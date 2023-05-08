@@ -1,0 +1,74 @@
+---
+layout: page
+keywords: "Deep-Learning, Geogebra, Visualization"
+title: "Gradient as a Guide : A Simple Game "
+date: 2022-05-22
+tags: Deep-Learning, Gradient-Descent, Geogebra, Visualization
+key: "GGSG0522"
+comment: true
+---
+	<html>
+		<head>
+			<meta charset="utf-8" />
+			<meta name="viewport" content="width=device-width,initial-scale=1" />
+			<meta name="keywords" content="Deep learning, Gradient Descent, Geogebra applet,Interactive Game">
+			<meta name="description" content="Play this simple Gradient Descent !">
+    	<!-- Global site tag (gtag.js) - Google Analytics -->
+			<script async src="https://www.googletagmanager.com/gtag/js?id=G-EZFN6Q425Z"></script>
+			<script>			
+			  window.dataLayer = window.dataLayer || [];
+			  function gtag(){dataLayer.push(arguments);}
+			  gtag('js', new Date());
+
+			  gtag('config', 'G-EZFN6Q425Z');
+			</script>
+			<!---Mathjax--->
+			<script type="text/javascript" id="MathJax-script" async
+  			src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+			</script>
+      
+			<meta name="author" content="Arun Prakash A">
+			<title>Gradient as a Guide : A Simple Game</title>
+			
+						
+			<script defer src="https://pyscript.net/alpha/pyscript.js"></script>			
+			
+		</head>
+			
+    
+		<body>			
+     
+      <p> <strong>  &emsp; The Backpropagation </strong> algorithm is the powerhouse of all Deep Learning models. It is one of the methods of <strong> efficiently </strong> <em> calculating 
+        Gradient </em> for billions of parameters. Therefore, it is vital to understand how <em> the Gradient </em> information guides the the function's parameters to traverse the loss-landscape and eventually halt in a valley.
+         I thought of building a simple game centred around the concepts to ensure whether a learner has understood them or not. Here it is for you to explore </p>
+      <div> 
+      <iframe scrolling="no" title="Gradient1D_v2" src="https://www.geogebra.org/material/iframe/id/mevucqbj/width/900/height/600/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/true/ctl/false" width="900px" height="600px" style="border:0px;"> </iframe>
+      
+      </div>
+     <p> where,<p> 
+	      <ul>
+		      <li> <p> \(w \rightarrow \) weight  </p></li>
+		      <li> <p> \( \eta \rightarrow \) the learning rate, default:1, range: \( 0 \leq \eta \leq1 \) </p> </li>
+		      <li> <p> \( dw \rightarrow \) gradient at \(w\) </p> </li>
+	      </ul>
+      <h2 id="Goal" style="color: #2e6c80;">Goal</h2>
+		<p> &emsp; Reach the minimum (or maximum) of the function using Gradient as a guide.</p>
+		<p><center> $$ w_{t+1} = w_t - \eta \cdot dw_t $$ </center> </p>
+		<p> Listed below are some information about the applet that help you get started quickly. </P>
+      
+		<ol>
+				<li> <p> By default, the weight \(w\)  value  is initialized to  1.2 and the learning rate is set to \(\eta=1\). You can modify the value of
+					\(w\) by replacing the number in the input box. The learning rate \(\eta\) can be changed using the slider. <p> </li>
+			        <li> <p> The gradient \(dw\) for the weight \(w\) is computed and then scaled by \(\eta\). It is displayed as \(\eta \cdot dw=0.31\) </p> </li>
+				<li> <p> The direction (to the minima) of the negative gradient is represented by an arrow originating at the point \((2,2)\).Therefore, it is pointing to the left now. </p> </li>
+				<li> <p> You can update the weight \(w\) by adding or subtracting the scaled-gradient value,\(\eta \cdot dw\),<strong> directly </strong> in the input box,like \([1.2 - 0.31]\).</p> </li>
+			         				
+				
+      		</ol>
+	    <p> The video below is my attempt to reach the minimum of the function. As you can see, the process enters into the vicious cycle after the \(5^{th}\) iteration!.To avoid it, you must choose the learning rate less than 1. Try it yourself! <p>
+<h3> <strong> Deep Learning is a game of Gradients at a scale! </strong> </h3>
+<div>{%- include extensions/youtube.html id='LSJC7Y2sRuM' -%}</div>
+
+
+		</body>
+	</html>

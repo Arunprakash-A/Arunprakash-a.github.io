@@ -1,0 +1,150 @@
+---
+layout: page
+keywords: "Python, pyscript"
+title: "Bringing Python to Browser! "
+date: 2022-05-04
+tags: Python, Pyscript
+key: "BPB0504"
+comment: true
+---
+
+<!DOCTYPE html>
+	<html>
+		<head>	
+						
+			<script defer src="https://pyscript.net/alpha/pyscript.js"></script>	
+			
+		</head>
+			
+    
+		<body>
+						
+<div class="post">
+<p>  Jupyter notebook has always been a de-facto choice when you teach the Python programming language or while developing prototype machine learning models or doing exploratory data analysis. 
+     The reasons are manifold. The most important reason is due to its ability to interleave the rich set of explanatory notes using markdown 
+     cells and the code cells (for this reason, it is also called a computational document). </p>
+			
+<p> This unique feature makes learning python components coherently (i.e., no switching back and forth between explanatory notes and IDE).
+     However, suppose that someone visits your site to learn python. What can we do then?. Well, we can convert the entire notebook into a markdown/HTML file and publish it on the site.
+     Well, the published page will look neat as shown below. There, we can copy the code,read the notes, but...</p>
+<iframe style="border:none;" height="200" width="100%" src="https://arunprakashiscoolbuddy.on.drv.tw/hello_world.html" title="jupyter-demo"></iframe>
+
+<p>      as you guessed, we can't execute the statements in the code cells!.Why?...</p>
+	<p> Simply because it requires <strong> a local or a web server </strong> to execute the code cells in the 
+	notebook. Therefore, we need to open  <strong> Google colab </strong> for quick experimentation by copying codes in the notebook. 
+	It offers a free server with pre-installed python packages such as NumPy,matplotloib,scikit-learn and many more.
+	Imagine, What if Python runs in the site itself <strong> without requiring any remote server </strong>. That will be cool!. </p>
+<p> That's where <em> PyScript </em> helps us!.How can we do it?.Just add the single line of code (line:6) in the <code>  &lt;head&gt; section.</code> </p>
+
+<script src="https://gist.github.com/Arunprakash-A/01dd938c587979f83d1d7d3fb7f8bc78.js"></script>
+
+<p>  and enclose the python code inside the <em> custom HTML elements </em> <code> &lt;py-script&gt; </code> or <code> &lt;py-repl&gt; </code> in the <code> &lt;body&gt; </code> section.
+	That's all!. We are ready to go ahead and execute python codes in the browser.Ok! without further ado..let's see some examples <br>
+	<em> Reminding you once again: The following code cells are not running in any remote server, they are simply running in the browser!.</em></p>
+
+<h2 id="hello-world" style="color: #2e6c80;" > 1.Displaying Hello world:</h2> 	
+ 
+	<py-repl output="hw">
+	print("Hello world")
+	</py-repl>
+	<div><pre id="hw"></pre></div>
+
+
+<p> Now, it is clear that we can insert any valid python statements in the cell and it gets executed. Let's do more.. </p>
+
+<h2 id="executing-a-function" style="color: #2e6c80;" >2. Calling a function:</h2>
+<py-repl output="fd" id="r1">
+def factorial(n):
+  if n==0:
+    return 1
+  return n*factorial(n-1)
+print(factorial(8))
+</py-repl>
+<div><pre id="fd"></pre></div>
+
+<p> So far so good!. Let's create objects to represent points in 2D cartesian coordinate.
+   Also, implement methods to compute the distance from the origin to the point.
+   This requires <code> <em> sqrt() </em> </code> function to be <strong> imported </strong> from the <em> math </em> module. 
+   Can we import standard built-in modules?. Let's see </p>
+
+
+<h2 id="creating-objects" style="color: #2e6c80;" >3.Creating Objects and importing modules:</h2>
+
+
+<py-repl output="object" id="r2">
+import math  
+class Point(object):
+  def __init__(self,x,y):
+    self.x = x
+    self.y = y
+  def dist_from_origin(self):
+    ''' 
+     Calculate the Euclidean distance from the origin to the point
+    '''
+    return math.sqrt(self.x**2+self.y**2)
+p = Point(3,4)
+print("Distance from the origin is: ",p.dist_from_origin())
+  
+</py-repl>
+<div><pre id="object"></pre></div>
+
+
+<p> It works as expected!. Well, this implies that we can import all standard modules that come with python.This is great!.</p>
+<p> Power to python comes from its large collection (around 100K) of third-party packages that supports variety of tasks. For tasks related to data science, we need packages for numerical computation
+   and data visualization. Therefore, it would be super cool if we are able to  use  packages like <code> numpy</code> and <code> matplotlib </code>.
+   Fortunately, <strong> PyScript </strong> offers a custom HTML element <code> &lt;py-env&gt;</code> to import required packages (you can check the list of packages supported <a href="https://github.com/pyodide/pyodide/tree/main/packages">here</a>)
+   . Let's execute the following cell,</p>
+
+<h2 id="importing-site-packages" style="color: #2e6c80;">4. Numerical Computation</h2>
+  <py-env>
+- numpy
+- matplotlib
+ </py-env>
+ 
+<py-repl output='np'> 
+import numpy as np
+A = np.array([[1,1],[1,-1]])
+b = np.array([[1.5,-2]])
+x = np.linalg.inv(A)*b
+print(x)
+</py-repl>
+<div> <pre id="np"> </pre> </div>
+
+
+<p> Wow!..NumPy on the browser!.Let's check the final requirement, that is, data visualization.</p>
+
+<h2 id="plotting-Sine-Wave" style="color: #2e6c80;"> 5.Plotting waves </h2>
+
+<py-repl output='mpl'> 
+import numpy as np
+from matplotlib import pyplot as plt
+x = np.linspace(0,1,100)
+y0 = np.sin(2*np.pi*x)
+y1 = 0.5*np.sin(6*np.pi*x)
+y2 = 0.25*np.sin(10*np.pi*x)
+y3 = 0.125*np.sin(14*np.pi*x)
+fig,(ax0,ax1) = plt.subplots(2,1)
+ax0.plot(x,y0+y1+y2+y3)
+ax0.set(xlabel='x',xlim=(0,1),ylim=(-1.1,1.1),title='Signal and its harmonics')
+ax0.grid(True)
+ax1.plot(x,y0)
+ax1.plot(x,y1)
+ax1.plot(x,y3)
+ax1.plot(x,y3)
+ax1.set(xlabel='x',xlim=(0,1),ylim=(-1.1,1.1))
+ax1.grid(True)
+fig
+</py-repl>
+<div id="mpl"></div>
+
+			<p> Despite <em> PyScript's </em> nascent stage, what it offers is laudable. Just by knowing a bit of <em> HTML </em> and <em> JavaScript </em>, you can create more useful stuffs in your site with the help of <em> PyScript </em>.Moreover, it comes with eight custom <em> HTML</em> elements to create buttons, input-boxes, widgets and so on.
+				I have just used only two of them, <code> &lt;py-repl&gt; and &lt;py-env&gt; </code> in this article. Currently, it is under a rapid development, so we can expect a lot of changes in the near future.You can read a lot about how it works under the hood by refering the following resources </p>.
+			<h2 id="resources"> Resources:</h2>
+			<ol>
+				<li> <a href=" https://static.fossee.in/scipy2019/slides/The_Futute_of_Python_on_the_Web.pdf"> Presentation on what is Iodide and Pyodide (on top of which the PyScript is built). </a> </li>
+				<li> <a href="https://pyodide.org/en/stable/"> Pyodide official page. </a> </li>
+				<li> <a href="https://pyscript.net/examples/"> A list of PyScript demos. </a> </li>
+			</ol>
+
+		</body>
+	</html>
