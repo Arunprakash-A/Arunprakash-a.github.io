@@ -1,0 +1,18 @@
+---
+layout: page
+title: "Masked Attention - Implementation in Pytorch"
+date: 2023-05-23
+tags: Deep-Learnig, Transformers, BERT, Pytorch
+key: "MAIP0523"
+comment: true
+mathjax: true
+---  
+
+## Introduction
+
+  Masked attention is typically used in the Decoder component of transformer architecture and also
+  in BERT (Bidirectionaly Encoded Repesentation for Text). Therefore, it is essential to understand how
+  masked attention actually works. For that, let's create some toy embeddings for 8 tokens. This is represented
+  by $X \in \mathbb{R}^{8 \times 32}$
+  
+
