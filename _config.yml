@@ -173,7 +173,7 @@ analytics:
 
   ## Google Analytics
   google:
-    tracking_id : 314959998 # Google Analytics id for the site
+    tracking_id : G-EZFN6Q425Z # Google Analytics id for the site
     anonymize_ip: false # Anonymize IP tracking for Analytics
 
 
@@ -182,6 +182,8 @@ analytics:
 markdown    : kramdown
 highlighter : rouge
 permalink   : date
+kramdown:
+ input: GFM
 
 exclude:
   - CHANGELOG.md
