@@ -76,17 +76,17 @@ We can simply generalize this,
  <p align="center"> 
 <span style="font-size:1.5em; line-height:0%">
     $ \begin{aligned} 
-    \frac{\partial{\hat{y}_3}}{\partial a_3} = =\frac{\partial }{\partial a_3} \frac{e^{a_3} }{e^{a_1}+e^{a_2}+\cdots+e^{a_5}} \\ 
-    & =\frac{(\sum) e^{a_3}-e^{a_3}*e^{a_3}}{(e^{a_1}+e^{a_2}+\cdots+e^{a_5})^2}\\
-    & = \frac{(\sum)e^{a_3}}{(\sum)^2} -  \frac{e^{a_3}}{\sum} \frac{e^{a_3}}{\sum} \\
-    & =\hat{y}_3(1-\hat{y}_3)
+    \frac{\partial{\hat{y}_3}}{\partial a_3} &= \frac{\partial }{\partial a_3} \frac{e^{a_3} }{e^{a_1}+e^{a_2}+\cdots+e^{a_5}} \\ 
+    &=\frac{(\sum) e^{a_3}-e^{a_3}*e^{a_3}}{(e^{a_1}+e^{a_2}+\cdots+e^{a_5})^2}\\
+    &= \frac{(\sum)e^{a_3}}{(\sum)^2} -  \frac{e^{a_3}}{\sum} \frac{e^{a_3}}{\sum} \\
+    &=\hat{y}_3(1-\hat{y}_3)
     \end{aligned}$
 </span>
 </p>
 We can generalize this once again,
 <p align="center"> 
 <span style="font-size:1.5em; line-height:0%">
-    $ \bbox[5px, border: 2px solid red] {\frac{\partial{\hat{y}_i}}{\partial a_j} = =\hat{y}_i(1-\hat{y}_i), \quad i = j}$
+    $ \bbox[5px, border: 2px solid red] {\frac{\partial{\hat{y}_i}}{\partial a_j} = \hat{y}_i(1-\hat{y}_i), \quad i = j}$
 </span>
 </p>
 
@@ -157,7 +157,7 @@ Multiply the Jacobian matrix and the vector and make a simple re-arrangement. Af
 
 <p align="center"> 
 <span style="font-size:1.5em; line-height:0%">
-    $ \bbox[5px, border: 2px solid green] {\frac{\partial \mathscr{L}}{\partial  \mathbf{a}} = =\mathbf{\hat{y}-y}}$
+    $ \bbox[5px, border: 2px solid green] {\frac{\partial \mathscr{L}}{\partial  \mathbf{a}} = \mathbf{\hat{y}-y}}$
 </span>
 </p>
 
