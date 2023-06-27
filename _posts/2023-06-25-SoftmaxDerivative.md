@@ -49,7 +49,12 @@ as follows
    <iframe src="/plotly/softmax.html" width="500px" height="500px" style="border:0px;"> </iframe>     
   </p>
 
- The function corresponding to the plot is $f = \frac{e^{a1}}{e^{a1}+e^{a_2}}$. Compare it with the hard-max function to get a better insight and to understand the reason why it is called softmax.
+ The function corresponding to the plot is $f_1 = \frac{e^{a_1}}{e^{a_1}+e^{a_2}}$. We would have a similar plot flipped in direction for $f_2 = \frac{e^{a_2}}{e^{a_1}+e^{a_2}}$. Then taking a max of ($f_1,f_2$) will result in a graph as shown below.
+ 
+   <p align="center">
+   <iframe src="/plotly/softmax-combined.html" width="500px" height="500px" style="border:0px;"> </iframe>     
+  </p>
+ Compare it with the hard-max function to get a better insight and to understand the reason why it is called softmax.
 ## Derivative of Softmax
   Well, computing softmax is quite easy. The same is true for computing the derivative of the softmax. Let's make clear what we are exactly taking a derivative of. Firstly, there are five inputs and five outputs. Each output is function of all the inputs. More precisely, if input is $a_i$, then the term in the numerator of $y_i$ depends only on $a_i$ whereas the term in the denominator depends on ALL the elements in input $a_j, j \in (1,2,3,4,5)$. Note that we use $i$ to denote the output element and $j$ as an index to sum over all elements in the input. So we can divide the entire derivative of $\frac{\partial y_i}{\partial a_j}$ part into two halves: 
      
