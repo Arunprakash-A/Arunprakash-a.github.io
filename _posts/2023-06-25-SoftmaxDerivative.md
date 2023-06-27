@@ -35,7 +35,10 @@ as follows
   <p align="center">
   <img align="center" src="https://drive.google.com/uc?export=view&id=1u1ZksekGZUtwo1Tm3_5QN8pkrmGptgIb" width="350px" height="300px">
 </p>
-  This is a desired property in our case to ensure that all the elements in $\hat{\mathbf{y}}$ are POSITIVE (even if some/all of the elements of $\mathbf{a}$ are negative) and $\in [0,1]$ . This is exactly what we are looking for in a typical classification setting. That is, we want the network to produce probabilities for the classes $P(C|X)$ 
+  This is a desired property in our case to ensure that all the elements in $\hat{\mathbf{y}}$ are POSITIVE (even if some/all of the elements of $\mathbf{a}$ are negative) and $\in [0,1]$. This is exactly what we are looking for in a typical classification setting. That is, we want the network to produce probabilities for the classes $P(C|X)$. The interactive figure below shows the plot of softmax function over the input space spanned by $x \times y$.
+  <p align="center">
+   <iframe src="https://github.com/Arunprakash-A/Arunprakash-a.github.io/blob/main/plotly/softmax.html" width="400px" height="400px"> </iframe>     
+  </p>
 
 ## Derivative of Softmax
   Well, computing softmax is quite easy. The same is true for computing the derivative of the softmax. Let's make clear what we are exactly taking a derivative of. Firstly, there are five inputs and five outputs. Each output is function of all the inputs. More precisely, if input is $a_i$, then the term in the numerator of $y_i$ depends only on $a_i$ whereas the term in the denominator depends on ALL the elements in input $a_j, j \in (1,2,3,4,5)$. Note that we use $i$ to denote the output element and $j$ as an index to sum over all elements in the input. So we can divide the entire derivative of $\frac{\partial y_i}{\partial a_j}$ part into two halves: 
@@ -90,7 +93,7 @@ We can generalize this once again,
 </span>
 </p>
 
-Let's put the pieces together by constructing a matrix for various values of $(i,j)$. The resultant matrix is called the Jacobian matrix (following the denominator layout in arranging the elements of the matrix). Here it is for you 
+Let's put the pieces together by constructing a matrix for various values of $(i,j)$. The resultant matrix is called the Jacobian matrix. Here it is for you 
 
 <p align="center"> 
 <span style="font-size:1.5em; line-height:0%">
