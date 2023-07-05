@@ -11,7 +11,7 @@ comment: true
  <ul> 
  <li> <p> You can access the slide deck here: <a href="https://iitm-pod.slides.com/arunprakash_ai/pytorch"> https://iitm-pod.slides.com/arunprakash_ai/pytorch </a> </p> </li>
  <li> <p>  Read the contents in the slide deck before using the following colab notebooks. </p> </li>
- <li> <p>  I strongly believe that once you get a good grip on the first four modules, you can refer to documenetation or others code easily. I will keep updating this repository.</p> </li>
+ <li> <p>  I strongly believe that once you get a good grip on the first four modules, you can refer to documenetation or others code easily. I will keep updating this post.</p> </li>
  </ul>
   
  <h2> Colab Notebooks </h2>
@@ -45,7 +45,7 @@ comment: true
     </ul>
     </li>
   
- <li> <p> <strong>   Convolutional Neural Netowrk   </strong> </p>
+ <li> <p> <strong>   Convolutional Neural Netowrk   </strong> <a href="https://colab.research.google.com/drive/1M9ha7mZ-42UKUFZGee5QeKHbdNoo3U51?usp=sharing">Image Classification </a></p>
      <ul>
         <li> Using torchvision for datasets </li>
         <li> build CNN and move it to GPU </li>
@@ -54,8 +54,18 @@ comment: true
         <li> Image segmentation </li>
     </ul>
     </li>
+  <li> <p> <strong>   Recurrent Neural Netowrk   </strong> <a href="https://colab.research.google.com/drive/1OAraEdQfr_rhXGeANZ83v5gJ4Kt14aAr?usp=sharing">Sequence Classification </a></p>
+     <ul>
+        <li> torchdata </li>
+        <li> torchtext </li>
+        <li> Word Embedding</li>
+        <li> Build RNN </li>
+        <li> Train,Test,Evaluate </li>
+    </ul>
+    </li>
   
   </ol>
+  
   
   
 
