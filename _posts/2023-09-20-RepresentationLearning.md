@@ -8,13 +8,15 @@ comment: true
 mathjax: true
 ---  
 ## Motivation
-Let's start with a simple question. How do you **represent** a number on a real line?. That's straightforward. How do you **represent** a 2D point $\begin{pmatrix}x \\ y \end{pmatrix}$ in a coordinate system?. Well, we use two real lines that are **orthogonal** to each other. Suppose you are given 5 points $x_1,x_2,\cdots,x_5$ as shown in the app below. Could you represent at least four of them with a single number per point?. Hmm, ya, there is a pattern! Four points are lying in a line (check the "show line" checkbox to see the line) and only one point is not on the line. 
+Let's start with a simple question. How do you **represent** a number on a real line?. That's straightforward. How do you **represent** a 2D point $\begin{bmatrix}x \\ y \end{bmatrix}$ in a coordinate system?. Well, we use two real lines that are **orthogonal** to each other. Move $x$ unit on the axis and $y$ unit on the $y$ axis, then the location denotes the point. For latter convenience, we call $x$ and $y$ as the coefficients of the standard (unit) basis vectors $\mathbf{u_x}$ and $\mathbf{u_y}$. 
 
-It means that we can reach the four points by scaling the vector $\mathbf{w}$ by an appropriate constant $c$. Therefore, we call $\mathbf{w}$ as the **representation** for these four points. Once we have the $\mathbf{w}$ and constants $c_1,c_2,c_3$ and $c_4$, we can throw away all these four points.
+Suppose you are given 5 points $x_1,x_2,\cdots,x_5$ as shown in the app below. Could you represent at least four of them with a single number(coefficient) per point?. Hmm, ya, there is a pattern! Four points are lying on the line (check the "show line" checkbox to see the line) and only one point is not on the line. In other words, the four points are linearly dependent. That is, the four points are lying on the lower dimensional subspace $\mathbb{R}$ of the original vector space $\mathbb{R}^2$.
+
+It means that we can reach the four points by scaling the unit vector $\mathbf{w}$ by an appropriate constant $c$. In linear algebra terminology, we can say the vector $\mathbf{w}$ is a new basis vector. Here, we call $\mathbf{w}$ as the **representation** for these four points. Once we have the $\mathbf{w}$ and coefficients $c_1,c_2,c_3$ and $c_4$, we can represent all these points in the new basis. We are representing the original data points of dim=2, $x_i \in \mathbb{R}^2$, as points in dim=1, $c_i \in \mathbb{R}$. So, we may call this process as dimensionality reduction! Note however that the dim of basis vector $\mathbf{w}$ is still the same as dim of the original points $(\mathbb{R}^2)$. In general, the dimension of the representation( aka: eigen, principal, basis) vectors is always equal to the dim of the original points. 
 
 However, how do we represent the point $x_5$ using $c_5\mathbf{w}$? It is not possible as the point is not on the line. Suppose we relax the requirement that we need to **exactly** represent the point. Instead, we want to represent the point as close as possible. For that, we need to first **project** the point onto the line (subspace). The red arrow in the applet denotes the projected vector $\mathbb{p}$ and the point $x_5'$ is the projection of the point $x_5$ onto the line. The dotted segment represents the error between the projected point and the actual point.
 
- <em>Activity:</em> Check the "show Circle" check box in the app. Then move the point $x_5$ on the circle and observe the error value. When does the error become high (that is, error=1)? 
+ <em>Activity:</em> Check the `show Circle` check box in the app. Then move the point $x_5$ on the circle and observe the change in error value as you move along the circle. When does the error become high (that is, error=1)? 
 
  <iframe scrolling="no" title="Projection-PCA" src="https://www.geogebra.org/material/iframe/id/rhce9wch/width/700/height/500/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/true/ctl/false" width="700px" height="500px" style="border:0px;"> </iframe>
 
@@ -30,14 +32,14 @@ Well, in the above setup, we assumed we are given with $\mathbf{w}$ (or we could
   <img align="center" src="https://drive.google.com/uc?export=view&id=1fiSjRrD8FN0Zb_Y3gBtxumk2Ob_LdrFn">
 </p>
 
-Now, many points are outside the given line. That is, if we sum the error for each data point, then the error will be high. There could be a better line that minimizes the average error. How do we find it? 
+Now, many points are outside the given line. That is, if we sum the error for each data point, then the average error might be high. The error is the function of the line we choose (that is, $\mathbb{w}$). However, there could be a better line ($\mathbb{w}$) that minimizes the average error. How do we find it? 
 
-In general, we have $n$ data points and each data point $x_i \in \mathbb{R}^d, \quad d>>2$. We are interested in finding a set of $\mathbf{w_i} \in \mathbb{R}^d$ and the scalars $c_i \in \mathbb{R}$ such that it minimizes the average error as much as possible. Be default,  the data points are represented in $\mathbb{R}^d$ with $d$ canonical (orthogonal) coordinates. Our objective is to come up with $d_1 \leq d$ number of coordinates that minimizes the following error
+In general, we have $n$ data points and each data point $x_i \in \mathbb{R}^d$. We are interested in finding a set of $\mathbf{w_i} \in \mathbb{R}^d$ and the scalars $c_i \in \mathbb{R}$ such that it minimizes the average error as much as possible. Again, in linear algebra terminology, we are looking for new bases that span the low-dimensional subspace. By default,  the data points are represented in $\mathbb{R}^d$ with $d$ canonical (orthogonal) bases (coordinates). Our objective is to come up with $d' \leq d$ number of bases (coordinates) that minimizes the following error
 <center>
 $Error = \frac{1}{n} \sum \limits_{i=1}^n ||x_i-x_i'||^2 = \frac{1}{n}  \sum \limits_{i=1}^n ||x_i-c_iw||^2 = \frac{1}{n}  \sum \limits_{i=1}^n ||x_i-(x_i^Tw)w||^2 $
 </center>
 
-So, in the above equation, the only way to reduce the error is to find the right $w$ (note that we dropped the suffix $i$ as we are just finding a single vector $w$ for now). That is, the error is a function of $w$ not of $x$. We can rewrite the error function as follows
+So, in the above equation, the only way to reduce the error is to find the right $w$ (note that we dropped the suffix $i$ as we are just finding a single vector $w$ for simplicity). That is, the error is a function of $w$ not of $x$. We can rewrite the error function as follows
 <center>
 $g(w) = \frac{1}{n} \sum \limits_{i=1}^n -(x_i^Tw)^2 = -\frac{1}{n} w^T \big[\sum \limits_{i=1}^n (x_ix_i^T)\big] w = -\frac{1}{n} w^TCw $
 </center>
@@ -68,4 +70,4 @@ We can get rid of the negative sign by posing this as a maximization problem. Th
   The application of PCA is numerous. It is used to remove the noise from the data points, de-correlate the correlated features, feature extraction and so on.
 
 ## Just A baby step
-   Principal Component Analysis (PCA) is just a baby step toward representation learning. The projection is on to the subspace spanned by the principal components which are lines and planes. Moreover, we expect the data points to have a high variance representation in the lower dimensional subspace for PCA to be helpful. It may not always be the case. What happens to the variance of principal components if the data points are distributed on a unit circle in $\mathbb{R}^2$?
+   Principal Component Analysis (PCA) is just a baby step toward representation learning. The projection is on to the subspace spanned by the principal components which are lines and planes. Moreover, we expect the data points to have a high variance representation in the lower dimensional subspace for PCA to be helpful. It may not always be the case. What happens to the variance of principal components if the data points are distributed on a unit circle in $\mathbb{R}^2$? Then all the points are linearly **independent**. We need to use another technique called Independent Component Analysis (ICA). We may apply some kernel tricks on the data points (Kernel PCA), or even neural network-based approaches like AutoEncoders!
