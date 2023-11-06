@@ -36,11 +36,7 @@ These assumptions can be clubbed together, then it is called **Independent and I
 <center>
 $P(x_0,x_1,x_2,x_3,x_4) = P(x_0)P(x_1|x_0)P(x_2|x_1,x_0)P(x_3|x_2,x_1,x_0)P(x_4|x_3,x_2,x_1,x_0)$
 </center> 
-If the second assumption doesn't hold, then 
-<center>
-$P(x_0,x_1,x_2,x_3,x_4) = P_1(x_0)P_2(x_1|x_0)P_1(x_2|x_1,x_0)P_2(x_3|x_2,x_1,x_0)P_3(x_4|x_3,x_2,x_1,x_0)$ 
-</center>
-where $P_i()$ is an $i-$th distribution function.
+
 
 
 Assuming IID for the random sequence $X = [1,0,1,1,0]$ (Note: The order of the samples in the sequence doesn't matter because of IID), the joint PDF (likelihood function) that generated the sequence is given by
