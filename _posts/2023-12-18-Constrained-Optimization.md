@@ -2,7 +2,7 @@
 layout: page
 title: "Lagrange Multiplier : Intuition via Interaction"
 date: 2023-12-18
-tags: ML
+tags: Math Geogebra ML
 key: "CO1218" 
 comment: true
 mathjax: true
@@ -32,7 +32,7 @@ Take all the points $(x,y)$ on the unit circle and evaluate the function at each
 </p>
 The maximum occurs at $x=0.88,y=0.49$ with the maximum value of the function being 2.24.If you move the point $A$ a bit clockwise or anti-clockwise, the function value decreases from 2.24. Similarly, if you move the point $A$ around the circle (that is, in the feasible region), then you will find the values of $(x,y)$ for which the function attains its minimum. 
 
-The explorative approach of finding the maximum by evaluating the function $z$ by considering all possible input points that satisfy  the constraints is helpful to get started but inefficient (infeasbile). However, we can explore it a bit further to see what we are actually looking for? Could we observe something unique? 
+The explorative approach of finding the maximum by evaluating the function $z$ by considering all possible input points that satisfy the constraints is helpful to get started but inefficient (infeasible). However, we can explore it a bit further to see what we are actually looking for. Could we observe something unique? 
 
  * The constraint function $x^2+y^2=0$ is living in $\mathbb{R}^2$
  * The objective function $z=2x+y$ is in $\mathbb{R}^3$
@@ -42,13 +42,13 @@ Therefore, let's plot the <b>contours of the objective </b> function $2x+y=k$ fo
 <iframe scrolling="no" title="ConstrainedOptimization-2" src="https://www.geogebra.org/material/iframe/id/nzcvzjbj/width/700/height/500/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/true/ctl/false" width="700px" height="500px" style="border:0px;"> </iframe>
 </p>
 
-What is your observation about the line (contours of the objective function) to circle (contours of the constraint)? Esspecially, at the point it maximizes (minimizes) the objective function.
+What is your observation about the line (contours of the objective function) to the circle (contours of the constraint)? Especially, at the point it maximizes (minimizes) the objective function.
 
-<b> The line is tangent to the circle (In general, the contour of the objective function is tangent to the contour of constraint function at maximum or minimum)
+<b> The line is tangent to the circle (In general, the contour of the objective function is tangent to the contour of the constraint function at maximum or minimum)
 
 ## Analytical approach
 
-With this observation, we can introduce the gradient vector (a simple quantity that we can calculate) of both objective and constraint functions and see how they are related. Once again, move the point $A$ and observe the direction of gradient vectors. Where they are perpendicular to each other ? Where they are parallel to each other? 
+With this observation, we can introduce the gradient vector (a simple quantity that we can calculate) of both objective and constraint functions and see how they are related. Once again, move the point $A$ and observe the direction of gradient vectors. Where they are perpendicular to each other? Where they are parallel to each other? 
 <p align="center">
 <iframe scrolling="no" title="GradientConstrainedOpt" src="https://www.geogebra.org/material/iframe/id/zyrkackr/width/700/height/500/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/true/ctl/false" width="700px" height="500px" style="border:0px;"> </iframe>
 </p>
@@ -63,7 +63,7 @@ We can see that the gradient of the objective function and the gradient of the c
 </p>
 <b> Important: </b> The above relation only holds at the point $(x_0,y_0)$ 
 
-The $\lambda$ is called <b> Lagrange multiplier </b>. This helps us to scale the magnitude  of the gradient of constraint function to match the magnitude of the gradient of the objective function. How do we make use of the equation to find $(x_0,y_0)$ ?
+The $\lambda$ is called <b> Lagrange multiplier </b>. This helps us to scale the magnitude of the gradient of the constraint function to match the magnitude of the gradient of the objective function. How do we make use of the equation to find $(x_0,y_0)$ ?
 
 <p align="center">
 
@@ -72,6 +72,6 @@ The $\lambda$ is called <b> Lagrange multiplier </b>. This helps us to scale the
 
 </p>
 
-Now we can solve for the $(x_0,y_0)$ by equating the gradients. You can take a look at the detailed calculations at [khanacademy](https://www.khanacademy.org/math/multivariable-calculus/applications-of-multivariable-derivatives/constrained-optimization/a/lagrange-multipliers-single-constraint)
+Now we can solve for the $(x_0,y_0)$ by equating the gradients. You can take a look at the detailed calculations at [Khan Academy](https://www.khanacademy.org/math/multivariable-calculus/applications-of-multivariable-derivatives/constrained-optimization/a/lagrange-multipliers-single-constraint)
 
 Now, we can conceptually extend the same for multiple constraints.
