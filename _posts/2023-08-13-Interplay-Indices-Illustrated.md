@@ -2,7 +2,7 @@
 layout: page
 title: "Interplay of Indices in Math - Illustrated "
 date: 2023-08-13
-tags: DL, Math
+tags: Math
 key: "IIMI1308" 
 comment: true
 mathjax: true
