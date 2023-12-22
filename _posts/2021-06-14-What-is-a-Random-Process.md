@@ -2,7 +2,7 @@
 layout: page
 title: "A Random Process"
 date: 2021-06-14
-tags: Probability, Numpy
+tags: Math Python
 key: "RP-1406"
 comment: true
 ---
