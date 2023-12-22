@@ -3,7 +3,7 @@ layout: page
 keywords: "Deep Learning, Pytorch, Pytorch Internels"
 title: "Pytorch for Deep Learning"
 date: 2022-12-17
-tags: Pytorch, Deep-Learning, Python.
+tags: Pytorch DL Python
 key: "PDL1712"
 comment: true
 ---
