@@ -3,7 +3,7 @@ layout: page
 keywords: "Deep-Learning, Transformers"
 title: "Transformer Architecture Explained in Detail from the scratch"
 date: 2022-03-28
-tags: Deep-Learning, Transformers
+tags: DL Transformers
 key: "TAED-2803"
 comment: true
 ---
