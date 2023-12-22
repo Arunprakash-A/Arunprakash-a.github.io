@@ -3,7 +3,7 @@ layout: page
 keywords: "Probability, Jupyter notebook"
 title: "Distribution of Random Variables"
 date: 2021-05-21
-tags: Probability, Jupyter-notebook, Numpy
+tags: Math Python
 key: "DRV-2105"
 comment: true
 ---
