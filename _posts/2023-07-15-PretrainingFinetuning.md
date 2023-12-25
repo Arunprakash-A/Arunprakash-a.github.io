@@ -3,7 +3,7 @@ layout: page
 keywords: "Deep-Learning"
 title: "Transfer Learning"
 date: 2023-07-15
-tags: Deep-Learning, Transformers
+tags: DL Transformers
 key: "TLPF-1407"
 comment: true
 ---
