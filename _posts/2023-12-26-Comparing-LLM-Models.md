@@ -22,6 +22,7 @@ mathjax: true
  * <span style="color:blue"> Optimizer</span>: Adam
  * <span style="color:blue"> Training steps</span>: 100 epochs ($2.4 \times 10^6$ steps), ($BS:64 \times T:512$) tokens/step
  * <span style="color:blue"> Number of parameters</span>: 0.12 Billion
+ * <span style="color:blue"> Evaluated on </span>: 12 Tasks (includes NLI, QA, Comprehension, Classification)
 
 ## BERT (Bidirectional Encoder Representation from Transformers)
  * <span style="color:blue"> Pre-training Dataset</span>: Book corpus (0.8B words), English Wikipedia (2.5B words) 
@@ -37,6 +38,7 @@ mathjax: true
  * <span style="color:blue"> Optimizer</span>: Adam
  * <span style="color:blue"> Training steps</span>: 40 epochs ($1 \times 10^6$ steps), ($BS:256 \times T:512$) tokens/step
  * <span style="color:blue"> Number of parameters</span>: 0.12 Billion (Base) to 0.34 (Large)
+* <span style="color:blue"> Evaluated on </span>: 11 Tasks (includes NLI, QA, Comprehension, Classification)
 
 ## BART (Bidirectional Autoregressive Training)
  * <span style="color:blue"> Pre-training Dataset</span>: Book corpus,English Wikipedia,CC News, Stories (total:160 GB of text data)
@@ -53,9 +55,10 @@ mathjax: true
  * <span style="color:blue"> Training steps</span>: BERT-Like : 40 epochs ($1 \times 10^6$ steps), ($BS:256 \times T:512$) tokens/step
  * <span style="color:blue"> Training steps</span>: RoBERTa Like: $0.5 \times 10^6$ steps, ($BS:8000 \times T:512$) tokens/step
  * <span style="color:blue"> Number of parameters</span>: 0.13 Billion (Base) to 0.37 (Large)
+ * <span style="color:blue"> Evaluated on </span>: 15 Tasks
 
-## T5 (Text-To-Text-Transfer-Learning)
- * <span style="color:blue"> Objective</span>: Extensive study on existing approaches to building LMs under a unified framework.
+## T5 (Pushing the limits)
+ * <span style="color:blue"> Objective</span>: Extensive study on existing approaches to building (Large) LMs under a unified **(Text-To-Text-Transfer-Learning)** framework.
  * <span style="color:blue"> Pre-training Dataset</span>: Colossal Clean Crawled Corpus <b>C4</b> (156 Billion tokens)
  * <span style="color:blue"> Unsupervised objective</span>: MLM-Denoising (predicting a span of missing tokens)  
  * <span style="color:blue"> Tokenizer</span>: Sentencepiece
@@ -69,8 +72,11 @@ mathjax: true
  * <span style="color:blue"> Optimizer</span>: Adafactor
  * <span style="color:blue"> Training steps</span>: **$<\frac{1}{4}$ of epoch** ($2^{19}=524,288$ steps), ($BS:128 \times T:512=65536$) tokens/step
  * <span style="color:blue"> Number of parameters</span>: 0.13 Billion (small) to 11 Billion (Large)
+ * <span style="color:blue"> Evaluated on</span>: 23 Tasks (GLUE, superGLUE, SQuAD, CNN/DM, WMT)
+
 
 ## GPT-2
+ * <span style="color:blue"> Pre-training Dataset</span>: Study zero-shot task transfer
  * <span style="color:blue"> Pre-training Dataset</span>: WebText (40 GB) (less than 19 Billion tokens)
  * <span style="color:blue"> Unsupervised objective</span>: CLM  
  * <span style="color:blue"> Tokenizer</span>: Bytelevel BPE
@@ -84,6 +90,7 @@ mathjax: true
  * <span style="color:blue"> Optimizer</span>: Adam
  * <span style="color:blue"> Training steps</span>: not disclosed. Model underfits the dataset (similar to T5) ($BS:64 \times T:1024=65536$) tokens/step
  * <span style="color:blue"> Number of parameters</span>: 0.12 Billion (small) to 1.5 Billion (Large)
+ * <span style="color:blue"> Evaluated on</span>: 8 Tasks
 
 ## GPT-3
  * <span style="color:blue"> Objective</span>: Scaling parameters and improve zero-shot, few-shot performance
@@ -100,7 +107,9 @@ mathjax: true
  * <span style="color:blue"> Optimizer</span>: Adam
  * <span style="color:blue"> Training steps</span>: (Inferred) 1 epoch = 93570 steps with  3.2M batch size (tokens) ($\frac{300 \times 10^9}{3.2 \times 10^6}$), ($BS:0.5M \rightarrow 3.2M \tokens$). Total training steps could also be inferred from the total compute (PF-days) used to train the model. 
  * <span style="color:blue"> Number of parameters</span>: 0.12 Billion (small) to **175 Billion (Large)**
+ * <span style="color:blue"> Evaluated on</span>: 28+ Tasks
  * <span style="color:blue"> New finding</span>: In-context learning
+ 
 
 ## Switch (Scaling up T5 with MoE)
  * <span style="color:blue"> Objective</span>: Scale to Trillion parameters with a reduced <b>computational budget</b> (FLOPS/token)
@@ -186,6 +195,45 @@ mathjax: true
 * <span style="color:blue"> Optimizer</span>: **AdamW**
 * <span style="color:blue"> Number of parameters:</span> 70 Billion (optimized Gopher :-) )
 
+## PaLM (Pathways Language Model)
+* <span style="color:blue"> Objective</span>: **Efficiently** Scale the model to 540 Billion parameters using **Pathways** system.
+* <span style="color:blue"> Pre-training Dataset</span>: 780 Billion tokens (natural language, codes from 24 programming languages, social media conversations)
+* <span style="color:blue"> Unsupervised objective</span>: CLM  
+* <span style="color:blue"> Tokenizer</span>: SentencePiece
+* <span style="color:blue"> Vocab_size</span>: **256K** 
+* <span style="color:blue"> Architecture</span>: Decoder (32, 64, 118 Layers) 
+* <span style="color:blue"> Activation</span>: SwiGELU (SwishGELU)
+* <span style="color:blue"> Attention</span>: **Multi-Query Attention** (to improve decoding speed)
+* <span style="color:blue"> FFN</span>: Dense
+* <span style="color:blue"> Attention mask</span>: Causal 
+* <span style="color:blue"> Positional Encoding</span>: **RoPE** (works better for long sequences) 
+* <span style="color:blue"> Normalization</span>: Pre-Norm (RMSNorm)
+* <span style="color:blue"> Optimizer</span>: AdaFactor (without factorization).
+* <span style="color:blue"> Training steps</span>: 255k (BS: vary from 1M,2M and 4M tokens)
+* <span style="color:blue"> Evaluated on</span>: 120+ tasks (NLU, MMLU, BIG-Bench,..)
+* <span style="color:blue"> Hardware</span>: 6144 TPU v4 chips
+* <span style="color:blue"> Parallelism</span>: Data and Model Parallelism
+
+
+
+## LLaMA
+* <span style="color:blue"> Motivation</span>: In line with Chinchilla and scaling law, train a smaller model with Trillion tokens (longer time) 
+* <span style="color:blue"> Objective</span>: Optimize the inference budget with smaller models (7B to 65B)
+* <span style="color:blue"> Pre-training Dataset</span>: Common Crawl (2017 to 2020), C4, Github, Arxiv, StackExchange 
+* <span style="color:blue"> Unsupervised objective</span>: CLM  
+* <span style="color:blue"> Tokenizer</span>: BPE
+* <span style="color:blue"> Architecture</span>: Decoder (32, 40, 60, 80 Layers) 
+* <span style="color:blue"> Activation</span>: SwiGELU (SwishGELU)
+* <span style="color:blue"> Attention</span>: **Flash Attention**
+* <span style="color:blue"> FFN</span>: Dense
+* <span style="color:blue"> Attention mask</span>: Causal 
+* <span style="color:blue"> Positional Encoding</span>: **RoPE** (works better for long sequences) 
+* <span style="color:blue"> Normalization</span>: Pre-Norm (RMSNorm)
+* <span style="color:blue"> Optimizer</span>: AdamW.
+* <span style="color:blue"> Training steps</span>: 255k (BS: vary from 1M,2M and 4M tokens)
+* <span style="color:blue"> Evaluated on</span>: 120+ tasks (NLU, MMLU, BIG-Bench,..)
+* <span style="color:blue"> Hardware</span>: 2048 A100 GPUs (80GB RAM) (380 tokens/s/GPU)
+* <span style="color:blue"> Parallelism</span>: Data and Model Parallelism
 
 
 ## References
@@ -199,3 +247,5 @@ mathjax: true
  1. [GLM](https://arxiv.org/pdf/2103.10360.pdf)
  1. [Gopher](https://arxiv.org/pdf/2112.11446.pdf)
  1. [Chinchilla](https://arxiv.org/pdf/2203.15556v1.pdf)
+ 1. [PaLM](https://arxiv.org/pdf/2204.02311.pdf)
+ 1. [LLaMA](https://arxiv.org/pdf/2302.13971.pdf)
