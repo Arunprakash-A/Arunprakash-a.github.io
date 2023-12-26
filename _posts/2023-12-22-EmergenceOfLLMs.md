@@ -33,7 +33,7 @@ All of these could influence the performance of the model in various downstream 
 
  <p align="center">
  <img align="center" src="https://drive.google.com/uc?export=view&id=1pdPjQNHn2F_XveQJrZiHDKrDu29wv0LF" >
-</p>
+ </p>
 
 Well, the recommendations are the following
 
@@ -90,7 +90,7 @@ Note carefully the use of log-scale for the x-axis (therefore, the relationship 
 </p>
 
 <b>Important:</b> <br>
-  If we scale the dataset size, we have to scale the model size and compute size <b>appropriately</b>. For example, if we train a smaller model on a bigger dataset for a longer time, it won't scale the performance. If we increase the model by $8\times$, then we have to increase the dataset size $5\times$. The figure below shows the smooth performance as we scale these factors
+  If we scale the dataset size, we have to scale the model size and compute size <b>appropriately</b>. For example, if we train a smaller model on a bigger dataset for a longer time, it won't scale the performance. If we increase the model by $8\times$, then we have to increase the dataset size $5\times$ (Chinchilla differs in this). The figure below shows the smooth performance as we scale these factors
 
 <p align="center">
  <img align="center" src="https://drive.google.com/uc?export=view&id=1dWIA4qg7mH1-7LGkpYd0HyQ69_IxxNIG" >
@@ -108,6 +108,10 @@ Therefore, for $N=10^3$, the loss starts at 6.7886 and for $N=10^9$ (Billion non
 Similarly, we can fix $D$ and $N$ (say, $N=10^9$) and vary $C$ (figure: Left). Refer to the paper [2] to know the relationships.
 
 <b>Caution</b>: The precise numerical values of $Nc=8.8 \times 10^{13}$, $D_c$ and $C_{min}$ depend on the vocabulary size and tokenization and hence do not have a fundamental meaning.
+
+### Chinchilla Scaling Law:
+
+ * [Chinchilla](https://arxiv.org/pdf/2203.15556v1.pdf) recommends scaling the model size (number of parameters) and data size (number of tokens) equally to get optimal performance for the given compute budget. The loss is predictable with the following relationship
  
 ## Consequences
 Well, you might wonder, is there a study on scaling the encoder-only model with MLM (Masked Language Modeling) objective? Yes, it was studied in the T5 paper. However, authors of T5 advocated for encoder-decoder models with the denoising objective and authors of GPT-2 and scaling law advocated a decoder-only model with autoregressive training (CLM objective). Therefore, people started scaling these two models after 2021 as shown in the figure below [4],
