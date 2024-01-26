@@ -32,7 +32,7 @@ When it comes to pre-train a language model using transformers, there are a lot 
 All of these could influence the performance of the model in various downstream tasks. So it requires extensive study. Fortunately, there is one such study[1]:"<b> Text-To-Text-Transfer-Transformer (T5)[1] </b>" using a really large dataset called (C4) (of size 750 GB, 156 Billion tokens). Each section of the paper gives you a lot of insights. 
 
  <p align="center">
- <img align="center" src="https://drive.google.com/uc?export=view&id=1pdPjQNHn2F_XveQJrZiHDKrDu29wv0LF" >
+ <img align="center" src="/images/ScalingLLMs/t5.PNG" >
  </p>
 
 Well, the recommendations are the following
@@ -40,7 +40,7 @@ Well, the recommendations are the following
 * It is not the size but the <b> quality of samples</b> in the dataset that matters
 * Prefer <b>*encoder-decoder </b> architecture over encoder-only (like BERT) or decoder-only (GPT) architectures
 * Pre-training the model with <b> denoising objective </b> performs better across downstream tasks
-* If you want to improve the performance of smaller models (for faster inference), then pre-train the model for longer.
+* If you want to improve the performance of smaller models (for faster inference), then pre-train the model for longer. (A similar line of study [Chinchilla](https://arxiv.org/pdf/2203.15556v1.pdf) finds the same)
 * <b>Underfitting is fine </b> (given the larger dataset, you can barely train for 1 epoch but that is fine)
 * (careful) Multi-task training is fine
 * Training parameters from scratch is better if you have a large dataset (as in the case of translation tasks)
@@ -68,17 +68,19 @@ Well, here comes the decoder-only model (as you might already be aware of GPT-3/
   1. Compute Budget $C$ in peta-FLOPs-Day (PF-Days=$10^{15} \times 24 \times 3600 = 8.64 \times 10^{19} $ floating point ooperations)   
 
 Given $d_{model},d_{atten},d_{ff}$, what is the <b> total number of (non-embedding) parameters</b>? 
+
 <p align="center">
 <span style="font-size:1.5em; line-height:0%">
  $N \approx 2 \times d_{model} \times d_{atten} \times d_{ff}$. 
  </span>
 </p>
+
 Typically $d_{ff}$ is much greater than the other two. Therefore, $d_{ff}$ contributes more to the number of parameters. So, can we just increase the number of parameters by increasing $d_{ff}$ (keeping the number of layers constant) and expect a decrease in test loss?
 
  Yes, but it observed that increasing the number of parameters works well with the corresponding <b>increase in the number of layers</b> by keeping $d_{ff}$ fixed in all layers. That is, having one layer with 1 Billion parameters performs poorly compared to having the same 1 Billion parameters with 6 layers (The deeper the better! [2]). 
 
  <p align="center">
- <img align="center" src="https://drive.google.com/uc?export=view&id=18SNq6-ViTxbXCe6ZyfiZ2Dwzri0cwgLD" >
+ <img align="center" src="/images/ScalingLLMs/parameterVsLoss.PNG" >
 </p>
 Note carefully the use of log-scale for the x-axis (therefore, the relationship is linear on the log-scale).
 
@@ -93,7 +95,7 @@ Note carefully the use of log-scale for the x-axis (therefore, the relationship 
   If we scale the dataset size, we have to scale the model size and compute size <b>appropriately</b>. For example, if we train a smaller model on a bigger dataset for a longer time, it won't scale the performance. If we increase the model by $8\times$, then we have to increase the dataset size $5\times$ (Chinchilla differs in this). The figure below shows the smooth performance as we scale these factors
 
 <p align="center">
- <img align="center" src="https://drive.google.com/uc?export=view&id=1dWIA4qg7mH1-7LGkpYd0HyQ69_IxxNIG" >
+ <img align="center" src="/images/ScalingLLMs/3.PNG" >
 </p>
 
 Suppose we train $L$ different models <b>varying</b> in parameters $N$ ranging from $10^3$ to $10^9$ (figure: right) on a sufficiently large dataset $D$ <b>(fixed)</b>  and compute budget $C$<b>(fixed)</b>. Then the loss could be <b> predicted </b> as a function of $N$
@@ -116,7 +118,7 @@ Similarly, we can fix $D$ and $N$ (say, $N=10^9$) and vary $C$ (figure: Left). R
 ## Consequences
 Well, you might wonder, is there a study on scaling the encoder-only model with MLM (Masked Language Modeling) objective? Yes, it was studied in the T5 paper. However, authors of T5 advocated for encoder-decoder models with the denoising objective and authors of GPT-2 and scaling law advocated a decoder-only model with autoregressive training (CLM objective). Therefore, people started scaling these two models after 2021 as shown in the figure below [4],
 <p align="center">
- <img align="center" src="https://drive.google.com/uc?export=view&id=158by3ki05qDo6MI70o13yr1xc-GeY_Fm" >
+ <img align="center" src="/images/ScalingLLMs/4.PNG" >
 </p>
 
 We can see five major branches from the root of the three. The third one which corresponds to encoder-only models stopped growing after 2021. The fourth one (encoder-decoder) is competing with the fifth one (decoder-only).
