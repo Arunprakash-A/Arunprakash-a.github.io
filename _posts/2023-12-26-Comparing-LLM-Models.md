@@ -133,7 +133,7 @@ mathjax: true
  * In the diagram below $e$ denotes the experts. For example, $64e$ means 64 experts. Note carefully that increasing experts beyond a point increases the communication cost and hence decreases speed-up.
 
 <p align="center">
- <img align="center" src="https://drive.google.com/uc?export=view&id=1oO9kefZi2JnRRtFaeUH0blhKIGjkdEW_" >
+ <img align="center" src="/images/Comparing-Famous-LLMs/speedup.JPG" >
 </p>
 
 ## GLM (Generalized Language Models - Unifying Framework)
@@ -167,7 +167,7 @@ mathjax: true
 * <span style="color:blue"> Number of parameters:</span> 44 Million to **280 Billion**
 * <span style="color:blue"> Evaluated on</span>: 120 tasks
 <p align="center">
- <img align="center" src="https://drive.google.com/uc?export=view&id=1cCgHB9cCulsfjbbo8SaNq5e161Tkftt0" >
+ <img align="center" src="/images/Comparing-Famous-LLMs/evalautionDatasets.JPG" >
 </p>
 
 ## InstructGPT (precursor to chatGPT)
@@ -190,7 +190,7 @@ mathjax: true
 * <span style="color:blue"> Core problem </span>: Is the model size of Gopher optimal for the given compute budget ($10^{25}$ FLOPS)?
 * <span style="color:blue"> Findings</span>: Model size and data size scale equally (doubling the model size (parameters) requires us to double the data size (measured in tokens) to get improved performance) as shown in the figure below (last row)
 <p align="center">
- <img align="center" src="https://drive.google.com/uc?export=view&id=1rX1eLXG-xewgipHWbCV6a4DdLt4j6x0A" >
+ <img align="center" src="/images/Comparing-Famous-LLMs/chinchilla.JPG" >
 </p>
 
 * <span style="color:blue"> The optimal size of Gopher</span>: According to the new law, the optimal model size (parameters) of Gopher (trained with 1.4 Trillion tokens) is <b>not 280 Billion</b> but 70 Billion.
