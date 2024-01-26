@@ -45,7 +45,7 @@ It is time to establish the connection to the Jupyter Notebook running on the re
 Enter your password and that's all! Open any web browser on the local machine (your laptop) and enter <em>127.0.0.1:8888</em>. Now, we have access to the jupyter Notebook running on the remote server. 
 
 <p align="center">
- <img align="center" src="/images/RemoteJupyter/3.png" width="800">
+ <img align="center" src="/images/RemoteJupyter/3.PNG" width="800">
 </p>
 
 Note that it might ask you to enter the token generated in the remote server. Just copy all the characters after the word **token** in the link. For ex, if the link is <em> http://127.0.0.1:8888/?token=66b6...06b </em>, then copy all the characters starting from 66b6 to 06b. 
@@ -55,7 +55,7 @@ Note that it might ask you to enter the token generated in the remote server. Ju
  Great! Now let's see whether we have access to GPUs. If yes, then view some of their properties. It is always safe to check the free (available) GPUs in a cluster of GPUs before accessing them for your project. Someone in your group may already be using the GPU instances. To check that, use the command <em>nvidia-smi</em> in the terminal and see the status of all GPUs.
 
  <p align="center">
- <img align="center" src="/images/RemoteJupyter/4.png" width="800">
+ <img align="center" src="/images/RemoteJupyter/4.PNG" width="800">
 </p>
 
 Viola! We have four A100 MI(multi-instance) GPUs with 80GB of GPU memory each. We have everything ready and can start training or finetuning the models. Note that the GPU memory usage is displayed as zero. Because I haven't moved the data and the model from RAM to GPU. How efficiently we can do this? Is it good to move all the data in RAM to GPU at once? Could Dataloader functionality in PyTorch be of any help? Just explore by experimenting... 
