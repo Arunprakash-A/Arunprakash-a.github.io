@@ -67,7 +67,7 @@ The same transformer paper also used **learned absolute position embeddings** by
  
 ## Shortformer
 
-One important observation from the above decomposition is that one can add positional information **directly** in the attention layer as well!.The advantages are two-fold
+One important observation from the above decomposition is that one can add positional information **directly** in the attention layer as well!. The advantages are two-fold
 1. Adding it directly to the input embedding is non-trivial due to $n$ possible encodings for each token
 1. The dimension of embedding should of $d_{model}$ if added directly, whereas adding it in attention is $d_k$.
 
@@ -139,7 +139,24 @@ Observe that adding the relative positional info as a learnable vector $(\in \ma
 Where the common $W_K$ matrix in the original decomposition is re-parameterized to $W_{K1}$ and $W_{K2}$, new parameter vectors $u,v$ that are **independent of the query position** were introduced. Finally, the relative position $r_{i-j}$ (uses the sinusoidal function for embedding matrix) is used.
 
 # RoPE
-It stands for Rotary Position Embeddings. Once Again, a cleaver modification of the original sinusoidal embeddings beautifully explained with a lot of illustrations
+It stands for Rotary Position Embeddings. The diagram below shows the vector representation of the position embeddings (in the 2d case) for the first 4 positions (kept, $d_{model}=18$). The relative distance as measured (in angles) between $pos=0$ and $pos=1$ is different from $pos=2$ and $pos=3$. 
+<p align="center">
+  <img align="center" src="/images/PositionEncoding/3_rope.PNG" >
+</p>
+The RoPE proposes to fix this issue with the sinusoidal embeddings with a rotation matrix. It rotates two consecutive elements in the **word embedding vector** by using a Block rotation matrix shown below
+
+<p align="center">
+  <img align="center" src="/images/PositionEncoding/4_rotationMatrix.PNG" >
+</p>
+
+where $m$ is the position index and $\theta_i=10000^{(2-i)/d},i=1,2,\cdots, \frac{d}{2}$. Then the final query-key attention is given by 
+<p align="center">
+ $$
+ q_m^Tk_n=(R_{\Theta,m}^d W_qx_m)^T(R_{\Theta,n}^dW_kx_n)      
+  $$
+ </p>
+
+You may watch this video for intuitive explanations
 <div>{%- include extensions/youtube.html id='GQPOtyITy54' -%}</div>
 
 # ALiBi
