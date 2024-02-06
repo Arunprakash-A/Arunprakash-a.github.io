@@ -139,11 +139,11 @@ Observe that adding the relative positional info as a learnable vector $(\in \ma
 Where the common $W_K$ matrix in the original decomposition is re-parameterized to $W_{K1}$ and $W_{K2}$, new parameter vectors $u,v$ that are **independent of the query position** were introduced. Finally, the relative position $r_{i-j}$ (uses the sinusoidal function for embedding matrix) is used.
 
 # RoPE
-It stands for Rotary Position Embeddings. The diagram below shows the vector representation of the position embeddings (in the 2d case) for the first 4 positions (kept, $d_{model}=18$). The relative distance as measured (in angles) between $pos=0$ and $pos=1$ is different from $pos=2$ and $pos=3$. 
+It stands for Rotary Position Embeddings. The diagram below shows the vector representation of the position embeddings (in the 2d case) for the first 7 positions. The relative distance as measured (in angles) between $pos=0$ and $pos=1$ are the same for any two positions. 
 <p align="center">
   <img align="center" src="/images/PositionEncoding/3_rope.PNG" >
 </p>
-The RoPE proposes to fix this issue with the sinusoidal embeddings with a rotation matrix. It rotates two consecutive elements in the **word embedding vector** by using a Block rotation matrix shown below
+Will that be the case if we consider the last two dimensions (511,512)?. The RoPE proposes to use the rotation matrix in the attention head applied to queries and keys. It rotates two consecutive elements in the **word embedding vector** by using a Block rotation matrix shown below
 
 <p align="center">
   <img align="center" src="/images/PositionEncoding/4_rotationMatrix.PNG" >
