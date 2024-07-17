@@ -29,7 +29,7 @@ However, how do we represent the point $x_5$ using $c_5\mathbf{w}$? It is not po
 
 Well, in the above setup, we assumed we are given with $\mathbf{w}$ (or we could have calculated it, not a big deal). Suppose we receive a few more points as shown in the figure below,
 <p align="center">
-  <img align="center" src="https://drive.google.com/uc?export=view&id=1fiSjRrD8FN0Zb_Y3gBtxumk2Ob_LdrFn">
+  <img align="center" src="https://lh3.googleusercontent.com/d/1fiSjRrD8FN0Zb_Y3gBtxumk2Ob_LdrFn">
 </p>
 
 Now, many points are outside the given line. That is, if we sum the error for each data point, then the average error might be high. The error is the function of the line we choose (that is, $\mathbb{w}$). However, there could be a better line ($\mathbb{w}$) that minimizes the average error. How do we find it? 
@@ -56,7 +56,7 @@ We can get rid of the negative sign by posing this as a maximization problem. Th
 
 
 ## Principal Components
-  The eigenvectors of the covariance matrix $C$ are called the principal directions and the eigenvalues corresponding to the eigenvectors convey the amount of variance along that direction. The component of the data point $x_i$ projected on each principal direction is called the **Principal Component**. 
+  The eigenvectors $(w_i)$ of the covariance matrix $C$ are called the principal directions and the eigenvalues $(c_i)$ corresponding to the eigenvectors convey the amount of variance along that direction. The component of the data point $x_i$ projected on each principal direction is called the **Principal Component**. 
   <center>
   $x_i = c_1w_1+c_2w_2+\cdots+c_dw_d, \quad c_i=x_i^Tw_i$
   </center>
