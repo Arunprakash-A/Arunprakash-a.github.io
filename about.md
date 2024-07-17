@@ -27,8 +27,16 @@ key: page-about
 ---
 
 <h2>Arun Prakash A</h2>
-<h4>Instructor | Researcher, IIT Madras</h4>
-<P> I am excited to solve complex problems in <em> Computer Vision and Natural Language Processing </em>  by using deep learning models. I have been coding in <strong> Python </strong> with its powerful supporting packages like <em> Numpy, OpenCV, Pytorch and Scipy,</em> to name a few. </P>
-<p> In addition to deep learning, I also have strong knowledge of <em> Signal Processing algorithms used for Image and Speech processing </em>. I learned a lot about the approach to science and engineering from books written by <strong> Richard Feynman and Richard Hamming</strong>.   </p>
+
+<!-- ![Image](https://drive.google.com/uc?export=view&id=1EqijJwh-eOJtBkHT0bQiJ0alVMMXpLua "ARUN"){:.circle width="136px" height="128px"} -->
+
+<!-- ![Image](https://lh3.googleusercontent.com/d/1EqijJwh-eOJtBkHT0bQiJ0alVMMXpLua "ARUN"){:.circle width="136px" height="128px"} -->
+
+
+<P> Finally, you are here! Like you, I am also fascinated by problems in the field of<em> NLP, CV and Speech </em>. I work with the transformer architecture and its variations and all the concepts revolving around it! I have been coding in <strong> Python </strong> with powerful supporting packages: <em> Pytorch and Hugging Face,</em> </P>.
+
+I am a GPU poor guy having access to only V100, A100 and L4 nodes.
+
+<p> My journey towards speech and image started with traditional<em> Signal Processing algorithms </em>.Somehow, I got hooked on the beauty of Fourier Transformation and recently to the attention mechanism. I learned a lot about the approach to science and engineering from books written by <strong> Richard Feynman and Richard Hamming</strong>.   </p>
             
 
