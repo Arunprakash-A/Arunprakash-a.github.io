@@ -1,28 +1,5 @@
 ---
 layout: page
-titles:
-  # @start locale config
-  en      : &EN       Talks
-  en-GB   : *EN
-  en-US   : *EN
-  en-CA   : *EN
-  en-AU   : *EN
-  zh-Hans : &ZH_HANS  关于
-  zh      : *ZH_HANS
-  zh-CN   : *ZH_HANS
-  zh-SG   : *ZH_HANS
-  zh-Hant : &ZH_HANT  關於
-  zh-TW   : *ZH_HANT
-  zh-HK   : *ZH_HANT
-  ko      : &KO       소개
-  ko-KR   : *KO
-  fr      : &FR       À propos
-  fr-BE   : *FR
-  fr-CA   : *FR
-  fr-CH   : *FR
-  fr-FR   : *FR
-  fr-LU   : *FR
-  # @end locale config
 key: page-about
 ---
 ## Application of Singular Value Decomposition (SVD) to Image compression
@@ -40,3 +17,4 @@ key: page-about
 * In this video, I introduce you to one of the most profound mathematical transformations called the Fourier Transform.
 * If you are too rigid about definitions, then in this video I talk about "The Fourier series".
 <div>{%- include extensions/youtube.html id='QUSWKNQfLUU' -%}</div>
+
