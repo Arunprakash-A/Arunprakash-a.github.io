@@ -1,3 +1,7 @@
+---
+title: Talks
+layout: page
+---
 ## Application of Singular Value Decomposition (SVD) to Image compression
 * In this video, I show you have SVD could be applied to images (which are essentially a matrix of elements)
 * We can use rank-k approximation to represent an image which eventually leads to image compression
