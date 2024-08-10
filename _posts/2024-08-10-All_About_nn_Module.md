@@ -100,7 +100,7 @@ class HEAD(nn.Module):
 
 ## Children
  * Return an iterator over **immediate** children modules.
- * Immediate children here are: all three linear layers
+ * Immediate children here are: all three `Linear` layers
 
 
 {% highlight python linenos %}
@@ -132,7 +132,7 @@ print(head(x))
     tensor([-0.8912], grad_fn=<AddBackward0>)
 
 
-Immediate children of the head module: MLP module, What? Why?
+Immediate children of the head module are the `MLP` module alone, What? Why?
 
 
 {% highlight python linenos %}
@@ -179,7 +179,7 @@ print(head(x))
     tensor([0.4823], grad_fn=<AddBackward0>)
 
 
-**Immediate** children of the head are: MLP and Linear modules
+**Immediate** children of the head module are `MLP` and `Linear modules`
 
 
 {% highlight python linenos %}
@@ -203,7 +203,7 @@ for child_name,layer in head.named_children(): # head module as root
 
 * We can use `named_children` as well if we want the name of the child module.
 
- ## Named modules
+## Named modules
   * What does the ```named_modules``` return? How does it differes from children?
   * It returns **all the nn.modules** in the tree recursively by default **(again, nn.Parameters will be ignored)**
   * The name for the root module is '' and all the submodules will have their respective names
