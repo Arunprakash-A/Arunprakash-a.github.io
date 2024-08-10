@@ -4,6 +4,7 @@ date: 2024-08-10
 tags: DL
 key: "AAnP1008" 
 comment: true
+mathjax: true
 --- 
 If you are a researcher or someone who builds/tweaks the deep learning models regularly using the Pytorch framework or any other high-level frameworks that are built on top of Pytorch such as Huggingface, then it is extremely important to understand Pytorch's `nn.Modules`. This is because your model could run without displaying any symptoms even if you are training the model `INCORRECTLY`{:.error}! What do I mean by that? 
 
