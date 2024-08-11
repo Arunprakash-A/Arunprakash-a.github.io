@@ -1,5 +1,4 @@
 ---
-layout: page
 title: "Experimental Settings of Famous Language Models"
 date: 2023-12-26
 tags: ML DL LLM
