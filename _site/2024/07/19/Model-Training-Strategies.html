@@ -1,0 +1,1073 @@
+<!DOCTYPE html><html lang="en">
+  <head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"><title>Model Training Strategies - Arun's Blog</title>
+
+<meta name="description" content="Training large language models from scratch is the job of tech giants. Often, the pre-trained proprietary models are adapted to downstream tasks using instru...">
+<link rel="canonical" href="http://localhost:4000/2024/07/19/Model-Training-Strategies.html"><link rel="alternate" type="application/rss+xml" title="Arun's Blog" href="/feed.xml"><!-- start favicons snippet, use https://realfavicongenerator.net/ --><link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png"><link rel="manifest" href="/assets/site.webmanifest"><link rel="mask-icon" href="/assets/safari-pinned-tab.svg" color="#fc4d50"><link rel="shortcut icon" href="/assets/favicon.ico">
+
+<meta name="msapplication-TileColor" content="#ffc40d"><meta name="msapplication-config" content="/assets/browserconfig.xml">
+
+<meta name="theme-color" content="#ffffff">
+<!-- end favicons snippet --><link rel="stylesheet" href="/assets/css/main.css"><link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.1/css/all.css" ><!-- start custom head snippets -->
+
+<!-- end custom head snippets -->
+<script>(function() {
+  window.isArray = function(val) {
+    return Object.prototype.toString.call(val) === '[object Array]';
+  };
+  window.isString = function(val) {
+    return typeof val === 'string';
+  };
+
+  window.hasEvent = function(event) {
+    return 'on'.concat(event) in window.document;
+  };
+
+  window.isOverallScroller = function(node) {
+    return node === document.documentElement || node === document.body || node === window;
+  };
+
+  window.isFormElement = function(node) {
+    var tagName = node.tagName;
+    return tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA';
+  };
+
+  window.pageLoad = (function () {
+    var loaded = false, cbs = [];
+    window.addEventListener('load', function () {
+      var i;
+      loaded = true;
+      if (cbs.length > 0) {
+        for (i = 0; i < cbs.length; i++) {
+          cbs[i]();
+        }
+      }
+    });
+    return {
+      then: function(cb) {
+        cb && (loaded ? cb() : (cbs.push(cb)));
+      }
+    };
+  })();
+})();
+(function() {
+  window.throttle = function(func, wait) {
+    var args, result, thisArg, timeoutId, lastCalled = 0;
+
+    function trailingCall() {
+      lastCalled = new Date;
+      timeoutId = null;
+      result = func.apply(thisArg, args);
+    }
+    return function() {
+      var now = new Date,
+        remaining = wait - (now - lastCalled);
+
+      args = arguments;
+      thisArg = this;
+
+      if (remaining <= 0) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+        lastCalled = now;
+        result = func.apply(thisArg, args);
+      } else if (!timeoutId) {
+        timeoutId = setTimeout(trailingCall, remaining);
+      }
+      return result;
+    };
+  };
+})();
+(function() {
+  var Set = (function() {
+    var add = function(item) {
+      var i, data = this._data;
+      for (i = 0; i < data.length; i++) {
+        if (data[i] === item) {
+          return;
+        }
+      }
+      this.size ++;
+      data.push(item);
+      return data;
+    };
+
+    var Set = function(data) {
+      this.size = 0;
+      this._data = [];
+      var i;
+      if (data.length > 0) {
+        for (i = 0; i < data.length; i++) {
+          add.call(this, data[i]);
+        }
+      }
+    };
+    Set.prototype.add = add;
+    Set.prototype.get = function(index) { return this._data[index]; };
+    Set.prototype.has = function(item) {
+      var i, data = this._data;
+      for (i = 0; i < data.length; i++) {
+        if (this.get(i) === item) {
+          return true;
+        }
+      }
+      return false;
+    };
+    Set.prototype.is = function(map) {
+      if (map._data.length !== this._data.length) { return false; }
+      var i, j, flag, tData = this._data, mData = map._data;
+      for (i = 0; i < tData.length; i++) {
+        for (flag = false, j = 0; j < mData.length; j++) {
+          if (tData[i] === mData[j]) {
+            flag = true;
+            break;
+          }
+        }
+        if (!flag) { return false; }
+      }
+      return true;
+    };
+    Set.prototype.values = function() {
+      return this._data;
+    };
+    return Set;
+  })();
+
+  window.Lazyload = (function(doc) {
+    var queue = {js: [], css: []}, sources = {js: {}, css: {}}, context = this;
+    var createNode = function(name, attrs) {
+      var node = doc.createElement(name), attr;
+      for (attr in attrs) {
+        if (attrs.hasOwnProperty(attr)) {
+          node.setAttribute(attr, attrs[attr]);
+        }
+      }
+      return node;
+    };
+    var end = function(type, url) {
+      var s, q, qi, cbs, i, j, cur, val, flag;
+      if (type === 'js' || type ==='css') {
+        s = sources[type], q = queue[type];
+        s[url] = true;
+        for (i = 0; i < q.length; i++) {
+          cur = q[i];
+          if (cur.urls.has(url)) {
+            qi = cur, val = qi.urls.values();
+            qi && (cbs = qi.callbacks);
+            for (flag = true, j = 0; j < val.length; j++) {
+              cur = val[j];
+              if (!s[cur]) {
+                flag = false;
+              }
+            }
+            if (flag && cbs && cbs.length > 0) {
+              for (j = 0; j < cbs.length; j++) {
+                cbs[j].call(context);
+              }
+              qi.load = true;
+            }
+          }
+        }
+      }
+    };
+    var load = function(type, urls, callback) {
+      var s, q, qi, node, i, cur,
+        _urls = typeof urls === 'string' ? new Set([urls]) : new Set(urls), val, url;
+      if (type === 'js' || type ==='css') {
+        s = sources[type], q = queue[type];
+        for (i = 0; i < q.length; i++) {
+          cur = q[i];
+          if (_urls.is(cur.urls)) {
+            qi = cur;
+            break;
+          }
+        }
+        val = _urls.values();
+        if (qi) {
+          callback && (qi.load || qi.callbacks.push(callback));
+          callback && (qi.load && callback());
+        } else {
+          q.push({
+            urls: _urls,
+            callbacks: callback ? [callback] : [],
+            load: false
+          });
+          for (i = 0; i < val.length; i++) {
+            node = null, url = val[i];
+            if (s[url] === undefined) {
+              (type === 'js' ) && (node = createNode('script', { src: url }));
+              (type === 'css') && (node = createNode('link', { rel: 'stylesheet', href: url }));
+              if (node) {
+                node.onload = (function(type, url) {
+                  return function() {
+                    end(type, url);
+                  };
+                })(type, url);
+                (doc.head || doc.body).appendChild(node);
+                s[url] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+    return {
+      js: function(url, callback) {
+        load('js', url, callback);
+      },
+      css: function(url, callback) {
+        load('css', url, callback);
+      }
+    };
+  })(this.document);
+})();
+</script><script>
+  (function() {
+    var TEXT_VARIABLES = {
+      version: '2.2.6',
+      sources: {
+        font_awesome: 'https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.1/css/all.css',
+        jquery: 'https://cdn.bootcss.com/jquery/3.1.1/jquery.min.js',
+        leancloud_js_sdk: '//cdn.jsdelivr.net/npm/leancloud-storage@3.13.2/dist/av-min.js',
+        chart: 'https://cdn.bootcss.com/Chart.js/2.7.2/Chart.bundle.min.js',
+        gitalk: {
+          js: 'https://cdn.bootcss.com/gitalk/1.2.2/gitalk.min.js',
+          css: 'https://cdn.bootcss.com/gitalk/1.2.2/gitalk.min.css'
+        },
+        valine: 'https://unpkg.com/valine/dist/Valine.min.js',
+        mathjax: 'https://cdn.bootcss.com/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML',
+        mermaid: 'https://cdn.bootcss.com/mermaid/8.0.0-rc.8/mermaid.min.js'
+      },
+      site: {
+        toc: {
+          selectors: 'h1,h2,h3'
+        }
+      },
+      paths: {
+        search_js: '/assets/search.js'
+      }
+    };
+    window.TEXT_VARIABLES = TEXT_VARIABLES;
+  })();
+</script>
+</head>
+  <body>
+    <div class="root" data-is-touch="false">
+      <div class="layout--page js-page-root"><div class="page__main js-page-main page__viewport has-aside cell cell--auto">
+
+      <div class="page__main-inner"><div class="page__header d-print-none"><header class="header"><div class="main">
+      <div class="header__title">
+        <div class="header__brand"><?xml version="1.0" encoding="UTF-8"?>
+<!-- Do not edit this file with editors other than diagrams.net -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="111px" height="111px" viewBox="-0.5 -0.5 111 111" content="&lt;mxfile host=&quot;app.diagrams.net&quot; modified=&quot;2023-05-07T11:36:57.688Z&quot; agent=&quot;Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36&quot; etag=&quot;qotx1mGjmt96wTaGivYD&quot; version=&quot;21.1.5&quot; type=&quot;device&quot;&gt;&#10;  &lt;diagram name=&quot;Page-1&quot; id=&quot;Om8qoDeevwsfi3RsY6pD&quot;&gt;&#10;    &lt;mxGraphModel dx=&quot;503&quot; dy=&quot;277&quot; grid=&quot;1&quot; gridSize=&quot;10&quot; guides=&quot;1&quot; tooltips=&quot;1&quot; connect=&quot;1&quot; arrows=&quot;1&quot; fold=&quot;1&quot; page=&quot;1&quot; pageScale=&quot;1&quot; pageWidth=&quot;850&quot; pageHeight=&quot;1100&quot; math=&quot;0&quot; shadow=&quot;0&quot;&gt;&#10;      &lt;root&gt;&#10;        &lt;mxCell id=&quot;0&quot; /&gt;&#10;        &lt;mxCell id=&quot;1&quot; parent=&quot;0&quot; /&gt;&#10;        &lt;mxCell id=&quot;EKuAaw0Q70c4uxEALBeM-1&quot; value=&quot;&quot; style=&quot;ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;sketch=1;curveFitting=1;jiggle=2;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&#10;          &lt;mxGeometry x=&quot;230&quot; y=&quot;130&quot; width=&quot;110&quot; height=&quot;110&quot; as=&quot;geometry&quot; /&gt;&#10;        &lt;/mxCell&gt;&#10;        &lt;mxCell id=&quot;EKuAaw0Q70c4uxEALBeM-3&quot; value=&quot;&quot; style=&quot;verticalLabelPosition=bottom;verticalAlign=top;html=1;shape=mxgraph.basic.polygon;polyCoords=[[0.25,0],[0.75,0],[1,0.25],[1,0.75],[0.75,1],[0.25,1],[0,0.75],[0,0.25]];polyline=0;strokeColor=none;gradientColor=none;fillColor=default;&quot; vertex=&quot;1&quot; parent=&quot;1&quot;&gt;&#10;          &lt;mxGeometry x=&quot;260&quot; y=&quot;160&quot; width=&quot;50&quot; height=&quot;50&quot; as=&quot;geometry&quot; /&gt;&#10;        &lt;/mxCell&gt;&#10;      &lt;/root&gt;&#10;    &lt;/mxGraphModel&gt;&#10;  &lt;/diagram&gt;&#10;&lt;/mxfile&gt;&#10;"><defs/><g><ellipse cx="55" cy="55" rx="55" ry="55" fill="none" stroke="none" pointer-events="all"/><path d="M 10.49 23.33 C 10.49 23.33 10.49 23.33 10.49 23.33 M 10.49 23.33 C 10.49 23.33 10.49 23.33 10.49 23.33 M 6.29 34.26 C 15 28.29 21.94 20.43 27.29 10.1 M 6.29 34.26 C 15.47 25.95 20.87 15.98 27.29 10.1 M 2.75 44.43 C 5.87 39.19 13.11 29.91 34.24 8.2 M 2.75 44.43 C 11.59 33.99 22.02 22.42 34.24 8.2 M 0.52 53.09 C 13.27 41.51 23.41 27.48 41.2 6.3 M 0.52 53.09 C 13.5 35.6 28.21 22.82 41.2 6.3 M 1.57 57.98 C 16.86 38.31 33.08 26.77 48.81 3.64 M 1.57 57.98 C 11.22 44.88 19.01 36.56 48.81 3.64 M 2.62 62.87 C 13.26 48.58 33.11 28.31 56.42 0.98 M 2.62 62.87 C 18.02 46.57 30.55 34.16 56.42 0.98 M 3.67 67.75 C 21.54 48.29 38.12 24.62 60.75 2.09 M 3.67 67.75 C 22.64 48.02 38.45 24.54 60.75 2.09 M 5.38 71.89 C 23.45 43.33 49.23 22.93 64.43 3.96 M 5.38 71.89 C 26.05 50.34 44.39 25.22 64.43 3.96 M 6.43 76.78 C 21.59 63.42 32.91 44.58 68.76 5.08 M 6.43 76.78 C 23.18 54.15 41.64 36.83 68.76 5.08 M 6.83 82.42 C 34.53 55.13 58.58 27.94 73.09 6.19 M 6.83 82.42 C 26.02 61.08 41.72 42.79 73.09 6.19 M 9.19 85.8 C 33.03 64.97 49.26 38.64 77.42 7.31 M 9.19 85.8 C 35.44 52.85 62.82 21.91 77.42 7.31 M 12.21 88.42 C 27.53 73.37 41.84 55.61 81.75 8.42 M 12.21 88.42 C 31.8 70.38 47.5 50.31 81.75 8.42 M 14.57 91.8 C 31.07 70.16 51.58 51.37 86.08 9.54 M 14.57 91.8 C 34.78 69.08 52.9 46.51 86.08 9.54 M 17.59 94.43 C 30.25 80.25 52.84 56.41 89.1 12.16 M 17.59 94.43 C 44.54 59.81 70.5 30 89.1 12.16 M 19.95 97.8 C 43.83 73.09 63.73 52.79 91.46 15.54 M 19.95 97.8 C 48.82 69.2 73.57 39.51 91.46 15.54 M 22.31 101.18 C 46.46 76.73 62.59 54.05 94.48 18.17 M 22.31 101.18 C 39.62 81.81 56 62.47 94.48 18.17 M 25.33 103.81 C 51.14 74.85 78.52 44.63 97.5 20.79 M 25.33 103.81 C 42.16 85.29 61.33 62.67 97.5 20.79 M 29.66 104.92 C 52.48 75.28 79.3 51.93 100.52 23.41 M 29.66 104.92 C 48.6 81.82 72.53 55.71 100.52 23.41 M 34.65 105.28 C 54.42 75.95 81.87 50.04 103.54 26.04 M 34.65 105.28 C 57.13 77.5 80.11 51.54 103.54 26.04 M 38.98 106.4 C 58.16 79.54 82.2 58.58 106.56 28.66 M 38.98 106.4 C 56.76 89.72 70.05 72.3 106.56 28.66 M 43.31 107.51 C 64.47 87.26 83.7 61.47 107.61 33.55 M 43.31 107.51 C 65.53 78.81 90.47 54.27 107.61 33.55 M 48.3 107.87 C 56.6 93.12 74.14 80.62 108.66 38.44 M 48.3 107.87 C 61.25 92.01 72.51 79.08 108.66 38.44 M 53.29 108.23 C 71 81.83 98.09 63.76 109.71 43.33 M 53.29 108.23 C 69.09 87.55 88.27 68.51 109.71 43.33 M 58.93 107.84 C 70.73 98.27 80.4 86.24 110.76 48.22 M 58.93 107.84 C 74.11 88.64 93.91 66.69 110.76 48.22 M 65.23 106.69 C 81.39 94.65 90.86 77.22 110.5 54.61 M 65.23 106.69 C 81.92 91.68 95.23 74.76 110.5 54.61 M 70.87 106.29 C 86.84 90.82 94.77 77.44 108.27 63.28 M 70.87 106.29 C 80.64 94.05 91.38 85.87 108.27 63.28 M 77.17 105.14 C 90.42 95.68 96.43 83.89 106.69 71.18 M 77.17 105.14 C 85.13 95.83 94.57 85.32 106.69 71.18 M 82.81 104.75 C 85.25 102.43 92.63 90.09 104.46 79.84 M 82.81 104.75 C 88.32 98.64 97.9 88.15 104.46 79.84" fill="none" stroke="#008a00" stroke-width="0.5" stroke-linejoin="round" stroke-linecap="round" stroke-miterlimit="10" pointer-events="all"/><path d="M 25.74 8.79 C 32.75 3.69 45.31 0.48 55 0.35 C 64.68 0.22 75.8 3.67 83.86 8.01 C 91.92 12.34 98.94 18.61 103.36 26.37 C 107.78 34.12 110.29 45.27 110.37 54.53 C 110.46 63.79 108.57 73.56 103.87 81.93 C 99.16 90.31 90.64 100.36 82.16 104.79 C 73.68 109.21 62.58 108.71 53 108.5 C 43.41 108.29 32.41 107.91 24.67 103.51 C 16.94 99.11 10.73 90.67 6.59 82.09 C 2.45 73.52 -0.8 61.84 -0.17 52.07 C 0.46 42.3 1.26 32.29 10.37 23.46 C 19.49 14.64 41.94 1.25 54.5 -0.89 C 67.06 -3.03 85.61 9.46 85.74 10.63 M 27 7.07 C 33.52 0.97 42.58 -1.38 51.77 -1.5 C 60.97 -1.62 73.41 2.11 82.16 6.36 C 90.91 10.61 100 15.85 104.28 24.01 C 108.55 32.18 107.51 45.81 107.81 55.36 C 108.11 64.9 109.68 73.53 106.09 81.27 C 102.5 89 94.41 97.12 86.26 101.77 C 78.12 106.42 67 108.52 57.2 109.17 C 47.4 109.82 35.39 110.37 27.49 105.69 C 19.59 101.01 14.68 90.02 9.81 81.11 C 4.93 72.2 -1.67 61.35 -1.77 52.22 C -1.87 43.1 4.54 33.09 9.19 26.36 C 13.84 19.63 23.31 14.86 26.11 11.85 C 28.91 8.83 26.06 8.05 25.99 8.27" fill="none" stroke="#005700" stroke-linejoin="round" stroke-linecap="round" stroke-miterlimit="10" pointer-events="all"/><path d="M 42.5 30 L 67.5 30 L 80 42.5 L 80 67.5 L 67.5 80 L 42.5 80 L 30 67.5 L 30 42.5 Z" fill="rgb(255, 255, 255)" stroke="none" pointer-events="all"/></g></svg><a title="Teaching and writing are great ways of learning anything in detail. 
+" href="/">Arun's Blog</a></div><button class="button button--secondary button--circle search-button js-search-toggle"><i class="fas fa-search"></i></button></div><nav class="navigation">
+        <ul><li class="navigation__item"><a href="/talks.html">Talks</a></li><li class="navigation__item"><a href="/archive.html">Archive</a></li><li class="navigation__item"><a href="/about.html">About</a></li><li><button class="button button--secondary button--circle search-button js-search-toggle"><i class="fas fa-search"></i></button></li></ul>
+      </nav></div>
+  </header>
+</div><div class="page__content"><div class ="main"><div class="grid grid--reverse">
+
+              <div class="col-aside d-print-none js-col-aside"><aside class="page__aside js-page-aside"><div class="toc-aside js-toc-root"></div>
+</aside></div>
+
+              <div class="col-main cell cell--auto"><!-- start custom main top snippet -->
+
+<!-- end custom main top snippet -->
+<article itemscope itemtype="http://schema.org/Article"><div class="article__header"><header><h1>Model Training Strategies</h1></header><span class="split-space">&nbsp;</span>
+          <a class="edit-on-github"
+            title="Edit on Github"
+            href="https://github.com/Arunprakash-A/Arunprakash-a.github.io/tree/master/_posts/2024-07-19-Model-Training-Strategies.md">
+            <i class="far fa-edit"></i></a></div><meta itemprop="headline" content="Model Training Strategies"><div class="article__info clearfix"><ul class="left-col menu"><li>
+              <a class="button button--secondary button--pill button--sm"
+                href="/archive.html?tag=LLM">LLM</a>
+            </li><li>
+              <a class="button button--secondary button--pill button--sm"
+                href="/archive.html?tag=DL">DL</a>
+            </li></ul><ul class="right-col menu"><li><i class="far fa-calendar-alt"></i> <span>Jul 19, 2024</span>
+            </li></ul></div><meta itemprop="author" content="Arun Prakash A"/><meta itemprop="datePublished" content="2024-07-19T00:00:00+05:30">
+    <meta itemprop="keywords" content="LLM,DL"><div class="js-article-content"><div class="layout--article"><!-- start custom article top snippet -->
+
+<!-- end custom article top snippet -->
+<div class="article__content" itemprop="articleBody"><p>Training large language models from scratch is the job of tech giants. Often, the pre-trained proprietary models are adapted to downstream tasks using instruction fine-tuning. However, doing full fine-tuning of model parameters increases the model performance. Of course, full fine- tuning of large models with Billions of parameters requires a good amount of compute resources.</p>
+
+<p>Anyhow, we typically want to train the model as quickly as possible. This requires passing a larger batch of samples (increased memory) and faster computation (increased FLOPs (Floating Point Operations per Second). There is also an important hidden factor: communication between memory and compute unit. Its role is important in distributed training on multiple nodes.</p>
+
+<p>Broadly, we can tailor the strategies based on the available compute resources.</p>
+
+<ul>
+  <li>Access to single-gpu</li>
+  <li>Access to Multi-GPU (in a single node or clusters)</li>
+</ul>
+
+<h1 id="single-gpu-setting">Single GPU setting</h1>
+
+<p>Assume that we have a GPU with 16 GB of memory (Say, Nvidia T4). Suppose we have a model that has 335 million parameters (for example, BERT large). What is the memory requirement to store the model?</p>
+
+<ul>
+  <li>It requires 1.35 GB of memory in FP32</li>
+  <li>Moreover, if we want to place the model on a GPU memory <code class="language-plaintext highlighter-rouge">(model.to(device))</code>, loading the kernel (A function that is meant to be executed in parallel on an attached GPU is called a kernel <a href="https://cvw.cac.cornell.edu/gpu-architecture/gpu-characteristics/kernel_sm">Ref</a>) takes additional (400MB to 2 GB) memory</li>
+</ul>
+
+<p>So we need almost 2GB of GPU memory just to load the model. As we move into training, the required amount of memory goes up drastically, roughly calculated as follows</p>
+
+<ul>
+  <li>Gradient requires the same 1.35 GB</li>
+  <li>Optimizer states (like $\beta_1$, $\beta_2$ in Adam) require 1.35 GB each</li>
+  <li>Finally, storing the output activation values takes a significant amount of memory</li>
+</ul>
+
+<p>Put together, naively training the model requires at least (ignoring activation) $1.35+ 2*(1.35)+1=5GB$ of memory per sample. When the batch size increases, the amount of memory for storing the gradients and output activation values increases proportionally (memory requirements for optimizer states won’t change as they can be accumulated across samples). So we will be running out of memory (Cuda:OOM) if the batch size goes beyond 6. How do we overcome this?</p>
+
+<p>We have to make a tradeoff with computation time. Is making the tradeoff worthy?</p>
+
+<h2 id="gradient-accumulation">Gradient Accumulation</h2>
+
+<p>So, how do we increase the effective batch size to 36? In the previous setting, we were able to load at max 6 samples into the given GPU memory. One simple idea is instead of storing gradients for each sample separately, just accumulate them (we assume there is enough space to store the output activation values for the extra samples during forward). In this way, we can effectively do the update for a batch of size 36. Here is the demonstration of the concept in the colab</p>
+
+<script src="https://gist.github.com/Arunprakash-A/c27ebe06e6c8fbd21263fc54013bbf49.js"></script>
+
+<p>The tradeoff here is the training time. Suppose we have used mini-batch gradient descent with a batch of size 36 with a suitable GPU, then in 100 iterations, we would have made 100 updates (collectively used 3600 samples). In gradient accumulation, each iteration can take only 6 samples. Therefore, one weight update happens after every 6 iterations (steps). So only at the end of 600 iterations, we would have the same weight values given by mini-batch gradient descent. This is the trade-off we have to make. It is fine as it generally gives better test performance. Note that gradient accumulation is not possible if we use optimizers like GaLore, and AdaFactor as the factorize the gradients!</p>
+
+<h2 id="activation-check-pointing">Activation Check Pointing</h2>
+
+<p>We can save a significant amount of memory by recomputing the activation values instead of storing those for large networks. The animation below shows how activation values that are stored during forward prop are consumed during backpropagation</p>
+<p align="center">
+  <img align="center" src="/images/Training-Strategies/1.webp" />
+</p>
+
+<p>The memory requirement scales linearly if we increase the number of nodes. During backpropagation, the activation at the $n-th$ node is consumed first (so it is independent of values in previous nodes). So we can drop storing the activation values for the previous nodes to compute the gradients for $n-th$ node. What about the gradients for $n-1$ the node? Well, we need to recompute it! That’s the trade-off we make</p>
+
+<p>It is beautifully illustrated in the animation below.</p>
+<p align="center">
+  <img align="center" src="/images/Training-Strategies/2.webp" />
+</p>
+
+<p>In total,  for every batch of samples, this approach requires $O(n^2)$ computation and $O(1)$ memory. To reduce the quadratic computational complexity, instead of dropping activation values of <strong>all</strong> previous nodes, we checkpoint some of them as shown below to bring down $O(n^2)$</p>
+
+<p align="center">
+  <img align="center" src="/images/Training-Strategies/3.webp" />
+</p>
+
+<p>In this case, we have chosen the second node for checkpointing. Therefore, activation values for 3rd node is obtained by forward passing the values from the second node (no need to do a full forward pass from the inputs). This is illustrated in the animation below</p>
+
+<p align="center">
+  <img align="center" src="/images/Training-Strategies/4.webp" />
+</p>
+
+<p>We can combine Gradient Accumulation and Activation Check-pointing to reduce memory requirements significantly. What is the interval of dropping nodes? Well, it is recommended to drop $\sqrt{n}$ nodes if we have $n$ nodes in the network. To see the relation between node, memory and computation time, see the original <a href="https://medium.com/tensorflow/fitting-larger-networks-into-memory-583e3c758ff9">article</a> (all images were taken from there). Do remember that if we combine these approaches, it will take still more time for training than training with gradient accumulation alone.</p>
+
+<p>In HF, we can simply turn it on by setting <code class="language-plaintext highlighter-rouge">gradient_checkpointing=True</code> while instantiating <code class="language-plaintext highlighter-rouge">TrainingArguments</code>.</p>
+
+<h2 id="mixed-precision-training">Mixed-Precision Training</h2>
+
+<ul>
+  <li>Not all variables require FP32</li>
+  <li>Store activation  FP16 and gradient in FP32</li>
+  <li>However, for training, load gradients in FP16.</li>
+  <li>Modern GPUs support BF16</li>
+</ul>
+
+<p>Once again, in HF, we can simply turn it on by setting <code class="language-plaintext highlighter-rouge">fp16=True</code> while instantiating <code class="language-plaintext highlighter-rouge">TrainingArguments</code>. Moreover, we can combine this with the above techniques!</p>
+
+<h2 id="memory-efficient-optimizers">Memory Efficient Optimizers</h2>
+
+<ul>
+  <li>Use memory-efficient optimizers such as AdaFactor, LION, 8-bit Adam, GaLore</li>
+  <li>However, if our model gets big, we need to use distributed training using multiple GPUs!</li>
+</ul>
+
+<p><a href="https://huggingface.co/docs/transformers/v4.18.0/en/performance">Ref:</a> (lengthy but well-written article from HF). I just added a running example.</p>
+</div><section class="article__sharing d-print-none"></section><div class="d-print-none"><footer class="article__footer"><meta itemprop="dateModified" content="2024-07-19T00:00:00+05:30"><!-- start custom article footer snippet -->
+
+<!-- end custom article footer snippet -->
+<div class="article__subscribe"><div class="subscribe"><i class="fas fa-rss"></i> <a type="application/rss+xml" href="/feed.xml">Subscribe</a></div>
+</div><div class="article__license"><div class="license">
+    <p>This work is licensed under a <a itemprop="license" rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/">Attribution-NonCommercial 4.0 International</a> license.
+      <a rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/">
+        <img alt="Attribution-NonCommercial 4.0 International" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" />
+      </a>
+    </p>
+  </div></div></footer>
+<div class="article__section-navigator clearfix"><div class="previous"><span>PREVIOUS</span><a href="/2024/06/15/Intro-to-LLM-course.html">Introduction to Large Language Models - Course</a></div><div class="next"><span>NEXT</span><a href="/2024/08/10/All_About_nn_Module.html">All About nn.Modules in Pytorch</a></div></div></div>
+
+</div>
+
+<script>(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    $(function() {
+      var $this ,$scroll;
+      var $articleContent = $('.js-article-content');
+      var hasSidebar = $('.js-page-root').hasClass('layout--page--sidebar');
+      var scroll = hasSidebar ? '.js-page-main' : 'html, body';
+      $scroll = $(scroll);
+
+      $articleContent.find('.highlight').each(function() {
+        $this = $(this);
+        $this.attr('data-lang', $this.find('code').attr('data-lang'));
+      });
+      $articleContent.find('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').each(function() {
+        $this = $(this);
+        $this.append($('<a class="anchor d-print-none" aria-hidden="true"></a>').html('<i class="fas fa-anchor"></i>'));
+      });
+      $articleContent.on('click', '.anchor', function() {
+        $scroll.scrollToAnchor('#' + $(this).parent().attr('id'), 400);
+      });
+    });
+  });
+})();
+</script>
+</div><section class="page__comments d-print-none"></section></article><!-- start custom main bottom snippet -->
+
+<!-- end custom main bottom snippet -->
+</div>
+            </div></div></div><div class="page__footer d-print-none">
+<footer class="footer py-4 js-page-footer">
+  <div class="main"><div itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Arun Prakash A"><meta itemprop="url" content="/"><meta itemprop="description" content="I am a deep learning instructor at IIT Madras"><div class="footer__author-links"><div class="author-links">
+  <ul class="menu menu--nowrap menu--inline"><li title="Follow me on Facebook.">
+        <a class="button button--circle facebook-button" itemprop="sameAs" href="https://www.facebook.com/Arunprakashiscalm" target="_blank">
+          <div class="icon"><svg fill="#000000" width="24px" height="24px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M767.428571 6.857143l0 150.857143-89.714286 0q-49.142857 0-66.285714 20.571429t-17.142857 61.714286l0 108 167.428571 0-22.285714 169.142857-145.142857 0 0 433.714286-174.857143 0 0-433.714286-145.714286 0 0-169.142857 145.714286 0 0-124.571429q0-106.285714 59.428571-164.857143t158.285714-58.571429q84 0 130.285714 6.857143z" />
+</svg>
+</div>
+        </a>
+      </li><li title="Follow me on Twitter.">
+        <a class="button button--circle twitter-button" itemprop="sameAs" href="https://twitter.com/a_arun283" target="_blank">
+          <div class="icon"><svg fill="#000000" width="24px" height="24px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M1024.032 194.432c-37.664 16.704-78.176 28-120.672 33.088 43.36-26.016 76.672-67.168 92.384-116.224-40.608 24.064-85.568 41.568-133.408 50.976-38.336-40.832-92.928-66.336-153.344-66.336-116.032 0-210.08 94.048-210.08 210.08 0 16.48 1.856 32.512 5.44 47.872-174.592-8.768-329.408-92.416-433.024-219.52-18.08 31.04-28.448 67.104-28.448 105.632 0 72.896 37.088 137.184 93.472 174.88-34.432-1.088-66.816-10.528-95.168-26.272-0.032 0.864-0.032 1.76-0.032 2.656 0 101.792 72.416 186.688 168.512 205.984-17.632 4.8-36.192 7.36-55.36 7.36-13.536 0-26.688-1.312-39.52-3.776 26.72 83.456 104.32 144.192 196.256 145.888-71.904 56.352-162.496 89.92-260.928 89.92-16.96 0-33.664-0.992-50.112-2.944 92.96 59.616 203.392 94.4 322.048 94.4 386.432 0 597.728-320.128 597.728-597.76 0-9.12-0.192-18.176-0.608-27.168 41.056-29.632 76.672-66.624 104.832-108.736z" />
+</svg>
+</div>
+        </a>
+      </li><li title="Follow me on Medium.">
+        <a class="button button--circle medium-button" itemprop="sameAs" href="https://medium.com/@a.arun283" target="_blank">
+          <div class="icon"><svg fill="#000000" width="24px" height="24px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M834.7 279.8l61.3-58.9V208H683.7L532.4 586.4 360.3 208H137.7v12.9l71.6 86.6c7 6.4 10.6 15.8 9.7 25.2V673c2.2 12.3-1.7 24.8-10.3 33.7L128 805v12.7h228.6v-12.9l-80.6-98a39.99 39.99 0 0 1-11.1-33.7V378.7l200.7 439.2h23.3l172.6-439.2v349.9c0 9.2 0 11.1-6 17.2l-62.1 60.3V819h301.2v-12.9l-59.9-58.9c-5.2-4-7.9-10.7-6.8-17.2V297a18.1 18.1 0 0 1 6.8-17.2z"></path>
+</svg>
+</div>
+        </a>
+      </li><li title="Follow me on Linkedin.">
+        <a class="button button--circle linkedin-button" itemprop="sameAs" href="https://www.linkedin.com/in/arun-prakash-650b0024# "user_name" the last part of your profile url, e.g. https://www.linkedin.com/in/user_name" target="_blank">
+          <div class="icon"><svg fill="#000000" width="24px" height="24px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M260.096 155.648c0 27.307008-9.899008 50.516992-29.696 69.632-19.796992 19.115008-45.396992 28.672-76.8 28.672-30.036992 0-54.612992-9.556992-73.728-28.672-19.115008-19.115008-28.672-42.324992-28.672-69.632 0-28.672 9.556992-52.224 28.672-70.656 19.115008-18.432 44.372992-27.648 75.776-27.648 31.403008 0 56.32 9.216 74.752 27.648 18.432 18.432 28.331008 41.984 29.696 70.656 0 0 0 0 0 0m-202.752 808.96c0 0 0-632.832 0-632.832 0 0 196.608 0 196.608 0 0 0 0 632.832 0 632.832 0 0-196.608 0-196.608 0 0 0 0 0 0 0m313.344-430.08c0-58.708992-1.364992-126.292992-4.096-202.752 0 0 169.984 0 169.984 0 0 0 10.24 88.064 10.24 88.064 0 0 4.096 0 4.096 0 40.96-68.267008 105.812992-102.4 194.56-102.4 68.267008 0 123.220992 22.868992 164.864 68.608 41.643008 45.739008 62.464 113.664 62.464 203.776 0 0 0 374.784 0 374.784 0 0-196.608 0-196.608 0 0 0 0-350.208 0-350.208 0-91.476992-33.451008-137.216-100.352-137.216-47.787008 0-81.236992 24.576-100.352 73.728-4.096 8.192-6.144 24.576-6.144 49.152 0 0 0 364.544 0 364.544 0 0-198.656 0-198.656 0 0 0 0-430.08 0-430.08 0 0 0 0 0 0" />
+</svg>
+</div>
+        </a>
+      </li><li title="Follow me on Github.">
+        <a class="button button--circle github-button" itemprop="sameAs" href="https://github.com/Arunprakash-A# "user_name" the last part of your profile url, e.g. https://github.com/user_name" target="_blank">
+          <div class="icon"><svg fill="#000000" width="24px" height="24px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path class="svgpath" data-index="path_0" fill="#272636" d="M0 525.2c0 223.6 143.3 413.7 343 483.5 26.9 6.8 22.8-12.4 22.8-25.4l0-88.7c-155.3 18.2-161.5-84.6-172-101.7-21.1-36-70.8-45.2-56-62.3 35.4-18.2 71.4 4.6 113.1 66.3 30.2 44.7 89.1 37.2 119 29.7 6.5-26.9 20.5-50.9 39.7-69.6C248.8 728.2 181.7 630 181.7 513.2c0-56.6 18.7-108.7 55.3-150.7-23.3-69.3 2.2-128.5 5.6-137.3 66.5-6 135.5 47.6 140.9 51.8 37.8-10.2 80.9-15.6 129.1-15.6 48.5 0 91.8 5.6 129.8 15.9 12.9-9.8 77-55.8 138.8-50.2 3.3 8.8 28.2 66.7 6.3 135 37.1 42.1 56 94.6 56 151.4 0 117-67.5 215.3-228.8 243.7 26.9 26.6 43.6 63.4 43.6 104.2l0 128.8c0.9 10.3 0 20.5 17.2 20.5C878.1 942.4 1024 750.9 1024 525.3c0-282.9-229.3-512-512-512C229.1 13.2 0 242.3 0 525.2L0 525.2z" />
+</svg>
+</div>
+        </a>
+      </li></ul>
+</div>
+</div>
+    </div><div class="site-info mt-2">
+      <div>© Arun's Blog 2023,
+        Powered by <a title="Jekyll is a simple, blog-aware, static site generator." href="http://jekyllrb.com/">Jekyll</a> & <a
+        title="TeXt is a super customizable Jekyll theme." href="https://github.com/kitian616/jekyll-TeXt-theme">TeXt Theme</a>.
+      </div>
+    </div>
+  </div>
+</footer>
+</div></div>
+    </div><script>(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    var $body = $('body'), $window = $(window);
+    var $pageRoot = $('.js-page-root'), $pageMain = $('.js-page-main');
+    var activeCount = 0;
+    function modal(options) {
+      var $root = this, visible, onChange, hideWhenWindowScroll = false;
+      var scrollTop;
+      function setOptions(options) {
+        var _options = options || {};
+        visible = _options.initialVisible === undefined ? false : show;
+        onChange = _options.onChange;
+        hideWhenWindowScroll = _options.hideWhenWindowScroll;
+      }
+      function init() {
+        setState(visible);
+      }
+      function setState(isShow) {
+        if (isShow === visible) {
+          return;
+        }
+        visible = isShow;
+        if (visible) {
+          activeCount++;
+          scrollTop = $(window).scrollTop() || $pageMain.scrollTop();
+          $root.addClass('modal--show');
+          $pageMain.scrollTop(scrollTop);
+          activeCount === 1 && ($pageRoot.addClass('show-modal'), $body.addClass('of-hidden'));
+          hideWhenWindowScroll && window.hasEvent('touchstart') && $window.on('scroll', hide);
+          $window.on('keyup', handleKeyup);
+        } else {
+          activeCount > 0 && activeCount--;
+          $root.removeClass('modal--show');
+          $window.scrollTop(scrollTop);
+          activeCount === 0 && ($pageRoot.removeClass('show-modal'), $body.removeClass('of-hidden'));
+          hideWhenWindowScroll && window.hasEvent('touchstart') && $window.off('scroll', hide);
+          $window.off('keyup', handleKeyup);
+        }
+        onChange && onChange(visible);
+      }
+      function show() {
+        setState(true);
+      }
+      function hide() {
+        setState(false);
+      }
+      function handleKeyup(e) {
+        // Char Code: 27  ESC
+        if (e.which ===  27) {
+          hide();
+        }
+      }
+      setOptions(options);
+      init();
+      return {
+        show: show,
+        hide: hide,
+        $el: $root
+      };
+    }
+    $.fn.modal = modal;
+  });
+})();
+</script><div class="modal modal--overflow page__search-modal d-print-none js-page-search-modal"><script>
+(function () {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    // search panel
+    var search = (window.search || (window.search = {}));
+    var useDefaultSearchBox = window.useDefaultSearchBox === undefined ?
+      true : window.useDefaultSearchBox ;
+
+    var $searchModal = $('.js-page-search-modal');
+    var $searchToggle = $('.js-search-toggle');
+    var searchModal = $searchModal.modal({ onChange: handleModalChange, hideWhenWindowScroll: true });
+    var modalVisible = false;
+    search.searchModal = searchModal;
+
+    var $searchBox = null;
+    var $searchInput = null;
+    var $searchClear = null;
+
+    function getModalVisible() {
+      return modalVisible;
+    }
+    search.getModalVisible = getModalVisible;
+
+    function handleModalChange(visible) {
+      modalVisible = visible;
+      if (visible) {
+        search.onShow && search.onShow();
+        useDefaultSearchBox && $searchInput[0] && $searchInput[0].focus();
+      } else {
+        search.onShow && search.onHide();
+        useDefaultSearchBox && $searchInput[0] && $searchInput[0].blur();
+        setTimeout(function() {
+          useDefaultSearchBox && ($searchInput.val(''), $searchBox.removeClass('not-empty'));
+          search.clear && search.clear();
+          window.pageAsideAffix && window.pageAsideAffix.refresh();
+        }, 400);
+      }
+    }
+
+    $searchToggle.on('click', function() {
+      modalVisible ? searchModal.hide() : searchModal.show();
+    });
+    // Char Code: 83  S, 191 /
+    $(window).on('keyup', function(e) {
+      if (!modalVisible && !window.isFormElement(e.target || e.srcElement) && (e.which === 83 || e.which === 191)) {
+        modalVisible || searchModal.show();
+      }
+    });
+
+    if (useDefaultSearchBox) {
+      $searchBox = $('.js-search-box');
+      $searchInput = $searchBox.children('input');
+      $searchClear = $searchBox.children('.js-icon-clear');
+      search.getSearchInput = function() {
+        return $searchInput.get(0);
+      };
+      search.getVal = function() {
+        return $searchInput.val();
+      };
+      search.setVal = function(val) {
+        $searchInput.val(val);
+      };
+
+      $searchInput.on('focus', function() {
+        $(this).addClass('focus');
+      });
+      $searchInput.on('blur', function() {
+        $(this).removeClass('focus');
+      });
+      $searchInput.on('input', window.throttle(function() {
+        var val = $(this).val();
+        if (val === '' || typeof val !== 'string') {
+          search.clear && search.clear();
+        } else {
+          $searchBox.addClass('not-empty');
+          search.onInputNotEmpty && search.onInputNotEmpty(val);
+        }
+      }, 400));
+      $searchClear.on('click', function() {
+        $searchInput.val(''); $searchBox.removeClass('not-empty');
+        search.clear && search.clear();
+      });
+    }
+  });
+})();
+</script><div class="search search--dark">
+  <div class="main">
+    <div class="search__header">Search</div>
+    <div class="search-bar">
+      <div class="search-box js-search-box">
+        <div class="search-box__icon-search"><i class="fas fa-search"></i></div>
+        <input type="text" />
+        <div class="search-box__icon-clear js-icon-clear">
+          <a><i class="fas fa-times"></i></a>
+        </div>
+      </div>
+      <button class="button button--theme-dark button--pill search__cancel js-search-toggle">
+        Cancel</button>
+    </div>
+    <div class="search-result js-search-result"></div>
+  </div>
+</div>
+<script>var SOURCES = window.TEXT_VARIABLES.sources;
+var PAHTS = window.TEXT_VARIABLES.paths;
+window.Lazyload.js([SOURCES.jquery, PAHTS.search_js], function() {
+  var search = (window.search || (window.search = {}));
+  var searchData = window.TEXT_SEARCH_DATA || {};
+
+  function memorize(f) {
+    var cache = {};
+    return function () {
+      var key = Array.prototype.join.call(arguments, ',');
+      if (key in cache) return cache[key];
+      else return cache[key] = f.apply(this, arguments);
+    };
+  }
+
+  /// search
+  function searchByQuery(query) {
+    var i, j, key, keys, cur, _title, result = {};
+    keys = Object.keys(searchData);
+    for (i = 0; i < keys.length; i++) {
+      key = keys[i];
+      for (j = 0; j < searchData[key].length; j++) {
+        cur = searchData[key][j], _title = cur.title;
+        if ((result[key] === undefined || result[key] && result[key].length < 4 )
+          && _title.toLowerCase().indexOf(query.toLowerCase()) >= 0) {
+          if (result[key] === undefined) {
+            result[key] = [];
+          }
+          result[key].push(cur);
+        }
+      }
+    }
+    return result;
+  }
+
+  var renderHeader = memorize(function(header) {
+    return $('<p class="search-result__header">' + header + '</p>');
+  });
+
+  var renderItem = function(index, title, url) {
+    return $('<li class="search-result__item" data-index="' + index + '"><a class="button" href="' + url + '">' + title + '</a></li>');
+  };
+
+  function render(data) {
+    if (!data) { return null; }
+    var $root = $('<ul></ul>'), i, j, key, keys, cur, itemIndex = 0;
+    keys = Object.keys(data);
+    for (i = 0; i < keys.length; i++) {
+      key = keys[i];
+      $root.append(renderHeader(key));
+      for (j = 0; j < data[key].length; j++) {
+        cur = data[key][j];
+        $root.append(renderItem(itemIndex++, cur.title, cur.url));
+      }
+    }
+    return $root;
+  }
+
+  // search box
+  var $result = $('.js-search-result'), $resultItems;
+  var lastActiveIndex, activeIndex;
+
+  function clear() {
+    $result.html(null);
+    $resultItems = $('.search-result__item'); activeIndex = 0;
+  }
+  function onInputNotEmpty(val) {
+    $result.html(render(searchByQuery(val)));
+    $resultItems = $('.search-result__item'); activeIndex = 0;
+    $resultItems.eq(0).addClass('active');
+  }
+
+  search.clear = clear;
+  search.onInputNotEmpty = onInputNotEmpty;
+
+  function updateResultItems() {
+    lastActiveIndex >= 0 && $resultItems.eq(lastActiveIndex).removeClass('active');
+    activeIndex >= 0 && $resultItems.eq(activeIndex).addClass('active');
+  }
+
+  function moveActiveIndex(direction) {
+    var itemsCount = $resultItems ? $resultItems.length : 0;
+    if (itemsCount > 1) {
+      lastActiveIndex = activeIndex;
+      if (direction === 'up') {
+        activeIndex = (activeIndex - 1 + itemsCount) % itemsCount;
+      } else if (direction === 'down') {
+        activeIndex = (activeIndex + 1 + itemsCount) % itemsCount;
+      }
+      updateResultItems();
+    }
+  }
+
+  // Char Code: 13  Enter, 37  ⬅, 38  ⬆, 39  ➡, 40  ⬇
+  $(window).on('keyup', function(e) {
+    var modalVisible = search.getModalVisible && search.getModalVisible();
+    if (modalVisible) {
+      if (e.which === 38) {
+        modalVisible && moveActiveIndex('up');
+      } else if (e.which === 40) {
+        modalVisible && moveActiveIndex('down');
+      } else if (e.which === 13) {
+        modalVisible && $resultItems && activeIndex >= 0 && $resultItems.eq(activeIndex).children('a')[0].click();
+      }
+    }
+  });
+
+  $result.on('mouseover', '.search-result__item > a', function() {
+    var itemIndex = $(this).parent().data('index');
+    itemIndex >= 0 && (lastActiveIndex = activeIndex, activeIndex = itemIndex, updateResultItems());
+  });
+});
+</script>
+</div></div>
+
+
+<script>(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    function scrollToAnchor(anchor, duration, callback) {
+      var $root = this;
+      $root.animate({ scrollTop: $(anchor).position().top }, duration, function() {
+        window.history.replaceState(null, '', window.location.href.split('#')[0] + anchor);
+        callback && callback();
+      });
+    }
+    $.fn.scrollToAnchor = scrollToAnchor;
+  });
+})();
+(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    function affix(options) {
+      var $root = this, $window = $(window), $scrollTarget, $scroll,
+        offsetBottom = 0, scrollTarget = window, scroll = window.document, disabled = false, isOverallScroller = true,
+        rootTop, rootLeft, rootHeight, scrollBottom, rootBottomTop,
+        hasInit = false, curState;
+
+      function setOptions(options) {
+        var _options = options || {};
+        _options.offsetBottom && (offsetBottom = _options.offsetBottom);
+        _options.scrollTarget && (scrollTarget = _options.scrollTarget);
+        _options.scroll && (scroll = _options.scroll);
+        _options.disabled !== undefined && (disabled = _options.disabled);
+        $scrollTarget = $(scrollTarget);
+        isOverallScroller = window.isOverallScroller($scrollTarget[0]);
+        $scroll = $(scroll);
+      }
+      function preCalc() {
+        top();
+        rootHeight = $root.outerHeight();
+        rootTop = $root.offset().top + (isOverallScroller ? 0 :  $scrollTarget.scrollTop());
+        rootLeft = $root.offset().left;
+      }
+      function calc(needPreCalc) {
+        needPreCalc && preCalc();
+        scrollBottom = $scroll.outerHeight() - offsetBottom - rootHeight;
+        rootBottomTop = scrollBottom - rootTop;
+      }
+      function top() {
+        if (curState !== 'top') {
+          $root.removeClass('fixed').css({
+            left: 0,
+            top: 0
+          });
+          curState = 'top';
+        }
+      }
+      function fixed() {
+        if (curState !== 'fixed') {
+          $root.addClass('fixed').css({
+            left: rootLeft + 'px',
+            top: 0
+          });
+          curState = 'fixed';
+        }
+      }
+      function bottom() {
+        if (curState !== 'bottom') {
+          $root.removeClass('fixed').css({
+            left: 0,
+            top: rootBottomTop + 'px'
+          });
+          curState = 'bottom';
+        }
+      }
+      function setState() {
+        var scrollTop = $scrollTarget.scrollTop();
+        if (scrollTop >= rootTop && scrollTop <= scrollBottom) {
+          fixed();
+        } else if (scrollTop < rootTop) {
+          top();
+        } else {
+          bottom();
+        }
+      }
+      function init() {
+        if(!hasInit) {
+          var interval, timeout;
+          calc(true); setState();
+          // run calc every 100 millisecond
+          interval = setInterval(function() {
+            calc();
+          }, 100);
+          timeout = setTimeout(function() {
+            clearInterval(interval);
+          }, 45000);
+          window.pageLoad.then(function() {
+            setTimeout(function() {
+              clearInterval(interval);
+              clearTimeout(timeout);
+            }, 3000);
+          });
+          $scrollTarget.on('scroll', function() {
+            disabled || setState();
+          });
+          $window.on('resize', function() {
+            disabled || (calc(true), setState());
+          });
+          hasInit = true;
+        }
+      }
+
+      setOptions(options);
+      if (!disabled) {
+        init();
+      }
+      $window.on('resize', window.throttle(function() {
+        init();
+      }, 200));
+      return {
+        setOptions: setOptions,
+        refresh: function() {
+          calc(true, { animation: false }); setState();
+        }
+      };
+    }
+    $.fn.affix = affix;
+  });
+})();
+(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    function toc(options) {
+      var $root = this, $window = $(window), $scrollTarget, $scroller, $tocUl = $('<ul class="toc toc--ellipsis"></ul>'), $tocLi, $headings, $activeLast, $activeCur,
+        selectors = 'h1,h2,h3', container = 'body', scrollTarget = window, scroller = 'html, body', disabled = false,
+        headingsPos, scrolling = false, hasRendered = false, hasInit = false;
+
+      function setOptions(options) {
+        var _options = options || {};
+        _options.selectors && (selectors = _options.selectors);
+        _options.container && (container = _options.container);
+        _options.scrollTarget && (scrollTarget = _options.scrollTarget);
+        _options.scroller && (scroller = _options.scroller);
+        _options.disabled !== undefined && (disabled = _options.disabled);
+        $headings = $(container).find(selectors).filter('[id]');
+        $scrollTarget = $(scrollTarget);
+        $scroller = $(scroller);
+      }
+      function calc() {
+        headingsPos = [];
+        $headings.each(function() {
+          headingsPos.push(Math.floor($(this).position().top));
+        });
+      }
+      function setState(element, disabled) {
+        var scrollTop = $scrollTarget.scrollTop(), i;
+        if (disabled || !headingsPos || headingsPos.length < 1) { return; }
+        if (element) {
+          $activeCur = element;
+        } else {
+          for (i = 0; i < headingsPos.length; i++) {
+            if (scrollTop >= headingsPos[i]) {
+              $activeCur = $tocLi.eq(i);
+            } else {
+              $activeCur || ($activeCur = $tocLi.eq(i));
+              break;
+            }
+          }
+        }
+        $activeLast && $activeLast.removeClass('active');
+        ($activeLast = $activeCur).addClass('active');
+      }
+      function render() {
+        if(!hasRendered) {
+          $root.append($tocUl);
+          $headings.each(function() {
+            var $this = $(this);
+            $tocUl.append($('<li></li>').addClass('toc-' + $this.prop('tagName').toLowerCase())
+              .append($('<a></a>').text($this.text()).attr('href', '#' + $this.prop('id'))));
+          });
+          $tocLi = $tocUl.children('li');
+          $tocUl.on('click', 'a', function(e) {
+            e.preventDefault();
+            var $this = $(this);
+            scrolling = true;
+            setState($this.parent());
+            $scroller.scrollToAnchor($this.attr('href'), 400, function() {
+              scrolling = false;
+            });
+          });
+        }
+        hasRendered = true;
+      }
+      function init() {
+        var interval, timeout;
+        if(!hasInit) {
+          render(); calc(); setState(null, scrolling);
+          // run calc every 100 millisecond
+          interval = setInterval(function() {
+            calc();
+          }, 100);
+          timeout = setTimeout(function() {
+            clearInterval(interval);
+          }, 45000);
+          window.pageLoad.then(function() {
+            setTimeout(function() {
+              clearInterval(interval);
+              clearTimeout(timeout);
+            }, 3000);
+          });
+          $scrollTarget.on('scroll', function() {
+            disabled || setState(null, scrolling);
+          });
+          $window.on('resize', window.throttle(function() {
+            if (!disabled) {
+              render(); calc(); setState(null, scrolling);
+            }
+          }, 100));
+        }
+        hasInit = true;
+      }
+
+      setOptions(options);
+      if (!disabled) {
+        init();
+      }
+      $window.on('resize', window.throttle(function() {
+        init();
+      }, 200));
+      return {
+        setOptions: setOptions
+      };
+    }
+    $.fn.toc = toc;
+  });
+})();
+/*(function () {
+
+})();*/
+</script><script>
+  /* toc must before affix, since affix need to konw toc' height. */(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  var TOC_SELECTOR = window.TEXT_VARIABLES.site.toc.selectors;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    var $window = $(window);
+    var $articleContent = $('.js-article-content');
+    var $tocRoot = $('.js-toc-root'), $col2 = $('.js-col-aside');
+    var toc;
+    var tocDisabled = false;
+    var hasSidebar = $('.js-page-root').hasClass('layout--page--sidebar');
+    var hasToc = $articleContent.find(TOC_SELECTOR).length > 0;
+
+    function disabled() {
+      return $col2.css('display') === 'none' || !hasToc;
+    }
+
+    tocDisabled = disabled();
+
+    toc = $tocRoot.toc({
+      selectors: TOC_SELECTOR,
+      container: $articleContent,
+      scrollTarget: hasSidebar ? '.js-page-main' : null,
+      scroller: hasSidebar ? '.js-page-main' : null,
+      disabled: tocDisabled
+    });
+
+    $window.on('resize', window.throttle(function() {
+      tocDisabled = disabled();
+      toc && toc.setOptions({
+        disabled: tocDisabled
+      });
+    }, 100));
+
+  });
+})();
+(function() {
+  var SOURCES = window.TEXT_VARIABLES.sources;
+  window.Lazyload.js(SOURCES.jquery, function() {
+    var $window = $(window), $pageFooter = $('.js-page-footer');
+    var $pageAside = $('.js-page-aside');
+    var affix;
+    var tocDisabled = false;
+    var hasSidebar = $('.js-page-root').hasClass('layout--page--sidebar');
+
+    affix = $pageAside.affix({
+      offsetBottom: $pageFooter.outerHeight(),
+      scrollTarget: hasSidebar ? '.js-page-main' : null,
+      scroller: hasSidebar ? '.js-page-main' : null,
+      scroll: hasSidebar ? $('.js-page-main').children() : null,
+      disabled: tocDisabled
+    });
+
+    $window.on('resize', window.throttle(function() {
+      affix && affix.setOptions({
+        disabled: tocDisabled
+      });
+    }, 100));
+
+    window.pageAsideAffix = affix;
+  });
+})();
+</script><script type="text/x-mathjax-config">
+	var _config = { tex2jax: {
+		inlineMath: [['$','$'], ['\\(','\\)']]
+	}};MathJax.Hub.Config(_config);
+</script>
+<script type="text/javascript" src="https://cdn.bootcss.com/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+
+    </div>
+    <script>(function () {
+  var $root = document.getElementsByClassName('root')[0];
+  if (window.hasEvent('touchstart')) {
+    $root.dataset.isTouch = true;
+    document.addEventListener('touchstart', function(){}, false);
+  }
+})();
+</script>
+  </body>
+</html>
+
