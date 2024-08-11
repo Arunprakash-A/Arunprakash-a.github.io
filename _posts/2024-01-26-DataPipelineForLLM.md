@@ -12,7 +12,7 @@ Moreover, the quality of the large language models benefits greatly from the siz
 
 # Data Sources
 
-Fortunately, for the language modeling tasks, all we need is raw texts. One can get it directly from the internet. 
+Fortunately, for the language modelling tasks, all we need is raw texts. One can get it directly from the internet. 
 
 ## Wikipedia
  * As of today, it supports articles written in 326 active languages 
