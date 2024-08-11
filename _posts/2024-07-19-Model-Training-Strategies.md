@@ -1,5 +1,4 @@
 ---
-layout: page
 title: "Model Training Strategies"
 date: 2024-07-19
 tags: LLM DL
@@ -35,7 +34,7 @@ We have to make a tradeoff with computation time. Is making the tradeoff worthy?
 
 ## Gradient Accumulation
 
-So, how do we increase the effective batch size to 36? In the previous setting, we were able to load at max 6 samples into the given GPU memory. One simple idea that instead of storing gradients for each sample separately, just accumulate them (we assume there is enough space to store the output activation values for the extra samples during forward). In this way, we can effectively do the update for a batch of size 36. Here is the demonstration of the concept in the colab 
+So, how do we increase the effective batch size to 36? In the previous setting, we were able to load at max 6 samples into the given GPU memory. One simple idea is instead of storing gradients for each sample separately, just accumulate them (we assume there is enough space to store the output activation values for the extra samples during forward). In this way, we can effectively do the update for a batch of size 36. Here is the demonstration of the concept in the colab 
 
 <script src="https://gist.github.com/Arunprakash-A/c27ebe06e6c8fbd21263fc54013bbf49.js"></script>
 
@@ -48,7 +47,7 @@ We can save a significant amount of memory by recomputing the activation values 
   <img align="center" src="/images/Training-Strategies/1.webp" >
 </p>
 
-The memory requirement scales linearly if we increase the number of nodes. During backpropagation, the activation at the $n-th$ node is consumed first (so it is independent of values in previous nodes). So we can drop storing the activation values for the previous nodes to compute the gradients for $n-th$ node. What about the gradients for $n-1$ the node? Well we need to recompute it! That's the trade-off we make
+The memory requirement scales linearly if we increase the number of nodes. During backpropagation, the activation at the $n-th$ node is consumed first (so it is independent of values in previous nodes). So we can drop storing the activation values for the previous nodes to compute the gradients for $n-th$ node. What about the gradients for $n-1$ the node? Well, we need to recompute it! That's the trade-off we make
 
 It is beautifully illustrated in the animation below.
 <p align="center">
