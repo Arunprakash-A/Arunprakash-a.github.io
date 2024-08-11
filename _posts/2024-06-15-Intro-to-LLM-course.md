@@ -1,5 +1,4 @@
 ---
-layout: page
 title: "Introduction to Large Language Models - Course"
 date: 2024-06-15
 tags: LLM
