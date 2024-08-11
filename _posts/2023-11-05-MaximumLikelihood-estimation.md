@@ -1,5 +1,4 @@
 ---
-layout: page
 title: "Maximum Likelihood Estimation"
 date: 2023-11-05
 tags: ML Math
