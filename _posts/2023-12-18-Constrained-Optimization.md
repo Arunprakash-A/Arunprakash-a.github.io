@@ -1,5 +1,4 @@
 ---
-layout: page
 title: "Lagrange Multiplier : Intuition via Interaction"
 date: 2023-12-18
 tags: Math Geogebra ML
