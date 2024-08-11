@@ -1,5 +1,4 @@
 ---
-layout: page
 title: "Positional Encoding In Transformers"
 date: 2024-02-02
 tags: LLM
