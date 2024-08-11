@@ -1,5 +1,4 @@
 ---
-layout: page
 title: "Representation Learning"
 date: 2023-09-20
 tags: ML
