@@ -1,5 +1,4 @@
 ---
-layout: page
 title: "Data Pipeline for Large Language models"
 date: 2024-01-26
 tags: LLM
@@ -29,7 +28,7 @@ Fortunately, for the language modeling tasks, all we need is raw texts. One can 
  * Overall, 28 languages contain more than 100 million tokens, and 82 languages contain more
 than 10 million tokens [Ref](https://arxiv.org/pdf/1802.06893.pdf)
 
- * **Major Limitation**: Wikipedia is a good source if you are focusing only on English. For languages like Tamil we have only 0.5 million pages (low resource?). Therefore, one needs to search through the ocean of documents. 
+ * **Major Limitation**: Wikipedia is a good source if you are focusing only on English. For languages like Tamil, we have only 0.5 million pages (low resource?). Therefore, one needs to search through the ocean of documents. 
  
 
 ## Common Crawl:
