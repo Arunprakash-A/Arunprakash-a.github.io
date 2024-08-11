@@ -1,5 +1,4 @@
 ---
-layout: page
 title: "Emergence of Large Language Models (LLMs)"
 date: 2023-12-22
 tags: ML DL LLM
