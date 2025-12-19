@@ -12,21 +12,21 @@ The friend who asked me this question is a scientist. Before responding, I made 
 
 I responded by asking him something else.
 
-“Are you comfortable with the concept of the ** span of basis** vectors that form a vector space from linear algebra?”
+“Are you comfortable with the concept of the **span of basis** vectors that form a vector space from linear algebra?”
 
 “Yes,” he said.
 
-“How many vectors exist in R-three?”
+“How many vectors exist in $$\mathbb{R}^3?$$”
 
 “Infinite.”
 
-“Do we need to list all of them to represent the entire R-three?”
+“Do we need to list all of them to represent the entire $$\mathbb{R}^3?$$?”
 
 “No.”
 
 “Then how do we represent it?”
 
-“Three vectors pointing in three independent directions are sufficient.”
+“**Three vectors** pointing in **three independent** directions are sufficient.”
 
 “Exactly. Just three vectors.”
 
@@ -36,7 +36,7 @@ He then asked,"So what? Why do we care? What is the point?"
 
 I said, "Good. Let me go further"
 
-"As human beings, we assign names or sounds, nāma or śabda, to all that is known, ..
+"As human beings, we assign **names or sounds**, _nāma or śabda_, to all that is known, ..
 
 And the realm of the knowable is infinite...
 
@@ -52,9 +52,9 @@ By uttering A-U-M, we are not referring to a specific object or entity. We ackno
 
 At this point, he asked, “It sounds like a good theory. What is the effect of doing this?”
 
-I replied, "Whether one says ‘AUM’ a thousand times a day or expresses it in some other way matters very little, if it is not accompanied by the right bhāvanā (attitude)"
+I replied, "Whether one says ‘AUM’ a thousand times a day or expresses it in some other way matters very little, if it is not accompanied by the **right bhāvanā (attitude)**"
 
-With consistent practice, the mind gradually begins to resonate in harmony with the environment, not because of mechanical chanting, but because of the underlying bhāvanā (attitude). One then remains largely unaffected by changes in the environment, whether they relate to people, circumstances, or wealth
+With consistent practice, the mind gradually begins to resonate in harmony with the environment, not because of mechanical chanting, but because of the underlying **bhāvanā (attitude)**. One then remains largely unaffected by changes in the environment, whether they relate to people, circumstances, or wealth
 
 “…and then?” he asked curiously.
 
