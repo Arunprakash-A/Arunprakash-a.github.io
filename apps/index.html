@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Science Explorer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: #07080f;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      padding: 48px 24px 32px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #fff;
+    }
+
+    header p {
+      margin-top: 10px;
+      font-size: 0.95rem;
+      color: #888;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      max-width: 960px;
+      width: 100%;
+      padding: 0 24px 60px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 32px 28px 28px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: background 0.2s, border-color 0.2s, transform 0.2s;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      background: rgba(255,255,255,0.07);
+      transform: translateY(-3px);
+    }
+
+    .card-icon {
+      font-size: 3rem;
+      line-height: 1;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .card-desc {
+      font-size: 0.82rem;
+      color: #888;
+      line-height: 1.55;
+    }
+
+    .card-tag {
+      align-self: flex-start;
+      margin-top: auto;
+      padding-top: 12px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      opacity: 0.6;
+    }
+
+    .card-moon  { border-color: rgba(255,229,100,0.15); }
+    .card-moon:hover  { border-color: rgba(255,229,100,0.35); }
+    .card-moon  .card-tag { color: #ffe566; }
+
+    .card-plant { border-color: rgba(80,200,120,0.15); }
+    .card-plant:hover { border-color: rgba(80,200,120,0.35); }
+    .card-plant .card-tag { color: #55dd99; }
+
+    .card-fall { border-color: rgba(255,180,80,0.15); }
+    .card-fall:hover { border-color: rgba(255,180,80,0.35); }
+    .card-fall .card-tag { color: #ffb347; }
+
+    .card-gd { border-color: rgba(160,120,255,0.15); }
+    .card-gd:hover { border-color: rgba(160,120,255,0.35); }
+    .card-gd .card-tag { color: #c8a0ff; }
+
+    footer {
+      margin-top: auto;
+      padding: 24px;
+      font-size: 0.72rem;
+      color: #444;
+      text-align: center;
+    }
+
+    @media (max-width: 480px) {
+      header h1 { font-size: 1.6rem; }
+      .grid { gap: 16px; padding: 0 16px 40px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🔬 Science Explorer</h1>
+    <p>Interactive science visualizations for curious minds</p>
+  </header>
+
+  <div class="grid">
+
+    <a class="card card-moon" href="moon-phases/">
+      <div class="card-icon">🌙</div>
+      <div class="card-title">Moon Phases Explorer</div>
+      <div class="card-desc">
+        Watch the Moon orbit Earth in real 3D. Explore all 8 phases, see how the Sun lights the Moon, and learn why eclipses are rare. Includes a phase quiz!
+      </div>
+      <div class="card-tag">Space · Orbits · Astronomy</div>
+    </a>
+
+    <a class="card card-plant" href="photosynthesis/">
+      <div class="card-icon">🌿</div>
+      <div class="card-title">Photosynthesis</div>
+      <div class="card-desc">
+        See how plants turn sunlight, water, and carbon dioxide into food and oxygen. An animated look at one of nature's most important processes.
+      </div>
+      <div class="card-tag">Biology · Plants · Chemistry</div>
+    </a>
+
+    <a class="card card-fall" href="free-fall/">
+      <div class="card-icon">🏛️</div>
+      <div class="card-title">Galileo's Tower</div>
+      <div class="card-desc">
+        Drop a pebble, ball, or leaf from a 55m tower — with and without air. Watch how air resistance causes drift and slows the fall.
+      </div>
+      <div class="card-tag">Physics · Forces · Air Resistance</div>
+    </a>
+
+    <a class="card card-gd" href="gradient-descent/">
+      <div class="card-icon">📉</div>
+      <div class="card-title">Gradient Descent</div>
+      <div class="card-desc">
+        Walk down a loss surface one step at a time. See how learning rate, local minima, and saddle points affect how neural networks learn.
+      </div>
+      <div class="card-tag">ML · Neural Networks · Optimisation</div>
+    </a>
+
+  </div>
+
+  <footer>Science Explorer · Educational Visualizations</footer>
+
+</body>
+</html>

@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moon Phases Explorer 🌙</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a1a;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    #header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    #header h1 { font-size: 1.3rem; letter-spacing: 1px; color: #ffe566; text-shadow: 0 0 12px #ffe56688; }
+    #header .subtitle { font-size: 0.72rem; color: #aaa; margin-top: 2px; }
+
+    /* ── Canvas wrapper ── */
+    #canvas-wrapper { flex: 1; position: relative; overflow: hidden; }
+    #three-canvas { display: block; width: 100%; height: 100%; }
+
+    /* ── Phase badge overlay ── */
+    #phase-badge {
+      position: absolute;
+      bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.65);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 30px;
+      padding: 8px 24px;
+      text-align: center;
+      pointer-events: none;
+      z-index: 5;
+    }
+    #phase-icon { font-size: 2rem; line-height: 1; }
+    #phase-name { font-size: 1rem; font-weight: 700; color: #ffe566; letter-spacing: 1px; margin-top: 2px; }
+    #phase-desc { font-size: 0.68rem; color: #aaa; margin-top: 2px; }
+    #phase-lit  { font-size: 0.7rem; color: #7dcfff; margin-top: 3px; font-weight: 600; }
+
+    /* ── Controls panel ── */
+    #controls {
+      flex-shrink: 0;
+      background: rgba(10,10,30,0.95);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 10px 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 30px;
+    }
+    .ctrl-row { display: flex; align-items: center; gap: 10px; }
+    .ctrl-label { font-size: 0.74rem; color: #ccc; white-space: nowrap; min-width: 120px; }
+    .ctrl-label span { display: block; font-size: 0.62rem; color: #888; }
+    input[type="range"] { flex: 1; -webkit-appearance: none; height: 6px; border-radius: 3px; outline: none; cursor: pointer; }
+    #earth-slider { background: linear-gradient(to right, #3a7bd5, #00d2ff); }
+    #earth-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #00d2ff; box-shadow: 0 0 6px #00d2ff; cursor: pointer; }
+    #moon-slider { background: linear-gradient(to right, #888, #ddd); }
+    #moon-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #ddd; box-shadow: 0 0 6px #ddd; cursor: pointer; }
+    #speed-slider { background: linear-gradient(to right, #f7971e, #ffd200); }
+    #speed-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #ffd200; box-shadow: 0 0 6px #ffd200; cursor: pointer; }
+    .ctrl-value { font-size: 0.75rem; color: #ffe566; min-width: 36px; text-align: right; }
+
+    /* ── Buttons ── */
+    #btn-animate {
+      padding: 6px 16px; border-radius: 20px; border: 1px solid #ffe566;
+      background: transparent; color: #ffe566; font-size: 0.8rem;
+      cursor: pointer; transition: background 0.2s, color 0.2s; white-space: nowrap;
+    }
+    #btn-animate.active { background: #ffe566; color: #0a0a1a; font-weight: 700; }
+
+    .header-btn {
+      padding: 6px 14px; border-radius: 20px; font-size: 0.78rem;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap; border: 1px solid;
+      background: transparent;
+    }
+    #btn-topview  { border-color: rgba(255,255,255,0.25); color: #ccc; }
+    #btn-topview:hover, #btn-topview.active { border-color: #7dcfff; color: #7dcfff; background: rgba(50,150,255,0.1); }
+    #btn-quiz     { border-color: rgba(255,150,50,0.5); color: #ffaa44; }
+    #btn-quiz:hover { background: rgba(255,150,50,0.1); }
+    .header-btns  { display: flex; gap: 8px; align-items: center; }
+
+    /* ── Earth click hint ── */
+    #earth-click-hint {
+      position: absolute; bottom: 62px; left: 50%; transform: translateX(-50%);
+      font-size: 0.65rem; color: #7dcfff99; pointer-events: none; white-space: nowrap;
+      animation: pulse-hint 2.5s ease-in-out infinite;
+    }
+    @keyframes pulse-hint { 0%,100% { opacity:0.5; } 50% { opacity:1; } }
+
+    /* ── Sky view overlay ── */
+    #sky-overlay {
+      position: absolute; inset: 0; background: transparent;
+      display: none; flex-direction: column; align-items: center; z-index: 50;
+    }
+    #sky-overlay.open { display: flex; }
+    #sky-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    #sky-ui { position: relative; z-index: 51; width: 100%; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+    #sky-header {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; pointer-events: all;
+      background: linear-gradient(to bottom, rgba(0,0,10,0.85) 0%, transparent 100%);
+    }
+    #sky-title { font-size: 0.9rem; color: #7dcfff; font-weight: 600; letter-spacing: 0.5px; }
+    #sky-title small { display: block; font-size: 0.65rem; color: #aaa; font-weight: 400; margin-top: 1px; }
+    #btn-sky-close {
+      padding: 5px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(0,0,0,0.4); color: #ccc; font-size: 0.78rem; cursor: pointer;
+    }
+    #btn-sky-close:hover { border-color: #7dcfff; color: #7dcfff; }
+    #sky-phase-label {
+      margin-top: 10px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px; padding: 5px 18px; font-size: 0.8rem; color: #ffe566;
+      font-weight: 600; letter-spacing: 0.5px; pointer-events: none;
+    }
+    #camera-hint { position: absolute; bottom: 8px; right: 12px; font-size: 0.65rem; color: #555; pointer-events: none; }
+
+    /* ── Phase Diagram Panel ── */
+    #phase-panel {
+      position: absolute; bottom: 20px; left: 16px;
+      background: rgba(5,5,20,0.85); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px; padding: 12px 14px 10px; width: 200px; pointer-events: none; z-index: 5;
+    }
+    #phase-panel-title { font-size: 0.65rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; text-align: center; }
+    #phase-diagram { display: block; margin: 0 auto; }
+
+
+    /* ── Phases found badge ── */
+    #score-badge {
+      position: absolute; top: 45px; left: 50%;
+      transform: translateX(-50%); pointer-events: none; z-index: 5;
+    }
+    #phases-found {
+      background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px; padding: 4px 14px; font-size: 0.68rem; color: #aaa; white-space: nowrap;
+    }
+
+    /* ── Achievement Flash ── */
+    #achievement {
+      position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, rgba(255,229,100,0.18), rgba(255,150,50,0.18));
+      border: 1px solid rgba(255,229,100,0.45); border-radius: 20px;
+      padding: 8px 22px; font-size: 0.82rem; color: #ffe566; font-weight: 700;
+      pointer-events: none; opacity: 0; transition: opacity 0.4s; z-index: 40; white-space: nowrap;
+    }
+    #achievement.show { opacity: 1; }
+
+    /* ── Quiz Overlay ── */
+    #quiz-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,10,0.88);
+      display: none; align-items: center; justify-content: center; z-index: 100;
+    }
+    #quiz-overlay.open { display: flex; }
+    #quiz-modal {
+      background: rgba(10,12,32,0.98); border: 1px solid rgba(100,150,255,0.3);
+      border-radius: 20px; padding: 28px 34px; max-width: 400px; width: 92%; text-align: center;
+    }
+    #quiz-title { font-size: 1.2rem; color: #ffe566; margin-bottom: 6px; font-weight: 700; }
+    #quiz-question { font-size: 0.88rem; color: #ccc; margin-bottom: 14px; line-height: 1.45; }
+    #quiz-moon-icon { font-size: 4.5rem; margin-bottom: 14px; }
+    #quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+    .quiz-btn {
+      padding: 10px 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.04); color: #ddd; font-size: 0.82rem;
+      cursor: pointer; transition: all 0.18s;
+    }
+    .quiz-btn:hover:not(:disabled) { border-color: #7dcfff; background: rgba(50,100,200,0.18); color: #7dcfff; }
+    .quiz-btn.correct { border-color: #44ff88 !important; background: rgba(20,150,50,0.25) !important; color: #44ff88 !important; }
+    .quiz-btn.wrong   { border-color: #ff4444 !important; background: rgba(150,20,20,0.25) !important; color: #ff4444 !important; }
+    #quiz-feedback { font-size: 0.86rem; min-height: 22px; font-weight: 600; margin-bottom: 12px; }
+    #quiz-score-display { font-size: 0.76rem; color: #888; margin-bottom: 16px; }
+    .quiz-nav-btn {
+      padding: 8px 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2);
+      background: transparent; color: #ccc; font-size: 0.82rem; cursor: pointer; margin: 0 5px;
+      transition: all 0.18s;
+    }
+    .quiz-nav-btn:hover { border-color: #ffe566; color: #ffe566; }
+    #quiz-next { border-color: #ffe566; color: #ffe566; }
+    #quiz-next:hover { background: #ffe566; color: #0a0a1a; font-weight: 700; }
+    #quiz-next:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+
+    /* ── CSS2D Labels ── */
+    .body-label { pointer-events: none; user-select: none; text-align: center; line-height: 1.2; }
+    .body-label .label-icon { font-size: 1.1rem; }
+    .body-label .label-name {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px;
+      padding: 2px 8px; border-radius: 10px; margin-top: 2px; white-space: nowrap;
+    }
+    .label-sun   .label-name { background: rgba(255,229,100,0.18); color: #ffe566; }
+    .label-earth .label-name { background: rgba(50,150,255,0.18);  color: #7dcfff; }
+    .label-moon  .label-name { background: rgba(200,200,200,0.15); color: #ddd; }
+    .body-label .label-sub { font-size: 0.58rem; color: #888; margin-top: 1px; }
+
+    /* ── CSS2DRenderer overlay ── */
+    #label-renderer {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; overflow: hidden;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      #header h1 { font-size: 1rem; }
+      .header-btn { font-size: 0.68rem; padding: 5px 10px; }
+      #controls { grid-template-columns: 1fr; padding: 8px 14px; gap: 7px; }
+      .ctrl-label { min-width: 80px; font-size: 0.7rem; }
+      #phase-panel { width: 160px; }
+      #phase-diagram { width: 136px !important; height: 136px !important; }
+    }
+    @media (max-width: 480px) {
+      #header { padding: 7px 12px; }
+      #header h1 { font-size: 0.9rem; }
+      .header-btn { font-size: 0.65rem; padding: 4px 7px; }
+      #header .subtitle { display: none; }
+      #controls { padding: 6px 10px; gap: 5px; }
+      .ctrl-label span { display: none; }
+      #phase-panel, #camera-hint { display: none; }
+      #phase-badge { bottom: auto; top: 10px; padding: 5px 14px; }
+      #phase-icon { font-size: 1.4rem; }
+      #phase-name { font-size: 0.82rem; }
+      #phase-desc, #phase-lit { display: none; }
+    }
+    @media (hover:none) and (pointer:coarse) { #camera-hint::before { content:'👆 '; } }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div id="header">
+    <div>
+      <h1>🌙 Moon Phases Explorer</h1>
+      <div class="subtitle">Real orbital mechanics — elliptical orbits, Kepler's laws · Click Earth to look up!</div>
+    </div>
+    <div class="header-btns">
+      <button id="btn-quiz"    class="header-btn">🎮 Phase Quiz</button>
+      <button id="btn-topview" class="header-btn">⬆ Top View</button>
+      <button id="btn-animate">▶ Animate</button>
+    </div>
+  </div>
+
+  <!-- 3D Canvas -->
+  <div id="canvas-wrapper">
+    <canvas id="three-canvas"></canvas>
+
+    <!-- Phase badge -->
+    <div id="phase-badge">
+      <div id="phase-icon">🌑</div>
+      <div id="phase-name">New Moon</div>
+      <div id="phase-desc">Moon is between Earth and Sun</div>
+      <div id="phase-lit">0% illuminated</div>
+    </div>
+
+    <div id="camera-hint">🖱 Drag to rotate · Scroll to zoom · Touch: pinch to zoom</div>
+    <div id="earth-click-hint">🌍 Click Earth to see the Moon from the ground!</div>
+
+    <!-- Sky view overlay -->
+    <div id="sky-overlay">
+      <canvas id="sky-canvas"></canvas>
+      <div id="sky-ui">
+        <div id="sky-header">
+          <div id="sky-title">
+            View from Earth 🌍
+            <small>Looking up at the night sky</small>
+          </div>
+          <button id="btn-sky-close">← Back to Space</button>
+        </div>
+        <div id="sky-phase-label">🌑 New Moon</div>
+      </div>
+    </div>
+
+    <!-- Phases found -->
+    <div id="score-badge">
+      <div id="phases-found">🔭 Phases found: <span id="found-count">0</span> / 8</div>
+    </div>
+
+    <!-- Phase diagram -->
+    <div id="phase-panel">
+      <div id="phase-panel-title">Phase Diagram</div>
+      <canvas id="phase-diagram" width="172" height="172"></canvas>
+    </div>
+
+    <!-- Achievement flash -->
+    <div id="achievement"></div>
+
+    <!-- Quiz overlay -->
+    <div id="quiz-overlay">
+      <div id="quiz-modal">
+        <div id="quiz-title">🎮 Moon Phase Quiz!</div>
+        <div id="quiz-question">Look at the space view — what Moon phase do you see?</div>
+        <div id="quiz-moon-icon">🌔</div>
+        <div id="quiz-options"></div>
+        <div id="quiz-feedback"></div>
+        <div id="quiz-score-display">Score: 0 ⭐ &nbsp;|&nbsp; Streak: 0 🔥</div>
+        <div>
+          <button class="quiz-nav-btn" id="quiz-next">Next Question ➡</button>
+          <button class="quiz-nav-btn" id="quiz-close">Close ✕</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Controls -->
+  <div id="controls">
+    <div class="ctrl-row">
+      <div class="ctrl-label">🌍 Earth Position <span>true anomaly around Sun</span></div>
+      <input type="range" id="earth-slider" min="0" max="360" value="180" step="1" />
+      <div class="ctrl-value" id="earth-val">180°</div>
+    </div>
+    <div class="ctrl-row">
+      <div class="ctrl-label">🌕 Moon Position <span>true anomaly around Earth</span></div>
+      <input type="range" id="moon-slider" min="0" max="360" value="0" step="1" />
+      <div class="ctrl-value" id="moon-val">0°</div>
+    </div>
+    <div class="ctrl-row">
+      <div class="ctrl-label">⚡ Speed <span>Moon orbits / sec</span></div>
+      <input type="range" id="speed-slider" min="1" max="100" value="20" step="1" />
+      <div class="ctrl-value" id="speed-val">20</div>
+    </div>
+  </div>
+
+  <!-- Three.js r160 via importmap -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls }    from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    // ═══════════════════════════════════════════════
+    //  SCENE SETUP
+    // ═══════════════════════════════════════════════
+    const canvas  = document.getElementById('three-canvas');
+    const wrapper = document.getElementById('canvas-wrapper');
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+    renderer.toneMapping         = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.domElement.id = 'label-renderer';
+    wrapper.appendChild(labelRenderer.domElement);
+
+    const scene  = new THREE.Scene();
+    scene.background = new THREE.Color(0x000008);
+
+    const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 2000);
+    camera.position.set(0, 60, 120);
+    camera.lookAt(0, 0, 0);
+
+    function resize() {
+      const w = wrapper.clientWidth, h = wrapper.clientHeight;
+      renderer.setSize(w, h);
+      labelRenderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const orbitControls = new OrbitControls(camera, renderer.domElement);
+    orbitControls.enableDamping = true;
+    orbitControls.dampingFactor = 0.08;
+    orbitControls.minDistance   = 20;
+    orbitControls.maxDistance   = 400;
+
+    // ═══════════════════════════════════════════════
+    //  STAR FIELD
+    // ═══════════════════════════════════════════════
+    (function buildStars() {
+      const N = 3000;
+      const pos = new Float32Array(N * 3);
+      for (let i = 0; i < N * 3; i++) pos[i] = (Math.random() - 0.5) * 1800;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.6, sizeAttenuation: true })));
+    })();
+
+    // ═══════════════════════════════════════════════
+    //  LIGHTING
+    // ═══════════════════════════════════════════════
+    scene.add(new THREE.AmbientLight(0x223355, 8));
+
+    const sunLight = new THREE.PointLight(0xfff8e0, 150000, 0);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(1024, 1024);
+    sunLight.shadow.camera.near = 1;
+    sunLight.shadow.camera.far  = 500;
+    scene.add(sunLight);
+
+    // ═══════════════════════════════════════════════
+    //  SUN
+    // ═══════════════════════════════════════════════
+    const SUN_R = 12;
+    const sunMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(SUN_R, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0xffe566 })
+    );
+    scene.add(sunMesh);
+    sunLight.position.set(0, 0, 0);   // Sun stays at origin
+
+    // Sun glow sprite
+    const glowMat = new THREE.SpriteMaterial({
+      map: makeGlowTexture(), color: 0xffdd44,
+      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+    });
+    const glowSprite = new THREE.Sprite(glowMat);
+    glowSprite.scale.set(SUN_R * 5.5, SUN_R * 5.5, 1);
+    scene.add(glowSprite);
+
+    function makeGlowTexture() {
+      const s = 128, c = document.createElement('canvas');
+      c.width = c.height = s;
+      const ctx = c.getContext('2d');
+      const g = ctx.createRadialGradient(s/2, s/2, 0, s/2, s/2, s/2);
+      g.addColorStop(0,   'rgba(255,240,150,0.9)');
+      g.addColorStop(0.3, 'rgba(255,200,50,0.4)');
+      g.addColorStop(1,   'rgba(255,150,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, s, s);
+      return new THREE.CanvasTexture(c);
+    }
+
+    // ═══════════════════════════════════════════════
+    //  REAL ORBITAL PARAMETERS
+    // ═══════════════════════════════════════════════
+    const EARTH_TILT_DEG   = 23.437;  // Earth's axial tilt to ecliptic normal
+    const MOON_INCL_DEG    = 5.145;   // Moon's orbital inclination to ecliptic
+    const MOON_EARTH_RATIO = 13.368;  // 365.25 / 27.32 sidereal angular speed ratio
+
+    // Moon's elliptical orbit around Earth
+    // Eccentricity 0.0549 means Moon is 12% closer at perigee than apogee
+    const MOON_E = 0.0549;
+    const MOON_A = 16;                                       // semi-major axis (visual)
+    const MOON_B = MOON_A * Math.sqrt(1 - MOON_E * MOON_E); // semi-minor axis
+    const MOON_C = MOON_A * MOON_E;                          // focus offset from center
+    const MOON_R_PERI = MOON_A * (1 - MOON_E);              // perigee distance (closest)
+    const MOON_R_APO  = MOON_A * (1 + MOON_E);              // apogee distance (farthest)
+
+    // Earth's elliptical orbit around Sun
+    // Eccentricity 0.0167 — more circular but still real
+    const EARTH_E = 0.0167;
+    const EARTH_A = 60;
+    const EARTH_B = EARTH_A * Math.sqrt(1 - EARTH_E * EARTH_E);
+    const EARTH_C = EARTH_A * EARTH_E;
+
+    // ── Kepler physics helpers ──
+    // r = a(1-e²)/(1+e·cos ν) — orbital radius at true anomaly ν
+    function getR(a, e, nu_deg) {
+      const nu = nu_deg * Math.PI / 180;
+      return a * (1 - e * e) / (1 + e * Math.cos(nu));
+    }
+
+    // dν/dt = n·(1+e·cos ν)²/(1-e²)^(3/2) — Kepler's 2nd law variable angular speed
+    function keplerDot(e, nu_deg, n_mean) {
+      const nu = nu_deg * Math.PI / 180;
+      const f  = 1 + e * Math.cos(nu);
+      return n_mean * f * f / Math.pow(1 - e * e, 1.5);
+    }
+
+    // Build an ellipse ring (Line) in local XZ plane; focus at origin
+    function makeEllipseRing(a, b, focusOffX, color, opacity) {
+      const pts = [];
+      for (let i = 0; i <= 128; i++) {
+        const t = (i / 128) * Math.PI * 2;
+        // Center of ellipse offset by focusOffX from focus; sin(t) maps to Z
+        pts.push(new THREE.Vector3(-focusOffX + a * Math.cos(t), 0, b * Math.sin(t)));
+      }
+      return new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({ color, transparent: true, opacity })
+      );
+    }
+
+    // ═══════════════════════════════════════════════
+    //  EARTH
+    // ═══════════════════════════════════════════════
+    const EARTH_R = 5;
+
+    const earthGroup = new THREE.Group();
+    scene.add(earthGroup);
+
+    // Axial tilt group — Earth's 23.437° tilt makes seasons possible
+    const earthTiltGroup = new THREE.Group();
+    earthTiltGroup.rotation.z = THREE.MathUtils.degToRad(EARTH_TILT_DEG);
+    earthGroup.add(earthTiltGroup);
+
+    const earthMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(EARTH_R, 48, 48),
+      new THREE.MeshPhongMaterial({
+        map:         makeEarthTexture(),
+        specularMap: makeEarthSpecular(),
+        specular:    new THREE.Color(0x334466),
+        shininess:   18,
+      })
+    );
+    earthMesh.castShadow    = true;
+    earthMesh.receiveShadow = true;
+    earthTiltGroup.add(earthMesh);
+
+    // Atmosphere haze
+    earthGroup.add(new THREE.Mesh(
+      new THREE.SphereGeometry(EARTH_R * 1.06, 32, 32),
+      new THREE.MeshPhongMaterial({ color: 0x4488ff, transparent: true, opacity: 0.12, side: THREE.FrontSide, depthWrite: false })
+    ));
+
+    // Earth's elliptical orbit ring (Sun at focus = origin)
+    // Center at +EARTH_C in +X (perihelion direction), so focusOffX = -EARTH_C
+    scene.add(makeEllipseRing(EARTH_A, EARTH_B, -EARTH_C, 0x3a7bd5, 0.32));
+
+    // ═══════════════════════════════════════════════
+    //  MOON
+    // ═══════════════════════════════════════════════
+    const MOON_R = 1.6;
+
+    // Moon orbital inclination (5.145°) to ecliptic — this is why eclipses are rare!
+    const moonOrbitGroup = new THREE.Group();
+    moonOrbitGroup.rotation.x = THREE.MathUtils.degToRad(MOON_INCL_DEG);
+    earthGroup.add(moonOrbitGroup);
+
+    const moonMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(MOON_R, 48, 48),
+      new THREE.MeshPhongMaterial({ map: makeMoonTexture(), specular: new THREE.Color(0x111111), shininess: 2 })
+    );
+    moonMesh.castShadow    = true;
+    moonMesh.receiveShadow = true;
+    moonOrbitGroup.add(moonMesh);
+
+    // Moon's elliptical orbit ring (Earth at focus)
+    // Center at -MOON_C from Earth (focusOffX = MOON_C)
+    moonOrbitGroup.add(makeEllipseRing(MOON_A, MOON_B, MOON_C, 0xbbbbbb, 0.32));
+
+    // Perigee marker (red dot) — closest point, ν=0 direction
+    const perigeeDot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xff6644 })
+    );
+    perigeeDot.position.set(MOON_R_PERI, 0, 0);
+    moonOrbitGroup.add(perigeeDot);
+
+    // Apogee marker (blue dot) — farthest point, ν=180° direction
+    const apogeeDot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0x4488ff })
+    );
+    apogeeDot.position.set(-MOON_R_APO, 0, 0);
+    moonOrbitGroup.add(apogeeDot);
+
+
+    // ═══════════════════════════════════════════════
+    //  CSS2D LABELS
+    // ═══════════════════════════════════════════════
+    function makeLabel({ icon, name, sub, cssClass, yOffset }) {
+      const div = document.createElement('div');
+      div.className = `body-label ${cssClass}`;
+      div.innerHTML = `
+        <div class="label-icon">${icon}</div>
+        <div class="label-name">${name}</div>
+        ${sub ? `<div class="label-sub">${sub}</div>` : ''}
+      `;
+      const obj = new CSS2DObject(div);
+      obj.position.set(0, yOffset, 0);
+      return obj;
+    }
+
+    sunMesh.add(makeLabel({ icon:'☀️', name:'Sun', sub:'Our star', cssClass:'label-sun', yOffset: SUN_R + 5 }));
+    earthGroup.add(makeLabel({ icon:'🌍', name:'Earth', sub:'Our home', cssClass:'label-earth', yOffset: EARTH_R + 4 }));
+
+    const moonLabelObj = makeLabel({ icon:'🌑', name:'New Moon', sub:"Earth's satellite", cssClass:'label-moon', yOffset: MOON_R + 3 });
+    moonMesh.add(moonLabelObj);
+
+
+    // ═══════════════════════════════════════════════
+    //  TEXTURES — Earth
+    // ═══════════════════════════════════════════════
+    function makeEarthTexture() {
+      const W = 1024, H = 512;
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const ctx = c.getContext('2d');
+
+      const ocean = ctx.createLinearGradient(0, 0, 0, H);
+      ocean.addColorStop(0,   '#0a2a5e');
+      ocean.addColorStop(0.5, '#1a5fa0');
+      ocean.addColorStop(1,   '#0a2a5e');
+      ctx.fillStyle = ocean; ctx.fillRect(0, 0, W, H);
+
+      const land = [
+        { cx:0.14, cy:0.30, rx:0.095, ry:0.18, rot:-0.3, fill:'#4a7a35' },
+        { cx:0.20, cy:0.62, rx:0.055, ry:0.16, rot: 0.1, fill:'#3d8a2a' },
+        { cx:0.48, cy:0.28, rx:0.050, ry:0.10, rot: 0.0, fill:'#5a8040' },
+        { cx:0.50, cy:0.55, rx:0.065, ry:0.18, rot: 0.0, fill:'#7a8840' },
+        { cx:0.65, cy:0.30, rx:0.165, ry:0.18, rot: 0.0, fill:'#5a7838' },
+        { cx:0.76, cy:0.65, rx:0.060, ry:0.08, rot: 0.2, fill:'#9a8040' },
+        { cx:0.50, cy:0.96, rx:0.50,  ry:0.06, rot: 0.0, fill:'#ddeeff' },
+        { cx:0.24, cy:0.12, rx:0.030, ry:0.055,rot: 0.0, fill:'#cce8f0' },
+      ];
+      land.forEach(({ cx, cy, rx, ry, rot, fill }) => {
+        ctx.save(); ctx.translate(cx*W, cy*H); ctx.rotate(rot);
+        ctx.beginPath(); ctx.ellipse(0, 0, rx*W, ry*H, 0, 0, Math.PI*2);
+        ctx.fillStyle = fill; ctx.fill();
+        ctx.strokeStyle = 'rgba(0,30,0,0.3)'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.restore();
+      });
+
+      [ { cx:0.48, cy:0.48, rx:0.055, ry:0.06, fill:'#c8a84a' },
+        { cx:0.58, cy:0.38, rx:0.035, ry:0.06, fill:'#b89a40' },
+        { cx:0.77, cy:0.64, rx:0.032, ry:0.04, fill:'#c49a3a' },
+      ].forEach(({ cx, cy, rx, ry, fill }) => {
+        ctx.save(); ctx.translate(cx*W, cy*H); ctx.globalAlpha = 0.7;
+        ctx.beginPath(); ctx.ellipse(0, 0, rx*W, ry*H, 0, 0, Math.PI*2);
+        ctx.fillStyle = fill; ctx.fill(); ctx.restore();
+      });
+      ctx.globalAlpha = 1;
+
+      const ice = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, H*0.18);
+      ice.addColorStop(0,   '#e8f4f8'); ice.addColorStop(0.7, '#cce0ee'); ice.addColorStop(1, 'rgba(180,220,240,0)');
+      ctx.fillStyle = ice; ctx.fillRect(0, 0, W, H*0.18);
+
+      ctx.globalAlpha = 0.22; ctx.fillStyle = '#fff';
+      [[0.0,0.18,1.0,0.025],[0.1,0.40,0.5,0.018],[0.5,0.35,0.4,0.015],[0.0,0.60,0.6,0.020],[0.3,0.72,0.5,0.018]]
+        .forEach(([x, y, w, h]) => {
+          const g = ctx.createLinearGradient(x*W, 0, (x+w)*W, 0);
+          g.addColorStop(0,'rgba(255,255,255,0)'); g.addColorStop(0.3,'rgba(255,255,255,0.9)');
+          g.addColorStop(0.7,'rgba(255,255,255,0.9)'); g.addColorStop(1,'rgba(255,255,255,0)');
+          ctx.fillStyle = g; ctx.beginPath();
+          ctx.ellipse((x+w/2)*W, y*H, (w/2)*W, h*H, 0, 0, Math.PI*2); ctx.fill();
+        });
+      ctx.globalAlpha = 1;
+      return new THREE.CanvasTexture(c);
+    }
+
+    function makeEarthSpecular() {
+      const W = 512, H = 256;
+      const c = document.createElement('canvas'); c.width = W; c.height = H;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#446688'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#111';
+      [ [0.14,0.30,0.095,0.18],[0.20,0.62,0.055,0.16],[0.48,0.28,0.050,0.10],
+        [0.50,0.55,0.065,0.18],[0.65,0.30,0.165,0.18],[0.76,0.65,0.060,0.08] ]
+        .forEach(([cx, cy, rx, ry]) => {
+          ctx.beginPath(); ctx.ellipse(cx*W, cy*H, rx*W, ry*H, 0, 0, Math.PI*2); ctx.fill();
+        });
+      return new THREE.CanvasTexture(c);
+    }
+
+    // ═══════════════════════════════════════════════
+    //  TEXTURES — Moon
+    // ═══════════════════════════════════════════════
+    function makeMoonTexture() {
+      const W = 1024, H = 512;
+      const c = document.createElement('canvas'); c.width = W; c.height = H;
+      const ctx = c.getContext('2d');
+
+      const base = ctx.createRadialGradient(W*0.5, H*0.45, 0, W*0.5, H*0.5, W*0.6);
+      base.addColorStop(0, '#d0cfc8'); base.addColorStop(0.6, '#b8b5ae'); base.addColorStop(1, '#9a9790');
+      ctx.fillStyle = base; ctx.fillRect(0, 0, W, H);
+
+      [ { cx:0.38, cy:0.38, rx:0.11, ry:0.09, col:'#787570' },
+        { cx:0.52, cy:0.42, rx:0.07, ry:0.06, col:'#807d78' },
+        { cx:0.60, cy:0.38, rx:0.05, ry:0.04, col:'#7a7874' },
+        { cx:0.48, cy:0.50, rx:0.09, ry:0.07, col:'#797670' },
+        { cx:0.70, cy:0.45, rx:0.06, ry:0.05, col:'#7e7b76' },
+        { cx:0.28, cy:0.55, rx:0.07, ry:0.06, col:'#7c7a74' },
+      ].forEach(({ cx, cy, rx, ry, col }) => {
+        const g = ctx.createRadialGradient(cx*W, cy*H, 0, cx*W, cy*H, rx*W);
+        g.addColorStop(0, col); g.addColorStop(1, 'rgba(180,178,172,0)');
+        ctx.fillStyle = g; ctx.beginPath();
+        ctx.ellipse(cx*W, cy*H, rx*W, ry*H, 0, 0, Math.PI*2); ctx.fill();
+      });
+
+      [ {cx:0.32,cy:0.44,r:0.025},{cx:0.65,cy:0.60,r:0.030},{cx:0.72,cy:0.28,r:0.018},
+        {cx:0.20,cy:0.32,r:0.020},{cx:0.55,cy:0.62,r:0.014},{cx:0.44,cy:0.26,r:0.012},
+        {cx:0.82,cy:0.50,r:0.016},{cx:0.10,cy:0.55,r:0.013},{cx:0.90,cy:0.35,r:0.011},
+        {cx:0.15,cy:0.70,r:0.010},{cx:0.60,cy:0.70,r:0.009},{cx:0.75,cy:0.65,r:0.012},
+      ].forEach(({ cx, cy, r }) => {
+        const pr = r*W, x = cx*W, y = cy*H;
+        const ej = ctx.createRadialGradient(x, y, pr*0.8, x, y, pr*2.5);
+        ej.addColorStop(0, 'rgba(220,218,212,0.5)'); ej.addColorStop(1, 'rgba(220,218,212,0)');
+        ctx.fillStyle = ej; ctx.beginPath(); ctx.arc(x, y, pr*2.5, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, pr, 0, Math.PI*2); ctx.fillStyle = '#7a7770'; ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, pr, 0, Math.PI*2);
+        ctx.strokeStyle = '#ccc9c0'; ctx.lineWidth = Math.max(1, pr*0.2); ctx.stroke();
+        if (pr > 20) { ctx.beginPath(); ctx.arc(x, y, pr*0.12, 0, Math.PI*2); ctx.fillStyle = '#c8c5be'; ctx.fill(); }
+      });
+
+      ctx.globalAlpha = 0.06;
+      for (let i = 0; i < 2000; i++) {
+        ctx.beginPath(); ctx.arc(Math.random()*W, Math.random()*H, Math.random()*3+0.5, 0, Math.PI*2);
+        ctx.fillStyle = Math.random() > 0.5 ? '#fff' : '#333'; ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      return new THREE.CanvasTexture(c);
+    }
+
+    // ═══════════════════════════════════════════════
+    //  PHASE DATA
+    // ═══════════════════════════════════════════════
+    const PHASES = [
+      { name:'New Moon',        icon:'🌑', desc:'Moon between Earth and Sun — we can\'t see the lit side', min:  0, max: 22 },
+      { name:'Waxing Crescent', icon:'🌒', desc:'"Waxing" means growing! A sliver appears on the right',   min: 22, max: 68 },
+      { name:'First Quarter',   icon:'🌓', desc:'Exactly half is lit — Moon is 90° from the Sun',         min: 68, max:112 },
+      { name:'Waxing Gibbous',  icon:'🌔', desc:'"Gibbous" means hump — more than half is lit now',      min:112, max:158 },
+      { name:'Full Moon',       icon:'🌕', desc:'Earth between Moon and Sun — the whole face glows!',     min:158, max:202 },
+      { name:'Waning Gibbous',  icon:'🌖', desc:'"Waning" means shrinking — the light is fading away',   min:202, max:248 },
+      { name:'Third Quarter',   icon:'🌗', desc:'Half lit on the left — ¾ of the cycle is done!',        min:248, max:292 },
+      { name:'Waning Crescent', icon:'🌘', desc:'A shrinking sliver — New Moon is just days away',        min:292, max:338 },
+      { name:'New Moon',        icon:'🌑', desc:'Moon between Earth and Sun — we can\'t see the lit side', min:338, max:360 },
+    ];
+
+    const PHASE_NAMES_8 = ['New Moon','Waxing Crescent','First Quarter','Waxing Gibbous',
+                            'Full Moon','Waning Gibbous','Third Quarter','Waning Crescent'];
+    const PHASE_ICONS_8 = ['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'];
+
+    // Kid-friendly fun facts — one per phase
+    const FUN_FACTS = {
+      'New Moon':
+        'The Moon is between Earth and the Sun right now! Its orbit is tilted 5.1°, so it usually misses the Sun — that\'s why we don\'t get a solar eclipse every month!',
+      'Waxing Crescent':
+        '"Waxing" means the Moon is getting bigger each night! It takes 27.3 days to orbit Earth, but 29.5 days for a full phase cycle — because Earth keeps moving around the Sun too!',
+      'First Quarter':
+        'Exactly half of the Moon is lit up! At this point, the Moon is 90° away from the Sun in the sky. You can see it in the afternoon and early evening.',
+      'Waxing Gibbous':
+        '"Gibbous" comes from a Latin word for hump. The Moon is moving faster than average right now — it sped up as it got closer to Earth! (Kepler\'s 2nd Law)',
+      'Full Moon':
+        'The whole face of the Moon is glowing! A Full Moon near perigee looks bigger — we call it a Supermoon! The Moon can cast shadows because it\'s 400,000× dimmer than the Sun.',
+      'Waning Gibbous':
+        '"Waning" means the Moon is shrinking each night. Soon it will be a Waning Crescent and then a New Moon — completing the cycle!',
+      'Third Quarter':
+        'Also called the Last Quarter! The Moon has completed ¾ of its 29.5-day trip around Earth. It rises around midnight and sets around noon.',
+      'Waning Crescent':
+        'The Moon rises just before the Sun each morning. In a few days it will lap the Sun in the sky and become a New Moon again. One complete cycle = one Lunar Month!',
+    };
+
+    const phaseIconEl = document.getElementById('phase-icon');
+    const phaseNameEl = document.getElementById('phase-name');
+    const phaseDescEl = document.getElementById('phase-desc');
+    const phaseLitEl  = document.getElementById('phase-lit');
+
+    // ═══════════════════════════════════════════════
+    //  PHASE DIAGRAM (2D canvas inset)
+    // ═══════════════════════════════════════════════
+    const diagCanvas = document.getElementById('phase-diagram');
+    const diagCtx    = diagCanvas.getContext('2d');
+    const DS = 172, DCX = DS/2, DCY = DS/2, DR = 62;
+
+    const DIAG_PHASES = [
+      { name:'New Moon',        icon:'🌑', angle:180 },
+      { name:'Waxing Crescent', icon:'🌒', angle:225 },
+      { name:'First Quarter',   icon:'🌓', angle:270 },
+      { name:'Waxing Gibbous',  icon:'🌔', angle:315 },
+      { name:'Full Moon',       icon:'🌕', angle:  0 },
+      { name:'Waning Gibbous',  icon:'🌖', angle: 45 },
+      { name:'Third Quarter',   icon:'🌗', angle: 90 },
+      { name:'Waning Crescent', icon:'🌘', angle:135 },
+    ];
+
+    function drawPhaseDiagram(currentName) {
+      diagCtx.clearRect(0, 0, DS, DS);
+      diagCtx.beginPath(); diagCtx.arc(DCX, DCY, DR, 0, Math.PI*2);
+      diagCtx.strokeStyle = 'rgba(255,255,255,0.1)'; diagCtx.lineWidth = 1; diagCtx.stroke();
+
+      diagCtx.beginPath(); diagCtx.arc(DCX, DCY, 7, 0, Math.PI*2);
+      const eg = diagCtx.createRadialGradient(DCX-2, DCY-2, 1, DCX, DCY, 7);
+      eg.addColorStop(0, '#5af'); eg.addColorStop(1, '#1a5ca8');
+      diagCtx.fillStyle = eg; diagCtx.fill();
+
+      diagCtx.font = '11px sans-serif'; diagCtx.fillStyle = '#ffe56688';
+      diagCtx.textAlign = 'center'; diagCtx.fillText('☀', DCX + DR + 14, DCY + 4);
+
+      DIAG_PHASES.forEach(ph => {
+        const rad = ph.angle * Math.PI / 180;
+        const x = DCX + Math.cos(rad) * DR, y = DCY + Math.sin(rad) * DR;
+        const isActive = ph.name === currentName;
+        if (isActive) {
+          diagCtx.beginPath(); diagCtx.arc(x, y, 13, 0, Math.PI*2);
+          diagCtx.fillStyle = 'rgba(255,229,102,0.22)'; diagCtx.fill();
+          diagCtx.strokeStyle = '#ffe566'; diagCtx.lineWidth = 1.5; diagCtx.stroke();
+        }
+        diagCtx.font = isActive ? '18px sans-serif' : '14px sans-serif';
+        diagCtx.textAlign = 'center'; diagCtx.textBaseline = 'middle';
+        diagCtx.globalAlpha = isActive ? 1.0 : 0.45;
+        diagCtx.fillText(ph.icon, x, y);
+        diagCtx.globalAlpha = 1.0;
+      });
+
+      const active = DIAG_PHASES.find(ph => ph.name === currentName);
+      if (active) {
+        const rad = active.angle * Math.PI / 180;
+        diagCtx.beginPath();
+        diagCtx.moveTo(DCX, DCY);
+        diagCtx.lineTo(DCX + Math.cos(rad)*(DR-16), DCY + Math.sin(rad)*(DR-16));
+        diagCtx.strokeStyle = '#ffe56666'; diagCtx.lineWidth = 1;
+        diagCtx.setLineDash([3,3]); diagCtx.stroke(); diagCtx.setLineDash([]);
+      }
+    }
+
+    // ═══════════════════════════════════════════════
+    //  PHASE UI UPDATE
+    // ═══════════════════════════════════════════════
+    const discoveredPhases = new Set();
+    let currentPhaseName  = 'New Moon';
+    let currentPhaseIcon  = '🌑';
+    let currentPhaseAngle = 0;
+
+    function updatePhaseUI(phaseAngle) {
+      const a = ((phaseAngle % 360) + 360) % 360;
+      const p = PHASES.find(ph => a >= ph.min && a < ph.max) || PHASES[0];
+
+      currentPhaseAngle = a;
+      currentPhaseName  = p.name;
+      currentPhaseIcon  = p.icon;
+
+      // Lit fraction: (1 - cos(phaseAngle)) / 2
+      phaseLitEl.textContent = Math.round((1 - Math.cos(a * Math.PI / 180)) / 2 * 100) + '% illuminated';
+
+      if (phaseNameEl.textContent !== p.name) {
+        phaseIconEl.textContent = p.icon;
+        phaseNameEl.textContent = p.name;
+        phaseDescEl.textContent = p.desc;
+
+        const ml = moonLabelObj.element.querySelector('.label-name');
+        const mi = moonLabelObj.element.querySelector('.label-icon');
+        if (ml) ml.textContent = p.name;
+        if (mi) mi.textContent = p.icon;
+
+        drawPhaseDiagram(p.name);
+
+        const fact = FUN_FACTS[p.name];
+
+        const key = p.name === 'New Moon' ? 'New Moon' : p.name;
+        if (!discoveredPhases.has(key)) {
+          discoveredPhases.add(key);
+          const cnt = Math.min(discoveredPhases.size, 8);
+          document.getElementById('found-count').textContent = cnt;
+          if (cnt === 8) {
+            document.getElementById('phases-found').innerHTML = '🌟 All 8 phases discovered!';
+            document.getElementById('phases-found').style.color = '#ffe566';
+            showAchievement('🌟 You discovered all 8 Moon phases!');
+          } else {
+            showAchievement(`${p.icon} You found ${p.name}! (${cnt}/8)`);
+          }
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════
+    //  ORBIT POSITIONING
+    // ═══════════════════════════════════════════════
+    const _moonWorldPos = new THREE.Vector3();
+
+    function updateOrbits() {
+      // ── Earth orbits Sun (elliptical, CCW from above)
+      const eR   = getR(EARTH_A, EARTH_E, earthNuDeg);
+      const eRad = earthNuDeg * Math.PI / 180;
+      earthGroup.position.set(
+        eR * Math.cos(eRad),
+        0,
+        -eR * Math.sin(eRad)
+      );
+
+      // ── Moon orbits Earth (elliptical, CCW, inside tilted moonOrbitGroup)
+      const mR   = getR(MOON_A, MOON_E, moonNuDeg);
+      const mRad = moonNuDeg * Math.PI / 180;
+      moonMesh.position.set(
+        mR * Math.cos(mRad),
+        0,
+        -mR * Math.sin(mRad)
+      );
+
+
+      // ── Phase angle: angular separation of Moon from Sun as seen from Earth
+      moonMesh.getWorldPosition(_moonWorldPos);
+      const toSunX  = -earthGroup.position.x;
+      const toSunZ  = -earthGroup.position.z;
+      const toMoonX = _moonWorldPos.x - earthGroup.position.x;
+      const toMoonZ = _moonWorldPos.z - earthGroup.position.z;
+
+      const sunDir  = Math.atan2(-toSunZ,  toSunX);
+      const moonDir = Math.atan2(-toMoonZ, toMoonX);
+      let phase = (moonDir - sunDir) * 180 / Math.PI;
+      phase = ((phase % 360) + 360) % 360;
+
+      updatePhaseUI(phase);
+
+      // Sync sliders
+      earthSlider.value = Math.round(earthNuDeg);
+      moonSlider.value  = Math.round(moonNuDeg);
+      earthVal.textContent = Math.round(earthNuDeg) + '°';
+      moonVal.textContent  = Math.round(moonNuDeg)  + '°';
+
+      if (skyOpen) {
+        drawSkyView();
+        skyPhaseLabel.textContent = `${currentPhaseIcon} ${currentPhaseName}`;
+      }
+    }
+
+    // ═══════════════════════════════════════════════
+    //  CONTROLS STATE
+    // ═══════════════════════════════════════════════
+    let earthNuDeg   = 180;
+    let moonNuDeg    = 0;
+    let isAnimating  = false;
+    let animSpeed    = 20;
+
+    const earthSlider = document.getElementById('earth-slider');
+    const moonSlider  = document.getElementById('moon-slider');
+    const speedSlider = document.getElementById('speed-slider');
+    const earthVal    = document.getElementById('earth-val');
+    const moonVal     = document.getElementById('moon-val');
+    const speedVal    = document.getElementById('speed-val');
+    const btnAnimate  = document.getElementById('btn-animate');
+
+    earthSlider.addEventListener('input', () => {
+      earthNuDeg = parseFloat(earthSlider.value);
+      earthVal.textContent = earthNuDeg + '°';
+      updateOrbits();
+    });
+    moonSlider.addEventListener('input', () => {
+      moonNuDeg = parseFloat(moonSlider.value);
+      moonVal.textContent = moonNuDeg + '°';
+      updateOrbits();
+    });
+    speedSlider.addEventListener('input', () => {
+      animSpeed = parseFloat(speedSlider.value);
+      speedVal.textContent = animSpeed;
+    });
+    btnAnimate.addEventListener('click', () => {
+      isAnimating = !isAnimating;
+      btnAnimate.textContent = isAnimating ? '⏸ Pause' : '▶ Animate';
+      btnAnimate.classList.toggle('active', isAnimating);
+    });
+
+    // ── Top View toggle ──
+    const btnTopview = document.getElementById('btn-topview');
+    let isTopView = false;
+    const camSaved = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
+
+    btnTopview.addEventListener('click', () => {
+      isTopView = !isTopView;
+      btnTopview.classList.toggle('active', isTopView);
+      btnTopview.textContent = isTopView ? '↙ 3D View' : '⬆ Top View';
+      if (isTopView) {
+        camSaved.pos.copy(camera.position);
+        camSaved.target.copy(orbitControls.target);
+        camera.position.set(0, 200, 0.01);
+        orbitControls.target.set(0, 0, 0);
+      } else {
+        camera.position.copy(camSaved.pos);
+        orbitControls.target.copy(camSaved.target);
+      }
+      orbitControls.update();
+    });
+
+    // ═══════════════════════════════════════════════
+    //  ACHIEVEMENT FLASH
+    // ═══════════════════════════════════════════════
+    let achTimer = null;
+    function showAchievement(msg) {
+      const el = document.getElementById('achievement');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(achTimer);
+      achTimer = setTimeout(() => el.classList.remove('show'), 3000);
+    }
+
+    // ═══════════════════════════════════════════════
+    //  QUIZ MODE
+    // ═══════════════════════════════════════════════
+    let quizScore    = 0;
+    let quizStreak   = 0;
+    let quizPhaseIdx = 0;
+    let quizAnswered = false;
+    let wasAnimating = false;
+
+    const quizOverlay = document.getElementById('quiz-overlay');
+    document.getElementById('btn-quiz').addEventListener('click', openQuiz);
+    document.getElementById('quiz-close').addEventListener('click', closeQuiz);
+    document.getElementById('quiz-next').addEventListener('click', nextQuizQuestion);
+
+    function openQuiz() {
+      wasAnimating = isAnimating;
+      isAnimating  = false;
+      btnAnimate.textContent = '▶ Animate';
+      btnAnimate.classList.remove('active');
+      quizOverlay.classList.add('open');
+      nextQuizQuestion();
+    }
+
+    function closeQuiz() {
+      quizOverlay.classList.remove('open');
+      if (wasAnimating) {
+        isAnimating = true;
+        btnAnimate.textContent = '⏸ Pause';
+        btnAnimate.classList.add('active');
+      }
+    }
+
+    function nextQuizQuestion() {
+      quizPhaseIdx = Math.floor(Math.random() * 8);
+      const targetPhaseAngle = quizPhaseIdx * 45 + 22.5;  // midpoint of each 45° slice
+      moonNuDeg  = (earthNuDeg + targetPhaseAngle) % 360;
+      updateOrbits();
+
+      document.getElementById('quiz-moon-icon').textContent = PHASE_ICONS_8[quizPhaseIdx];
+      document.getElementById('quiz-feedback').textContent  = '';
+      document.getElementById('quiz-feedback').style.color  = '';
+      document.getElementById('quiz-next').disabled = true;
+
+      // 4 options: 1 correct + 3 random
+      const opts = new Set([quizPhaseIdx]);
+      while (opts.size < 4) opts.add(Math.floor(Math.random() * 8));
+      const shuffled = [...opts].sort(() => Math.random() - 0.5);
+
+      const container = document.getElementById('quiz-options');
+      container.innerHTML = '';
+      shuffled.forEach(idx => {
+        const btn = document.createElement('button');
+        btn.className = 'quiz-btn';
+        btn.dataset.idx = idx;
+        btn.textContent = `${PHASE_ICONS_8[idx]} ${PHASE_NAMES_8[idx]}`;
+        btn.addEventListener('click', () => handleQuizAnswer(idx));
+        container.appendChild(btn);
+      });
+
+      quizAnswered = false;
+    }
+
+    function handleQuizAnswer(selectedIdx) {
+      if (quizAnswered) return;
+      quizAnswered = true;
+
+      const correct = selectedIdx === quizPhaseIdx;
+      if (correct) { quizScore++; quizStreak++; }
+      else          { quizStreak = 0; }
+
+      document.querySelectorAll('.quiz-btn').forEach(btn => {
+        btn.disabled = true;
+        const i = parseInt(btn.dataset.idx);
+        if (i === quizPhaseIdx) btn.classList.add('correct');
+        if (i === selectedIdx && !correct) btn.classList.add('wrong');
+      });
+
+      const fb = document.getElementById('quiz-feedback');
+      if (correct) {
+        const msgs = ['⭐ Correct! Amazing!', '🚀 You got it! Brilliant!', '🌟 Perfect! Well done!', '✨ Awesome work!'];
+        fb.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+        fb.style.color = '#44ff88';
+      } else {
+        fb.textContent = `❌ Not quite! It was ${PHASE_ICONS_8[quizPhaseIdx]} ${PHASE_NAMES_8[quizPhaseIdx]}`;
+        fb.style.color = '#ff8888';
+      }
+
+      document.getElementById('quiz-score-display').textContent =
+        `Score: ${quizScore} ⭐  |  Streak: ${quizStreak} 🔥`;
+      document.getElementById('quiz-next').disabled = false;
+    }
+
+    // ═══════════════════════════════════════════════
+    //  SKY VIEW
+    // ═══════════════════════════════════════════════
+    const skyOverlay    = document.getElementById('sky-overlay');
+    const skyCanvas     = document.getElementById('sky-canvas');
+    const skyCtx        = skyCanvas.getContext('2d');
+    const skyPhaseLabel = document.getElementById('sky-phase-label');
+    let   skyOpen       = false;
+
+    function resizeSkyCanvas() {
+      skyCanvas.width  = wrapper.clientWidth;
+      skyCanvas.height = wrapper.clientHeight;
+      if (skyOpen) drawSkyView();
+    }
+    window.addEventListener('resize', resizeSkyCanvas);
+
+    function drawSkyView() {
+      const W = skyCanvas.width, H = skyCanvas.height;
+      const ctx = skyCtx;
+      ctx.clearRect(0, 0, W, H);
+
+      const sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0,    '#000005');
+      sky.addColorStop(0.65, '#000820');
+      sky.addColorStop(0.82, '#06142a');
+      sky.addColorStop(1,    '#0a1f10');
+      ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+
+      const rng = (n) => { let x = Math.sin(n * 42) * 43758.5453; return x - Math.floor(x); };
+      for (let i = 0; i < 280; i++) {
+        ctx.beginPath();
+        ctx.arc(rng(i*3)*W, rng(i*3+1)*H*0.78, rng(i*3+2)*1.4+0.2, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255,255,255,${(0.4 + rng(i*3+2)*0.6).toFixed(2)})`;
+        ctx.fill();
+      }
+
+      const moonR  = Math.min(W, H) * 0.13;
+      drawSkyMoon(ctx, W*0.62, H*0.30, moonR, currentPhaseAngle);
+      drawLandscape(ctx, W, H);
+    }
+
+    function drawSkyMoon(ctx, cx, cy, r, phaseAngle) {
+      const a = ((phaseAngle % 360) + 360) % 360;
+      const glowA = Math.sin(a * Math.PI / 180) * 0.5 + (a < 180 ? a/180 : (360-a)/180) * 0.3;
+      if (glowA > 0.02) {
+        const glow = ctx.createRadialGradient(cx, cy, r*0.5, cx, cy, r*2.4);
+        glow.addColorStop(0, `rgba(255,250,200,${(glowA*0.18).toFixed(3)})`);
+        glow.addColorStop(1, 'rgba(255,250,200,0)');
+        ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(cx, cy, r*2.4, 0, Math.PI*2); ctx.fill();
+      }
+
+      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.clip();
+      ctx.fillStyle = '#111120'; ctx.fillRect(cx-r, cy-r, r*2, r*2);
+
+      const termX = Math.cos(a * Math.PI / 180) * r;
+      const lit   = '#fffde8';
+      if (a <= 180) {
+        ctx.beginPath(); ctx.arc(cx, cy, r, -Math.PI/2, Math.PI/2); ctx.lineTo(cx, cy-r);
+        ctx.fillStyle = lit; ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx, cy, Math.abs(termX), r, 0, 0, Math.PI*2);
+        ctx.fillStyle = (a <= 90) ? '#111120' : lit; ctx.fill();
+      } else {
+        ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI/2, -Math.PI/2); ctx.lineTo(cx, cy+r);
+        ctx.fillStyle = lit; ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx, cy, Math.abs(termX), r, 0, 0, Math.PI*2);
+        ctx.fillStyle = (a <= 270) ? lit : '#111120'; ctx.fill();
+      }
+
+      [[0.25,-0.30,0.11],[-0.28,0.12,0.08],[0.10,0.32,0.10],[-0.12,-0.18,0.06],[0.40,0.10,0.07],[-0.05,0.05,0.13]]
+        .forEach(([dx, dy, cr]) => {
+          ctx.beginPath(); ctx.arc(cx+dx*r, cy+dy*r, cr*r, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(0,0,30,0.12)'; ctx.fill();
+        });
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(200,200,180,0.15)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    function drawLandscape(ctx, W, H) {
+      ctx.beginPath(); ctx.moveTo(0, H);
+      [[0,0.82],[0.06,0.74],[0.12,0.79],[0.20,0.70],[0.28,0.76],[0.35,0.68],
+       [0.42,0.73],[0.50,0.66],[0.58,0.72],[0.65,0.64],[0.73,0.70],[0.80,0.75],
+       [0.88,0.68],[0.94,0.74],[1.0,0.78],[1.0,1.0]]
+        .forEach(([x, y]) => ctx.lineTo(x*W, y*H));
+      ctx.closePath(); ctx.fillStyle = '#0a1a0d'; ctx.fill();
+      ctx.fillStyle = '#060f07'; ctx.fillRect(0, H*0.87, W, H*0.13);
+
+      [0.08,0.15,0.22,0.78,0.85,0.91,0.96].forEach(tx => {
+        const th = H*(0.06 + Math.abs(Math.sin(tx*31))*0.05);
+        const tw = th*0.35, ty = H*0.87 - th;
+        ctx.fillStyle = '#040c04'; ctx.fillRect(tx*W - tw*0.1, ty+th*0.6, tw*0.2, th*0.4);
+        ctx.beginPath(); ctx.moveTo(tx*W, ty);
+        ctx.lineTo(tx*W - tw, ty+th*0.7); ctx.lineTo(tx*W + tw, ty+th*0.7);
+        ctx.closePath(); ctx.fillStyle = '#071008'; ctx.fill();
+      });
+    }
+
+    function openSkyView() {
+      skyOpen = true;
+      resizeSkyCanvas();
+      skyOverlay.classList.add('open');
+      skyPhaseLabel.textContent = `${currentPhaseIcon} ${currentPhaseName}`;
+      orbitControls.enabled = false;
+    }
+    function closeSkyView() {
+      skyOpen = false;
+      skyOverlay.classList.remove('open');
+      orbitControls.enabled = true;
+    }
+    document.getElementById('btn-sky-close').addEventListener('click', closeSkyView);
+    window.addEventListener('keydown', e => { if (e.key === 'Escape') { if (skyOpen) closeSkyView(); if (quizOverlay.classList.contains('open')) closeQuiz(); } });
+
+    // ═══════════════════════════════════════════════
+    //  RAYCASTER — Earth click → Sky view
+    // ═══════════════════════════════════════════════
+    const raycaster  = new THREE.Raycaster();
+    const mouse2d    = new THREE.Vector2();
+
+    renderer.domElement.addEventListener('click', e => {
+      if (skyOpen || quizOverlay.classList.contains('open')) return;
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse2d.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+      mouse2d.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouse2d, camera);
+      if (raycaster.intersectObject(earthMesh, true).length > 0) openSkyView();
+    });
+
+    renderer.domElement.addEventListener('mousemove', e => {
+      if (skyOpen) return;
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse2d.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+      mouse2d.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouse2d, camera);
+      renderer.domElement.style.cursor =
+        raycaster.intersectObject(earthMesh, true).length > 0 ? 'pointer' : 'grab';
+    });
+
+    // ═══════════════════════════════════════════════
+    //  ANIMATION LOOP
+    // ═══════════════════════════════════════════════
+    let lastTime = performance.now();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const now = performance.now();
+      const dt  = Math.min((now - lastTime) / 1000, 0.1);  // cap at 100ms to avoid jumps
+      lastTime  = now;
+
+      if (isAnimating) {
+        // Kepler's 2nd Law: angular speed varies with position in ellipse
+        // Moon speeds up near Perigee, slows down near Apogee — just like the real Moon!
+        const moonDot  = keplerDot(MOON_E,  moonNuDeg,  animSpeed);
+        const earthDot = keplerDot(EARTH_E, earthNuDeg, animSpeed / MOON_EARTH_RATIO);
+
+        moonNuDeg  = (moonNuDeg  + moonDot  * dt) % 360;
+        earthNuDeg = (earthNuDeg + earthDot * dt) % 360;
+      }
+
+      // Earth self-rotation around its tilted axis
+      earthMesh.rotation.y += dt * 1.0;
+
+      updateOrbits();
+      orbitControls.update();
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+    }
+
+    // ── Kick off ──
+    phaseNameEl.textContent = '';   // force first updatePhaseUI to run fully
+    drawPhaseDiagram('New Moon');
+    updateOrbits();
+    animate();
+
+  </script>
+</body>
+</html>

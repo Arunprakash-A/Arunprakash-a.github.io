@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photosynthesis Explorer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #07080f;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 12px 24px 8px;
+      text-align: center;
+      flex-shrink: 0;
+      background: rgba(0,0,0,0.3);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.5px; }
+    header p  { font-size: 0.78rem; color: #888; margin-top: 2px; }
+
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    canvas { display: block; width: 100% !important; height: 100% !important; }
+
+    /* Bottom equation bar */
+    #equation {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(5,8,18,0.88);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 8px 16px;
+      text-align: center;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
+      color: #ddd;
+    }
+
+    #equation .co2  { color: #a0c4ff; }
+    #equation .h2o  { color: #74d7ff; }
+    #equation .sun  { color: #ffe566; }
+    #equation .glu  { color: #ffb347; }
+    #equation .o2   { color: #7dffb3; }
+
+    /* Stage info panel */
+    #stage-panel {
+      position: absolute;
+      top: 12px; right: 14px;
+      background: rgba(10,15,30,0.88);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 14px 18px;
+      max-width: 210px;
+      font-size: 0.8rem;
+      line-height: 1.55;
+    }
+
+    #stage-panel .stage-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #ffe566;
+    }
+
+    #stage-panel .stage-body { color: #bbb; }
+
+    /* Legend */
+    #legend {
+      position: absolute;
+      top: 12px; left: 14px;
+      background: rgba(10,15,30,0.88);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 0.75rem;
+    }
+
+    #legend .leg-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #ccc;
+    }
+
+    .leg-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+      color: #aaa;
+    }
+
+    .leg-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Play/pause */
+    #controls {
+      position: absolute;
+      bottom: 52px; left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+    }
+
+    #controls button {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      border-radius: 20px;
+      padding: 7px 20px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      transition: background 0.15s;
+    }
+
+    #controls button:hover { background: rgba(255,255,255,0.2); }
+    #controls button.active { background: rgba(100,200,150,0.25); border-color: #7dffb3; color: #7dffb3; }
+
+    /* Speed label */
+    #speed-label {
+      position: absolute;
+      bottom: 52px; right: 14px;
+      font-size: 0.72rem;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🌿 Photosynthesis Explorer</h1>
+    <p>How plants turn sunlight into food — animated for curious minds</p>
+  </header>
+
+  <div id="canvas-wrap">
+    <canvas id="c"></canvas>
+
+    <div id="legend">
+      <div class="leg-title">Molecules</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#a0c4ff"></div> CO₂ (carbon dioxide)</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#74d7ff"></div> H₂O (water)</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#ffe566"></div> Photon (light)</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#7dffb3"></div> O₂ (oxygen out)</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#ffb347"></div> Glucose (food)</div>
+    </div>
+
+    <div id="stage-panel">
+      <div class="stage-title" id="stage-title">☀️ Light Reactions</div>
+      <div class="stage-body" id="stage-body">Photons hit the leaf's chloroplasts and split water molecules. This releases oxygen into the air and creates energy packets (ATP).</div>
+    </div>
+
+    <div id="controls">
+      <button id="btn-play" class="active">⏸ Pause</button>
+    </div>
+
+    <div id="speed-label">Speed: 1×</div>
+
+    <div id="equation">
+      <span class="co2">6 CO₂</span> + <span class="h2o">6 H₂O</span> + <span class="sun">☀️ Light</span>
+      &nbsp;→&nbsp;
+      <span class="glu">C₆H₁₂O₆ (glucose)</span> + <span class="o2">6 O₂</span>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    const canvas = document.getElementById('c');
+    const ctx    = canvas.getContext('2d');
+    const wrap   = document.getElementById('canvas-wrap');
+
+    let W, H, CX, CY;
+    function resize() {
+      W = wrap.clientWidth;
+      H = wrap.clientHeight;
+      canvas.width  = W;
+      canvas.height = H;
+      CX = W / 2;
+      CY = H / 2;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // ── Animation state ──────────────────────────────────────────────────────
+    let running = true;
+    let t = 0;  // elapsed seconds
+
+    document.getElementById('btn-play').addEventListener('click', () => {
+      running = !running;
+      const btn = document.getElementById('btn-play');
+      btn.textContent = running ? '⏸ Pause' : '▶ Play';
+      btn.className   = running ? 'active' : '';
+    });
+
+    // ── Scene layout helpers (relative to W, H) ──────────────────────────────
+    // Sky occupies top 60%, soil bottom 40%
+    function skyH()  { return H * 0.62; }
+    function soilY() { return H * 0.62; }
+
+    // Plant geometry
+    function stemX()      { return CX; }
+    function stemBaseY()  { return H * 0.95; }
+    function stemTopY()   { return H * 0.26; }
+    function stemWidth()  { return Math.max(8, W * 0.018); }
+
+    // Sun
+    function sunX() { return W * 0.12; }
+    function sunY() { return H * 0.11; }
+    function sunR() { return Math.min(W, H) * 0.08; }
+
+    // Leaf geometry (two lobes: left and right of stem, at mid-height)
+    function leafY()  { return H * 0.42; }
+    function leafW()  { return W * 0.22; }
+    function leafH2() { return H * 0.08; }
+
+    // ── Chloroplast positions (inside leaf) ──────────────────────────────────
+    const chloroOffsets = [
+      [-0.45, -0.25], [-0.2, 0.1], [-0.65, 0.15],
+      [-0.38, 0.45],  [-0.7, -0.05],
+    ]; // fraction of leafW / leafH2
+
+    // ── Particle systems ─────────────────────────────────────────────────────
+    const particles = [];
+
+    const TYPES = {
+      PHOTON: { color: '#ffe566', r: 4, label: 'Photon' },
+      CO2:    { color: '#a0c4ff', r: 5, label: 'CO₂' },
+      H2O:    { color: '#74d7ff', r: 5, label: 'H₂O' },
+      O2:     { color: '#7dffb3', r: 4, label: 'O₂' },
+      GLUCOSE:{ color: '#ffb347', r: 7, label: 'Glucose' },
+    };
+
+    function spawnPhoton() {
+      // from sun toward a random leaf chloroplast point
+      const sx = sunX() + (Math.random() - 0.5) * sunR() * 1.4;
+      const sy = sunY() + (Math.random() - 0.5) * sunR() * 1.4;
+      const lx = stemX() - leafW() * (0.3 + Math.random() * 0.5);
+      const ly = leafY() + (Math.random() - 0.5) * leafH2();
+      const dx = lx - sx, dy = ly - sy;
+      const len = Math.hypot(dx, dy);
+      particles.push({
+        type: 'PHOTON',
+        x: sx, y: sy,
+        vx: dx / len * 1.8, vy: dy / len * 1.8,
+        life: 1, maxLife: 1,
+        target: { x: lx, y: ly },
+        done: false,
+        trail: [],
+      });
+    }
+
+    function spawnCO2() {
+      // drift in from the left/right sides of the leaf
+      const side = Math.random() < 0.5 ? -1 : 1;
+      const sx = stemX() + side * (leafW() * 0.95 + Math.random() * W * 0.1);
+      const sy = leafY() + (Math.random() - 0.5) * leafH2() * 2;
+      const tx = stemX() - leafW() * (0.2 + Math.random() * 0.5);
+      const ty = leafY() + (Math.random() - 0.5) * leafH2();
+      const dx = tx - sx, dy = ty - sy;
+      const len = Math.hypot(dx, dy);
+      particles.push({
+        type: 'CO2',
+        x: sx, y: sy,
+        vx: dx / len * 0.9, vy: dy / len * 0.9,
+        life: 1, maxLife: 1,
+        target: { x: tx, y: ty },
+        done: false,
+        trail: [],
+      });
+    }
+
+    function spawnH2O() {
+      // rise from roots through the stem
+      const sx = stemX() + (Math.random() - 0.5) * stemWidth() * 0.6;
+      const sy = H * 0.85 + Math.random() * H * 0.05;
+      particles.push({
+        type: 'H2O',
+        x: sx, y: sy,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: -1.1,
+        life: 1, maxLife: 1,
+        target: { x: stemX(), y: leafY() },
+        done: false,
+        trail: [],
+      });
+    }
+
+    function spawnO2(fromX, fromY) {
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.6;
+      particles.push({
+        type: 'O2',
+        x: fromX, y: fromY,
+        vx: Math.cos(angle) * (0.8 + Math.random() * 0.6),
+        vy: Math.sin(angle) * (0.8 + Math.random() * 0.6) - 0.4,
+        life: 1, maxLife: 1,
+        done: false,
+        trail: [],
+        fading: true,
+      });
+    }
+
+    function spawnGlucose(fromX, fromY) {
+      // flows down the stem
+      particles.push({
+        type: 'GLUCOSE',
+        x: fromX, y: fromY,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: 1.0,
+        life: 1, maxLife: 1,
+        done: false,
+        trail: [],
+        fading: true,
+      });
+    }
+
+    // ── Chloroplast glow state ───────────────────────────────────────────────
+    const chloroGlow = chloroOffsets.map(() => 0);
+
+    // ── Spawn timers ─────────────────────────────────────────────────────────
+    let photonTimer = 0, co2Timer = 0, h2oTimer = 0;
+
+    // ── Stage cycling for info panel ─────────────────────────────────────────
+    const STAGES = [
+      {
+        title: '☀️ Light Reactions',
+        body: 'Photons hit the leaf\'s chloroplasts and split water molecules. This releases oxygen into the air and creates energy packets (ATP).',
+      },
+      {
+        title: '🌿 Calvin Cycle',
+        body: 'Inside the chloroplast, CO₂ from the air is "fixed" using the energy from the light reactions. The plant builds glucose — its own food!',
+      },
+      {
+        title: '💧 Water Transport',
+        body: 'Water travels up from the roots through tiny tubes in the stem. It arrives at the leaf ready to be split by sunlight.',
+      },
+    ];
+    let stageTimer = 0;
+    let stageIdx   = 0;
+
+    function updateStagePanel() {
+      document.getElementById('stage-title').textContent = STAGES[stageIdx].title;
+      document.getElementById('stage-body').textContent  = STAGES[stageIdx].body;
+    }
+    updateStagePanel();
+
+    // ── Drawing helpers ──────────────────────────────────────────────────────
+    function drawSky() {
+      const grad = ctx.createLinearGradient(0, 0, 0, skyH());
+      grad.addColorStop(0, '#0a1628');
+      grad.addColorStop(0.5, '#0e2a50');
+      grad.addColorStop(1, '#1a4a2e');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, skyH());
+    }
+
+    function drawSoil() {
+      const grad = ctx.createLinearGradient(0, soilY(), 0, H);
+      grad.addColorStop(0, '#2a1a0a');
+      grad.addColorStop(0.3, '#3d2510');
+      grad.addColorStop(1, '#1a0e04');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, soilY(), W, H - soilY());
+
+      // Soil texture dots
+      ctx.fillStyle = 'rgba(60,35,10,0.4)';
+      for (let i = 0; i < 80; i++) {
+        const sx = (i * 137.5) % W;
+        const sy = soilY() + ((i * 71.3) % (H - soilY()));
+        ctx.beginPath();
+        ctx.arc(sx, sy, 2 + (i % 3), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawSun() {
+      const sx = sunX(), sy = sunY(), sr = sunR();
+      // outer glow
+      const glow = ctx.createRadialGradient(sx, sy, sr * 0.3, sx, sy, sr * 2.2);
+      glow.addColorStop(0, 'rgba(255,230,80,0.35)');
+      glow.addColorStop(1, 'rgba(255,200,50,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr * 2.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // rays
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.strokeStyle = 'rgba(255,220,60,0.45)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2 + t * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * sr * 1.2, Math.sin(a) * sr * 1.2);
+        ctx.lineTo(Math.cos(a) * sr * 1.9, Math.sin(a) * sr * 1.9);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // core
+      const core = ctx.createRadialGradient(sx - sr * 0.2, sy - sr * 0.2, sr * 0.05, sx, sy, sr);
+      core.addColorStop(0, '#fff9c4');
+      core.addColorStop(0.5, '#ffe566');
+      core.addColorStop(1, '#ff9800');
+      ctx.fillStyle = core;
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.font = `bold ${Math.round(sr * 0.38)}px Segoe UI`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SUN', sx, sy);
+    }
+
+    function drawStem() {
+      const sx = stemX(), by = stemBaseY(), ty = stemTopY(), sw = stemWidth();
+      const grad = ctx.createLinearGradient(sx - sw, 0, sx + sw, 0);
+      grad.addColorStop(0, '#1a5c20');
+      grad.addColorStop(0.4, '#2e8b38');
+      grad.addColorStop(1, '#1a5c20');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(sx - sw / 2, ty, sw, by - ty, [sw / 2]);
+      ctx.fill();
+    }
+
+    function drawRoots() {
+      const sx = stemX(), by = stemBaseY(), sw = stemWidth();
+      ctx.strokeStyle = '#3a7a2a';
+      ctx.lineWidth = stemWidth() * 0.45;
+      ctx.lineCap = 'round';
+      const roots = [
+        [-0.7, 0.5], [-0.4, 0.8], [0.4, 0.7], [0.75, 0.45], [0, 1],
+      ];
+      roots.forEach(([rx, ry]) => {
+        ctx.beginPath();
+        ctx.moveTo(sx, by);
+        ctx.quadraticCurveTo(
+          sx + rx * W * 0.12, by + ry * H * 0.04,
+          sx + rx * W * 0.18, by + ry * H * 0.09
+        );
+        ctx.stroke();
+      });
+    }
+
+    function drawLeaf() {
+      const lx = stemX(), ly = leafY(), lw = leafW(), lh = leafH2();
+
+      // Left lobe
+      ctx.fillStyle = '#2d7a3a';
+      ctx.beginPath();
+      ctx.moveTo(lx, ly);
+      ctx.bezierCurveTo(
+        lx - lw * 0.25, ly - lh * 1.4,
+        lx - lw * 0.95, ly - lh * 1.2,
+        lx - lw, ly
+      );
+      ctx.bezierCurveTo(
+        lx - lw * 0.95, ly + lh * 1.2,
+        lx - lw * 0.25, ly + lh * 1.4,
+        lx, ly
+      );
+      ctx.fill();
+
+      // Leaf vein
+      ctx.strokeStyle = 'rgba(50,140,60,0.5)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(lx, ly);
+      ctx.lineTo(lx - lw, ly);
+      ctx.stroke();
+      for (let i = 1; i <= 4; i++) {
+        const px = lx - lw * (i / 5);
+        ctx.beginPath();
+        ctx.moveTo(px, ly);
+        ctx.lineTo(px - lw * 0.05, ly - lh * 0.7);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(px, ly);
+        ctx.lineTo(px - lw * 0.05, ly + lh * 0.7);
+        ctx.stroke();
+      }
+
+      // Right smaller lobe
+      ctx.fillStyle = '#2d7a3a';
+      ctx.beginPath();
+      ctx.moveTo(lx, ly - lh * 0.2);
+      ctx.bezierCurveTo(
+        lx + lw * 0.15, ly - lh * 1.1,
+        lx + lw * 0.6, ly - lh * 1.0,
+        lx + lw * 0.55, ly - lh * 0.15
+      );
+      ctx.bezierCurveTo(
+        lx + lw * 0.5, ly + lh * 0.5,
+        lx + lw * 0.05, ly + lh * 0.6,
+        lx, ly + lh * 0.2
+      );
+      ctx.fill();
+    }
+
+    function drawChloroplasts() {
+      const lx = stemX(), ly = leafY(), lw = leafW(), lh = leafH2();
+      chloroOffsets.forEach(([ox, oy], i) => {
+        const cx = lx + ox * lw;
+        const cy = ly + oy * lh;
+        const glow = chloroGlow[i];
+        const r = lw * 0.045;
+
+        if (glow > 0) {
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 3);
+          g.addColorStop(0, `rgba(150,255,150,${glow * 0.5})`);
+          g.addColorStop(1, 'rgba(0,200,100,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.fillStyle = `rgba(${Math.round(30 + glow * 100)},${Math.round(160 + glow * 80)},${Math.round(60 + glow * 60)},0.85)`;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, r * 1.4, r, 0, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawParticle(p) {
+      const cfg = TYPES[p.type];
+      const alpha = p.fading ? p.life : 0.9;
+
+      // trail
+      if (p.trail.length > 1) {
+        ctx.save();
+        for (let i = 1; i < p.trail.length; i++) {
+          const a = (i / p.trail.length) * alpha * 0.4;
+          ctx.strokeStyle = cfg.color.replace(')', `,${a})`).replace('rgb', 'rgba').replace('#', '');
+          ctx.lineWidth = cfg.r * 0.6;
+          ctx.beginPath();
+          ctx.moveTo(p.trail[i - 1].x, p.trail[i - 1].y);
+          ctx.lineTo(p.trail[i].x, p.trail[i].y);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // particle body
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      if (p.type === 'GLUCOSE') {
+        // hexagon
+        ctx.fillStyle = cfg.color;
+        ctx.beginPath();
+        for (let k = 0; k < 6; k++) {
+          const a = (k / 6) * Math.PI * 2 - Math.PI / 6;
+          k === 0
+            ? ctx.moveTo(p.x + Math.cos(a) * cfg.r, p.y + Math.sin(a) * cfg.r)
+            : ctx.lineTo(p.x + Math.cos(a) * cfg.r, p.y + Math.sin(a) * cfg.r);
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        const grad = ctx.createRadialGradient(p.x - cfg.r * 0.3, p.y - cfg.r * 0.3, 0, p.x, p.y, cfg.r * 1.4);
+        grad.addColorStop(0, '#fff');
+        grad.addColorStop(0.4, cfg.color);
+        grad.addColorStop(1, cfg.color + '88');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, cfg.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // label
+      ctx.globalAlpha = alpha * 0.85;
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${Math.max(8, cfg.r * 1.1)}px Segoe UI`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(cfg.label, p.x, p.y - cfg.r * 2);
+
+      ctx.restore();
+    }
+
+    // ── Update ───────────────────────────────────────────────────────────────
+    function update(dt) {
+      t += dt;
+
+      // Stage cycling
+      stageTimer += dt;
+      if (stageTimer > 5) {
+        stageTimer = 0;
+        stageIdx = (stageIdx + 1) % STAGES.length;
+        updateStagePanel();
+      }
+
+      // Spawn
+      photonTimer -= dt;
+      co2Timer    -= dt;
+      h2oTimer    -= dt;
+
+      if (photonTimer <= 0) { spawnPhoton(); photonTimer = 0.25 + Math.random() * 0.3; }
+      if (co2Timer    <= 0) { spawnCO2();    co2Timer    = 0.8  + Math.random() * 0.5; }
+      if (h2oTimer    <= 0) { spawnH2O();    h2oTimer    = 0.6  + Math.random() * 0.4; }
+
+      // Decay chloroplast glow
+      for (let i = 0; i < chloroGlow.length; i++) {
+        chloroGlow[i] = Math.max(0, chloroGlow[i] - dt * 1.5);
+      }
+
+      // Update particles
+      const lx = stemX(), ly = leafY(), lw = leafW(), lh = leafH2();
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+
+        // Save trail
+        p.trail.push({ x: p.x, y: p.y });
+        if (p.trail.length > 8) p.trail.shift();
+
+        if (p.fading) {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= dt * 0.6;
+          if (p.life <= 0) { particles.splice(i, 1); continue; }
+        } else {
+          // Move toward target
+          const tx = p.target.x, ty = p.target.y;
+          const dx = tx - p.x, dy = ty - p.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < 6) {
+            // Arrived at leaf
+            if (p.type === 'PHOTON') {
+              // light up nearest chloroplast
+              let best = 0, bestD = Infinity;
+              chloroOffsets.forEach(([ox, oy], k) => {
+                const d = Math.hypot(p.x - (lx + ox * lw), p.y - (ly + oy * lh));
+                if (d < bestD) { bestD = d; best = k; }
+              });
+              chloroGlow[best] = 1.0;
+              // emit O2
+              spawnO2(p.x, p.y - 8);
+            } else if (p.type === 'CO2' || p.type === 'H2O') {
+              // after enough inputs, emit glucose
+              if (Math.random() < 0.4) spawnGlucose(stemX(), leafY() + 10);
+            }
+            particles.splice(i, 1);
+            continue;
+          }
+
+          p.x += (dx / dist) * Math.min(dist, Math.hypot(p.vx, p.vy));
+          p.y += (dy / dist) * Math.min(dist, Math.hypot(p.vx, p.vy));
+        }
+      }
+    }
+
+    // ── Render ───────────────────────────────────────────────────────────────
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      drawSky();
+      drawSoil();
+      drawSun();
+      drawRoots();
+      drawStem();
+      drawLeaf();
+      drawChloroplasts();
+
+      // Draw particles (behind: CO2, H2O, PHOTON; front: O2, GLUCOSE)
+      const back = particles.filter(p => ['CO2','H2O','PHOTON'].includes(p.type));
+      const front = particles.filter(p => ['O2','GLUCOSE'].includes(p.type));
+      [...back, ...front].forEach(drawParticle);
+
+      // Labels
+      ctx.fillStyle = '#ffffffcc';
+      ctx.font = `bold ${Math.max(10, H * 0.016)}px Segoe UI`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('PLANT', stemX(), stemTopY() - H * 0.04);
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#aaa';
+      ctx.font = `${Math.max(9, H * 0.013)}px Segoe UI`;
+      ctx.fillText('roots', stemX() + stemWidth(), stemBaseY() + H * 0.03);
+    }
+
+    // ── Loop ─────────────────────────────────────────────────────────────────
+    let last = null;
+    function frame(ts) {
+      requestAnimationFrame(frame);
+      if (!last) last = ts;
+      const dt = Math.min((ts - last) / 1000, 0.05);
+      last = ts;
+      if (running) update(dt);
+      draw();
+    }
+    requestAnimationFrame(frame);
+  })();
+  </script>
+</body>
+</html>

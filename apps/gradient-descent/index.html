@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gradient Descent Explorer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #07080f; color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+    }
+    header {
+      padding: 10px 20px 8px; text-align: center; flex-shrink: 0;
+      background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    header h1 { font-size: 1.3rem; font-weight: 700; }
+    header p  { font-size: 0.75rem; color: #888; margin-top: 2px; }
+
+    #main { display: flex; flex: 1; overflow: hidden; }
+    #canvas-wrap { flex: 1; position: relative; overflow: hidden; cursor: crosshair; }
+    canvas { display: block; }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 265px; flex-shrink: 0;
+      background: rgba(8,10,22,0.98); border-left: 1px solid rgba(255,255,255,0.07);
+      padding: 14px; display: flex; flex-direction: column; gap: 13px; overflow-y: auto;
+    }
+    .sec-title {
+      font-size: 0.67rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; color: #555; margin-bottom: 7px;
+    }
+
+    /* Surface buttons */
+    .surf-btn {
+      width: 100%; text-align: left; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 9px;
+      color: #ccc; padding: 8px 11px; cursor: pointer; font-family: inherit;
+      font-size: 0.8rem; margin-bottom: 4px;
+      display: flex; align-items: center; gap: 8px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .surf-btn:hover { background: rgba(255,255,255,0.08); }
+    .surf-btn.active { background: rgba(160,120,255,0.18); border-color: rgba(160,120,255,0.5); color: #fff; }
+    .surf-btn .se { font-size: 1.1rem; }
+    .surf-btn .sn { font-weight: 700; display: block; font-size: 0.8rem; }
+    .surf-btn .sd { font-size: 0.65rem; color: #666; }
+    .surf-btn.active .sd { color: #aaa; }
+
+    /* LR slider */
+    #lr-wrap { display: flex; align-items: center; gap: 8px; }
+    #lr-slider {
+      flex: 1; -webkit-appearance: none; height: 4px;
+      background: rgba(255,255,255,0.12); border-radius: 2px; outline: none;
+    }
+    #lr-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+      background: rgba(160,120,255,0.9); cursor: pointer;
+    }
+    #lr-val {
+      font-size: 0.8rem; font-weight: 700; color: #c8a0ff;
+      font-variant-numeric: tabular-nums; width: 52px; text-align: right;
+    }
+
+    /* Toggle rows */
+    .tog-row { display: flex; border: 1px solid rgba(255,255,255,0.1); border-radius: 9px; overflow: hidden; }
+    .tog-btn {
+      flex: 1; padding: 7px 4px; background: transparent; border: none;
+      color: #666; cursor: pointer; font-size: 0.73rem; font-weight: 700;
+      transition: background 0.15s, color 0.15s; font-family: inherit;
+    }
+    .tog-btn + .tog-btn { border-left: 1px solid rgba(255,255,255,0.1); }
+    .tog-btn.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .tog-btn.active.spd { color: #ffe566; background: rgba(255,220,80,0.1); }
+
+    /* Action buttons */
+    #btn-step {
+      flex: 1; padding: 10px; background: rgba(160,120,255,0.2);
+      border: 1px solid rgba(160,120,255,0.4); border-radius: 10px;
+      color: #d0a8ff; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+    }
+    #btn-step:hover { opacity: 0.8; }
+    #btn-step:disabled { opacity: 0.3; cursor: default; }
+    #btn-anim {
+      flex: 1; padding: 10px; background: linear-gradient(135deg,#1a6fbd,#0e4a7a);
+      border: 1px solid rgba(100,180,255,0.35); border-radius: 10px;
+      color: #fff; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+    }
+    #btn-anim:hover { opacity: 0.85; }
+    #btn-reset {
+      width: 100%; padding: 7px; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09); border-radius: 8px;
+      color: #888; font-size: 0.75rem; cursor: pointer; font-family: inherit; margin-top: 4px;
+    }
+    #btn-reset:hover { background: rgba(255,255,255,0.08); }
+    #btn-row { display: flex; gap: 6px; }
+
+    /* Stats */
+    .stat-row {
+      display: flex; justify-content: space-between;
+      padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.77rem;
+    }
+    .stat-label { color: #555; }
+    .stat-val { color: #ddd; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    /* Legend */
+    .leg-row { display: flex; align-items: center; gap: 8px; font-size: 0.73rem; color: #aaa; margin-bottom: 5px; }
+    .leg-swatch { width: 28px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+
+    /* Hint box */
+    #hint-box {
+      background: rgba(255,220,80,0.07); border: 1px solid rgba(255,220,80,0.18);
+      border-radius: 9px; padding: 10px; font-size: 0.74rem; color: #ccc; line-height: 1.5;
+    }
+    #hint-title { color: #ffe566; font-weight: 700; font-size: 0.78rem; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📉 Gradient Descent Explorer</h1>
+  <p>Step through the algorithm one iteration at a time · Click the map to set a starting point</p>
+</header>
+
+<div id="main">
+  <div id="canvas-wrap"><canvas id="c"></canvas></div>
+
+  <div id="sidebar">
+
+    <div>
+      <div class="sec-title">Loss Surface</div>
+      <button class="surf-btn active" data-surf="bowl">
+        <span class="se">🥣</span>
+        <div><span class="sn">Simple Bowl</span><span class="sd">Convex — always converges</span></div>
+      </button>
+      <button class="surf-btn" data-surf="valley">
+        <span class="se">🏔️</span>
+        <div><span class="sn">Narrow Valley</span><span class="sd">High curvature → oscillation</span></div>
+      </button>
+      <button class="surf-btn" data-surf="banana">
+        <span class="se">🍌</span>
+        <div><span class="sn">Banana Valley</span><span class="sd">Rosenbrock — classic hard case</span></div>
+      </button>
+      <button class="surf-btn" data-surf="wells">
+        <span class="se">⛰️</span>
+        <div><span class="sn">Double Well</span><span class="sd">Two minima — start pos matters!</span></div>
+      </button>
+      <button class="surf-btn" data-surf="saddle">
+        <span class="se">🐴</span>
+        <div><span class="sn">Saddle Point</span><span class="sd">∇L = 0 but not a minimum</span></div>
+      </button>
+    </div>
+
+    <div>
+      <div class="sec-title">Learning Rate η</div>
+      <div id="lr-wrap">
+        <input type="range" id="lr-slider" min="-3" max="-0.3" step="0.01" value="-0.82" />
+        <span id="lr-val">0.1500</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-title">Animation Speed</div>
+      <div class="tog-row">
+        <button class="tog-btn spd active" data-spf="1">1×</button>
+        <button class="tog-btn spd" data-spf="5">5×</button>
+        <button class="tog-btn spd" data-spf="20">20×</button>
+        <button class="tog-btn spd" data-spf="100">100×</button>
+      </div>
+    </div>
+
+    <div>
+      <div id="btn-row">
+        <button id="btn-step">⏭ Step</button>
+        <button id="btn-anim">▶ Animate</button>
+      </div>
+      <button id="btn-reset">↺ Reset to start</button>
+    </div>
+
+    <div>
+      <div class="sec-title">Live Stats</div>
+      <div class="stat-row"><span class="stat-label">Iteration</span><span class="stat-val" id="st-iter">0</span></div>
+      <div class="stat-row"><span class="stat-label">Loss L(w)</span><span class="stat-val" id="st-loss">—</span></div>
+      <div class="stat-row"><span class="stat-label">Gradient |∇L|</span><span class="stat-val" id="st-grad">—</span></div>
+      <div class="stat-row"><span class="stat-label">Position (w₁,w₂)</span><span class="stat-val" id="st-w">—</span></div>
+      <div class="stat-row"><span class="stat-label">Status</span><span class="stat-val" id="st-status">○ Ready</span></div>
+    </div>
+
+    <div>
+      <div class="sec-title">Legend</div>
+      <div class="leg-row"><div class="leg-swatch" style="background:#ff6060;height:2px"></div> Gradient ∇L — steepest ascent</div>
+      <div class="leg-row"><div class="leg-swatch" style="background:#50ddb0"></div> Step −η∇L — where we move</div>
+      <div class="leg-row"><div class="leg-swatch" style="background:rgba(255,255,255,0.5)"></div> Path history</div>
+      <div class="leg-row" style="font-size:0.73rem;color:#aaa">★ Global minimum &nbsp; ● Current position</div>
+    </div>
+
+    <div id="hint-box">
+      <div id="hint-title">💡 Simple Bowl</div>
+      <div id="hint-body">A perfectly convex surface with one global minimum. Gradient descent always converges here — try different learning rates and watch the path change!</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(() => {
+  // ── Surface definitions ──────────────────────────────────────────────────
+  const SURFS = {
+    bowl: {
+      label: 'Simple Bowl',
+      loss: (a,b) => a*a + b*b,
+      grad: (a,b) => [2*a, 2*b],
+      range: 3.0, start: [2.2, 2.0], defaultLR: 0.15, minPos: [0,0],
+      hint: 'A perfectly convex surface with one global minimum. Gradient descent always converges here — try different learning rates and watch the path change!',
+    },
+    valley: {
+      label: 'Narrow Valley',
+      loss: (a,b) => a*a + 9*b*b,
+      grad: (a,b) => [2*a, 18*b],
+      range: 3.0, start: [2.5, 0.8], defaultLR: 0.06, minPos: [0,0],
+      hint: 'The loss surface is much steeper in the w₂ direction. With a high learning rate, GD overshoots and oscillates. This is common in neural networks where gradients have very different scales.',
+    },
+    banana: {
+      label: 'Banana Valley (Rosenbrock)',
+      loss: (a,b) => Math.pow(1-a,2) + 50*Math.pow(b-a*a,2),
+      grad: (a,b) => [-2*(1-a) - 200*a*(b-a*a), 100*(b-a*a)],
+      range: 2.2, start: [-1.5, 1.8], defaultLR: 0.001, minPos: [1,1],
+      hint: 'The classic Rosenbrock function. A narrow curved valley leads to the minimum at (1,1). GD struggles because the valley curves — it constantly overshoots the ridge. Use 20× or 100× speed!',
+    },
+    wells: {
+      label: 'Double Well',
+      loss: (a,b) => Math.pow(a*a - 1, 2) + b*b,
+      grad: (a,b) => [4*a*(a*a - 1), 2*b],
+      range: 2.2, start: [0.5, 1.5], defaultLR: 0.1, minPos: null,
+      hint: 'Two equally good minima at (1,0) and (−1,0). Where GD ends up depends entirely on the starting point. Click different positions on the map to see which minimum gets reached!',
+    },
+    saddle: {
+      label: 'Saddle Point',
+      loss: (a,b) => a*a - b*b + 0.08*(Math.pow(a,4) + Math.pow(b,4)),
+      grad: (a,b) => [2*a + 0.32*Math.pow(a,3), -2*b + 0.32*Math.pow(b,3)],
+      range: 2.6, start: [0.08, 0.08], defaultLR: 0.12, minPos: null,
+      hint: 'A saddle point: the gradient is nearly zero but it is not a minimum. GD slowly escapes, then converges to a true minimum. Saddle points are very common in deep neural networks!',
+    },
+  };
+  const SURF_KEYS = ['bowl','valley','banana','wells','saddle'];
+
+  // ── Canvas ────────────────────────────────────────────────────────────────
+  const canvas = document.getElementById('c');
+  const ctx    = canvas.getContext('2d');
+  const wrap   = document.getElementById('canvas-wrap');
+  let CW, CH;
+
+  function resize() {
+    CW = wrap.clientWidth; CH = wrap.clientHeight;
+    canvas.width = CW; canvas.height = CH;
+    precompute();
+    drawFrame();
+  }
+
+  // ── Coordinate transforms ─────────────────────────────────────────────────
+  // world (w0, w1) ∈ [-R, R]² → canvas (x, y) ∈ [0, CW] × [0, CH]
+  function w2c(w0, w1) {
+    return [
+      (w0 + surf.range) / (2*surf.range) * CW,
+      (1 - (w1 + surf.range) / (2*surf.range)) * CH,
+    ];
+  }
+  function c2w(x, y) {
+    return [
+      x / CW * 2*surf.range - surf.range,
+      (1 - y / CH) * 2*surf.range - surf.range,
+    ];
+  }
+  // pixels per world-unit in each axis
+  const ppuX = () => CW / (2*surf.range);
+  const ppuY = () => CH / (2*surf.range);
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let surfKey  = 'bowl';
+  let surf     = SURFS[surfKey];
+  let lr       = surf.defaultLR;
+  let w        = [...surf.start];
+  let path     = [[...w]];
+  let losses   = [surf.loss(w[0], w[1])];
+  let iter     = 0;
+  let status   = 'ready';   // ready | running | converged | diverged
+  let animating     = false;
+  let animId        = null;
+  let stepsPerFrame = 1;
+
+  // ── Plasma colormap ───────────────────────────────────────────────────────
+  const PLASMA = [
+    [13,8,135],[84,2,163],[139,10,165],[185,50,137],
+    [219,92,104],[244,136,73],[254,188,43],[240,249,33],
+  ];
+  function plasma(t) {
+    t = Math.max(0, Math.min(1, t));
+    const idx = t * (PLASMA.length - 1);
+    const i   = Math.min(Math.floor(idx), PLASMA.length - 2);
+    const f   = idx - i;
+    return PLASMA[i].map((v,k) => Math.round(v + f*(PLASMA[i+1][k]-v)));
+  }
+
+  // ── Precomputed background canvases ──────────────────────────────────────
+  const HRES = 260;   // heatmap grid resolution
+  const CRES = 110;   // contour grid resolution
+  let bgCanvas = document.createElement('canvas');
+
+  function precompute() {
+    if (!CW || !CH) return;
+    bgCanvas.width = CW; bgCanvas.height = CH;
+    const bctx = bgCanvas.getContext('2d');
+
+    // 1. Heatmap
+    const hgrid = new Float32Array(HRES * HRES);
+    let mn = Infinity, mx = -Infinity;
+    for (let j = 0; j < HRES; j++) for (let i = 0; i < HRES; i++) {
+      const [wa, wb] = c2w((i+.5)/HRES*CW, (j+.5)/HRES*CH);
+      const L = Math.min(Math.max(surf.loss(wa, wb), -1e5), 1e5);
+      hgrid[j*HRES+i] = L; if (L < mn) mn = L; if (L > mx) mx = L;
+    }
+    const imgData = bctx.createImageData(HRES, HRES);
+    const range = mx - mn + 1e-10;
+    for (let k = 0; k < HRES*HRES; k++) {
+      const t   = Math.pow((hgrid[k] - mn) / range, 0.45); // power stretch for contrast
+      const [r,g,b] = plasma(t);
+      imgData.data[k*4]=r; imgData.data[k*4+1]=g; imgData.data[k*4+2]=b; imgData.data[k*4+3]=255;
+    }
+    const tmp = document.createElement('canvas');
+    tmp.width = HRES; tmp.height = HRES;
+    tmp.getContext('2d').putImageData(imgData, 0, 0);
+    bctx.drawImage(tmp, 0, 0, CW, CH);
+
+    // 2. Contour lines (marching squares on coarser grid)
+    const cgrid = new Float32Array(CRES * CRES);
+    let cmn = Infinity, cmx = -Infinity;
+    for (let j = 0; j < CRES; j++) for (let i = 0; i < CRES; i++) {
+      const [wa, wb] = c2w((i+.5)/CRES*CW, (j+.5)/CRES*CH);
+      const L = Math.min(Math.max(surf.loss(wa, wb), -1e5), 1e5);
+      cgrid[j*CRES+i] = L; if (L < cmn) cmn = L; if (L > cmx) cmx = L;
+    }
+    const logMin = Math.log(Math.max(cmn - cmn + 0.01, 0.001));
+    const logMax = Math.log(Math.max(cmx - cmn + 0.01, 0.001));
+    const levels = [];
+    for (let k = 0; k <= 12; k++)
+      levels.push(cmn + Math.exp(logMin + k/12 * (logMax - logMin)) - 0.01);
+
+    bctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    bctx.lineWidth = 0.7;
+    const cw = CW / CRES, ch2 = CH / CRES;
+    for (const lv of levels) {
+      bctx.beginPath();
+      for (let j = 0; j < CRES-1; j++) for (let i = 0; i < CRES-1; i++) {
+        const v00 = cgrid[j*CRES+i],     v10 = cgrid[j*CRES+i+1];
+        const v01 = cgrid[(j+1)*CRES+i], v11 = cgrid[(j+1)*CRES+i+1];
+        const x0 = i*cw, x1=(i+1)*cw, y0=j*ch2, y1=(j+1)*ch2;
+        const lerp = (v0,v1,p0,p1) => p0 + (lv-v0)/(v1-v0)*(p1-p0);
+        const pts = [];
+        if ((v00-lv)*(v10-lv)<0) pts.push([lerp(v00,v10,x0,x1), y0]);
+        if ((v01-lv)*(v11-lv)<0) pts.push([lerp(v01,v11,x0,x1), y1]);
+        if ((v00-lv)*(v01-lv)<0) pts.push([x0, lerp(v00,v01,y0,y1)]);
+        if ((v10-lv)*(v11-lv)<0) pts.push([x1, lerp(v10,v11,y0,y1)]);
+        if (pts.length >= 2) {
+          bctx.moveTo(pts[0][0], pts[0][1]);
+          bctx.lineTo(pts[1][0], pts[1][1]);
+        }
+      }
+      bctx.stroke();
+    }
+
+    // 3. Axis ticks
+    bctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    bctx.lineWidth = 1; bctx.setLineDash([4,7]);
+    bctx.beginPath(); bctx.moveTo(CW/2,0); bctx.lineTo(CW/2,CH); bctx.stroke();
+    bctx.beginPath(); bctx.moveTo(0,CH/2); bctx.lineTo(CW,CH/2); bctx.stroke();
+    bctx.setLineDash([]);
+    bctx.fillStyle='rgba(255,255,255,0.22)'; bctx.font='11px Segoe UI';
+    bctx.textAlign='center';
+    bctx.fillText('w₁ →', CW-20, CH/2-5);
+    bctx.textAlign='left';
+    bctx.fillText('w₂ ↑', CW/2+5, 14);
+    // tick values
+    bctx.fillStyle='rgba(255,255,255,0.18)'; bctx.font='9px Segoe UI';
+    bctx.textAlign='center';
+    for (let v = Math.ceil(-surf.range); v <= Math.floor(surf.range); v++) {
+      if (v === 0) continue;
+      const [tx] = w2c(v, 0); bctx.fillText(v, tx, CH/2+11);
+      const [,ty] = w2c(0, v); bctx.textAlign='right'; bctx.fillText(v, CW/2-3, ty+3); bctx.textAlign='center';
+    }
+  }
+
+  // ── GD Step ───────────────────────────────────────────────────────────────
+  function gdStep() {
+    if (status === 'converged' || status === 'diverged') return false;
+    const [ga, gb] = surf.grad(w[0], w[1]);
+    const nw = [w[0] - lr*ga, w[1] - lr*gb];
+    const nL = surf.loss(nw[0], nw[1]);
+
+    if (isNaN(nw[0]) || isNaN(nL) || nL > 1e8 ||
+        Math.abs(nw[0]) > surf.range*5 || Math.abs(nw[1]) > surf.range*5) {
+      status = 'diverged'; return false;
+    }
+    w = nw; iter++;
+    path.push([...w]); losses.push(nL);
+    if (path.length > 1000) { path.shift(); losses.shift(); }
+
+    const gMag = Math.sqrt(ga*ga + gb*gb);
+    if (gMag < 4e-4 || iter >= 3000) { status = 'converged'; return false; }
+    status = 'running'; return true;
+  }
+
+  // ── Arrow helper ──────────────────────────────────────────────────────────
+  function arrow(x1, y1, x2, y2, color, label) {
+    const dx = x2-x1, dy = y2-y1, len = Math.hypot(dx,dy);
+    if (len < 1) return;
+    ctx.save();
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const a = Math.atan2(dy,dx), hs=8;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2-hs*Math.cos(a-0.42), y2-hs*Math.sin(a-0.42));
+    ctx.lineTo(x2-hs*Math.cos(a+0.42), y2-hs*Math.sin(a+0.42));
+    ctx.closePath(); ctx.fill();
+    if (label) {
+      ctx.font = 'bold 10px Segoe UI'; ctx.textAlign = 'left';
+      ctx.fillText(label, x2+5, y2+4);
+    }
+    ctx.restore();
+  }
+
+  function clampVec(dx, dy, cap) {
+    const len = Math.hypot(dx, dy);
+    if (len <= cap) return [dx, dy];
+    return [dx/len*cap, dy/len*cap];
+  }
+
+  // ── Main draw ─────────────────────────────────────────────────────────────
+  function drawFrame() {
+    ctx.clearRect(0, 0, CW, CH);
+    ctx.drawImage(bgCanvas, 0, 0);
+
+    // Global minimum marker
+    if (surf.minPos) {
+      const [mx, my] = w2c(surf.minPos[0], surf.minPos[1]);
+      ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(255,220,80,0.95)'; ctx.fillText('★', mx, my);
+      ctx.font = '9px Segoe UI'; ctx.fillStyle = 'rgba(255,220,80,0.65)';
+      ctx.textBaseline = 'alphabetic'; ctx.fillText('min', mx, my+14);
+    }
+
+    if (!path.length) return;
+
+    // Path trail
+    const n = path.length;
+    if (n > 1) {
+      // Line
+      for (let i = 1; i < n; i++) {
+        const [x0,y0] = w2c(path[i-1][0], path[i-1][1]);
+        const [x1,y1] = w2c(path[i][0],   path[i][1]);
+        ctx.strokeStyle = `rgba(255,255,255,${(i/n)*0.75})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+      }
+      // Dots (sparse)
+      const step = Math.max(1, Math.floor(n/40));
+      for (let i = 0; i < n; i += step) {
+        const [px,py] = w2c(path[i][0], path[i][1]);
+        ctx.fillStyle = `rgba(255,255,255,${(i/n)*0.55})`;
+        ctx.beginPath(); ctx.arc(px,py, 2, 0, Math.PI*2); ctx.fill();
+      }
+    }
+
+    // Arrows at current position
+    const [cx, cy] = w2c(w[0], w[1]);
+    const [ga, gb] = surf.grad(w[0], w[1]);
+    const gMag = Math.hypot(ga, gb);
+
+    if (gMag > 1e-5 && status !== 'diverged') {
+      const px = ppuX(), py = ppuY();
+      // Gradient arrow (red) — direction of steepest ascent
+      // canvas direction: (+ga → right, −gb → up since y-axis flipped)
+      let [gdx, gdy] = [ga*px, -gb*py];
+      [gdx, gdy] = clampVec(gdx, gdy, 58);
+      arrow(cx, cy, cx+gdx, cy+gdy, 'rgba(255,80,80,0.92)', '∇L');
+
+      // Step arrow (teal) — actual descent step −η∇L
+      let [sdx, sdy] = [-lr*ga*px, lr*gb*py];
+      [sdx, sdy] = clampVec(sdx, sdy, 66);
+      arrow(cx, cy, cx+sdx, cy+sdy, 'rgba(60,210,170,0.92)', '−η∇L');
+
+      // Dotted preview of next position
+      const [nx, ny] = w2c(w[0]-lr*ga, w[1]-lr*gb);
+      ctx.setLineDash([3,5]); ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(nx,ny,5,0,Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Current position: white dot + blue ring
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(120,190,255,0.9)'; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.arc(cx,cy,9,0,Math.PI*2); ctx.stroke();
+
+    // Status banner
+    if (status === 'converged') {
+      ctx.fillStyle = 'rgba(80,220,150,0.9)';
+      ctx.font = 'bold 13px Segoe UI'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText(`✓ Converged in ${iter} iterations`, CW/2, 26);
+    } else if (status === 'diverged') {
+      ctx.fillStyle = 'rgba(255,90,90,0.9)';
+      ctx.font = 'bold 13px Segoe UI'; ctx.textAlign = 'center';
+      ctx.fillText('✗ Diverged — learning rate too high!', CW/2, 26);
+    } else if (status === 'ready') {
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.font = '11px Segoe UI'; ctx.textAlign = 'center';
+      ctx.fillText('Click anywhere to place start · Press Step or Animate', CW/2, CH-12);
+    }
+
+    // Iter / loss stamp
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = '10px Segoe UI'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+    const curLoss = losses[losses.length-1];
+    ctx.fillText(`iter ${iter}  ·  L = ${curLoss < 1000 ? curLoss.toFixed(4) : curLoss.toExponential(2)}`, CW-8, CH-8);
+
+    // Loss curve inset
+    drawLossCurve();
+  }
+
+  // ── Loss curve (bottom-left inset) ────────────────────────────────────────
+  function drawLossCurve() {
+    if (losses.length < 2) return;
+    const lx=10, ly=CH-95, lw=165, lh=78;
+    ctx.fillStyle='rgba(5,8,20,0.7)'; ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.roundRect(lx,ly,lw,lh,6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.font='9px Segoe UI'; ctx.textAlign='left'; ctx.textBaseline='top';
+    ctx.fillText('Loss (log scale)', lx+5, ly+5);
+
+    const logL = losses.map(v => Math.log10(Math.max(Math.abs(v), 1e-8)));
+    const lo = Math.min(...logL), hi = Math.max(...logL);
+    const span = hi - lo || 1;
+    const pad = 5, ip = 16;
+    const pw = lw-ip-pad*2, ph = lh-ip-pad*2;
+
+    ctx.strokeStyle='rgba(180,140,255,0.85)'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    for (let i = 0; i < logL.length; i++) {
+      const px = lx+ip+pad + (i/(logL.length-1||1))*pw;
+      const py = ly+ip+pad + (1-(logL[i]-lo)/span)*ph;
+      i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+
+    // Current point
+    const lp = logL[logL.length-1];
+    const lpx = lx+ip+pad+pw, lpy = ly+ip+pad+(1-(lp-lo)/span)*ph;
+    ctx.fillStyle='rgba(220,180,255,1)';
+    ctx.beginPath(); ctx.arc(lpx,lpy,3,0,Math.PI*2); ctx.fill();
+
+    // Axis labels
+    ctx.fillStyle='rgba(255,255,255,0.25)'; ctx.font='8px Segoe UI'; ctx.textBaseline='alphabetic';
+    ctx.textAlign='left'; ctx.fillText('Iteration →', lx+ip+pad, ly+lh-3);
+  }
+
+  // ── Stats update ──────────────────────────────────────────────────────────
+  function updateStats() {
+    const [ga, gb] = surf.grad(w[0], w[1]);
+    const gMag = Math.hypot(ga, gb);
+    const L    = losses[losses.length-1] ?? 0;
+    const el   = id => document.getElementById(id);
+    el('st-iter').textContent = iter;
+    el('st-loss').textContent = L < 1000 ? L.toFixed(5) : L.toExponential(3);
+    el('st-grad').textContent = gMag.toFixed(5);
+    el('st-w').textContent    = `(${w[0].toFixed(3)}, ${w[1].toFixed(3)})`;
+    const st = el('st-status');
+    const stMap = {
+      ready:     ['○ Ready',      '#888'],
+      running:   ['● Running',    '#ffe566'],
+      converged: ['✓ Converged',  '#7dffb3'],
+      diverged:  ['✗ Diverged',   '#ff7070'],
+    };
+    const [txt, col] = stMap[status];
+    st.textContent = txt; st.style.color = col;
+  }
+
+  // ── Animation loop ────────────────────────────────────────────────────────
+  function animFrame() {
+    let cont = true;
+    for (let i = 0; i < stepsPerFrame && cont; i++) cont = gdStep();
+    drawFrame(); updateStats();
+    if (cont) animId = requestAnimationFrame(animFrame);
+    else { animating = false; syncButtons(); }
+  }
+
+  function syncButtons() {
+    const done = status === 'converged' || status === 'diverged';
+    document.getElementById('btn-step').disabled = done;
+    document.getElementById('btn-anim').textContent = animating ? '⏸ Pause' : '▶ Animate';
+  }
+
+  // ── Reset ─────────────────────────────────────────────────────────────────
+  function reset(startPos) {
+    if (animId) { cancelAnimationFrame(animId); animId=null; }
+    animating = false;
+    w       = startPos ? [...startPos] : [...surf.start];
+    path    = [[...w]];
+    losses  = [surf.loss(w[0], w[1])];
+    iter    = 0;
+    status  = 'ready';
+    syncButtons();
+    updateStats();
+    drawFrame();
+  }
+
+  // ── Canvas click → set start ──────────────────────────────────────────────
+  canvas.addEventListener('click', e => {
+    const r = canvas.getBoundingClientRect();
+    const [wa, wb] = c2w((e.clientX-r.left)*(CW/r.width), (e.clientY-r.top)*(CH/r.height));
+    if (Math.abs(wa) <= surf.range*1.02 && Math.abs(wb) <= surf.range*1.02) reset([wa, wb]);
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  window.addEventListener('resize', () => { resize(); });
+  resize();
+
+  // ── UI events ─────────────────────────────────────────────────────────────
+  document.querySelectorAll('.surf-btn').forEach(b => b.addEventListener('click', () => {
+    surfKey = b.dataset.surf; surf = SURFS[surfKey]; lr = surf.defaultLR;
+    document.querySelectorAll('.surf-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('hint-title').textContent = '💡 ' + surf.label;
+    document.getElementById('hint-body').textContent  = surf.hint;
+    const sl = document.getElementById('lr-slider');
+    sl.value = Math.log10(lr).toFixed(3);
+    document.getElementById('lr-val').textContent = lr.toFixed(4);
+    precompute(); reset();
+  }));
+
+  const lrSlider = document.getElementById('lr-slider');
+  lrSlider.addEventListener('input', () => {
+    lr = Math.pow(10, parseFloat(lrSlider.value));
+    document.getElementById('lr-val').textContent = lr.toFixed(4);
+    if (!animating) drawFrame();
+  });
+
+  document.querySelectorAll('[data-spf]').forEach(b => b.addEventListener('click', () => {
+    stepsPerFrame = +b.dataset.spf;
+    document.querySelectorAll('[data-spf]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+  }));
+
+  document.getElementById('btn-step').addEventListener('click', () => {
+    if (status === 'ready') status = 'running';
+    gdStep(); drawFrame(); updateStats();
+  });
+
+  document.getElementById('btn-anim').addEventListener('click', () => {
+    if (animating) {
+      cancelAnimationFrame(animId); animId=null;
+      animating = false; syncButtons();
+    } else {
+      if (status === 'converged' || status === 'diverged') reset();
+      if (status === 'ready') status = 'running';
+      animating = true; syncButtons();
+      animId = requestAnimationFrame(animFrame);
+    }
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', () => reset());
+
+  // Keyboard shortcuts
+  window.addEventListener('keydown', e => {
+    if (e.code==='Space') { e.preventDefault(); document.getElementById('btn-step').click(); }
+    if (e.code==='Enter') { document.getElementById('btn-anim').click(); }
+    if (e.code==='KeyR')  { document.getElementById('btn-reset').click(); }
+  });
+
+  // Init LR display
+  document.getElementById('lr-val').textContent = lr.toFixed(4);
+  lrSlider.value = Math.log10(lr).toFixed(3);
+  updateStats();
+})();
+</script>
+</body>
+</html>

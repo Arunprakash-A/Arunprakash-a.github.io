@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Free Fall Explorer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #07080f;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex; flex-direction: column;
+      height: 100vh; overflow: hidden;
+    }
+    header {
+      padding: 10px 20px 8px; text-align: center; flex-shrink: 0;
+      background: rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    header h1 { font-size: 1.3rem; font-weight: 700; }
+    header p  { font-size: 0.75rem; color: #888; margin-top: 2px; }
+
+    #main { display: flex; flex: 1; overflow: hidden; }
+    #canvas-wrap { flex: 1; position: relative; overflow: hidden; }
+    canvas { display: block; }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 255px; flex-shrink: 0;
+      background: rgba(8,10,22,0.98);
+      border-left: 1px solid rgba(255,255,255,0.07);
+      padding: 14px; display: flex; flex-direction: column; gap: 14px;
+      overflow-y: auto;
+    }
+    .sec-title {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; color: #555; margin-bottom: 7px;
+    }
+
+    /* Object checkboxes */
+    .obj-chk {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 10px; padding: 9px 12px;
+      margin-bottom: 5px; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+    .obj-chk:hover { background: rgba(255,255,255,0.08); }
+    .obj-chk.checked { border-color: rgba(100,180,255,0.4); background: rgba(100,180,255,0.1); }
+    .obj-chk input[type=checkbox] { display: none; }
+    .obj-chk .chk-box {
+      width: 16px; height: 16px; border: 1.5px solid #444;
+      border-radius: 4px; flex-shrink: 0; display: flex;
+      align-items: center; justify-content: center; font-size: 11px;
+    }
+    .obj-chk.checked .chk-box { background: rgba(100,180,255,0.4); border-color: #6ab4ff; }
+    .obj-chk .oe { font-size: 1.3rem; }
+    .obj-chk .on { font-weight: 700; display: block; font-size: 0.82rem; }
+    .obj-chk .od { font-size: 0.67rem; color: #666; }
+
+    /* Toggle row (env / speed) */
+    .tog-row {
+      display: flex; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 9px; overflow: hidden;
+    }
+    .tog-btn {
+      flex: 1; padding: 8px 4px; background: transparent; border: none;
+      color: #666; cursor: pointer; font-size: 0.74rem; font-weight: 700;
+      transition: background 0.15s, color 0.15s; font-family: inherit;
+    }
+    .tog-btn + .tog-btn { border-left: 1px solid rgba(255,255,255,0.1); }
+    .tog-btn.active { color: #fff; background: rgba(255,255,255,0.1); }
+    .tog-btn.active.spd { color: #ffe566; background: rgba(255,220,80,0.1); }
+
+    /* Buttons */
+    #btn-drop {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, #1a6fbd, #0e4a7a);
+      border: 1px solid rgba(100,180,255,0.3); border-radius: 11px;
+      color: #fff; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+    }
+    #btn-drop:hover { opacity: 0.85; }
+    #btn-drop:disabled { opacity: 0.35; cursor: default; }
+    #btn-reset {
+      width: 100%; margin-top: 6px; padding: 8px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 9px; color: #aaa; font-size: 0.78rem;
+      cursor: pointer; font-family: inherit;
+    }
+    #btn-reset:hover { background: rgba(255,255,255,0.08); }
+
+    /* Results table */
+    #res-table {
+      width: 100%; border-collapse: collapse; font-size: 0.75rem;
+    }
+    #res-table th {
+      color: #555; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; font-size: 0.63rem;
+      padding: 3px 4px; border-bottom: 1px solid rgba(255,255,255,0.07);
+      text-align: center;
+    }
+    #res-table th:first-child { text-align: left; }
+    #res-table td {
+      padding: 5px 4px; border-bottom: 1px solid rgba(255,255,255,0.04);
+      text-align: center; font-variant-numeric: tabular-nums; color: #bbb;
+    }
+    #res-table td:first-child { text-align: left; }
+    #res-table td.live { color: #ffe566; }
+    #res-table td.done { color: #7dffb3; font-weight: 700; }
+    #res-table td.drift { color: #a0d4ff; }
+    #res-table tr.inactive { opacity: 0.25; }
+
+    /* Fact box */
+    #fact-box {
+      background: rgba(255,220,80,0.07); border: 1px solid rgba(255,220,80,0.2);
+      border-radius: 10px; padding: 11px; font-size: 0.76rem; color: #ccc;
+      line-height: 1.5; display: none;
+    }
+    #fact-title { color: #ffe566; font-weight: 700; font-size: 0.8rem; margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏛️ Galileo's Tower — Free Fall Explorer</h1>
+  <p>Drop all three objects at once — with and without air — and see what happens!</p>
+</header>
+
+<div id="main">
+  <div id="canvas-wrap"><canvas id="c"></canvas></div>
+
+  <div id="sidebar">
+
+    <div>
+      <div class="sec-title">Objects to Drop</div>
+      <label class="obj-chk checked" data-obj="pebble">
+        <input type="checkbox" checked id="chk-pebble">
+        <span class="chk-box">✓</span>
+        <span class="oe">🪨</span>
+        <div><span class="on">Pebble</span><span class="od">Dense &amp; small</span></div>
+      </label>
+      <label class="obj-chk checked" data-obj="ball">
+        <input type="checkbox" checked id="chk-ball">
+        <span class="chk-box">✓</span>
+        <span class="oe">🎾</span>
+        <div><span class="on">Rubber Ball</span><span class="od">Bigger surface area</span></div>
+      </label>
+      <label class="obj-chk checked" data-obj="leaf">
+        <input type="checkbox" checked id="chk-leaf">
+        <span class="chk-box">✓</span>
+        <span class="oe">🍂</span>
+        <div><span class="on">Leaf</span><span class="od">Super light &amp; flat</span></div>
+      </label>
+    </div>
+
+    <div>
+      <div class="sec-title">Environment</div>
+      <div class="tog-row">
+        <button class="tog-btn active" data-env="both">Both</button>
+        <button class="tog-btn" data-env="vacuum">🌑 Vacuum</button>
+        <button class="tog-btn" data-env="air">💨 Air</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-title">Simulation Speed</div>
+      <div class="tog-row">
+        <button class="tog-btn spd" data-spd="1">1×</button>
+        <button class="tog-btn spd active" data-spd="2">2×</button>
+        <button class="tog-btn spd" data-spd="5">5×</button>
+        <button class="tog-btn spd" data-spd="10">10×</button>
+      </div>
+    </div>
+
+    <div>
+      <button id="btn-drop">⬇ Drop All!</button>
+      <button id="btn-reset">↺ Reset</button>
+    </div>
+
+    <div>
+      <div class="sec-title">Results — Landing Time</div>
+      <table id="res-table">
+        <thead>
+          <tr>
+            <th>Object</th>
+            <th id="th-vac">Vacuum</th>
+            <th id="th-air">Air</th>
+            <th id="th-drift">Drift</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr id="tr-pebble"><td>🪨 Pebble</td><td id="td-pv">—</td><td id="td-pa">—</td><td id="td-pd">—</td></tr>
+          <tr id="tr-ball">  <td>🎾 Ball</td>  <td id="td-bv">—</td><td id="td-ba">—</td><td id="td-bd">—</td></tr>
+          <tr id="tr-leaf">  <td>🍂 Leaf</td>  <td id="td-lv">—</td><td id="td-la">—</td><td id="td-ld">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="fact-box">
+      <div id="fact-title"></div>
+      <div id="fact-body"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(() => {
+  const G       = 9.81;
+  const RHO     = 1.225;
+  const TOWER_H = 55;
+
+  // ── Object definitions ────────────────────────────────────────────────────
+  const OBJS = {
+    pebble: {
+      name:'Pebble', mass:0.05, Cd:0.47,
+      area: Math.PI * 0.015 * 0.015,
+      pxR: 8,  color:[158,158,158], trailRGB:[180,190,255], lateralK:0.05, isLeaf:false,
+    },
+    ball: {
+      name:'Ball', mass:0.058, Cd:0.47,
+      area: Math.PI * 0.033 * 0.033,
+      pxR: 15, color:[200,210,60],  trailRGB:[240,230,80],  lateralK:0.22, isLeaf:false,
+    },
+    leaf: {
+      name:'Leaf', mass:0.002, Cd:1.28, area:0.004,
+      pxR: 20, color:[102,187,106], trailRGB:[100,220,140], lateralK:2.2,  isLeaf:true,
+    },
+  };
+  const OBJ_KEYS = ['pebble', 'ball', 'leaf'];
+
+  // Drop base-X fractions of W
+  const FRAC = {
+    both: {
+      vac: { pebble:0.12, ball:0.25, leaf:0.38 },
+      air: { pebble:0.62, ball:0.75, leaf:0.88 },
+    },
+    single: { pebble:0.25, ball:0.50, leaf:0.75 },
+  };
+
+  // ── Canvas ────────────────────────────────────────────────────────────────
+  const canvas = document.getElementById('c');
+  const ctx    = canvas.getContext('2d');
+  const wrap   = document.getElementById('canvas-wrap');
+  let W, H, scale, groundY, towerTopY;
+
+  function resize() {
+    W = wrap.clientWidth; H = wrap.clientHeight;
+    canvas.width = W; canvas.height = H;
+    groundY   = H * 0.87;
+    towerTopY = H * 0.06;
+    scale     = (groundY - towerTopY) / TOWER_H;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function baseX(objKey, isAir) {
+    if (selectedEnv === 'both')
+      return FRAC.both[isAir ? 'air' : 'vac'][objKey] * W;
+    return FRAC.single[objKey] * W;
+  }
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let selectedEnv  = 'both';
+  let simSpeed     = 2;
+  let simRunning   = false;
+  let lastTs       = null;
+  let allDone      = false;
+  const activeObjs = new Set(['pebble','ball','leaf']);
+
+  function newState() {
+    return { y:0,vy:0,x:0,vx:0, landed:false,t:0,landT:0,trail:[],ph:Math.random()*20 };
+  }
+
+  // sims[objKey].vac / sims[objKey].air
+  const sims = {};
+  OBJ_KEYS.forEach(k => { sims[k] = { vac: newState(), air: newState() }; });
+
+  function resetSims() {
+    OBJ_KEYS.forEach(k => { sims[k] = { vac: newState(), air: newState() }; });
+    simRunning = false; lastTs = null; allDone = false;
+    document.getElementById('btn-drop').disabled = false;
+    document.getElementById('fact-box').style.display = 'none';
+    clearResults();
+  }
+
+  // ── Wind particles ─────────────────────────────────────────────────────────
+  const wind = [];
+  function mkWind() {
+    return {
+      x: W * (selectedEnv === 'air' ? Math.random() : 0.5 + Math.random() * 0.5),
+      y: Math.random() * groundY,
+      vx: 0.4 + Math.random() * 0.7, vy: (Math.random()-0.5)*0.35,
+      a: 0.08+Math.random()*0.18, r: 0.8+Math.random()*1.2,
+      life: Math.random(), maxLife: 0.8+Math.random()*2,
+    };
+  }
+  for (let i = 0; i < 70; i++) wind.push(mkWind());
+
+  function updateWind(dt) {
+    const minX = selectedEnv === 'air' ? 0 : W * 0.5;
+    wind.forEach((w, i) => {
+      w.x += w.vx * dt * 60; w.y += w.vy * dt * 60; w.life += dt;
+      if (w.life > w.maxLife || w.x > W)
+        wind[i] = { ...mkWind(), x: minX + Math.random()*20, y: Math.random()*groundY };
+    });
+  }
+
+  // ── Physics ───────────────────────────────────────────────────────────────
+  function stepVac(s, dt) {
+    if (s.landed) return;
+    s.vy += G * dt; s.y += s.vy * dt; s.t += dt;
+    if (s.y >= TOWER_H) { s.y = TOWER_H; s.landed = true; s.landT = s.t; }
+    s.trail.push({ x: s.x, y: s.y });
+    if (s.trail.length > 140) s.trail.shift();
+  }
+
+  function stepAir(s, dt, obj) {
+    if (s.landed) return;
+    const dragY = 0.5 * RHO * s.vy * Math.abs(s.vy) * obj.Cd * obj.area;
+    const ay    = G - dragY / obj.mass;
+    const turb  = obj.lateralK * (Math.sin((s.t+s.ph)*3.1) + Math.sin((s.t+s.ph)*6.7)*0.5) * 0.6;
+    const dragX = 0.5 * RHO * s.vx * Math.abs(s.vx) * obj.Cd * obj.area;
+    const ax    = turb - dragX / obj.mass;
+    s.vy += ay*dt; s.vx += ax*dt; s.y += s.vy*dt; s.x += s.vx*dt; s.t += dt;
+    if (s.y >= TOWER_H) { s.y = TOWER_H; s.landed = true; s.landT = s.t; }
+    s.trail.push({ x: s.x, y: s.y });
+    if (s.trail.length > 240) s.trail.shift();
+  }
+
+  // ── Draw helpers ──────────────────────────────────────────────────────────
+  function toScreen(simX, simY, bx) {
+    return [bx + simX * scale, towerTopY + simY * scale];
+  }
+
+  function drawBg() {
+    const sg = ctx.createLinearGradient(0,0,0,groundY);
+    sg.addColorStop(0,'#010710'); sg.addColorStop(0.6,'#071830'); sg.addColorStop(1,'#0c2010');
+    ctx.fillStyle = sg; ctx.fillRect(0,0,W,groundY);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    const seeds=[0.04,0.10,0.18,0.27,0.06,0.15,0.23,0.32,0.08,0.20,0.29,0.41];
+    seeds.forEach((s,i) => {
+      const vfrac = (selectedEnv === 'vacuum') ? 0.9 : 0.46;
+      ctx.beginPath(); ctx.arc(s*W*vfrac, ((i*0.13+0.05)%0.88)*groundY*0.9, 1,0,Math.PI*2); ctx.fill();
+    });
+
+    const gg = ctx.createLinearGradient(0,groundY,0,H);
+    gg.addColorStop(0,'#1e3210'); gg.addColorStop(0.3,'#28401a'); gg.addColorStop(1,'#0f1a08');
+    ctx.fillStyle = gg; ctx.fillRect(0,groundY,W,H-groundY);
+    ctx.strokeStyle='#2d5020'; ctx.lineWidth=1.5;
+    for (let i=0;i<35;i++) {
+      const gx=(i*137+30)%W;
+      ctx.beginPath(); ctx.moveTo(gx,groundY); ctx.lineTo(gx-3,groundY-7);
+      ctx.moveTo(gx,groundY); ctx.lineTo(gx+3,groundY-8); ctx.stroke();
+    }
+  }
+
+  function drawWind() {
+    if (selectedEnv === 'vacuum') return;
+    const minX = selectedEnv === 'both' ? W*0.5 : 0;
+    ctx.fillStyle = 'rgba(80,200,120,0.025)';
+    ctx.fillRect(minX, 0, W-minX, groundY);
+    wind.forEach(w => {
+      if (w.x < minX) return;
+      const fade = 1 - w.life/w.maxLife;
+      ctx.fillStyle = `rgba(140,220,170,${w.a*fade})`;
+      ctx.beginPath(); ctx.arc(w.x,w.y,w.r,0,Math.PI*2); ctx.fill();
+    });
+  }
+
+  function drawZoneLabels() {
+    if (selectedEnv !== 'both') return;
+    ctx.setLineDash([5,8]);
+    ctx.strokeStyle='rgba(255,255,255,0.07)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(W*0.5,towerTopY-10); ctx.lineTo(W*0.5,groundY+20); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font='bold 10px Segoe UI'; ctx.textAlign='center';
+    ctx.fillStyle='rgba(140,170,255,0.55)'; ctx.fillText('VACUUM', W*0.25, towerTopY-4);
+    ctx.fillStyle='rgba(100,220,140,0.55)'; ctx.fillText('AIR', W*0.75, towerTopY-4);
+  }
+
+  function drawTower() {
+    const tx=W*0.5, tw=Math.max(26,W*0.045);
+    const top=towerTopY, bot=groundY, th=bot-top;
+    const blk=Math.max(10,H*0.028);
+
+    const tg=ctx.createLinearGradient(tx-tw,0,tx+tw,0);
+    tg.addColorStop(0,'#221d12'); tg.addColorStop(0.35,'#45392a');
+    tg.addColorStop(0.65,'#504334'); tg.addColorStop(1,'#221d12');
+    ctx.fillStyle=tg; ctx.fillRect(tx-tw,top,tw*2,th);
+    ctx.lineWidth=1;
+    for (let y=top;y<bot;y+=blk) {
+      ctx.strokeStyle='rgba(0,0,0,0.28)';
+      ctx.beginPath(); ctx.moveTo(tx-tw,y); ctx.lineTo(tx+tw,y); ctx.stroke();
+    }
+    for (let row=0; row*blk<th; row++) {
+      const y0=top+row*blk, off=(row%2===0)?0:tw*0.9;
+      ctx.strokeStyle='rgba(0,0,0,0.18)';
+      ctx.beginPath(); ctx.moveTo(tx-tw+off,y0); ctx.lineTo(tx-tw+off,y0+blk); ctx.stroke();
+    }
+    const mw=tw*0.38, mh=blk*0.9;
+    ctx.fillStyle='#45392a';
+    for (let bx=tx-tw; bx<tx+tw-1; bx+=mw*1.6)
+      ctx.fillRect(bx, top-mh, mw, mh);
+
+    const dw=tw*0.65, dh=tw*1.1, dx=tx-dw/2, dy=bot-dh;
+    ctx.fillStyle='#0b0906';
+    ctx.beginPath(); ctx.rect(dx,dy+dw/2,dw,dh-dw/2); ctx.arc(tx,dy+dw/2,dw/2,Math.PI,0); ctx.fill();
+
+    const ww=tw*0.36, wh=tw*0.52;
+    [0.22,0.48,0.72].forEach(f => {
+      const wy=top+th*f-wh/2;
+      ctx.fillStyle='#0b0906';
+      ctx.beginPath(); ctx.rect(tx-ww/2,wy+ww/2,ww,wh-ww/2); ctx.arc(tx,wy+ww/2,ww/2,Math.PI,0); ctx.fill();
+      ctx.fillStyle='rgba(255,200,80,0.06)';
+      ctx.beginPath(); ctx.arc(tx,wy+wh*0.3,ww*0.4,0,Math.PI*2); ctx.fill();
+    });
+
+    ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(tx-tw-10,top); ctx.lineTo(tx-tw-10,bot); ctx.stroke();
+    ctx.font='9px Segoe UI'; ctx.textAlign='right'; ctx.fillStyle='rgba(255,255,255,0.25)';
+    for (let m=0; m<=TOWER_H; m+=10) {
+      const ty2=top+m*scale;
+      ctx.beginPath(); ctx.moveTo(tx-tw-14,ty2); ctx.lineTo(tx-tw-10,ty2); ctx.stroke();
+      ctx.fillText(`${m}m`, tx-tw-15, ty2+3);
+    }
+  }
+
+  function drawTrail(trail, bx, rgb) {
+    if (trail.length < 2) return;
+    ctx.save(); ctx.lineWidth=2;
+    for (let i=1;i<trail.length;i++) {
+      const a=(i/trail.length)*0.55;
+      const [x0,y0]=toScreen(trail[i-1].x,trail[i-1].y,bx);
+      const [x1,y1]=toScreen(trail[i].x,trail[i].y,bx);
+      ctx.strokeStyle=`rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawObj(s, bx, obj, isAir) {
+    const [sx,sy]=toScreen(s.x,s.y,bx);
+    const r=obj.pxR, [cr,cg,cb]=obj.color;
+    ctx.save();
+    if (obj.isLeaf) {
+      ctx.translate(sx,sy); ctx.rotate(isAir ? s.t*1.8+s.ph : 0);
+      ctx.fillStyle=`rgb(${cr},${cg},${cb})`;
+      ctx.beginPath(); ctx.ellipse(0,0,r*1.6,r*0.65,0,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle=`rgba(${Math.max(0,cr-50)},${Math.max(0,cg-50)},${Math.max(0,cb-50)},0.6)`;
+      ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(-r*1.5,0); ctx.lineTo(r*1.5,0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,-r*0.5); ctx.lineTo(-r*1.4,0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,r*0.5);  ctx.lineTo(-r*1.4,0); ctx.stroke();
+      ctx.restore();
+    } else {
+      const grad=ctx.createRadialGradient(sx-r*0.3,sy-r*0.3,0,sx,sy,r);
+      grad.addColorStop(0,'#fff');
+      grad.addColorStop(0.35,`rgb(${cr},${cg},${cb})`);
+      grad.addColorStop(1,`rgba(${cr},${cg},${cb},0.5)`);
+      ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(sx,sy,r,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+    // Velocity arrow (yellow)
+    if (!s.landed && s.vy>1) {
+      const al=Math.min(s.vy*scale*0.12,28);
+      ctx.strokeStyle='rgba(255,220,80,0.65)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(sx,sy+r); ctx.lineTo(sx,sy+r+al); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(sx-4,sy+r+al-5); ctx.lineTo(sx,sy+r+al); ctx.lineTo(sx+4,sy+r+al-5); ctx.stroke();
+    }
+    // Drag arrow (cyan, air only)
+    if (isAir && !s.landed && s.vy>2) {
+      const dl=Math.min((s.vy*s.vy*obj.Cd*obj.area*RHO*0.5/obj.mass)*scale*0.04,22);
+      if (dl>2) {
+        ctx.strokeStyle='rgba(100,220,255,0.55)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.moveTo(sx,sy-r); ctx.lineTo(sx,sy-r-dl); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(sx-3,sy-r-dl+5); ctx.lineTo(sx,sy-r-dl); ctx.lineTo(sx+3,sy-r-dl+5); ctx.stroke();
+      }
+    }
+    // Object label
+    ctx.fillStyle='rgba(255,255,255,0.65)';
+    ctx.font=`bold 9px Segoe UI`; ctx.textAlign='center';
+    ctx.fillText(obj.name, sx, sy-r-5);
+  }
+
+  function drawLandMark(s, bx, obj) {
+    if (!s.landed) return;
+    const [sx]=toScreen(s.x,s.y,bx);
+    const [cr,cg,cb]=obj.color;
+    ctx.strokeStyle=`rgba(${cr},${cg},${cb},0.6)`; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(sx-9,groundY+4); ctx.lineTo(sx+9,groundY+4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sx,groundY+2); ctx.lineTo(sx,groundY+8); ctx.stroke();
+    ctx.fillStyle=`rgba(${cr},${cg},${cb},0.85)`;
+    ctx.font='bold 10px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText(`${s.landT.toFixed(2)}s`, sx, groundY+20);
+  }
+
+  function drawReveal() {
+    if (!allDone) return;
+    const active = OBJ_KEYS.filter(k => activeObjs.has(k));
+    if (active.length < 2) return;
+
+    ctx.font=`bold ${Math.max(11,H*0.018)}px Segoe UI`;
+    ctx.textAlign='center';
+
+    if (selectedEnv === 'vacuum' || selectedEnv === 'both') {
+      // All vacuum times should be equal
+      const vacTimes = active.map(k => sims[k].vac.landT);
+      const maxDiff  = Math.max(...vacTimes) - Math.min(...vacTimes);
+      if (maxDiff < 0.05) {
+        ctx.fillStyle='rgba(255,220,80,0.95)';
+        ctx.fillText('🎉 All objects hit at the SAME time in vacuum — Galileo was right!', W*0.5, groundY+32);
+      }
+    }
+
+    if (selectedEnv === 'air') {
+      const sorted = [...active].sort((a,b) => sims[a].air.landT - sims[b].air.landT);
+      const fastest = OBJS[sorted[0]].name, slowest = OBJS[sorted[sorted.length-1]].name;
+      const diff = (sims[sorted[sorted.length-1]].air.landT - sims[sorted[0]].air.landT).toFixed(1);
+      ctx.fillStyle='rgba(100,220,180,0.9)';
+      ctx.fillText(`${fastest} landed first — ${slowest} was ${diff}s slower due to air drag!`, W*0.5, groundY+32);
+    }
+
+    if (selectedEnv === 'both') {
+      const leaf = sims.leaf;
+      if (activeObjs.has('leaf') && leaf.vac.landed && leaf.air.landed) {
+        const diff = (leaf.air.landT - leaf.vac.landT).toFixed(1);
+        ctx.fillStyle='rgba(100,220,140,0.85)';
+        ctx.font=`${Math.max(10,H*0.015)}px Segoe UI`;
+        ctx.fillText(`The leaf took ${diff}s longer in air than in vacuum!`, W*0.5, groundY+50);
+      }
+    }
+  }
+
+  // ── Results table ─────────────────────────────────────────────────────────
+  const tdMap = {
+    pebble: { v:'td-pv', a:'td-pa', d:'td-pd', row:'tr-pebble' },
+    ball:   { v:'td-bv', a:'td-ba', d:'td-bd', row:'tr-ball' },
+    leaf:   { v:'td-lv', a:'td-la', d:'td-ld', row:'tr-leaf' },
+  };
+
+  function clearResults() {
+    OBJ_KEYS.forEach(k => {
+      const m=tdMap[k];
+      document.getElementById(m.v).textContent='—';
+      document.getElementById(m.a).textContent='—';
+      document.getElementById(m.d).textContent='—';
+      document.getElementById(m.v).className='';
+      document.getElementById(m.a).className='';
+      document.getElementById(m.d).className='drift';
+    });
+    updateTableVisibility();
+  }
+
+  function updateTableVisibility() {
+    document.getElementById('th-vac').style.display   = selectedEnv==='air'    ? 'none':'';
+    document.getElementById('th-air').style.display   = selectedEnv==='vacuum' ? 'none':'';
+    document.getElementById('th-drift').style.display = selectedEnv==='vacuum' ? 'none':'';
+    OBJ_KEYS.forEach(k => {
+      const row=document.getElementById(tdMap[k].row);
+      row.classList.toggle('inactive', !activeObjs.has(k));
+      document.getElementById(tdMap[k].v).closest('td').style.display = selectedEnv==='air'    ? 'none':'';
+      document.getElementById(tdMap[k].a).closest('td').style.display = selectedEnv==='vacuum' ? 'none':'';
+      document.getElementById(tdMap[k].d).closest('td').style.display = selectedEnv==='vacuum' ? 'none':'';
+    });
+  }
+
+  function updateResults() {
+    OBJ_KEYS.forEach(k => {
+      if (!activeObjs.has(k)) return;
+      const sv=sims[k].vac, sa=sims[k].air;
+      const m=tdMap[k];
+
+      if (selectedEnv !== 'air') {
+        const td=document.getElementById(m.v);
+        if (sv.landed) { td.textContent=sv.landT.toFixed(2)+'s'; td.className='done'; }
+        else if (simRunning) { td.textContent=sv.t.toFixed(2)+'s'; td.className='live'; }
+      }
+      if (selectedEnv !== 'vacuum') {
+        const td=document.getElementById(m.a);
+        if (sa.landed) { td.textContent=sa.landT.toFixed(2)+'s'; td.className='done'; }
+        else if (simRunning) { td.textContent=sa.t.toFixed(2)+'s'; td.className='live'; }
+
+        const td2=document.getElementById(m.d);
+        td2.textContent = Math.abs(sa.x).toFixed(2)+'m';
+        td2.className='drift';
+      }
+    });
+  }
+
+  function showFact() {
+    const active = OBJ_KEYS.filter(k => activeObjs.has(k));
+    let title='', body='';
+    if (selectedEnv === 'vacuum' || (selectedEnv === 'both' && active.length > 1)) {
+      title = '💡 Galileo\'s Discovery';
+      body  = 'In a vacuum (no air), ALL objects fall at exactly the same rate regardless of mass! Galileo proved this ~400 years ago. On the Moon (no atmosphere), a hammer and a feather really do land at the same time!';
+    } else if (active.includes('leaf')) {
+      title = '💡 The Leaf';
+      body  = 'A leaf reaches its terminal velocity (~2.5 m/s) within just 1 metre of falling! Air resistance is so strong relative to its weight that it barely accelerates after that — it just floats slowly down.';
+    } else {
+      title = '💡 Air Resistance';
+      body  = 'Air drag force = ½ × ρ × v² × Cd × A. Larger surface area (A) or higher speed (v) means much more drag. That\'s why a ball slows down more than a pebble!';
+    }
+    document.getElementById('fact-title').textContent = title;
+    document.getElementById('fact-body').textContent  = body;
+    document.getElementById('fact-box').style.display = 'block';
+  }
+
+  // ── Main loop ──────────────────────────────────────────────────────────────
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    let dt=0;
+    if (lastTs!==null) dt=Math.min((ts-lastTs)/1000,0.05)*simSpeed;
+    lastTs=ts;
+
+    if (simRunning && dt>0) {
+      activeObjs.forEach(k => {
+        const obj=OBJS[k];
+        if (selectedEnv !== 'air')    stepVac(sims[k].vac, dt);
+        if (selectedEnv !== 'vacuum') stepAir(sims[k].air, dt, obj);
+      });
+      if (selectedEnv !== 'vacuum') updateWind(dt/simSpeed);
+      updateResults();
+
+      // Check all done
+      if (!allDone) {
+        const done = [...activeObjs].every(k => {
+          const vacOk = selectedEnv === 'air'    || sims[k].vac.landed;
+          const airOk = selectedEnv === 'vacuum' || sims[k].air.landed;
+          return vacOk && airOk;
+        });
+        if (done) {
+          allDone = true;
+          showFact();
+          document.getElementById('btn-drop').disabled = false;
+        }
+      }
+    }
+
+    // ── Draw ─────────────────────────────────────────────────────────────────
+    ctx.clearRect(0,0,W,H);
+    drawBg(); drawWind(); drawZoneLabels(); drawTower();
+
+    if (simRunning) {
+      activeObjs.forEach(k => {
+        const obj=OBJS[k];
+
+        if (selectedEnv !== 'air') {
+          const sv=sims[k].vac, bv=baseX(k,false);
+          drawTrail(sv.trail, bv, obj.trailRGB);
+          if (!sv.landed) drawObj(sv, bv, obj, false);
+          drawLandMark(sv, bv, obj);
+        }
+        if (selectedEnv !== 'vacuum') {
+          const sa=sims[k].air, ba=baseX(k,true);
+          drawTrail(sa.trail, ba, obj.trailRGB);
+          if (!sa.landed) drawObj(sa, ba, obj, true);
+          drawLandMark(sa, ba, obj);
+        }
+      });
+      drawReveal();
+    }
+  }
+  requestAnimationFrame(frame);
+
+  // ── UI Events ──────────────────────────────────────────────────────────────
+  document.querySelectorAll('.obj-chk').forEach(lbl => {
+    lbl.addEventListener('click', () => {
+      const k=lbl.dataset.obj;
+      const inp=lbl.querySelector('input');
+      inp.checked=!inp.checked;
+      lbl.classList.toggle('checked', inp.checked);
+      lbl.querySelector('.chk-box').textContent = inp.checked ? '✓' : '';
+      if (inp.checked) activeObjs.add(k); else activeObjs.delete(k);
+      resetSims(); updateTableVisibility();
+    });
+  });
+
+  document.querySelectorAll('[data-env]').forEach(b => b.addEventListener('click', () => {
+    selectedEnv = b.dataset.env;
+    document.querySelectorAll('[data-env]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    resetSims(); updateTableVisibility();
+  }));
+
+  document.querySelectorAll('[data-spd]').forEach(b => b.addEventListener('click', () => {
+    simSpeed = +b.dataset.spd;
+    document.querySelectorAll('[data-spd]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+  }));
+
+  document.getElementById('btn-drop').addEventListener('click', () => {
+    if (activeObjs.size === 0) return;
+    resetSims();
+    simRunning = true;
+    document.getElementById('btn-drop').disabled = true;
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    resetSims(); updateTableVisibility();
+  });
+
+  updateTableVisibility();
+})();
+</script>
+</body>
+</html>
