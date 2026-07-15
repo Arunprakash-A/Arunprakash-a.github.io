@@ -199,6 +199,6 @@ Be concrete and surgical. Prefer a short list of real, high-impact fixes over a 
 
 ---
 
-Browse everything, including the per-model breakdowns, generation time, and token counts for every single applet, in the **[full gallery](/llm-applets/)**. The static-site generator that builds the gallery from the raw run folders is on [GitHub](https://github.com/Arunprakash-A/Arunprakash-a.github.io/blob/master/tools/build-llm-applets-site.py); the planner/coder/reflector pipeline itself runs against local Ollama models and lives in a separate repo.
+Browse everything, including the per-model breakdowns, generation time, and token counts for every single applet, in the **[full gallery](/llm-applets/)**. The static-site generator that builds the gallery from the raw run folders is on [GitHub](https://github.com/Arunprakash-A/Arunprakash-a.github.io/blob/master/tools/build-llm-applets-site.py); the planner/coder/reflector pipeline itself is in [interactive-simulations-agentic-ai](https://github.com/Arunprakash-A/interactive-simulations-agentic-ai).
 
 This is a living comparison — new applets get added as more models and topics are run, and the numbers above will grow.
