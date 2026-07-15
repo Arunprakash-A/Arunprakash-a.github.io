@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Unit Circle Trigonometry Explorer</title>
+<style>
+  :root{
+    --bg: radial-gradient(circle at center, #0a0c12 0%, #12151f 100%);
+    --surface:#1e293b;
+    --accent1:#22d3ee;
+    --accent2:#a78bfa;
+    --heading-text:#f9fafb;
+    --secondary-text:#94a3b8;
+    --font-body:"Inter", system-ui, sans-serif;
+    --font-mono:"Fira Code", monospace;
+  }
+  html,body{
+    margin:0; padding:0; height:100%; background:var(--bg); color:var(--secondary-text);
+    font-family:var(--font-body); overflow:hidden;
+  }
+  .app{
+    display:flex; flex-direction:row; justify-content:center; align-items:flex-start;
+    min-height:100vh; gap:20px; padding:20px;
+  }
+  .canvas-container{flex:1 1 70%; max-width:800px;}
+  .controls-card{
+    background:rgba(30,41,59,.9); border-radius:16px; padding:16px; flex-basis:300px;
+    box-shadow:0 4px 12px rgba(0,0,0,.5);
+  }
+  .controls-card h2{color:var(--heading-text); margin-top:0;}
+  .control-group{margin-bottom:12px;}
+  label{display:block; font-size:.9rem; color:var(--secondary-text); margin-bottom:4px;}
+  input[type=range]{width:100%; appearance:none; background:#3b4a5c; height:6px; border-radius:3px; cursor:pointer;}
+  input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent1);box-shadow:0 0 2px rgba(0,0,0,.5);}
+  input[type=checkbox]{margin-right:8px; accent-color:var(--accent1);}
+  button{
+    padding:.6rem 1.2rem;background:var(--accent1);color:#fff;border:none;border-radius:8px;
+    cursor:pointer;font-weight:bold;transition:background .3s; width:100%;
+  }
+  button:hover{background:var(--accent2);}
+  .toggle-switch{
+    position:relative;display:inline-block;width:48px;height:24px;margin-right:8px;
+  }
+  .toggle-switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;cursor:pointer;background:#ccc;border-radius:34px;top:0;left:0;width:100%;height:100%;transition:.4s;}
+  .slider::before{
+    position:absolute;content:"";height:18px;width:18px;background:white;border-radius:50%;
+    bottom:3px;left:3px;transition:.4s;
+  }
+  input:checked + .slider{background:var(--accent1);}
+  input:checked + .slider::before{transform:translateX(24px);}
+  svg{width:100%; height:auto;}
+  circle, line, path{stroke-width:2; transition:all .3s ease;}
+  text{font-family:var(--font-mono);fill:#f4f6fb;font-size:12px;transition:opacity .3s ease;}
+  @media (max-width:768px){
+    .app{flex-direction:column;align-items:center;}
+    .canvas-container{width:100%; max-width:none;}
+    .controls-card{width:90%;}
+  }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="canvas-container">
+    <svg id="viz"></svg>
+  </div>
+  <aside class="controls-card">
+    <h2>Controls</h2>
+    <div class="control-group">
+      <label for="angleSlider">Angle (<span id="angleUnitLabel">°</span>)</label>
+      <input type="range" id="angleSlider" min="0" max="360" step="1" value="0" aria-label="Angle slider">
+    </div>
+    <div class="control-group toggle-switch-wrapper">
+      <label for="unitToggle">Units</label>
+      <label class="toggle-switch">
+        <input type="checkbox" id="unitToggle" aria-label="Degree/Radian toggle">
+        <span class="slider"></span>
+      </label>
+      <span id="unitToggleLabel">Degrees</span>
+    </div>
+    <div class="control-group"><label><input type="checkbox" id="showSine" checked> Show Sine Curve</label></div>
+    <div class="control-group"><label><input type="checkbox" id="showCosine"> Show Cosine Curve</label></div>
+    <div class="control-group"><label><input type="checkbox" id="showTangent" checked> Show Tangent Segment</label></div>
+    <button id="sweepButton">Start Sweep</button>
+  </aside>
+</div>
+
+<script>
+(() => {
+  const width = 800, height = 600;
+  const cx = width / 2, cy = 250; // center of unit circle
+  const radius = 200;
+
+  const svg = d3.select('#viz')
+    .attr('viewBox', `0 0 ${width} ${height}`);
+
+  /* Scales */
+  const xScale = d3.scaleLinear().domain([0,360]).range([0,width]);
+  const traceYScale = d3.scaleLinear().domain([-1,1]).range([cy+radius+30, cy+radius+150]);
+
+  /* Groups */
+  const gCircle = svg.append('g').attr('class','circle-group');
+  const traceGroup = svg.append('g').attr('class','trace-group');
+
+  /* Unit circle */
+  gCircle.append('circle')
+    .attr('cx',cx).attr('cy',cy).attr('r',radius)
+    .style('fill','none').style('stroke','#94a3b8').style('stroke-width',2);
+
+  /* Axes */
+  gCircle.append('line')
+    .attr('x1',cx-radius).attr('y1',cy)
+    .attr('x2',cx+radius).attr('y2',cy)
+    .style('stroke','#94a3b8').style('stroke-width',1);
+  gCircle.append('line')
+    .attr('x1',cx).attr('y1',cy-radius)
+    .attr('x2',cx).attr('y2',cy+radius)
+    .style('stroke','#94a3b8').style('stroke-width',1);
+
+  /* Point */
+  const point = gCircle.append('circle')
+    .attr('r',6)
+    .style('fill','var(--accent1)')
+    .style('stroke','white')
+    .style('stroke-width',2);
+
+  /* Legs */
+  const vLeg = gCircle.append('line').style('stroke','var(--accent1)');
+  const hLeg = gCircle.append('line').style('stroke','var(--accent1)');
+
+  /* Labels */
+  const sinLabel = gCircle.append('text');
+  const cosLabel = gCircle.append('text');
+  const tanLabel = gCircle.append('text');
+
+  /* Tangent line */
+  const tanLine = gCircle.append('line')
+    .style('stroke','var(--accent2)')
+    .style('display','none');
+
+  /* Traces */
+  const sinePath = traceGroup.append('path')
+    .style('stroke','var(--accent1)')
+    .style('fill','none');
+  const cosinePath = traceGroup.append('path')
+    .style('stroke','var(--accent2)')
+    .style('fill','none');
+
+  /* State */
+  const state = {
+    thetaRad:0,
+    unitMode:'deg',
+    showSine:true,
+    showCosine:false,
+    showTangent:true,
+    sweepPlaying:false
+  };
+
+  /* Exact values mapping */
+  const exactValues = {
+    0:{sin:'0',cos:'1',tan:'0'},
+    30:{sin:'½',cos:'√3/2',tan:'1/√3'},
+    45:{sin:'√2/2',cos:'√2/2',tan:'1'},
+    60:{sin:'√3/2',cos:'½',tan:'√3'},
+    90:{sin:'1',cos:'0',tan:'∞'}
+  };
+
+  function formatValue(angleDeg,type){
+    const key = Math.round(angleDeg);
+    if(exactValues[key] && exactValues[key][type]) return exactValues[key][type];
+    const val = {sin:Math.sin(state.thetaRad), cos:Math.cos(state.thetaRad), tan:Math.tan(state.thetaRad)}[type];
+    if(isNaN(val) || !isFinite(val)) return '∞';
+    return val.toFixed(3);
+  }
+
+  /* UI elements */
+  const angleSlider = document.getElementById('angleSlider');
+  const unitToggle = document.getElementById('unitToggle');
+  const unitToggleLabel = document.getElementById('unitToggleLabel');
+  const showSineChk = document.getElementById('showSine');
+  const showCosineChk = document.getElementById('showCosine');
+  const showTangentChk = document.getElementById('showTangent');
+  const sweepButton = document.getElementById('sweepButton');
+  const angleUnitLabel = document.getElementById('angleUnitLabel');
+
+  /* Update function */
+  function update(){
+    const theta = state.thetaRad;
+    const sinVal = Math.sin(theta);
+    const cosVal = Math.cos(theta);
+
+    const px = cx + radius * cosVal;
+    const py = cy - radius * sinVal;
+
+    point.attr('cx',px).attr('cy',py);
+    vLeg.attr('x1',px).attr('y1',py).attr('x2',px).attr('y2',cy);
+    hLeg.attr('x1',px).attr('y1',py).attr('x2',cx).attr('y2',py);
+
+    sinLabel.text(formatValue(radToDeg(theta),'sin')).attr('x',px+8).attr('y',py-8);
+    cosLabel.text(formatValue(radToDeg(theta),'cos')).attr('x',cx+8).attr('y',py+12);
+
+    /* Tangent */
+    const EPS = 1e-6;
+    if(state.showTangent && Math.abs(cosVal) > EPS){
+      let y_intersect;
+      if(Math.abs(sinVal) < EPS){
+        // tangent is vertical; intersection at same y
+        y_intersect = 0;
+      } else {
+        y_intersect = sinVal - (cosVal*(1-cosVal))/sinVal;
+      }
+      const ix = cx + radius * 1; // x coordinate of intersection
+      const iy = cy - radius*y_intersect;
+
+      tanLine.attr('x1',px).attr('y1',py)
+        .attr('x2',ix).attr('y2',iy)
+        .style('display','block')
+        .style('opacity',1);
+      tanLabel.text(formatValue(radToDeg(theta),'tan'))
+        .attr('x',(px+ix)/2).attr('y',(py+iy)/2 - 4)
+        .style('display','block')
+        .style('opacity',1);
+    } else {
+      // fade out
+      if(tanLine.style('display') !== 'none'){
+        tanLine.style('opacity',0);
+        tanLabel.style('opacity',0);
+        setTimeout(()=>{tanLine.style('display','none'); tanLabel.style('display','none');},300);
+      } else {
+        tanLine.style('display','none').style('opacity',0);
+        tanLabel.style('display','none').style('opacity',0);
+      }
+    }
+
+    /* Traces */
+    const angleDeg = radToDeg(theta);
+    if(state.showSine){
+      const sinePoints=[];
+      for(let a=0;a<=angleDeg;a+=1){
+        const s=Math.sin(degToRad(a));
+        sinePoints.push([xScale(a), traceYScale(s)]);
+      }
+      sinePath.attr('d', d3.line()(sinePoints)).style('display','block');
+    } else {
+      sinePath.style('display','none');
+    }
+
+    if(state.showCosine){
+      const cosinePoints=[];
+      for(let a=0;a<=angleDeg;a+=1){
+        const c=Math.cos(degToRad(a));
+        cosinePoints.push([xScale(a), traceYScale(c)]);
+      }
+      cosinePath.attr('d', d3.line()(cosinePoints)).style('display','block');
+    } else {
+      cosinePath.style('display','none');
+    }
+
+    if(!dragging){
+      if(state.unitMode==='deg'){
+        angleSlider.value = Math.round(angleDeg);
+      } else {
+        angleSlider.value = state.thetaRad;
+      }
+    }
+
+    angleUnitLabel.textContent = state.unitMode==='deg'?'°':'rad';
+  }
+
+  /* Helpers */
+  function degToRad(d){return d*Math.PI/180;}
+  function radToDeg(r){return r*180/Math.PI;}
+
+  /* Dragging */
+  let dragging=false;
+  point.call(d3.drag()
+    .on('start',()=>{dragging=true; if(state.sweepPlaying) stopSweep();})
+    .on('drag',(event)=>{const [x,y]=[event.x,event.y]; const dx=x-cx; const dy=cy-y; let ang=Math.atan2(dy,dx); if(ang<0) ang+=2*Math.PI; state.thetaRad=ang; update();})
+    .on('end',()=>{dragging=false; update();}));
+
+  /* Slider */
+  angleSlider.addEventListener('input',()=>{
+    const val = +angleSlider.value;
+    if(state.unitMode==='rad'){
+      state.thetaRad = val;
+    } else {
+      state.thetaRad = degToRad(val);
+    }
+    update();
+  });
+
+  /* Unit toggle */
+  unitToggle.addEventListener('change',()=>{
+    if(unitToggle.checked){
+      const degVal = +angleSlider.value;
+      const radVal = degToRad(degVal);
+      state.unitMode='rad';
+      unitToggleLabel.textContent='Radians';
+      angleUnitLabel.textContent='rad';
+      angleSlider.min=0; angleSlider.max=Math.PI*2; angleSlider.step=Math.PI/180;
+      angleSlider.value = radVal;
+      state.thetaRad = radVal;
+    } else {
+      const radVal = +angleSlider.value;
+      const degVal = radToDeg(radVal);
+      state.unitMode='deg';
+      unitToggleLabel.textContent='Degrees';
+      angleUnitLabel.textContent='°';
+      angleSlider.min=0; angleSlider.max=360; angleSlider.step=1;
+      angleSlider.value = Math.round(degVal);
+      state.thetaRad = degToRad(degVal);
+    }
+    update();
+  });
+
+  /* Checkboxes */
+  showSineChk.addEventListener('change',()=>{state.showSine=showSineChk.checked; update();});
+  showCosineChk.addEventListener('change',()=>{state.showCosine=showCosineChk.checked; update();});
+  showTangentChk.addEventListener('change',()=>{state.showTangent=showTangentChk.checked; update();});
+
+  /* Sweep animation */
+  let lastTime=null;
+  function animateSweep(ts){
+    if(!lastTime) lastTime=ts;
+    const dt = ts-lastTime; lastTime=ts;
+    const radPerMs=(Math.PI/3)/1000; // 60° per second
+    state.thetaRad += radPerMs*dt;
+    if(state.thetaRad >= 2*Math.PI){
+      state.thetaRad = 2*Math.PI;
+      stopSweep();
+    }
+    update();
+    if(state.sweepPlaying) requestAnimationFrame(animateSweep);
+  }
+  function startSweep(){state.sweepPlaying=true; sweepButton.textContent='Pause Sweep'; requestAnimationFrame(animateSweep);}
+  function stopSweep(){state.sweepPlaying=false; sweepButton.textContent='Start Sweep'; lastTime=null;}
+  sweepButton.addEventListener('click',()=>{if(state.sweepPlaying)stopSweep(); else startSweep();});
+
+  /* Initial render */
+  update();
+})();
+</script>
+</body>
+</html>

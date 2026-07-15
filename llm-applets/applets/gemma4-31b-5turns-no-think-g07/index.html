@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance Scale Equation Solver</title>
+    <!-- KaTeX for beautiful math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <!-- GSAP for high-quality animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Import JetBrains Mono and Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-start: #1a1c2c;
+            --bg-end: #0f111a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #22d3ee;
+            --accent-violet: #a78bfa;
+            --accent-yellow: #facc15;
+            --accent-red: #ef4444;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+        }
+
+        * { box-sizing: border-box; }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; background: var(--bg-start);
+            font-family: var(--font-main); color: var(--text-primary);
+        }
+
+        body {
+            background: radial-gradient(circle at center, var(--bg-start) 0%, var(--bg-end) 100%);
+        }
+
+        #app {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        /* Visualization Stage */
+        #stage {
+            position: relative;
+            cursor: grab;
+            user-select: none;
+        }
+        #stage:active { cursor: grabbing; }
+
+        /* Equation Display */
+        #equation-container {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 17, 26, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 20px 40px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            min-width: 400px;
+            transition: all 0.3s ease;
+            z-index: 5;
+        }
+        #equation-container.glow {
+            box-shadow: 0 0 20px var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+        #equation-container.shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-50%, 0, 0); }
+            20%, 80% { transform: translate3d(-52%, 0, 0); }
+            30%, 70% { transform: translate3d(-48%, 0, 0); }
+            40%, 60% { transform: translate3d(-50%, 0, 0); }
+        }
+        #math-display {
+            font-family: var(--font-mono) !important;
+            font-size: 1.8rem;
+        }
+
+        /* Control Panel */
+        #controls {
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid var(--border-color);
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+        .section-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .control-group {
+            background: rgba(0,0,0,0.2);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .input-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .input-row label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 6px;
+            background: #334155; border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px; width: 18px;
+            border-radius: 50%; background: var(--accent-cyan);
+            cursor: pointer; margin-top: -6px;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+        }
+
+        /* Buttons */
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        button {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        button:hover { background: #475569; }
+        button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        button.primary {
+            background: var(--accent-cyan);
+            color: #0f111a;
+        }
+        button.primary:hover { background: #67e8ff; }
+
+        button.secondary {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+        button.secondary:hover { border-color: var(--text-primary); color: var(--text-primary); }
+
+        .num-input {
+            background: #0f111a;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            text-align: center;
+        }
+
+        /* Toast Notification */
+        #toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-red);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translate(-50%, 10px);
+        }
+
+        .success-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            place-items: center;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+        .success-card {
+            background: var(--bg-start);
+            padding: 40px;
+            border-radius: 24px;
+            border: 2px solid var(--accent-yellow);
+            text-align: center;
+            box-shadow: 0 0 50px rgba(250, 204, 21, 0.3);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @media (max-width: 900px) {
+            #app { grid-template-columns: 1fr; }
+            #controls { position: absolute; right: 0; top: 0; height: 100%; width: 320px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="toast">Not quite! Try to isolate x.</div>
+
+<div id="app">
+    <div id="stage">
+        <div id="equation-container">
+            <div id="math-display"></div>
+        </div>
+    </div>
+
+    <aside id="controls">
+        <div>
+            <h1>Balance Solver</h1>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Isolate x to find the value.</p>
+        </div>
+
+        <div class="control-group">
+            <span class="section-label">Equation Setup</span>
+            <div class="input-row">
+                <label id="lbl-coeff">Coefficient of x: 2</label>
+                <input type="range" id="sld-coeff" min="1" max="10" value="2">
+            </div>
+            <div class="input-row">
+                <label id="lbl-left">Left Constant: 3</label>
+                <input type="range" id="sld-left" min="-10" max="10" value="3">
+            </div>
+            <div class="input-row">
+                <label id="lbl-right">Right Value: 11</label>
+                <input type="range" id="sld-right" min="-20" max="20" value="11">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="section-label">Additive Operations</span>
+            <div style="display: flex; gap: 8px;">
+                <input type="number" id="op-val" class="num-input" value="1" style="width: 60px;">
+                <div class="btn-grid" style="flex: 1;">
+                    <button onclick="applyOp('add')">+</button>
+                    <button onclick="applyOp('sub')">−</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="section-label">Multiplicative Operations</span>
+            <div style="display: flex; gap: 8px;">
+                <select id="op-coeff" class="num-input" style="width: 60px; cursor: pointer;">
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+                <div class="btn-grid" style="flex: 1;">
+                    <button onclick="applyOp('mul')">×</button>
+                    <button onclick="applyOp('div')">÷</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: auto;">
+            <button class="secondary" style="flex: 1;" onclick="undo()">Undo</button>
+            <button class="primary" style="flex: 2;" onclick="checkSolution()">Check Solution</button>
+        </div>
+    </aside>
+</div>
+
+<div class="success-overlay" id="success-overlay">
+    <div class="success-card">
+        <h2 style="color: var(--accent-yellow); margin-top: 0;">🎉 Correct!</h2>
+        <p>You've isolated x and found the solution.</p>
+        <button class="primary" onclick="closeSuccess()">Awesome</button>
+    </div>
+</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // --- State Management ---
+    let state = {
+        coeffL: 2,
+        constL: 3,
+        constR: 11,
+        history: [],
+        initialSolution: 0 // Store the target x value
+    };
+
+    const COLORS = {
+        xBox: 0x22d3ee,
+        unitPos: 0xa78bfa,
+        unitNeg: 0xef4444,
+        beam: 0x475569,
+        base: 0x1e293b
+    };
+
+    // --- Three.js Setup ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, (window.innerWidth - 380) / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth - 380, window.innerHeight);
+    document.getElementById('stage').appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.enablePan = false;
+    controls.minDistance = 5;
+    controls.maxDistance = 20;
+    controls.target.set(0, 1, 0);
+
+    camera.position.set(0, 3, 8);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(5, 10, 7);
+    scene.add(dirLight);
+
+    const base = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.5, 0.8, 2, 32),
+        new THREE.MeshStandardMaterial({ color: COLORS.base })
+    );
+    base.position.y = -1;
+    scene.add(base);
+
+    const pivot = new THREE.Group();
+    pivot.position.y = 1;
+    scene.add(pivot);
+
+    const beam = new THREE.Mesh(
+        new THREE.BoxGeometry(6, 0.15, 0.15),
+        new THREE.MeshStandardMaterial({ color: COLORS.beam })
+    );
+    pivot.add(beam);
+
+    function createPan() {
+        const group = new THREE.Group();
+        const plate = new THREE.Mesh(
+            new THREE.CylinderGeometry(1, 1, 0.1, 32),
+            new THREE.MeshStandardMaterial({ color: COLORS.beam })
+        );
+        group.add(plate);
+
+        const wire = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.02, 0.02, 1.5),
+            new THREE.MeshStandardMaterial({ color: COLORS.beam })
+        );
+        wire.position.y = -0.75;
+        group.add(wire);
+
+        return group;
+    }
+
+    const panL = createPan();
+    panL.position.set(-3, -0.8, 0);
+    pivot.add(panL);
+
+    const panR = createPan();
+    panR.position.set(3, -0.8, 0);
+    pivot.add(panR);
+
+    // --- Weight Management & Animation ---
+    let currentWeights = { leftX: [], leftU: [], rightU: [] };
+
+    function spawnXBox(parent, index) {
+        const mesh = new THREE.Mesh(
+            new THREE.BoxGeometry(0.4, 0.4, 0.4),
+            new THREE.MeshStandardMaterial({ color: COLORS.xBox, emissive: COLORS.xBox, emissiveIntensity: 0.3 })
+        );
+        const targetPos = { x: (index % 2) * 0.5 - 0.25, y: 0.3, z: Math.floor(index / 2) * 0.5 - 0.25 };
+        mesh.position.set(targetPos.x, targetPos.y, targetPos.z);
+        parent.add(mesh);
+        return { mesh, targetPos };
+    }
+
+    function spawnUnit(parent, index, isPositive) {
+        const color = isPositive ? COLORS.unitPos : COLORS.unitNeg;
+        const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(0.15, 16, 16),
+            new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.4 })
+        );
+        const yPos = isPositive ? 0.2 : 0.5;
+        const targetPos = { x: (index % 3) * 0.4 - 0.4, y: yPos, z: Math.floor(index / 3) * 0.4 - 0.2 };
+        mesh.position.set(targetPos.x, targetPos.y, targetPos.z);
+        parent.add(mesh);
+        return { mesh, targetPos };
+    }
+
+    async function updateVisuals(isOperation = false) {
+        // We use Math.round for visual representation but keep state as floats
+        const nextXCount = Math.round(state.coeffL);
+        const nextLCount = Math.round(state.constL);
+        const nextRCount = Math.round(state.constR);
+
+        if (isOperation) {
+            // Visual "pop" for multiplicative changes
+            if (currentWeights.leftX.length > 0 && currentWeights.leftX.length !== nextXCount) {
+                const groupCenter = { x: 0, y: 0.3, z: 0 };
+                currentWeights.leftX.forEach(item => {
+                    gsap.to(item.mesh.position, { 
+                        x: groupCenter.x, y: groupCenter.y, z: groupCenter.z, 
+                        duration: 0.2, ease: "power2.in" 
+                    });
+                });
+                await new Promise(r => setTimeout(r, 200));
+            }
+        }
+
+        // Process Left X
+        if (currentWeights.leftX.length !== nextXCount) {
+            if (currentWeights.leftX.length > nextXCount) {
+                const toRemove = currentWeights.leftX.slice(nextXCount);
+                toRemove.forEach(item => removeMeshWithFade(item.mesh, panL));
+                currentWeights.leftX = currentWeights.leftX.slice(0, nextXCount);
+            } else {
+                for (let i = currentWeights.leftX.length; i < nextXCount; i++) {
+                    const item = spawnXBox(panL, i);
+                    item.mesh.scale.set(0,0,0);
+                    gsap.to(item.mesh.scale, { x: 1, y: 1, z: 1, duration: 0.3, ease: "back.out(1.7)" });
+                    currentWeights.leftX.push(item);
+                }
+            }
+        }
+
+        const handleConstants = async (current, value, pan) => {
+            const absVal = Math.round(Math.abs(value));
+            const isPos = value >= 0;
+            if (current.length !== absVal || (current.length > 0 && !isPos)) {
+                current.forEach(item => removeMeshWithFade(item.mesh, pan));
+                current = [];
+            }
+            const newWeights = [];
+            for (let i = 0; i < absVal; i++) {
+                if (i < current.length) {
+                    newWeights.push(current[i]);
+                } else {
+                    const item = spawnUnit(pan, i, isPos);
+                    item.mesh.scale.set(0,0,0);
+                    gsap.to(item.mesh.scale, { x: 1, y: 1, z: 1, duration: 0.3, ease: "back.out(1.7)" });
+                    newWeights.push(item);
+                }
+            }
+            return newWeights;
+        };
+
+        currentWeights.leftU = await handleConstants(currentWeights.leftU, state.constL, panL);
+        currentWeights.rightU = await handleConstants(currentWeights.rightU, state.constR, panR);
+
+        updateEquation();
+    }
+
+    function removeMeshWithFade(mesh, parent) {
+        mesh.material.transparent = true;
+        gsap.to(mesh.position, { y: mesh.position.y + 2, duration: 0.5, ease: "power1.out" });
+        gsap.to(mesh.material, { opacity: 0, duration: 0.5, onComplete: () => parent.remove(mesh) });
+    }
+
+    function updateEquation() {
+        const eqDiv = document.getElementById('math-display');
+        const container = document.getElementById('equation-container');
+        
+        // Format numbers to avoid long decimals in LaTeX
+        const fmt = (n) => Number.isInteger(n) ? n.toString() : n.toFixed(2);
+        
+        let leftSide = `${fmt(state.coeffL)}x`;
+        if (state.constL > 0) leftSide += ` + ${fmt(state.constL)}`;
+        else if (state.constL < 0) leftSide += ` - ${fmt(Math.abs(state.constL))}`;
+        
+        let rightSide = `${fmt(state.constR)}`;
+        katex.render(`${leftSide} = ${rightSide}`, eqDiv, { throwOnError: false });
+        container.classList.add('glow');
+        setTimeout(() => container.classList.remove('glow'), 400);
+    }
+
+    let currentTilt = 0;
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        const leftWeight = state.coeffL + state.constL; 
+        const rightWeight = state.constR;
+        const diff = rightWeight - leftWeight;
+        const targetTilt = Math.max(-0.4, Math.min(0.4, diff * 0.05));
+        currentTilt += (targetTilt - currentTilt) * 0.1; 
+        pivot.rotation.z = currentTilt;
+        renderer.render(scene, camera);
+    }
+
+    window.applyOp = function(type) {
+        const valInput = document.getElementById('op-val');
+        const coeffSelect = document.getElementById('op-coeff'); // FIX: Now correctly accessed
+        const val = parseFloat(valInput.value) || 0;
+        const coeff = parseFloat(coeffSelect.value) || 1;
+        
+        state.history.push({ ...state });
+
+        if (type === 'add') {
+            state.constL += val; state.constR += val;
+        } else if (type === 'sub') {
+            state.constL -= val; state.constR -= val;
+        } else if (type === 'mul') {
+            state.coeffL *= coeff; state.constL *= coeff; state.constR *= coeff;
+        } else if (type === 'div') {
+            if (coeff === 0) return;
+            state.coeffL /= coeff; state.constL /= coeff; state.constR /= coeff;
+        }
+        updateVisuals(true);
+    };
+
+    window.undo = function() {
+        if (state.history.length > 0) {
+            state = state.history.pop();
+            updateVisuals(true);
+        }
+    };
+
+    window.checkSolution = function() {
+        // FIX: Verify against the initial solution of the problem setup
+        const currentXValue = (state.constR - state.constL) / state.coeffL;
+        const isIsolated = Math.abs(state.coeffL - 1) < 0.01 && Math.abs(state.constL) < 0.01;
+        const isCorrectValue = Math.abs(currentXValue - state.initialSolution) < 0.01;
+
+        if (isIsolated && isCorrectValue) {
+            document.getElementById('success-overlay').style.display = 'grid';
+        } else {
+            const toast = document.getElementById('toast');
+            const eqContainer = document.getElementById('equation-container');
+            eqContainer.classList.add('shake');
+            setTimeout(() => eqContainer.classList.remove('shake'), 400);
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    };
+
+    window.closeSuccess = function() {
+        document.getElementById('success-overlay').style.display = 'none';
+        // FIX: Allow user to reset or start over by returning them to setup focus
+        document.getElementById('sld-coeff').focus();
+    };
+
+    const sCoeff = document.getElementById('sld-coeff');
+    const sLeft = document.getElementById('sld-left');
+    const sRight = document.getElementById('sld-right');
+
+    function syncSliders() {
+        state.coeffL = parseInt(sCoeff.value);
+        state.constL = parseInt(sLeft.value);
+        state.constR = parseInt(sRight.value);
+        
+        // FIX: Store the initial solution for validation
+        state.initialSolution = (state.constR - state.constL) / state.coeffL;
+        state.history = []; // Clear history on new problem setup
+
+        document.getElementById('lbl-coeff').innerText = `Coefficient of x: ${state.coeffL}`;
+        document.getElementById('lbl-left').innerText = `Left Constant: ${state.constL}`;
+        document.getElementById('lbl-right').innerText = `Right Value: ${state.constR}`;
+        updateVisuals();
+    }
+
+    [sCoeff, sLeft, sRight].forEach(el => el.addEventListener('input', syncSliders));
+
+    window.addEventListener('resize', () => {
+        const w = window.innerWidth - (window.innerWidth > 900 ? 380 : 320);
+        camera.aspect = w / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, window.innerHeight);
+    });
+
+    syncSliders();
+    animate();
+</script>
+</body>
+</html>

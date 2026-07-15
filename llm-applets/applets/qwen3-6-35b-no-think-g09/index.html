@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pythagorean Theorem Explorer</title>
+    
+    <!-- External Libraries -->
+    <!-- Fabric.js for Canvas manipulation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <!-- GSAP for Animation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            /* Light Theme Palette */
+            --bg-body: #F8F9FA;
+            --bg-panel: #FFFFFF;
+            --text-main: #2C3E50;
+            --text-muted: #6c757d;
+            --border-color: #E0E0E0;
+            
+            /* Math Colors */
+            --accent-a: #3498DB; /* Blue - Leg A */
+            --accent-b: #27AE60; /* Green - Leg B */
+            --accent-c: #E74C3C; /* Red - Hypotenuse */
+            --accent-glow: rgba(52, 152, 219, 0.2);
+            
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            flex: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Canvas Area (60%) */
+        .canvas-wrapper {
+            flex: 3;
+            position: relative;
+            background: #FFFFFF;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border-right: 1px solid var(--border-color);
+        }
+
+        #c {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border-radius: 4px;
+            cursor: crosshair;
+        }
+
+        /* Sidebar Controls (40%) */
+        .sidebar {
+            flex: 1;
+            background: var(--bg-panel);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Math Display */
+        .math-panel {
+            background: var(--bg-body);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .katex { font-size: 1.1rem; color: var(--text-main); }
+        .katex-display { margin: 0.5em 0; }
+
+        /* Controls */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .toggle-container {
+            display: flex;
+            background: var(--bg-body);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 4px;
+            position: relative;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .toggle-btn.active {
+            color: var(--text-main);
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: calc(50% - 4px);
+            height: calc(100% - 8px);
+            background: white;
+            border-radius: 6px;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            z-index: 1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .btn {
+            background: white;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            background: var(--bg-body);
+            border-color: #BDC3C7;
+        }
+
+        .btn.primary {
+            background: var(--accent-a);
+            border-color: var(--accent-a);
+            color: white;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+        
+        .btn.primary:hover {
+            background: #2980b9;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-card {
+            background: var(--bg-body);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid transparent;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-card.a { border-color: var(--accent-a); }
+        .stat-card.b { border-color: var(--accent-b); }
+        .stat-card.c { border-color: var(--accent-c); grid-column: span 2; }
+
+        .stat-val {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(44, 62, 80, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: white;
+            width: 800px;
+            height: 600px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-body);
+        }
+
+        .modal-body {
+            flex: 1;
+            position: relative;
+            background: #FFFFFF;
+        }
+
+        #proof-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: var(--text-main);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 50;
+            font-family: var(--font-mono);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Left: Visualization -->
+        <div class="canvas-wrapper">
+            <canvas id="c" width="800" height="800"></canvas>
+            <div id="tooltip" class="tooltip"></div>
+        </div>
+
+        <!-- Right: Controls -->
+        <div class="sidebar">
+            <div>
+                <h1>Pythagorean Explorer</h1>
+                <div class="subtitle">Interactive Coordinate Geometry</div>
+            </div>
+
+            <!-- Math Display -->
+            <div class="math-panel">
+                <div id="equation-display"></div>
+            </div>
+
+            <!-- Live Stats -->
+            <div class="stats-grid">
+                <div class="stat-card a">
+                    <div class="stat-label">Leg a (Vertical)</div>
+                    <div class="stat-val" id="val-a">3.00</div>
+                    <div class="stat-label">Area: <span id="area-a">9.00</span></div>
+                </div>
+                <div class="stat-card b">
+                    <div class="stat-label">Leg b (Horizontal)</div>
+                    <div class="stat-val" id="val-b">4.00</div>
+                    <div class="stat-label">Area: <span id="area-b">16.00</span></div>
+                </div>
+                <div class="stat-card c">
+                    <div class="stat-label">Hypotenuse c</div>
+                    <div class="stat-val" id="val-c">5.00</div>
+                    <div class="stat-label">Area: <span id="area-c">25.00</span></div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="control-group">
+                <label>Interaction Mode</label>
+                <div class="toggle-container">
+                    <div class="toggle-slider" id="mode-slider"></div>
+                    <button class="toggle-btn active" onclick="setMode('drag')">Drag Legs</button>
+                    <button class="toggle-btn" onclick="setMode('plot')">Plot Points</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Constraints</label>
+                <button class="btn" id="snap-btn" onclick="toggleSnap()">
+                    Snap to Pythagorean Triples: OFF
+                </button>
+            </div>
+
+            <div class="control-group" style="margin-top: auto;">
+                <button class="btn primary" onclick="openProof()">
+                    Visual Proof Animation
+                </button>
+                <button class="btn" onclick="resetTriangle()" style="margin-top: 10px;">
+                    Reset to 3-4-5
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proof Modal -->
+    <div class="modal-overlay" id="proof-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Geometric Proof: Area Rearrangement</h3>
+                <button class="close-modal" onclick="closeProof()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <canvas id="proof-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration & State ---
+        const SCALE = 40; // Pixels per unit
+        const GRID_SIZE = 20; // 20x20 grid
+        const COLORS = {
+            bg: '#FFFFFF',
+            grid: '#F0F0F0',
+            gridLine: '#E0E0E0',
+            a: '#3498DB', // Blue
+            b: '#27AE60', // Green
+            c: '#E74C3C', // Red
+            text: '#2C3E50'
+        };
+
+        let state = {
+            mode: 'drag', // 'drag' or 'plot'
+            snap: false,
+            p1: { x: 0, y: 0 }, // Right Angle Vertex
+            p2: { x: 0, y: -4 }, // Top Vertex (Leg A)
+            p3: { x: 3, y: 0 }   // Right Vertex (Leg B)
+        };
+
+        // --- Initialization ---
+        const canvasEl = document.getElementById('c');
+        const canvas = new fabric.Canvas('c', {
+            backgroundColor: COLORS.bg,
+            selection: false,
+            preserveObjectStacking: true
+        });
+
+        // --- Helper Functions ---
+        function toPixel(val) { return val * SCALE; }
+        function toGrid(val) { return Math.round(val / SCALE); }
+        
+        function dist(p1, p2) {
+            return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        }
+
+        // --- Drawing Logic ---
+        let gridGroup, triangleGroup, squaresGroup, labelsGroup;
+
+        function initGrid() {
+            gridGroup = new fabric.Group([], { selectable: false, evented: false });
+            const lines = [];
+            
+            // Draw Grid
+            for (let i = -GRID_SIZE; i <= GRID_SIZE; i++) {
+                const x = toPixel(i);
+                const y = toPixel(i);
+                lines.push(new fabric.Line([x, 0, x, canvas.height], { stroke: COLORS.gridLine, strokeWidth: 1 }));
+                lines.push(new fabric.Line([0, y, canvas.width, y], { stroke: COLORS.gridLine, strokeWidth: 1 }));
+            }
+            
+            // Axes
+            lines.push(new fabric.Line([0, canvas.height/2, canvas.width, canvas.height/2], { stroke: '#BDC3C7', strokeWidth: 2 }));
+            lines.push(new fabric.Line([canvas.width/2, 0, canvas.width/2, canvas.height], { stroke: '#BDC3C7', strokeWidth: 2 }));
+
+            gridGroup.add(...lines);
+            canvas.add(gridGroup);
+            canvas.sendToBack(gridGroup);
+        }
+
+        function updateVisualization() {
+            // Clear dynamic layers
+            if (triangleGroup) canvas.remove(triangleGroup);
+            if (squaresGroup) canvas.remove(squaresGroup);
+            if (labelsGroup) canvas.remove(labelsGroup);
+
+            triangleGroup = new fabric.Group([], { selectable: false, evented: false });
+            squaresGroup = new fabric.Group([], { selectable: false, evented: false });
+            labelsGroup = new fabric.Group([], { selectable: false, evented: false });
+
+            // Coordinates relative to center (0,0)
+            const cX = canvas.width / 2;
+            const cY = canvas.height / 2;
+
+            // Vertices
+            const vRightAngle = { x: cX + toPixel(state.p1.x), y: cY - toPixel(state.p1.y) };
+            const vTop = { x: cX + toPixel(state.p2.x), y: cY - toPixel(state.p2.y) };
+            const vRight = { x: cX + toPixel(state.p3.x), y: cY - toPixel(state.p3.y) };
+
+            // 1. Draw Triangle
+            const lineA = new fabric.Line([vRightAngle.x, vRightAngle.y, vTop.x, vTop.y], { stroke: COLORS.a, strokeWidth: 3 });
+            const lineB = new fabric.Line([vRightAngle.x, vRightAngle.y, vRight.x, vRight.y], { stroke: COLORS.b, strokeWidth: 3 });
+            const lineC = new fabric.Line([vTop.x, vTop.y, vRight.x, vRight.y], { stroke: COLORS.c, strokeWidth: 3 });
+            
+            triangleGroup.add(lineA, lineB, lineC);
+
+            // 2. Draw Squares (Outward)
+            // Square A (on vertical leg)
+            const lenA = Math.abs(vTop.y - vRightAngle.y);
+            const sqA = new fabric.Rect({
+                width: lenA, height: lenA,
+                fill: COLORS.a, opacity: 0.2,
+                left: vRightAngle.x - lenA, top: vTop.y,
+                stroke: COLORS.a, strokeWidth: 1
+            });
+            // Square B (on horizontal leg)
+            const lenB = Math.abs(vRight.x - vRightAngle.x);
+            const sqB = new fabric.Rect({
+                width: lenB, height: lenB,
+                fill: COLORS.b, opacity: 0.2,
+                left: vRightAngle.x, top: vRightAngle.y - lenB,
+                stroke: COLORS.b, strokeWidth: 1
+            });
+            // Square C (Hypotenuse) - Requires rotation
+            const lenC = dist({x: state.p2.x, y: state.p2.y}, {x: state.p3.x, y: state.p3.y}) * SCALE;
+            const angle = Math.atan2(vRight.y - vTop.y, vRight.x - vTop.x) * (180/Math.PI);
+            
+            const sqC = new fabric.Rect({
+                width: lenC, height: lenC,
+                fill: COLORS.c, opacity: 0.2,
+                left: vTop.x, top: vTop.y,
+                angle: angle,
+                originX: 'left', originY: 'top',
+                stroke: COLORS.c, strokeWidth: 1
+            });
+
+            squaresGroup.add(sqA, sqB, sqC);
+
+            // 3. Draw Handles (Vertices)
+            const handleSize = 8;
+            const h1 = new fabric.Circle({ radius: handleSize, fill: '#fff', left: vRightAngle.x - handleSize/2, top: vRightAngle.y - handleSize/2, selectable: state.mode === 'drag' });
+            const h2 = new fabric.Circle({ radius: handleSize, fill: '#fff', left: vTop.x - handleSize/2, top: vTop.y - handleSize/2, selectable: state.mode === 'drag' });
+            const h3 = new fabric.Circle({ radius: handleSize, fill: '#fff', left: vRight.x - handleSize/2, top: vRight.y - handleSize/2, selectable: state.mode === 'drag' });
+
+            // 4. Labels
+            const labelA = new fabric.Text('a', { fill: COLORS.a, fontSize: 20, fontFamily: 'serif', left: vRightAngle.x - 20, top: (vRightAngle.y + vTop.y)/2 - 10 });
+            const labelB = new fabric.Text('b', { fill: COLORS.b, fontSize: 20, fontFamily: 'serif', left: (vRightAngle.x + vRight.x)/2, top: vRightAngle.y - 20 });
+            const labelC = new fabric.Text('c', { fill: COLORS.c, fontSize: 20, fontFamily: 'serif', left: (vTop.x + vRight.x)/2 + 10, top: (vTop.y + vRight.y)/2 - 10 });
+
+            labelsGroup.add(h1, h2, h3, labelA, labelB, labelC);
+
+            // Add all to canvas
+            canvas.add(triangleGroup, squaresGroup, labelsGroup);
+            canvas.setActiveObject(h1); // Focus on right angle
+            canvas.renderAll();
+
+            updateMath();
+        }
+
+        // --- Math & UI Updates ---
+        function updateMath() {
+            const a = Math.abs(state.p2.y - state.p1.y);
+            const b = Math.abs(state.p3.x - state.p1.x);
+            const c = dist({x: state.p2.x, y: state.p2.y}, {x: state.p3.x, y: state.p3.y});
+
+            // Update DOM
+            document.getElementById('val-a').innerText = a.toFixed(2);
+            document.getElementById('val-b').innerText = b.toFixed(2);
+            document.getElementById('val-c').innerText = c.toFixed(2);
+            
+            document.getElementById('area-a').innerText = (a*a).toFixed(2);
+            document.getElementById('area-b').innerText = (b*b).toFixed(2);
+            document.getElementById('area-c').innerText = (c*c).toFixed(2);
+
+            // KaTeX
+            const latex = `a^2 + b^2 = c^2 \\rightarrow (${a.toFixed(1)})^2 + (${b.toFixed(1)})^2 = (${c.toFixed(1)})^2`;
+            katex.render(latex, document.getElementById('equation-display'), {
+                displayMode: true,
+                throwOnError: false
+            });
+        }
+
+        // --- Interaction Logic ---
+        function setMode(mode) {
+            state.mode = mode;
+            const btns = document.querySelectorAll('.toggle-btn');
+            const slider = document.getElementById('mode-slider');
+            
+            if (mode === 'drag') {
+                btns[0].classList.add('active');
+                btns[1].classList.remove('active');
+                slider.style.transform = 'translateX(0)';
+            } else {
+                btns[0].classList.remove('active');
+                btns[1].classList.add('active');
+                slider.style.transform = 'translateX(100%)';
+            }
+            updateVisualization();
+        }
+
+        function toggleSnap() {
+            state.snap = !state.snap;
+            const btn = document.getElementById('snap-btn');
+            btn.innerText = `Snap to Pythagorean Triples: ${state.snap ? 'ON' : 'OFF'}`;
+            btn.style.borderColor = state.snap ? COLORS.c : 'var(--border-color)';
+            btn.style.color = state.snap ? COLORS.c : 'var(--text-main)';
+            
+            if (state.snap) snapToTriple();
+            updateVisualization();
+        }
+
+        function snapToTriple() {
+            // FIX 1: Robust Global Search for Pythagorean Triples
+            // Search range increased to +/- 50 units to ensure valid triples are found
+            const currentA = Math.abs(state.p2.y - state.p1.y);
+            const currentB = Math.abs(state.p3.x - state.p1.x);
+            
+            let bestMatch = null;
+            let minDiff = Infinity;
+
+            const range = 50;
+            const startA = Math.max(1, Math.round(currentA) - range);
+            const endA = Math.round(currentA) + range;
+            const startB = Math.max(1, Math.round(currentB) - range);
+            const endB = Math.round(currentB) + range;
+
+            for(let i = startA; i <= endA; i++) {
+                for(let j = startB; j <= endB; j++) {
+                    const k = Math.sqrt(i*i + j*j);
+                    // Check if k is an integer (valid Pythagorean triple)
+                    if (Number.isInteger(k)) {
+                        // Calculate distance from current position to this triple
+                        const diff = Math.abs(currentA - i) + Math.abs(currentB - j);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            bestMatch = { a: i, b: j, c: k };
+                        }
+                    }
+                }
+            }
+
+            if (bestMatch) {
+                gsap.to(state, {
+                    p2: { y: -bestMatch.a },
+                    p3: { x: bestMatch.b },
+                    duration: 0.5,
+                    ease: "power2.out"
+                });
+            }
+        }
+
+        function resetTriangle() {
+            gsap.to(state, {
+                p1: { x: 0, y: 0 },
+                p2: { y: -4 },
+                p3: { x: 3 },
+                duration: 0.8,
+                ease: "elastic.out(1, 0.5)"
+            });
+            // FIX 4: Reset Snap state on reset
+            if(state.snap) toggleSnap();
+        }
+
+        // --- Event Listeners for Dragging ---
+        canvas.on('mouse:down', function(opt) {
+            const target = opt.target;
+            if (!target || !target.type || target.type !== 'circle') return;
+            
+            if (state.mode !== 'drag') return;
+
+            let isDragging = true;
+            let startX, startY;
+            
+            // Identify handles by index (they are added in order: h1, h2, h3)
+            const handles = canvas.getObjects().filter(o => o.type === 'circle');
+            const h1 = handles[handles.length - 3];
+            const h2 = handles[handles.length - 2];
+            const h3 = handles[handles.length - 1];
+
+            if (target === h1) { // Right Angle
+                startX = target.left; startY = target.top;
+            } else if (target === h2) { // Top
+                startX = target.left; startY = target.top;
+            } else { // Right
+                startX = target.left; startY = target.top;
+            }
+
+            canvas.on('mouse:move', function(e) {
+                if (!isDragging) return;
+                const pointer = canvas.getPointer(e.e);
+                
+                // Calculate grid delta
+                const dx = toGrid(pointer.x - startX);
+                const dy = toGrid(pointer.y - startY);
+
+                if (target === h1) { // Right Angle (Moves whole triangle)
+                    state.p1.x += dx;
+                    state.p1.y -= dy; // Canvas Y is inverted
+                    startX = pointer.x; startY = pointer.y;
+                } else if (target === h2) { // Top (Leg A)
+                    state.p2.y = state.p1.y + dy;
+                    startX = pointer.x; startY = pointer.y;
+                } else { // Right (Leg B)
+                    state.p3.x = state.p1.x + dx;
+                    startX = pointer.x; startY = pointer.y;
+                }
+                
+                updateVisualization();
+            });
+
+            canvas.on('mouse:up', function() {
+                isDragging = false;
+                canvas.off('mouse:move');
+                canvas.off('mouse:up');
+                
+                // Snap logic after drag
+                if (state.snap) snapToTriple();
+            });
+        });
+
+        // --- Plot Points Mode Logic (FIX 3) ---
+        // Allows independent plotting of vertices.
+        // Click 1: Sets Right Angle (p1)
+        // Click 2: Sets Top Vertex (p2) relative to p1
+        // Click 3: Sets Right Vertex (p3) relative to p1
+        let plotStep = 0;
+
+        canvas.on('mouse:down', function(opt) {
+            if (state.mode !== 'plot') return;
+            
+            const pointer = canvas.getPointer(opt.e);
+            const gridX = toGrid(pointer.x - canvas.width/2);
+            const gridY = toGrid(pointer.y - canvas.height/2);
+
+            if (plotStep === 0) {
+                // Set Right Angle
+                state.p1.x = gridX;
+                state.p1.y = gridY;
+                plotStep = 1;
+            } else if (plotStep === 1) {
+                // Set Top Vertex (p2)
+                state.p2.x = gridX;
+                state.p2.y = gridY;
+                plotStep = 2;
+            } else if (plotStep === 2) {
+                // Set Right Vertex (p3)
+                state.p3.x = gridX;
+                state.p3.y = gridY;
+                plotStep = 0; // Reset for next triangle
+            }
+
+            updateVisualization();
+        });
+
+        // --- Proof Animation Logic (FIX 2) ---
+        // Implements a full dissection proof animation using GSAP
+        let proofCanvas, proofCtx;
+        let proofAnimId;
+
+        function openProof() {
+            document.getElementById('proof-modal').classList.add('open');
+            proofCanvas = document.getElementById('proof-canvas');
+            proofCanvas.width = proofCanvas.parentElement.clientWidth;
+            proofCanvas.height = proofCanvas.parentElement.clientHeight;
+            proofCtx = proofCanvas.getContext('2d');
+            
+            // Get current dimensions
+            const a = Math.abs(state.p2.y - state.p1.y);
+            const b = Math.abs(state.p3.x - state.p1.x);
+            const c = dist({x: state.p2.x, y: state.p2.y}, {x: state.p3.x, y: state.p3.y});
+            
+            // Scale for visualization
+            const scale = Math.min(proofCanvas.width, proofCanvas.height) / (c + 4);
+            
+            animateProof(a, b, c, scale);
+        }
+
+        function closeProof() {
+            document.getElementById('proof-modal').classList.remove('open');
+            cancelAnimationFrame(proofAnimId);
+        }
+
+        function animateProof(a, b, c, scale) {
+            // Clear previous animations
+            if (proofAnimId) cancelAnimationFrame(proofAnimId);
+            
+            const centerX = proofCanvas.width / 2;
+            const centerY = proofCanvas.height / 2;
+            const sideLen = c * scale;
+            const sqASide = a * scale;
+            const sqBSide = b * scale;
+            
+            // Initial positions (outside the target square)
+            const startAX = centerX - sideLen - sqASide;
+            const startAY = centerY - sqASide/2;
+            
+            const startBX = centerX + sideLen/2;
+            const startBY = centerY + sideLen + sqBSide;
+            
+            // Target positions (inside the target square)
+            const targetAX = centerX - sideLen/2;
+            const targetAY = centerY - sqASide/2;
+            
+            const targetBX = centerX + sideLen/2 - sqBSide;
+            const targetBY = centerY - sideLen/2;
+
+            // Create GSAP Timeline
+            const tl = gsap.timeline({
+                onUpdate: drawFrame,
+                onComplete: () => {
+                    // Final draw to ensure crispness
+                    drawFrame();
+                }
+            });
+
+            // Animate Square A (Blue)
+            tl.to({ x: startAX, y: startAY }, {
+                x: targetAX,
+                y: targetAY,
+                duration: 1.2,
+                ease: "power2.inOut"
+            }, 0);
+
+            // Animate Square B (Green)
+            tl.to({ x: startBX, y: startBY }, {
+                x: targetBX,
+                y: targetBY,
+                duration: 1.2,
+                ease: "power2.inOut"
+            }, 0);
+
+            function drawFrame() {
+                proofCtx.clearRect(0, 0, proofCanvas.width, proofCanvas.height);
+                
+                // 1. Draw Target Square (Hypotenuse)
+                const hypAngle = Math.atan2(a, b); 
+      	
+                proofCtx.save();
+                proofCtx.translate(centerX, centerY);
+                proofCtx.rotate(hypAngle);
+                proofCtx.strokeStyle = COLORS.c;
+                proofCtx.lineWidth = 2;
+                proofCtx.strokeRect(-sideLen/2, -sideLen/2, sideLen, sideLen);
+                proofCtx.restore();
+
+                // 2. Draw Animated Squares
+                // We need to get the current values from GSAP
+                const currentAX = gsap.getProperty({ x: startAX, y: startAY }, 'x');
+                const currentAY = gsap.getProperty({ x: startAX, y: startAY }, 'y');
+                
+                const currentBX = gsap.getProperty({ x: startBX, y: startBY }, 'x');
+                const currentBY = gsap.getProperty({ x: startBX, y: startBY }, 'y');
+
+                // Draw Square A
+                proofCtx.fillStyle = COLORS.a;
+                proofCtx.globalAlpha = 0.6;
+                proofCtx.fillRect(currentAX, currentAY, sqASide, sqASide);
+                
+                // Draw Square B
+                proofCtx.fillStyle = COLORS.b;
+                proofCtx.fillRect(currentBX, currentBY, sqBSide, sqBSide);
+
+                // Text
+                proofCtx.fillStyle = '#2C3E50';
+                proofCtx.font = '20px sans-serif';
+                proofCtx.textAlign = 'center';
+                proofCtx.fillText(`Area: ${a}² + ${b}² = ${c}²`, centerX, 50);
+            }
+        }
+
+        // --- Boot ---
+        window.onload = () => {
+            initGrid();
+            updateVisualization();
+        };
+
+    </script>
+</body>
+</html>

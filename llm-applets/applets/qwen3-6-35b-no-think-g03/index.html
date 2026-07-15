@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplication Array Explorer</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- GSAP for Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #F0F4F8;
+            --bg-panel: #FFFFFF;
+            --bg-panel-hover: #E2E8F0;
+            --accent-primary: #4A90E2; /* Blue */
+            --accent-secondary: #50E3C2; /* Teal */
+            --accent-success: #7ED321; /* Green */
+            --accent-warning: #F5A623; /* Orange */
+            --accent-danger: #BD10E0; /* Purple */
+            --text-main: #333333;
+            --text-muted: #64748B;
+            --font-heading: 'Fredoka', sans-serif;
+            --font-body: 'Nunito', sans-serif;
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #root {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* App Container */
+        .app-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 95vh;
+            background: var(--bg-panel);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+        }
+        
+        h1 {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            margin: 0;
+            color: var(--accent-primary);
+        }
+
+        /* Controls Area */
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: var(--bg-dark);
+            border-radius: 16px;
+        }
+
+        .stepper-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-panel);
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--bg-panel-hover);
+        }
+
+        .stepper-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--bg-panel-hover);
+            color: var(--text-main);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stepper-btn:hover { background: var(--accent-primary); color: white; }
+        .stepper-btn:active { transform: scale(0.95); }
+
+        .factor-display {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            width: 40px;
+            text-align: center;
+            color: var(--accent-warning);
+        }
+
+        .operator { font-size: 1.5rem; color: var(--text-muted); }
+
+        /* Action Buttons */
+        .action-btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: none;
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+        }
+
+        .btn-primary { background: var(--accent-primary); }
+        .btn-secondary { background: var(--accent-secondary); color: var(--text-main); }
+        .btn-accent { background: var(--accent-success); }
+        .btn-danger { background: var(--accent-danger); }
+        
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .action-btn:active { transform: translateY(0); }
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Main Visualization Area */
+        .main-stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .math-sentence {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-dark);
+            padding: 10px 20px;
+            border-radius: 12px;
+            color: var(--text-main);
+        }
+
+        .array-container {
+            display: grid;
+            gap: 4px;
+            padding: 20px;
+            background: var(--bg-dark);
+            border-radius: 16px;
+            border: 2px solid var(--bg-panel-hover);
+            transition: all 0.5s ease;
+            position: relative;
+            will-change: transform; 
+        }
+
+        .tile {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .tile:hover { transform: scale(1.1); z-index: 10; }
+        .tile.highlighted { background: var(--accent-warning); box-shadow: 0 0 15px var(--accent-warning); }
+        .tile.active-row { background: var(--accent-success); }
+        .tile.active-col { background: var(--accent-secondary); }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: var(--text-main);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 100;
+            border: 1px solid var(--accent-primary);
+            white-space: nowrap;
+        }
+
+        /* Bottom Section */
+        .bottom-panel {
+            display: flex;
+            gap: 20px;
+            height: 180px;
+        }
+
+        .times-table-container {
+            flex: 1;
+            background: var(--bg-dark);
+            border-radius: 16px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .times-table-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 2px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .tt-cell {
+            aspect-ratio: 1;
+            background: var(--bg-panel);
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: transparent;
+            transition: all 0.3s;
+        }
+
+        .tt-cell.highlight { background: var(--accent-warning); color: var(--text-main); font-weight: bold; transform: scale(1.2); }
+        .tt-cell.related { background: var(--accent-secondary); color: var(--text-main); }
+
+        .info-panel {
+            flex: 1;
+            background: var(--bg-dark);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        .info-label { color: var(--text-muted); }
+        .info-value { font-weight: bold; color: var(--accent-primary); }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-container { height: 100vh; border-radius: 0; padding: 10px; }
+            .tile { width: 25px; height: 25px; }
+            .controls { gap: 10px; }
+            .bottom-panel { flex-direction: column; height: auto; }
+            .times-table-container { height: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- Audio Helper ---
+        let audioCtx = null;
+
+        const getAudioContext = () => {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        };
+
+        const playSound = (type) => {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.1);
+            } else if (type === 'count') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300 + (Math.random() * 200), ctx.currentTime);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.15);
+            } else if (type === 'flip') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(200, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(800, ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            }
+        };
+
+        // --- Components ---
+
+        const Stepper = ({ label, value, onChange, color }) => (
+            <div className="stepper-group">
+                <span style={{color: 'var(--text-muted)', fontSize: '0.9rem'}}>{label}</span>
+                <button className="stepper-btn" onClick={() => onChange(value - 1)}>-</button>
+                <div className="factor-display" style={{color: color}}>{value}</div>
+                <button className="stepper-btn" onClick={() => onChange(value + 1)}>+</button>
+            </div>
+        );
+
+        const App = () => {
+            // State
+            const [rows, setRows] = useState(4);
+            const [cols, setCols] = useState(3);
+            const [highlightedRow, setHighlightedRow] = useState(null);
+            const [isAnimating, setIsAnimating] = useState(false);
+            const [animatingRow, setAnimatingRow] = useState(null);
+            const [animatingCol, setAnimatingCol] = useState(null); 
+            const [flipMode, setFlipMode] = useState(false); 
+            
+            // Refs for GSAP
+            const gridRef = useRef(null);
+            const tilesRef = useRef([]);
+
+            // Derived State
+            const product = rows * cols;
+            const addend = cols;
+            const count = rows;
+
+            // Handlers
+            const handleRowHover = (r) => {
+                if (!isAnimating) setHighlightedRow(r);
+            };
+
+            const handleReset = () => {
+                setRows(4);
+                setCols(3);
+                setHighlightedRow(null);
+                setAnimatingRow(null);
+                setAnimatingCol(null);
+                setFlipMode(false);
+                playSound('click');
+            };
+
+            const handleFlip = () => {
+                playSound('flip');
+                setFlipMode(true);
+                
+                // FIX 3: GSAP Rotation Animation
+                if (gridRef.current) {
+                    gsap.to(gridRef.current, {
+                        rotation: 90,
+                        scale: 0.8,
+                        duration: 0.5,
+                        ease: "power2.inOut",
+                        onComplete: () => {
+                            // Swap logic
+                            const tempRows = rows;
+                            setRows(cols);
+                            setCols(tempRows);
+                            
+                            // Reset transform and animate back
+                            gsap.set(gridRef.current, { rotation: 0, scale: 1 });
+                            setFlipMode(false);
+                        }
+                    });
+                } else {
+                    // Fallback if ref fails
+                    const tempRows = rows;
+                    setRows(cols);
+                    setCols(tempRows);
+                    setFlipMode(false);
+                }
+            };
+
+            const handleSkipCount = async () => {
+                if (isAnimating) return;
+                setIsAnimating(true);
+                setHighlightedRow(null);
+                setAnimatingCol(null);
+                
+                let currentSum = 0;
+                
+                // FIX 1: Iterate through ROWS for skip counting
+                for (let i = 0; i < rows; i++) {
+                    setAnimatingRow(i);
+                    
+                    // FIX 4: Play sound once per row (group)
+                    playSound('count');
+                    
+                    // Calculate subtotal (cumulative sum)
+                    currentSum += cols;
+                    
+                    // Wait for animation
+                    await new Promise(r => setTimeout(r, 800)); // Slower to allow reading
+                }
+                
+                setAnimatingRow(null);
+                setIsAnimating(false);
+            };
+
+            // GSAP Effects
+            useEffect(() => {
+                // Animate grid entrance
+                if (tilesRef.current.length > 0) {
+                    gsap.fromTo(tilesRef.current, 
+                        { scale: 0, opacity: 0 },
+                        { scale: 1, opacity: 1, stagger: 0.01, duration: 0.4, ease: "back.out(1.7)" }
+                    );
+                }
+            }, [rows, cols]);
+
+            // FIX 1: Dynamic Math Rendering
+            useEffect(() => {
+                if (window.renderMathInElement) {
+                    const el = document.getElementById('math-sentence');
+                    if(el) {
+                        // Clear previous
+                        el.innerHTML = '';
+                        
+                        // Build LaTeX string dynamically
+                        let latex = '';
+                        for(let i=0; i<rows; i++) {
+                            latex += `${cols} + `;
+                        }
+                        latex = latex.slice(0, -3) + ` = ${product}`;
+                        
+                        // Render with KaTeX
+                        try {
+                            const rendered = katex.renderToString(latex, { throwOnError: false });
+                            el.innerHTML = rendered;
+                        } catch(e) {
+                            el.innerText = latex;
+                        }
+                    }
+                }
+            }, [rows, cols]);
+
+            // Generate Grid
+            const gridItems = useMemo(() => {
+                const items = [];
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        items.push({ r, c, id: `${r}-${c}` });
+                    }
+                }
+                return items;
+            }, [rows, cols]);
+
+            // Generate Times Table
+            const timesTableGrid = useMemo(() => {
+                const cells = [];
+                for(let r=1; r<=12; r++) {
+                    for(let c=1; c<=12; c++) {
+                        const isCurrent = (r === rows && c === cols);
+                        const isRelated = (r === rows || c === cols);
+                        
+                        cells.push(
+                            <div 
+                                key={`${r}-${c}`} 
+                                className={`tt-cell ${isCurrent ? 'highlight' : (isRelated ? 'related' : '')}`}
+                            >
+                                {r*c}
+                            </div>
+                        );
+                    }
+                }
+                return cells;
+            }, [rows, cols]);
+
+            return (
+                <div className="app-container">
+                    <header>
+                        <h1>Array Explorer</h1>
+                        <div style={{display:'flex', gap:'10px'}}>
+                            <button className="action-btn btn-danger" onClick={handleReset}>Reset</button>
+                        </div>
+                    </header>
+
+                    <div className="controls">
+                        <Stepper label="Rows" value={rows} onChange={(v) => {
+                            const nv = Math.max(1, Math.min(12, v));
+                            setRows(nv);
+                            playSound('click');
+                        }} color="var(--accent-primary)" />
+                        
+                        <span className="operator">×</span>
+                        
+                        <Stepper label="Cols" value={cols} onChange={(v) => {
+                            const nv = Math.max(1, Math.min(12, v));
+                            setCols(nv);
+                            playSound('click');
+                        }} color="var(--accent-secondary)" />
+                        
+                        <span className="operator">=</span>
+                        
+                        <div className="factor-display" style={{color: 'var(--accent-success)', width: '60px'}}>{product}</div>
+                    </div>
+
+                    <div className="main-stage">
+                        <div className="math-sentence" id="math-sentence">
+                            {/* Rendered by useEffect */}
+                        </div>
+
+                        <div 
+                            className="array-container" 
+                            ref={gridRef}
+                            style={{
+                                gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                                gridTemplateRows: `repeat(${rows}, 1fr)`,
+                                transform: flipMode ? 'rotate(90deg) scale(0.8)' : 'scale(1)',
+                                opacity: flipMode ? 0 : 1
+                            }}
+                        >
+                            {gridItems.map((item) => {
+                                const isHighlighted = highlightedRow === item.r;
+                                const isAnimatingRow = animatingRow === item.r;
+                                const isAnimatingCol = animatingCol === item.c;
+                                
+                                // FIX 2: Highlight logic for individual tiles
+                                // Changed to OR logic to ensure row highlighting works during skip count
+                                const isCurrent = isHighlighted || isAnimatingRow;
+                                
+                                return (
+                                    <div 
+                                        key={item.id}
+                                        ref={el => tilesRef.current[item.r * cols + item.c] = el}
+                                        className={`tile ${isCurrent ? 'active-row' : ''}`}
+                                        style={{
+                                            backgroundColor: isCurrent ? 'var(--accent-success)' : 'var(--accent-primary)',
+                                            boxShadow: isCurrent ? '0 0 15px var(--accent-success)' : '0 4px 6px rgba(0,0,0,0.1)'
+                                        }}
+                                        onMouseEnter={() => handleRowHover(item.r)}
+                                        onMouseLeave={() => setHighlightedRow(null)}
+                                    />
+                                );
+                            })}
+                        </div>
+                        
+                        {/* Tooltip for subtotal */}
+                        {highlightedRow !== null && !isAnimating && (
+                            <div className="tooltip" style={{
+                                // FIX 3: Position tooltip relative to the hovered tile
+                                // We use a fixed offset from the center of the screen for simplicity in this grid
+                                // or we could calculate based on grid position. 
+                                // Here we use a simple top/left relative to the container based on row index
+                                top: `${(highlightedRow * 44) + 20}px`, 
+                                left: '100%',
+                                marginLeft: '20px',
+                                transform: 'none',
+                                opacity: 1,
+                                background: 'var(--text-main)',
+                                border: '2px solid var(--accent-warning)'
+                            }}>
+                                Row {highlightedRow + 1}: {highlightedRow + 1} × {cols} = {(highlightedRow + 1) * cols}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="controls" style={{marginTop: '10px'}}>
+                        <button className="action-btn btn-secondary" onClick={handleFlip}>
+                            <span>↻</span> Commutative Flip
+                        </button>
+                        <button className="action-btn btn-accent" onClick={handleSkipCount} disabled={isAnimating}>
+                            <span>▶</span> Skip Count
+                        </button>
+                    </div>
+
+                    <div className="bottom-panel">
+                        <div className="info-panel">
+                            <div className="info-row">
+                                <span className="info-label">Total Tiles</span>
+                                <span className="info-value">{product}</span>
+                            </div>
+                            <div className="info-row">
+                                <span className="info-label">Groups</span>
+                                <span className="info-value">{rows}</span>
+                            </div>
+                            <div className="info-row">
+                                <span className="info-label">Size of Group</span>
+                                <span className="info-value">{cols}</span>
+                            </div>
+                        </div>
+
+                        <div className="times-table-container">
+                            <div style={{marginBottom: '10px', color: 'var(--text-muted)', fontSize: '0.9rem'}}>Times Table</div>
+                            <div className="times-table-grid">
+                                {timesTableGrid}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

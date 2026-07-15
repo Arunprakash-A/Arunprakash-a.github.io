@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Self-Attention Mechanism Explorer</title>
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" 
+        onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --bg-panel: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(148, 163, 184, 0.1);
+            
+            --cyan: #38bdf8;    /* Query */
+            --green: #4ade80;   /* Key */
+            --orange: #fb923c;  /* Value */
+            --pink: #f472b6;    /* Attention/Heatmap */
+            
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+            
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 20% 30%, #1e293b 0%, transparent 40%),
+                linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* --- Layout --- */
+        .sidebar {
+            width: 320px;
+            min-width: 320px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid var(--border-color);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .main-stage {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            gap: 2rem;
+            overflow-y: auto;
+        }
+
+        /* --- Typography & Headers --- */
+        h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); margin-bottom: 0.5rem; }
+        h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--cyan); margin-bottom: 1rem; font-weight: 600; }
+        p { font-size: 0.9rem; line-height: 1.6; color: var(--text-muted); }
+
+        /* --- Controls --- */
+        .control-group { display: flex; flex-direction: column; gap: 0.75rem; }
+        
+        label { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+
+        .btn-row { display: flex; gap: 0.5rem; }
+        
+        button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            transition: all 200ms ease;
+        }
+        button:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--cyan); color: var(--cyan); }
+        button.active { background: rgba(56, 189, 248, 0.15); border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
+
+        input[type="range"] {
+            -webkit-appearance: none; width: 100%; height: 4px; background: #334155; border-radius: 2px; outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 16px; height: 16px; background: var(--cyan); border-radius: 50%; cursor: pointer; box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+        }
+
+        /* --- Math Display --- */
+        .math-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: var(--radius);
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        /* --- Token Cards (Sidebar) --- */
+        .token-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        
+        .token-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: all 200ms ease;
+            position: relative;
+        }
+        .token-card:hover { background: rgba(30, 41, 59, 0.8); border-color: var(--text-muted); }
+        .token-card.selected { border-color: var(--cyan); box-shadow: 0 0 12px rgba(56, 189, 248, 0.15); background: rgba(30, 41, 59, 0.8); }
+        
+        .token-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .token-word { font-weight: 600; color: var(--text-main); font-size: 0.95rem; }
+        .token-id { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; }
+
+        /* Vector Bars */
+        .vector-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; height: 18px; position: relative; }
+        .v-label { width: 12px; font-size: 0.6rem; text-align: center; color: var(--text-muted); }
+        
+        /* The actual bar - Fix #4: Make the whole track draggable */
+        .bar-track { 
+            flex: 1; height: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; position: relative; overflow: visible; cursor: ns-resize; /* Added cursor style */
+        }
+        
+        /* The actual bar fill */
+        .bar-fill { 
+            height: 100%; width: 50%; position: absolute; left: 50%; transform: translateX(-50%); transition: none; border-radius: 3px; pointer-events: none; /* Important: let clicks pass through to track */
+        }
+        
+        .v-q .bar-fill { background: var(--cyan); box-shadow: 0 0 6px rgba(56, 189, 248, 0.4); }
+        .v-k .bar-fill { background: var(--green); box-shadow: 0 0 6px rgba(74, 222, 128, 0.4); }
+        .v-v .bar-fill { background: var(--orange); box-shadow: 0 0 6px rgba(251, 146, 60, 0.4); }
+
+        /* --- Visualization Area --- */
+        
+        /* Token Row (Top) */
+        .token-row-container { display: flex; justify-content: center; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
+        .mini-token {
+            width: 80px; height: 40px; background: rgba(30, 41, 59, 0.6); border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-weight: 600; color: var(--text-muted); border: 1px solid transparent; transition: all 300ms ease; position: relative; cursor: pointer;
+        }
+        .mini-token.active { background: rgba(56, 189, 248, 0.15); color: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 15px rgba(56, 189, 248, 0.3); }
+        .mini-token::after { content: ''; position: absolute; bottom: -1rem; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: var(--cyan); border-radius: 50%; opacity: 0; transition: opacity 300ms; }
+        .mini-token.active::after { opacity: 1; }
+
+        /* Canvas Layer */
+        #viz-canvas-container { position: relative; flex: 1; min-height: 400px; background: rgba(2, 6, 23, 0.5); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border-color); }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* Output Panel - Fix #5: Always visible */
+        .output-panel {
+            background: rgba(30, 41, 59, 0.4); border-radius: var(--radius); padding: 1rem; border: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 2rem; opacity: 1; transition: opacity 300ms; pointer-events: auto; /* Always interactive */
+        }
+        
+        .output-title { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; display: block; }
+        .weighted-sum-visual { display: flex; gap: 4px; align-items: flex-end; height: 60px; width: 200px; border-bottom: 1px solid var(--text-muted); padding-bottom: 4px; position: relative; }
+        
+        /* --- Responsive (Fix #4) --- */
+        @media (max-width: 900px) {
+            body { flex-direction: column; overflow-y: auto; height: auto; }
+            .sidebar { width: 100%; min-width: 0; border-right: none; border-bottom: 1px solid var(--border-color); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div>
+            <h1>Self-Attention Explorer</h1>
+            <p style="margin-top: 0.5rem;">Visualize how Transformers process language by weighing the relevance of different words.</p>
+        </div>
+
+        <!-- Controls -->
+        <div class="control-group">
+            <h2>Controls</h2>
+            
+            <label>Mode</label>
+            <div class="btn-row">
+                <button id="btn-single" class="active" onclick="setMode('single')" role="button" aria-pressed="true">Single Token</button>
+                <button id="btn-full" onclick="setMode('full')" role="button" aria-pressed="false">Full Matrix</button>
+            </div>
+
+            <!-- Fix #2: Temperature Slider Range -->
+            <label>Temperature ($\tau$): <span id="temp-val">1.0</span></label>
+            <input type="range" id="slider-temp" min="0.1" max="2.0" step="0.1" value="1.0">
+
+            <!-- Fix #3: Dimension Display -->
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label>Vector Dim ($d_k$):</label>
+                <span id="dim-val" style="font-family: var(--font-mono); color: var(--cyan);">2</span>
+            </div>
+
+            <div class="btn-row">
+                <button onclick="randomizeVectors()">Randomize Vectors</button>
+                <button onclick="resetState()">Reset</button>
+            </div>
+        </div>
+
+        <!-- Math -->
+        <div>
+            <h2>The Formula</h2>
+            <div class="math-container">
+                $$ \text{Attention}(Q, K) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right) $$
+            </div>
+        </div>
+
+        <!-- Token Selector (Sidebar List) -->
+        <div class="control-group">
+            <h2>Tokens</h2>
+            <p style="font-size: 0.75rem; margin-bottom: 0.5rem;">Drag the colored bars to adjust vectors.</p>
+            <div id="token-list" class="token-list"></div>
+        </div>
+    </aside>
+
+    <!-- MAIN STAGE -->
+    <main class="main-stage">
+        
+        <!-- Top Token Row (Visual Anchor) -->
+        <div class="token-row-container" id="top-token-row">
+            <!-- Generated by JS -->
+        </div>
+
+        <!-- Visualization Canvas -->
+        <div id="viz-canvas-container">
+            <canvas id="main-canvas"></canvas>
+        </div>
+
+        <!-- Output Vector Panel (Bottom) - Fix #5: Always visible -->
+        <div class="output-panel" id="output-panel">
+            <div style="flex: 1;">
+                <span class="output-title">Weighted Sum of Values ($O_i = \sum w_{ij} V_j$)</span>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">The output is a blend of all Value vectors, weighted by relevance.</p>
+            </div>
+            <div class="weighted-sum-visual" id="output-bars"></div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Configuration & State ---
+        const CONFIG = {
+            tokenCount: 4,
+            vectorDim: 2, // Visualized as Q, K, V bars (2D for visualization)
+            colors: {
+                q: '#38bdf8', k: '#4ade80', v: '#fb923c', a: '#f472b6'
+            }
+        };
+
+        const TOKENS_DATA = [
+            { word: "The", id: 0 },
+            { word: "cat", id: 1 },
+            { word: "sat", id: 2 },
+            { word: "mat", id: 3 }
+        ];
+
+        let state = {
+            mode: 'single', // 'single' or 'full'
+            selectedTokenIdx: 0,
+            temperature: 1.0,
+            tokens: [] // Will hold Q, K, V vectors for each token
+        };
+
+        // --- Initialization ---
+        function init() {
+            // Initialize random vectors (-1 to 1)
+            state.tokens = TOKENS_DATA.map((t, i) => ({
+                ...t,
+                q: [Math.random() * 2 - 1, Math.random() * 2 - 1],
+                k: [Math.random() * 2 - 1, Math.random() * 2 - 1],
+                v: [Math.random() * 2 - 1, Math.random() * 2 - 1]
+            }));
+
+            renderSidebar();
+            setupCanvas();
+            
+            // Fix #3: Ensure resize triggers redraw correctly
+            window.addEventListener('resize', () => { 
+                setupCanvas(); 
+                requestAnimationFrame(draw);
+            });
+            
+            // Initial Draw
+            requestAnimationFrame(draw);
+        }
+
+        function resetState() {
+            state.temperature = 1.0;
+            state.selectedTokenIdx = 0;
+            document.getElementById('slider-temp').value = 1.0;
+            document.getElementById('temp-val').innerText = "1.0";
+            
+            // Reset vectors to a default pattern (e.g., identity-like)
+            const defaults = [
+                { q: [1, 0], k: [1, 0], v: [1, 0] },
+                { q: [0, 1], k: [0.5, 0.8], v: [0, 1] },
+                { q: [-0.5, 0.8], k: [0.8, -0.2], v: [1, 1] },
+                { q: [0.8, -0.6], k: [-0.3, 0.9], v: [0, 0] }
+            ];
+            
+            state.tokens.forEach((t, i) => {
+                t.q = [...defaults[i].q];
+                t.k = [...defaults[i].k];
+                t.v = [...defaults[i].v];
+            });
+
+            renderSidebar();
+            requestAnimationFrame(draw);
+        }
+
+        function randomizeVectors() {
+            state.tokens.forEach(t => {
+                t.q = [Math.random() * 2 - 1, Math.random() * 2 - 1];
+                t.k = [Math.random() * 2 - 1, Math.random() * 2 - 1];
+                t.v = [Math.random() * 2 - 1, Math.random() * 2 - 1];
+            });
+            renderSidebar();
+            requestAnimationFrame(draw);
+        }
+
+        // --- Logic: Attention Calculation ---
+        function calculateAttention(queryIdx) {
+            const qVec = state.tokens[queryIdx].q;
+            const scores = [];
+            
+            // Fix #3: Use the actual vector dimension for scaling. 
+            // For 2D vectors, d_k=2 makes the math meaningful and visible.
+            const d_k = state.tokens[0].q.length; 
+
+            // 1. Dot Product & Scale
+            for (let i = 0; i < state.tokens.length; i++) {
+                const kVec = state.tokens[i].k;
+                let dot = 0;
+                for(let j=0; j<qVec.length; j++) dot += qVec[j] * kVec[j];
+                
+                // Scale by sqrt(d_k)
+                const scaledScore = dot / Math.sqrt(d_k); 
+                scores.push(scaledScore);
+            }
+
+            // 2. Softmax with Temperature (Fix #1: Use state.temperature)
+            const tau = state.temperature;
+            
+            // Numerical stability: subtract max before exp to avoid overflow
+            const maxScore = Math.max(...scores);
+            const shiftedScores = scores.map(s => s - maxScore);
+            const expScores = shiftedScores.map(s => Math.exp(s / tau));
+            const sumExp = expScores.reduce((a, b) => a + b, 0);
+            
+            return expScores.map(e => e / sumExp);
+        }
+
+        // --- UI Rendering: Sidebar & Controls ---
+        function renderSidebar() {
+            const list = document.getElementById('token-list');
+            list.innerHTML = '';
+
+            state.tokens.forEach((t, i) => {
+                const card = document.createElement('div');
+                card.className = `token-card ${i === state.selectedTokenIdx ? 'selected' : ''}`;
+                
+                // Fix #1: Click handler for selection
+                card.onclick = (e) => {
+                    if(e.target.classList.contains('drag-handle')) return;
+                    selectToken(i);
+                };
+
+                // Helper to create vector bar - Fix #4: Use .bar-track as the drag target
+                const makeBar = (label, val, colorClass, type) => `
+                    <div class="vector-row ${colorClass}">
+                        <span class="v-label">${label}</span>
+                        <div class="bar-track" data-token="${i}" data-type="${type}">
+                            <div class="bar-fill" style="width: ${(val + 1) * 50}%"></div>
+                        </div>
+                    </div>
+                `;
+
+                card.innerHTML = `
+                    <div class="token-header">
+                        <span class="token-word">${t.word}</span>
+                        <span class="token-id">#${i}</span>
+                    </div>
+                    ${makeBar('Q', t.q[0], 'v-q', 'q')}
+                    ${makeBar('K', t.k[0], 'v-k', 'k')}
+                    ${makeBar('V', t.v[0], 'v-v', 'v')}
+                `;
+
+                list.appendChild(card);
+            });
+
+            // Attach Drag Listeners (Re-attach after innerHTML update) - Fix #4: Listen on .bar-track
+            document.querySelectorAll('.bar-track').forEach(track => {
+                track.addEventListener('mousedown', startDrag);
+            });
+        }
+
+        function selectToken(idx) {
+            state.selectedTokenIdx = idx;
+            renderSidebar(); // Update selection highlight
+            
+            const panel = document.getElementById('output-panel');
+            if (state.mode === 'single') {
+                updateOutputPanel(idx);
+            } else {
+                updateOutputPanel(state.selectedTokenIdx); // Always show output for selected token
+            }
+            
+            requestAnimationFrame(draw);
+        }
+
+        function setMode(mode) {
+            state.mode = mode;
+            document.getElementById('btn-single').classList.toggle('active', mode === 'single');
+            document.getElementById('btn-full').classList.toggle('active', mode === 'full');
+            
+            // Fix #5: Update ARIA states for accessibility
+            document.getElementById('btn-single').setAttribute('aria-pressed', mode === 'single' ? 'true' : 'false');
+            document.getElementById('btn-full').setAttribute('aria-pressed', mode === 'full' ? 'true' : 'false');
+
+            const panel = document.getElementById('output-panel');
+            if (mode === 'single') {
+                updateOutputPanel(state.selectedTokenIdx);
+            } else {
+                // In full matrix mode, we can still show output for the selected token or hide it. 
+                // Let's keep it visible but maybe change the title to indicate it's the selected row.
+                updateOutputPanel(state.selectedTokenIdx);
+            }
+            
+            // Fix #3: Ensure canvas redraws on mode switch
+            requestAnimationFrame(draw);
+        }
+
+        function updateOutputPanel(tokenIdx) {
+            const weights = calculateAttention(tokenIdx);
+            const container = document.getElementById('output-bars');
+            container.innerHTML = '';
+
+            // Visualize the weighted sum components (simplified as stacked bars or just values)
+            state.tokens.forEach((t, i) => {
+                const w = weights[i];
+                const val = t.v[0]; // Use first dim for visualization
+                
+                const bar = document.createElement('div');
+                bar.style.width = '20px';
+                bar.style.background = `linear-gradient(to top, ${CONFIG.colors.a}88, ${CONFIG.colors.a})`;
+                bar.style.height = `${Math.abs(val) * 40}px`; // Base height
+                bar.style.position = 'relative';
+                bar.style.borderRadius = '2px';
+                
+                const label = document.createElement('span');
+                label.innerText = `×${w.toFixed(2)}`;
+                label.style.fontSize = '0.6rem';
+                label.style.color = CONFIG.colors.a;
+                label.style.position = 'absolute';
+                label.style.bottom = '-15px';
+                label.style.left = '50%';
+                label.style.transform = 'translateX(-50%)';
+                
+                bar.appendChild(label);
+                container.appendChild(bar);
+            });
+        }
+
+        // --- Dragging Logic (Interactive Vectors) - Fix #1 & #4 ---
+        let dragTarget = null;
+
+        function startDrag(e) {
+            e.stopPropagation(); // Prevent event bubbling
+            const track = e.currentTarget; // Use currentTarget to ensure we get the .bar-track
+            const tokenIdx = parseInt(track.dataset.token);
+            const type = track.dataset.type; // 'q', 'k', or 'v'
+            
+            dragTarget = { idx: tokenIdx, type };
+
+            const onMouseMove = (ev) => {
+                if (!dragTarget) return;
+                
+                const rect = track.getBoundingClientRect();
+                let x = ev.clientX - rect.left;
+                if (x < 0) x = 0;
+                if (x > rect.width) x = rect.width;
+                
+                // Map 0..width to -1..1
+                const val = (x / rect.width) * 2 - 1;
+                
+                state.tokens[tokenIdx][type][0] = val;
+                
+                // Update UI immediately
+                const fill = track.querySelector('.bar-fill');
+                if(fill) {
+                    fill.style.width = `${(val + 1) * 50}%`;
+                }
+                
+                requestAnimationFrame(draw);
+            };
+
+            const onMouseUp = () => {
+                dragTarget = null;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        }
+
+        // --- Canvas Visualization ---
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function setupCanvas() {
+            const container = document.getElementById('viz-canvas-container');
+            const dpr = window.devicePixelRatio || 1;
+            
+            // Fix #3: Ensure dimensions are set correctly before drawing
+            width = container.clientWidth;
+            height = container.clientHeight;
+            
+            if (width === 0 || height === 0) {
+                console.warn("Canvas has zero size, skipping setup");
+                return;
+            }
+
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+        }
+
+        function draw() {
+            // Clear
+            ctx.clearRect(0, 0, width, height);
+            
+            if (state.mode === 'single') {
+                drawSingleMode();
+            } else {
+                drawFullMatrixMode();
+            }
+        }
+
+        function drawSingleMode() {
+            const qIdx = state.selectedTokenIdx;
+            const weights = calculateAttention(qIdx);
+            
+            // Layout: 4 columns for tokens. 
+            // Top area: Token Cards (visualized as nodes)
+            // Bottom area: Connection lines
+            
+            const paddingX = width * 0.1;
+            const colWidth = (width - paddingX * 2) / (state.tokens.length - 1);
+            
+            const nodeY = height * 0.35;
+            const nodes = state.tokens.map((t, i) => ({
+                x: paddingX + i * colWidth,
+                y: nodeY,
+                token: t
+            }));
+
+            // Draw Connection Lines (Curved Bezier)
+            for (let i = 0; i < state.tokens.length; i++) {
+                const w = weights[i];
+                if (w < 0.01) continue; // Skip invisible lines
+                
+                const source = nodes[qIdx];
+                const target = nodes[i];
+                
+                ctx.beginPath();
+                ctx.moveTo(source.x, source.y);
+                
+                // Bezier control points for curve
+                const cpY = Math.max(source.y, target.y) + 100; 
+                ctx.quadraticCurveTo((source.x + target.x)/2, cpY, target.x, target.y);
+                
+                // Style based on weight
+                ctx.strokeStyle = CONFIG.colors.a;
+                ctx.lineWidth = w * 6 + 1;
+                ctx.globalAlpha = Math.max(0.1, w);
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
+
+                // Draw "flowing" dot animation on line
+                const time = Date.now() / 1000;
+                const tAnim = (time * w) % 1; 
+                // Simple linear interpolation for demo, ideally use bezier pointAt(t)
+                const animX = source.x + (target.x - source.x) * tAnim;
+                const animY = source.y + (target.y - source.y) * tAnim + Math.sin(tAnim * Math.PI) * 50;
+
+                ctx.beginPath();
+                ctx.arc(animX, animY, 4, 0, Math.PI*2);
+                ctx.fillStyle = '#fff';
+                ctx.fill();
+            }
+
+            // Draw Nodes (Tokens)
+            nodes.forEach((n, i) => {
+                const isSelected = i === qIdx;
+                
+                // Glow
+                if (isSelected) {
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = CONFIG.colors.q;
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+
+                // Node Circle
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, 24, 0, Math.PI * 2);
+                ctx.fillStyle = '#1e293b';
+                ctx.strokeStyle = isSelected ? CONFIG.colors.q : '#475569';
+                ctx.lineWidth = 3;
+                ctx.fill();
+                ctx.stroke();
+
+                // Text
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = 'bold 12px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(n.token.word, n.x, n.y);
+
+                // Vector Bars (Mini) below node
+                drawMiniVectorBars(ctx, n.x, n.y + 35, n.token);
+            });
+        }
+
+        function drawFullMatrixMode() {
+            const padding = 60;
+            const gridW = Math.min(width - padding*2, height * 0.8);
+            const cellSize = gridW / state.tokens.length;
+            
+            // Calculate full matrix weights
+            let allWeights = [];
+            for(let i=0; i<state.tokens.length; i++) {
+                allWeights.push(calculateAttention(i));
+            }
+
+            // Draw Heatmap Cells
+            for (let i = 0; i < state.tokens.length; i++) {
+                for (let j = 0; j < state.tokens.length; j++) {
+                    const w = allWeights[i][j];
+                    
+                    const x = padding + j * cellSize;
+                    const y = padding + i * cellSize;
+
+                    // Fix #4: Use solid color scale instead of opacity for visibility
+                    // Interpolate between dark slate (#1e293b) and pink (#f472b6) based on weight
+                    const r = Math.round(30 + (244 - 30) * w);
+                    const g = Math.round(41 + (114 - 41) * w);
+                    const b = Math.round(59 + (182 - 59) * w);
+                    
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`; 
+                    ctx.fillRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+                    
+                    // Text value
+                    if (w > 0.15) {
+                        ctx.fillStyle = '#fff';
+                        ctx.font = '10px monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(w.toFixed(2), x + cellSize/2, y + cellSize/2);
+                    }
+                }
+            }
+
+            // Draw Token Labels (Top and Left)
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '12px Inter, sans-serif';
+            
+            state.tokens.forEach((t, i) => {
+                const x = padding + i * cellSize;
+                const y = padding + i * cellSize;
+
+                // Top Label
+                ctx.textAlign = 'center';
+                ctx.fillText(t.word, x + cellSize/2, padding - 15);
+
+                // Left Label
+                ctx.textAlign = 'right';
+                ctx.fillText(t.word, padding - 10, y + cellSize/2 + 4);
+            });
+        }
+
+        function drawMiniVectorBars(ctx, x, y, token) {
+            const barW = 30;
+            const gap = 4;
+            
+            // Draw Q (Cyan)
+            drawBar(ctx, x - barW/2, y, barW, 4, token.q[0], CONFIG.colors.q);
+            // Draw K (Green)
+            drawBar(ctx, x - barW/2, y + gap, barW, 4, token.k[0], CONFIG.colors.k);
+            // Draw V (Orange)
+            drawBar(ctx, x - barW/2, y + gap*2, barW, 4, token.v[0], CONFIG.colors.v);
+        }
+
+        function drawBar(ctx, x, y, w, h, val, color) {
+            // val is -1 to 1. Center is 0.
+            const centerX = x + w/2;
+            
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fillRect(x, y, w, h);
+
+            let fillW = Math.abs(val) * (w/2);
+            if (val < 0) {
+                ctx.fillRect(centerX - fillW, y, fillW, h);
+            } else {
+                ctx.fillRect(centerX, y, fillW, h);
+            }
+            
+            // Glow
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = color;
+            ctx.fillStyle = color;
+            if (val < 0) ctx.fillRect(centerX - fillW, y, fillW, h);
+            else ctx.fillRect(centerX, y, fillW, h);
+            ctx.shadowBlur = 0;
+        }
+
+        // --- Event Listeners for Controls ---
+        document.getElementById('slider-temp').addEventListener('input', (e) => {
+            state.temperature = parseFloat(e.target.value);
+            document.getElementById('temp-val').innerText = state.temperature.toFixed(1);
+            
+            if (state.mode === 'single') updateOutputPanel(state.selectedTokenIdx);
+            requestAnimationFrame(draw);
+        });
+
+        // --- Start ---
+        init();
+
+    </script>
+</body>
+</html>

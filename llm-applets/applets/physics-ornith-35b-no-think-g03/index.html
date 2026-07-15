@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sun & Shadows Explorer</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- p5.js (Pinned Version) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+
+    <style>
+        :root {
+            --bg-deep: #050608;
+            --bg-vignette: #1a1b2e;
+            --surface: rgba(30, 41, 59, 0.7);
+            --border: rgba(148, 163, 184, 0.2);
+            --accent-gold: #FFD700;
+            --accent-cyan: #22d3ee;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --font-display: 'Fredoka', sans-serif;
+            --font-body: 'Nunito', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image: radial-gradient(circle at center, var(--bg-vignette) 0%, var(--bg-deep) 80%);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Main App Container */
+        #app-container {
+            position: relative;
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 24px;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.7),
+                inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Header / Controls */
+        #controls {
+            padding: 20px 32px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 24px;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            background: rgba(5, 6, 8, 0.4);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h2 {
+            font-family: var(--font-display);
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+        }
+
+        .value-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+            font-weight: 700;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        
+        input[type=range]:focus { outline: none; }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            transition: transform 0.2s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: linear-gradient(90deg, #3b82f6, var(--accent-gold), #ef4444);
+            border-radius: 2px;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pill-toggle {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 50px;
+            padding: 4px;
+            display: flex;
+            position: relative;
+            cursor: pointer;
+            border: 1px solid var(--border);
+        }
+
+        .pill-option {
+            padding: 8px 20px;
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            z-index: 2;
+            transition: color 0.3s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .pill-option.active {
+            color: #fff;
+        }
+
+        /* Focus styles for accessibility */
+        .pill-option:focus-visible, 
+        .obj-btn:focus-visible,
+        .reset-btn:focus-visible {
+            outline: 2px solid var(--accent-cyan);
+            outline-offset: 2px;
+        }
+
+        .pill-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: calc(50% - 4px);
+            height: calc(100% - 8px);
+            background: var(--accent-cyan);
+            border-radius: 50px;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
+        }
+
+        /* Object Picker */
+        .object-picker {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .obj-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: var(--font-body);
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .obj-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .obj-btn.active {
+            background: rgba(34, 211, 238, 0.15);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.2);
+        }
+
+        /* Reset Button */
+        .reset-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-body);
+            transition: all 0.2s ease;
+        }
+
+        .reset-btn:hover {
+            color: #ef4444;
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Canvas Stage */
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            #controls {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                padding: 16px;
+            }
+            
+            .toggle-container, .object-picker {
+                justify-content: center;
+            }
+
+            h2 { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <div id="controls">
+        <!-- Left: Time Slider -->
+        <div class="control-group" style="grid-column: span 1;">
+            <div class="label-row">
+                <h2>Sun Position</h2>
+                <span id="time-display" class="value-badge">Noon (12 PM)</span>
+            </div>
+            <input type="range" id="sun-slider" min="0" max="100" value="50" aria-label="Time of Day Slider">
+        </div>
+
+        <!-- Center: Mode Toggle -->
+        <div class="control-group" style="align-items: center;">
+            <h2>Light Source</h2>
+            <div class="pill-toggle" id="mode-toggle" role="group" aria-label="Light Source Mode">
+                <div class="pill-slider" id="toggle-slider"></div>
+                <div class="pill-option active" data-mode="sun" role="button" tabindex="0" aria-pressed="true">Sun</div>
+                <div class="pill-option" data-mode="torch" role="button" tabindex="0" aria-pressed="false">Torch</div>
+            </div>
+        </div>
+
+        <!-- Right: Object Picker & Reset -->
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <h2>Object</h2>
+            <div class="object-picker">
+                <button class="obj-btn active" data-obj="stick"><span>🥢</span> Stick</button>
+                <button class="obj-btn" data-obj="tree"><span>🌲</span> Tree</button>
+                <button class="obj-btn" data-obj="child"><span>🧍</span> Child</button>
+            </div>
+            <button id="reset-btn" class="reset-btn">↺ Reset View</button>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+</div>
+
+<script>
+/**
+ * APP STATE & CONFIGURATION
+ */
+const state = {
+    mode: 'sun', // 'sun' or 'torch'
+    timeSlider: 50, // 0 (Sunrise) to 100 (Sunset), 50 is Noon
+    objectType: 'stick', // 'stick', 'tree', 'child'
+    
+    // Physics / Geometry Constants
+    groundY: 0, 
+    objectX: 0,
+    
+    // Sun Arc Parameters
+    sunArcRadius: 0,
+    
+    // Torch State
+    torchX: 0,
+    torchY: 0,
+    
+    // Animation / Transitions
+    targetSunPos: { x: 0, y: 0 },
+    currentSunPos: { x: 0, y: 0 },
+    isDraggingTorch: false,
+};
+
+/**
+ * P5.JS SKETCH (Encapsulated to avoid global scope conflicts)
+ */
+const sketch = (p) => {
+    
+    // Canvas reference
+    let canvasRef;
+
+    p.setup = function() {
+        const container = document.getElementById('canvas-container');
+        canvasRef = p.createCanvas(container.offsetWidth, container.offsetHeight);
+        canvasRef.parent('canvas-container');
+        
+        // Initialize positions
+        state.groundY = p.height - (p.height * 0.25); 
+        state.objectX = p.width / 2;
+        state.torchX = state.objectX + 100;
+        state.torchY = p.height / 3;
+
+        // FIX #1: Assign this to global variable safely
+        window.p5_instance = this;
+        
+        calculateSunPosition();
+    };
+
+    p.windowResized = function() {
+        const container = document.getElementById('canvas-container');
+        p.resizeCanvas(container.offsetWidth, container.offsetHeight);
+        state.groundY = p.height - (p.height * 0.25);
+        state.objectX = p.width / 2;
+        
+        // Ensure torch stays in bounds after resize
+        if(state.torchX > p.width) state.torchX = p.width - 50;
+        if(state.torchY > p.height) state.torchY = p.height - 50;
+        
+        calculateSunPosition();
+    };
+
+    p.draw = function() {
+        updateState();
+        
+        drawSky();
+        drawGround();
+        drawLightRays();
+        drawShadow();
+        drawObject();
+        drawLightSource();
+        drawUIOverlay();
+    };
+
+    /**
+     * LOGIC: UPDATE STATE
+     */
+    function updateState() {
+        const lerpSpeed = 0.1;
+        
+        if (state.mode === 'sun') {
+            calculateSunPosition();
+            state.currentSunPos.x = p.lerp(state.currentSunPos.x, state.targetSunPos.x, lerpSpeed);
+            state.currentSunPos.y = p.lerp(state.currentSunPos.y, state.targetSunPos.y, lerpSpeed);
+        } else {
+            // In torch mode, sun position follows torch but dimmed
+            if (!state.isDraggingTorch) {
+                state.currentSunPos.x = p.lerp(state.currentSunPos.x, state.torchX, 0.1);
+                state.currentSunPos.y = p.lerp(state.currentSunPos.y, state.torchY, 0.1);
+            } else {
+                state.currentSunPos.x = state.torchX;
+                state.currentSunPos.y = state.torchY;
+            }
+        }
+    }
+
+    function calculateSunPosition() {
+        const percent = state.timeSlider / 100;
+        // Map slider (0-100) to angle (PI to 0 degrees)
+        // 0% slider = PI (Left Horizon), 50% = PI/2 (Top), 100% = 0 (Right Horizon)
+        const angleDeg = p.map(percent, 0, 1, p.PI, 0); 
+        
+        const arcRadius = p.min(p.width * 0.45, p.height * 0.8);
+        
+        state.targetSunPos.x = state.objectX + p.cos(angleDeg) * arcRadius;
+        state.targetSunPos.y = state.groundY - p.sin(angleDeg) * arcRadius;
+    }
+
+    /**
+     * DRAWING FUNCTIONS
+     */
+
+    function drawSky() {
+        // FIX #5: Smooth interpolation of sky colors based on sun height
+        const sunHeightNorm = p.map(state.currentSunPos.y, 0, state.groundY, 1, 0);
+        
+        let topColor, bottomColor;
+        
+        if (sunHeightNorm < 0.2 || sunHeightNorm > 0.8) {
+            // Sunrise/Sunset: Orange/Pink to Dark Blue
+            topColor = p.color(25, 25, 50);
+            bottomColor = p.color(60, 30, 40);
+        } else if (sunHeightNorm < 0.4) {
+            // Morning/Evening: Lighter Blue to Orange
+            topColor = p.color(40, 60, 120);
+            bottomColor = p.color(80, 50, 60);
+        } else {
+            // Noon: Bright Blue to Deep Blue (FIX #5 - Brighter colors)
+            topColor = p.color(30, 100, 200);
+            bottomColor = p.color(100, 180, 240);
+        }
+        
+        p.noStroke();
+        // Use createGradient for smoother transitions (Fix #5) - Fixed 'height' reference
+        const gradient = p.drawingContext.createLinearGradient(0, 0, 0, p.height * 0.75);
+        gradient.addColorStop(0, `rgb(${topColor.levels[0]}, ${topColor.levels[1]}, ${topColor.levels[2]})`);
+        gradient.addColorStop(1, `rgb(${bottomColor.levels[0]}, ${bottomColor.levels[1]}, ${bottomColor.levels[2]})`);
+        
+        p.drawingContext.fillStyle = gradient;
+        // Fixed 'width' and 'height' references (Fix #1)
+        p.rect(0, 0, p.width, p.height * 0.75);
+    }
+
+    function drawGround() {
+        // Ground Surface
+        p.fill(30, 41, 59); 
+        p.noStroke();
+        
+        p.beginShape();
+        p.vertex(0, state.groundY);
+        p.bezierVertex(p.width * 0.3, state.groundY + 20, p.width * 0.7, state.groundY - 20, p.width, state.groundY);
+        p.vertex(p.width, p.height);
+        p.vertex(0, p.height);
+        p.endShape(p.CLOSE);
+        
+        // Grid lines for depth perception
+        p.stroke(45, 60, 80);
+        p.strokeWeight(1);
+        p.noFill();
+        for(let i = 0; i < p.width; i+= 50) {
+            p.line(i, state.groundY + 20, i - (i-p.width/2)*0.2, p.height);
+        }
+    }
+
+    function drawObject() {
+        p.push();
+        p.translate(state.objectX, state.groundY);
+        
+        if (state.objectType === 'stick') {
+            drawStickFigure();
+        } else if (state.objectType === 'tree') {
+            drawTree();
+        } else if (state.objectType === 'child') {
+            drawChild();
+        }
+        
+        p.pop();
+    }
+
+    function drawStickFigure() {
+        p.stroke(248, 250, 252); 
+        p.strokeWeight(6);
+        p.noFill();
+        
+        // Head
+        p.circle(0, -130, 20);
+        // Body
+        p.line(0, -120, 0, -50);
+        // Arms
+        p.line(-30, -90, 30, -90);
+        // Legs
+        p.line(0, -50, -25, 0);
+        p.line(0, -50, 25, 0);
+    }
+
+    function drawTree() {
+        // Trunk
+        p.fill(68, 64, 60);
+        p.stroke(68, 64, 60);
+        p.strokeWeight(1);
+        
+        p.rect(-10, -120, 20, 120, 5); 
+        
+        // Leaves (Cluster of circles)
+        p.noStroke();
+        p.fill(34, 197, 94); 
+        p.circle(0, -160, 80);
+        p.circle(-30, -120, 70);
+        p.circle(30, -120, 70);
+        p.circle(0, -90, 60);
+    }
+
+    function drawChild() {
+        // Body (Jacket)
+        p.fill(59, 130, 246); 
+        p.noStroke();
+        
+        p.rect(-15, -100, 30, 60, 10);
+        
+        // Head
+        p.fill(255, 228, 196); 
+        p.circle(0, -120, 30);
+        
+        // Hair/Hat
+        p.fill(45, 45, 45);
+        p.arc(0, -125, 32, 20, p.PI, p.TWO_PI);
+        
+        // Legs (Pants)
+        p.stroke(30, 30, 30);
+        p.strokeWeight(8);
+        p.line(-10, -40, -12, 0);
+        p.line(10, -40, 12, 0);
+    }
+
+    function drawShadow() {
+        const lx = state.currentSunPos.x;
+        const ly = state.currentSunPos.y;
+        
+        // Top of object height (approximate based on type)
+        let topY = -140; 
+        if (state.objectType === 'tree') topY = -200;
+        if (state.objectType === 'child') topY = -135;
+
+        const topX = 0; // Object center X relative to itself
+        
+        // Vector from Light to Top of Object
+        const dx = topX - lx;
+        const dy = topY - ly;
+        
+        // Find intersection with ground (y=0 in local coords)
+        // y = ly + t * dy = 0 => t = -ly / dy
+        
+        let shadowEndX = null;
+
+        // FIX #3: Handle edge cases for shadow calculation
+        if (p.abs(dy) < 0.1) {
+            // Light is directly above or below the top point, shadow extends to infinity/edge
+            shadowEndX = lx + dx * 100; 
+        } else {
+            const t = -ly / dy;
+            
+            if (t > 0) {
+                // Light is above the object (standard case for ground shadow)
+                shadowEndX = lx + t * dx;
+            } else {
+                // Light is below the object, no ground shadow cast forward
+                shadowEndX = topX; 
+            }
+        }
+
+        p.push();
+        p.translate(state.objectX, state.groundY);
+        
+        p.noStroke();
+        
+        if (state.mode === 'torch') {
+            // Torch mode: Shadow is more diffuse and larger
+            p.fill(15, 23, 42, 150);
+            const spread = p.map(p.dist(lx, ly, topX, topY), 50, 500, 20, 5); 
+            if (shadowEndX !== null) {
+                p.beginShape();
+                p.vertex(topX - 10, 0);
+                p.vertex(topX + 10, 0);
+                p.vertex(shadowEndX + spread, 0);
+                p.vertex(shadowEndX - spread, 0);
+                p.endShape(p.CLOSE);
+            }
+        } else {
+            // Sun mode: Sharp shadow
+            p.fill(15, 23, 42, 220);
+            if (shadowEndX !== null) {
+                p.beginShape();
+                p.vertex(topX - 10, 0);
+                p.vertex(topX + 10, 0);
+                p.vertex(shadowEndX + 5, 0);
+                p.vertex(shadowEndX - 5, 0);
+                p.endShape(p.CLOSE);
+            }
+        }
+        
+        // Text Label for Shadow Length (Educational)
+        if (state.mode === 'sun' && shadowEndX !== null) {
+            const shadowLen = p.abs(shadowEndX - topX);
+            p.fill(248, 250, 252);
+            p.noStroke();
+            p.textAlign(p.CENTER);
+            p.textSize(12);
+            p.text(`Shadow Length: ${p.nf(shadowLen/10, 1, 1)}m`, (topX + shadowEndX)/2, 20);
+        }
+        
+        p.pop();
+    }
+
+    function drawLightSource() {
+        const lx = state.currentSunPos.x;
+        const ly = state.currentSunPos.y;
+        
+        if (state.mode === 'sun') {
+            // Draw Sun
+            p.push();
+            p.translate(lx, ly);
+            
+            // Glow
+            p.noStroke();
+            for(let i=5; i>0; i--) {
+                p.fill(255, 215, 0, p.map(i, 0, 5, 80, 0));
+                p.circle(0, 0, 60 + i*15);
+            }
+            
+            // Core
+            p.fill(255, 235, 59);
+            p.circle(0, 0, 50);
+            
+            p.pop();
+        } else {
+            // Draw Torch / Flashlight
+            p.push();
+            p.translate(lx, ly);
+            
+            if (!state.isDraggingTorch) {
+                drawBeam(lx, ly);
+            }
+            
+            // Icon
+            p.noStroke();
+            p.fill(34, 211, 238); 
+            p.circle(0, 0, 30);
+            
+            // Handle
+            p.stroke(94, 62, 50);
+            p.strokeWeight(4);
+            p.line(0, 15, -10, 35);
+            
+            p.pop();
+        }
+    }
+
+    function drawBeam(lx, ly) {
+        const topY = state.objectType === 'tree' ? -200 : -140;
+        
+        p.push();
+        p.noFill();
+        p.stroke(34, 211, 238);
+        p.strokeWeight(1);
+        p.drawingContext.setLineDash([5, 5]); 
+        
+        // Left ray
+        p.line(lx, ly, state.objectX - 10, state.groundY + topY);
+        // Right ray
+        p.line(lx, ly, state.objectX + 10, state.groundY + topY);
+        
+        p.drawingContext.setLineDash([]);
+        p.pop();
+    }
+
+    function drawLightRays() {
+        // Optional: Draw rays from sun to object for educational purposes
+        if (state.mode === 'sun') return; 
+    }
+
+    function drawUIOverlay() {
+        p.push();
+        p.fill(248, 250, 252);
+        p.noStroke();
+        p.textAlign(p.LEFT);
+        
+        let tip = "";
+        if (state.mode === 'sun') {
+            const t = state.timeSlider;
+            if (t < 30) tip = "☀️ Morning: Shadows are long!";
+            else if (t > 70) tip = "🌇 Evening: Shadows stretch out.";
+            else tip = "☀️ Noon: Shadows are shortest.";
+        } else {
+            tip = "💡 Move the torch to change the shadow.";
+        }
+        
+        p.textSize(14);
+        // Fixed 'height' reference (Fix #1)
+        p.text(tip, 20, p.height - 20);
+        p.pop();
+    }
+
+    /**
+     * INTERACTION HANDLERS
+     */
+    p.mousePressed = function() {
+        if (state.mode === 'torch') {
+            const d = p.dist(p.mouseX, p.mouseY, state.torchX, state.torchY);
+            if (d < 50) { 
+                state.isDraggingTorch = true;
+            }
+        }
+    };
+
+    p.mouseDragged = function() {
+        if (state.mode === 'torch' && state.isDraggingTorch) {
+            state.torchX = p.mouseX;
+            state.torchY = p.mouseY;
+            // Clamp to keep torch in sky area roughly
+            if (state.torchY > p.height * 0.8) state.torchY = p.height * 0.8;
+        }
+    };
+
+    p.mouseReleased = function() {
+        state.isDraggingTorch = false;
+    };
+};
+
+// Initialize p5 instance safely
+new p5(sketch);
+
+
+/**
+ * UI CONTROLS LOGIC (Outside of p5 scope)
+ */
+
+// Time Slider
+const slider = document.getElementById('sun-slider');
+const timeDisplay = document.getElementById('time-display');
+
+slider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    state.timeSlider = val;
+    
+    let label = "";
+    if (val < 20) label = "Sunrise (6 AM)";
+    else if (val < 40) label = "Morning (9 AM)";
+    else if (val < 60) label = "Noon (12 PM)";
+    else if (val < 80) label = "Afternoon (3 PM)";
+    else label = "Sunset (6 PM)";
+    
+    timeDisplay.textContent = label;
+});
+
+// Mode Toggle with Accessibility Fixes (#4)
+const modeToggle = document.getElementById('mode-toggle');
+const toggleSlider = document.getElementById('toggle-slider');
+const options = modeToggle.querySelectorAll('.pill-option');
+
+function setMode(mode) {
+    state.mode = mode;
+    
+    // Update UI
+    options.forEach(o => {
+        o.classList.remove('active');
+        o.setAttribute('aria-pressed', 'false');
+    });
+    
+    const activeOpt = document.querySelector(`.pill-option[data-mode="${mode}"]`);
+    if (activeOpt) {
+        activeOpt.classList.add('active');
+        activeOpt.setAttribute('aria-pressed', 'true');
+    }
+
+    // Move slider pill
+    if (mode === 'sun') {
+        toggleSlider.style.transform = 'translateX(0)';
+    } else {
+        toggleSlider.style.transform = 'translateX(100%)';
+        
+        // FIX #2: Safe access to p5 instance with fallback
+        const w = window.p5_instance ? window.p5_instance.width : 800;
+        const h = window.p5_instance ? window.p5_instance.height : 600;
+        
+        state.torchX = w / 2 + 150; 
+        state.torchY = h / 3;       
+    }
+}
+
+// Store the p5 instance globally so we can access width/height safely in UI logic
+let p5_instance = null;
+
+options.forEach(opt => {
+    const handler = () => setMode(opt.dataset.mode);
+    
+    opt.addEventListener('click', handler);
+    // Keyboard accessibility
+    opt.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handler();
+        }
+    });
+});
+
+// Object Picker
+const objBtns = document.querySelectorAll('.obj-btn');
+objBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        objBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.objectType = btn.dataset.obj;
+    });
+});
+
+// Reset Button
+document.getElementById('reset-btn').addEventListener('click', () => {
+    slider.value = 50;
+    slider.dispatchEvent(new Event('input'));
+    
+    // Find sun option and click it
+    const sunOption = document.querySelector('.pill-option[data-mode="sun"]');
+    if(sunOption) sunOption.click();
+    
+    objBtns[0].click();
+});
+
+</script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ornith-35b &middot; Building Interactive Simulations Using Agentic AI</title>
+<link rel="stylesheet" href="/llm-applets/style.css">
+</head>
+<body>
+<header>
+  <a class="back-link" href="/llm-applets/neural-networks/">&larr; Neural Networks models</a>
+  <h1>ornith-35b</h1>
+  <p>11 applets &middot; ran on A100 40GB</p>
+  <p class="browser-tip">Tip: if an applet's animations don't appear to run, try shrinking your browser window to about 80% width.</p>
+</header>
+<div class="grid">
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/nn-ornith-35b-no-think-n01/">
+          <div class="card-body">
+            <h2>Single Artificial Neuron: Inputs, Weights, Bias, and Activation</h2>
+            <p class="description">This applet provides a concrete, visual exploration of the fundamental unit of a neural network: the artificial neuron. Learners manipulate inputs, weights, and bias to see how they combine into a weighted sum (z) and pass through an activation function to produce an output (a). The visualization emphasizes the physical metaphor of signals flowing along wires, where wire thickness represents weight magnitude and color represents sign, making abstract linear algebra tangible.</p>
+            <span class="duration">8m 10s to build</span>
+            <p class="stage-breakdown">Planner 21s &middot; Coder 1m 25s &middot; Reflect 6m 24s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/nn-ornith-35b-no-think-n01/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A single-artificial-neuron explorer that makes the fundamental unit of a neural network concrete. The stage shows one neuron: two or three input nodes (x1, x2, x3) as circles on the left, each connected by a wire carrying a weight (w1, w2, w3), plus a separate bias term b, all feeding a central neuron body that computes the weighted sum z = w1*x1 + w2*x2 + b and then an output a = activation(z). The weighted sum builds up term by term in a readout (w1*x1 + w2*x2 + b = z), and each wire is drawn so its colour encodes the sign of the weight (e.g. blue for positive, red for negative) and its thickness the magnitude, so the learner literally sees which inputs push the neuron up or down. A simple step or sigmoid activation turns z into the final output shown at the neuron&#x27;s exit. Controls: sliders for each input value, sliders for each weight and the bias, an activation toggle (step / sigmoid), a &#x27;show computation&#x27; toggle that reveals the term-by-term arithmetic, and a &#x27;Reset&#x27;. Acceptance criteria: z always equals the sum of weight*input over all inputs plus the bias, and the term-by-term breakdown matches it exactly; the output a always equals activation(z); each wire&#x27;s colour and thickness correctly reflect its weight&#x27;s sign and magnitude; and changing any input, weight, or the bias updates z and the output consistently.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/nn-ornith-35b-no-think-n02/">
+          <div class="card-body">
+            <h2>Activation Function Explorer: Visualizing Non-Linearity in Neural Networks</h2>
+            <p class="description">An interactive visualization that demystifies why neural networks require non-linear activation functions. It allows learners to manipulate an input signal z and immediately see how different mathematical functions (Sigmoid, Tanh, ReLU, Leaky ReLU, Step) transform it into an output. By toggling derivative overlays and a comparison mode, the applet visually demonstrates critical concepts like saturation, vanishing gradients, and the &#x27;dead neuron&#x27; problem.</p>
+            <span class="duration">7m 48s to build</span>
+            <p class="stage-breakdown">Planner 14s &middot; Coder 1m 12s &middot; Reflect 6m 22s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/nn-ornith-35b-no-think-n02/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">An activation-function explorer that shows why neurons need non-linearities and how the common ones differ. A graph plots the selected activation over an input range (roughly z from -6 to 6): step, sigmoid, tanh, ReLU, and leaky ReLU. A draggable marker for the input z slides along the horizontal axis; a dot rides the curve at (z, f(z)) and a readout reports the output value. A side panel names the function, shows its formula, and states its output range and where it saturates. An optional derivative overlay draws f&#x27;(z) on the same axes so the learner can see that sigmoid and tanh flatten (tiny gradient) at the extremes while ReLU&#x27;s derivative is 0 or 1 - previewing the vanishing-gradient idea. An optional &#x27;compare all&#x27; mode draws every curve faintly at once. Controls: an activation picker, a draggable input z (or slider), a &#x27;show derivative&#x27; toggle, a &#x27;compare all&#x27; toggle, and a &#x27;Reset&#x27;. Acceptance criteria: each curve matches its exact formula (sigmoid = 1/(1+e^-z), tanh, ReLU = max(0,z), leaky ReLU, and a true step); the marker&#x27;s reported output equals f(z) at the current z; the derivative overlay matches the true derivative of the selected function; and the stated output range and saturation behaviour are correct for each activation.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/nn-ornith-35b-no-think-n03/">
+          <div class="card-body">
+            <h2>Single-Neuron Classifier: Weights, Bias, and Decision Boundaries</h2>
+            <p class="description">An interactive exploration of the geometric intuition behind a single perceptron. Learners manipulate weights (w1, w2) and bias (b) to separate two classes of data points on a 2D plane. The applet visualizes the decision boundary line, the normal vector representing the weight gradient, and real-time classification accuracy, making abstract linear algebra tangible.</p>
+            <span class="duration">8m 10s to build</span>
+            <p class="stage-breakdown">Planner 15s &middot; Coder 1m 24s &middot; Reflect 6m 31s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/nn-ornith-35b-no-think-n03/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A single-neuron classifier explorer that turns weights and bias into a decision boundary. A 2D plane holds a scatter of points in two classes (two colours). One neuron with weights (w1, w2) and bias b defines the line w1*x + w2*y + b = 0, which splits the plane into two shaded half-planes; every point is classified by the side it falls on. As the learner changes the weights the line rotates and as they change the bias it slides, and a live accuracy readout counts how many points are correctly classified. The weight vector (w1, w2) is drawn as an arrow from the line, always perpendicular to it, pointing toward the positive side, to make &#x27;weights set the orientation, bias sets the offset&#x27; visible. Controls: sliders for w1, w2, and b (or drag the line/normal arrow directly), a &#x27;new points&#x27; button that regenerates a fresh two-class scatter, a toggle for the half-plane shading, and a &#x27;Reset&#x27;. Acceptance criteria: the drawn boundary is exactly the line w1*x + w2*y + b = 0; changing the weights rotates the line and changing the bias translates it, both correctly; the weight-vector arrow is perpendicular to the boundary and points to the positive half-plane; and the accuracy count matches which side of the line each point actually lies on.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/nn-ornith-35b-no-think-n04/">
+          <div class="card-body">
+            <h2>Forward Propagation in a Tiny Multilayer Perceptron</h2>
+            <p class="description">This applet provides an intuitive, step-by-step visualization of how a neural network computes its output. It renders a small MLP (2 inputs -&gt; 3 hidden neurons -&gt; 1 output) as a graph where learners can manipulate input values and weights to see exactly how signals flow through the network layer by layer.</p>
+            <span class="duration">7m 58s to build</span>
+            <p class="stage-breakdown">Planner 12s &middot; Coder 1m 23s &middot; Reflect 6m 24s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/nn-ornith-35b-no-think-n04/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A forward-propagation explorer for a tiny multilayer perceptron (for example 2 inputs -&gt; 3 hidden neurons -&gt; 1 output), drawn as nodes with weighted edges between the layers. The learner sets the input values, then runs a propagation animation that lights up the network layer by layer: signals travel along the edges (each edge&#x27;s colour/thickness encoding weight*value), every hidden and output node displays its own weighted sum and its activation, and the final prediction appears at the output. Hovering or tapping any node reveals the incoming computation that produced its value. This shows that a network is just many single-neuron computations chained in layers. Controls: input-value sliders, a &#x27;Step&#x27; button that advances exactly one layer at a time, an &#x27;Auto propagate&#x27; play button, a &#x27;Randomize weights&#x27; button, and a &#x27;Reset&#x27;. Acceptance criteria: each hidden and output node&#x27;s value equals activation(sum of incoming value*weight over its inputs, plus its bias); the animation strictly flows input -&gt; hidden -&gt; output and never backward; the edge visuals encode the signal actually passing along them; and the final output equals a correct full manual forward pass for the current inputs and weights.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/nn-ornith-35b-no-think-n05/">
+          <div class="card-body">
+            <h2>Loss Function Explorer: Visualizing MSE and Cross-Entropy</h2>
+            <p class="description">This applet provides a dual-mode tactile interface for understanding how loss functions quantify model error. In Regression mode, learners manipulate a line through data points where residuals are rendered as literal squares with area proportional to squared error, making the abstract concept of &#x27;minimizing sum of squares&#x27; physically intuitive. In Classification mode, a single slider adjusts predicted probability against a logarithmic curve, revealing why confident correct predictions yield low loss while incorrect ones explode.</p>
+            <span class="duration">7m 30s to build</span>
+            <p class="stage-breakdown">Planner 13s &middot; Coder 1m 17s &middot; Reflect 6m 0s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/nn-ornith-35b-no-think-n05/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A loss-function explorer that makes &#x27;how wrong is the model&#x27; visible. In a regression mode, a handful of data points sit on a plane with a straight model line the learner can tilt and shift; a vertical residual segment joins each point to the line, and each residual is drawn as a literal square whose area equals that point&#x27;s squared error, so the mean squared error is the average of those square areas, shown live on a gauge or bar. In a classification mode, a slider sets the model&#x27;s predicted probability p for the true class and the applet plots the cross-entropy loss -log(p) with the current (p, loss) point marked, so the learner sees the loss approach zero as p -&gt; 1 and explode as p -&gt; 0. Controls: in regression, slope and intercept sliders (or drag the line) and a toggle for the residual squares; a mode toggle between MSE and cross-entropy; in classification, the predicted-probability slider; and a &#x27;Reset&#x27;. Acceptance criteria: the MSE readout equals the mean of the squared residuals and updates as the line moves; each residual square&#x27;s area equals that point&#x27;s squared error; the cross-entropy value equals -log(p), tending to 0 as p -&gt; 1 and growing without bound as p -&gt; 0; and the numeric loss readout always agrees with the on-screen visual.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/nn-ornith-35b-no-think-n06/">
+          <div class="card-body">
+            <h2>Visualizing Gradient Descent on a Loss Landscape</h2>
+            <p class="description">An interactive explorer that demystifies how machine learning models optimize by visualizing gradient descent as a physical ball rolling down a hill. The applet renders a loss landscape (1D curve or 2D contour map) and simulates the optimization process step-by-step, allowing learners to manipulate the learning rate and initial position to observe convergence, oscillation, or divergence firsthand.</p>
+            <span class="duration">8m 3s to build</span>
+            <p class="stage-breakdown">Planner 13s &middot; Coder 1m 21s &middot; Reflect 6m 29s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/nn-ornith-35b-no-think-n06/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A gradient-descent explorer that shows how a model learns by rolling downhill on its loss. The stage shows a loss landscape - a 1D loss curve (a smooth bowl, or a bumpy curve with a local and a global minimum) and optionally a 2D contour map - with a ball at the current parameter value. Each step updates the parameter by exactly minus the learning rate times the gradient (the local slope), and the gradient/tangent arrow is drawn at the ball so its direction and steepness are visible. A learning-rate slider exposes the central trade-off: too small and the ball crawls, a good value converges smoothly to the minimum, too large and it overshoots and bounces outward or diverges. Readouts show the iteration count and the current loss; in 2D mode the descent path is traced across the contour lines toward the minimum. Controls: a learning-rate slider, a &#x27;Step&#x27; button and a &#x27;Run&#x27; animation, a way to reposition the ball to a new start (drag or &#x27;new start&#x27;), a landscape picker (bowl / bumpy / 2D contour), and a &#x27;Reset&#x27;. Acceptance criteria: each step moves the parameter by exactly -(learning rate)*(gradient) and the ball stays on the curve; a small learning rate converges slowly, a moderate one converges, and a too-large one visibly overshoots or diverges; the gradient arrow points along the true local slope; and on a well-behaved run the loss readout decreases over iterations.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/nn-ornith-35b-no-think-n07/">
+          <div class="card-body">
+            <h2>Backpropagation in a Tiny Neural Network</h2>
+            <p class="description">An interactive visualization that walks the learner through a complete forward and backward pass of backpropagation on a small, fully-connected computation graph (input -&gt; hidden -&gt; output -&gt; loss). The applet animates data flowing left-to-right during the forward pass and gradients flowing right-to-left during the backward pass, explicitly highlighting the chain rule at each node. It bridges the gap between abstract calculus notation and concrete numerical gradient computation.</p>
+            <span class="duration">9m 26s to build</span>
+            <p class="stage-breakdown">Planner 15s &middot; Coder 1m 38s &middot; Reflect 7m 33s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/nn-ornith-35b-no-think-n07/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A backpropagation explorer built on a small computation graph or a tiny two-to-three-node network. First a forward pass flows left to right, computing intermediate values, the output, and a final loss, each shown at its node. Then backpropagation runs right to left: each node and edge lights up to show its local derivative and the accumulated gradient dLoss/dparameter obtained by multiplying local derivatives along the path (the chain rule), and every weight ends up annotated with its gradient. Forward values are drawn in one colour and backward gradients in another so the two passes are clearly distinct. The learner can change an input or a weight and re-run both passes to see how the gradients respond. Controls: input and weight sliders, a &#x27;Forward&#x27; step, a &#x27;Backward&#x27; step (or an auto play through both), a &#x27;Randomize&#x27;, and a &#x27;Reset&#x27;. Acceptance criteria: the forward values are computed correctly; each weight&#x27;s gradient equals the product of the local derivatives along its path to the loss (the chain rule) and matches a numerical finite-difference estimate within a small tolerance; the backward pass flows strictly output -&gt; input; and the sign of each gradient is correct, so that a positive gradient means nudging that weight up increases the loss.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/nn-ornith-35b-no-think-n08/">
+          <div class="card-body">
+            <h2>Interactive Neural Network Training: From Data to Decision Boundary</h2>
+            <p class="description">This applet provides a real-time visualization of the neural network training loop. Learners select a 2D classification dataset (linearly separable or not) and watch a small neural network learn to classify it. The interface synchronizes the evolving decision boundary with a live loss curve, making abstract concepts like backpropagation and gradient descent tangible through immediate visual feedback.</p>
+            <span class="duration">7m 24s to build</span>
+            <p class="stage-breakdown">Planner 12s &middot; Coder 1m 18s &middot; Reflect 5m 54s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/nn-ornith-35b-no-think-n08/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A live training explorer that puts forward pass, loss, backprop, and gradient descent together as a real training loop. A small neural network learns to separate a 2D dataset that can be linear or not - two moons, two concentric circles, or XOR. The left panel shows the data points with the network&#x27;s current decision boundary as a shaded region; the right panel draws a loss-versus-epoch curve live. Pressing &#x27;Train&#x27; repeatedly runs epochs (forward pass, loss, backprop, weight update), and the learner watches the boundary morph from a random split into one that fits the data while the loss curve falls. A hidden-layer-size (capacity) slider lets them discover that a non-linearly-separable dataset only gets solved with enough hidden units. Controls: a dataset picker (linear / moons / circles / XOR), a learning-rate slider, a hidden-layer-size slider, Train / Pause / Reset-weights buttons, and a training-speed control. Acceptance criteria: the decision boundary starts near-random and demonstrably improves as training proceeds; the loss curve trends downward over epochs (minor noise allowed); a non-linearly-separable dataset (circles or XOR) is separated only when there are enough hidden units and fails with too few; and &#x27;Reset-weights&#x27; re-randomizes the weights and returns the boundary to an untrained state.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/nn-ornith-35b-no-think-n09/">
+          <div class="card-body">
+            <h2>Interactive exploration of overfitting, generalization, and regularization in polynomial regression.</h2>
+            <p class="description">This applet visualizes the bias-variance tradeoff by fitting a polynomial curve to noisy data. Learners manipulate model capacity (polynomial degree) and regularization strength to observe how the fitted curve transitions from underfitting to overfitting. It simultaneously plots training vs. validation loss against capacity, revealing the characteristic U-shaped generalization curve that defines the core challenge of machine learning.</p>
+            <span class="duration">7m 17s to build</span>
+            <p class="stage-breakdown">Planner 12s &middot; Coder 1m 14s &middot; Reflect 5m 51s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/nn-ornith-35b-no-think-n09/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">An overfitting-and-generalization explorer. A 1D regression has a handful of noisy points drawn from a smooth underlying trend, and the learner increases model capacity (a polynomial degree, or the number of hidden units) and watches the fitted curve go from underfit (too stiff, missing the trend) through a good fit to overfit (wiggling through every noisy point). Two losses are tracked and plotted against capacity: the training loss, which keeps falling as capacity grows, and the validation loss on held-out points, which falls and then rises - the classic U-shaped generalization curve. A regularization-strength (weight-decay) slider pulls an overfit curve back toward smoothness and narrows the train/validation gap. The held-out validation points are shown distinctly so the learner sees the model is scored on data it did not fit. Controls: a capacity slider (degree or hidden units), a regularization-strength slider, a &#x27;Resample noise / new data&#x27; button, a toggle to show the held-out validation points, and a &#x27;Reset&#x27;. Acceptance criteria: low capacity underfits (both training and validation loss high), high capacity drives training loss toward zero while validation loss rises (overfitting), and the best validation loss occurs at an intermediate capacity; increasing regularization visibly smooths an overfit curve and reduces the train/validation gap; and the validation loss is computed only on points the model was not fitted on.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/nn-ornith-35b-no-think-n11/">
+          <div class="card-body">
+            <h2>Embeddings Explorer: Visualizing Vector Spaces</h2>
+            <p class="description">An interactive 2D visualization that demystifies how machine learning models convert words into vectors. Learners explore a semantic space where similar items cluster together, manipulate similarity metrics to see nearest neighbors, and perform vector arithmetic (like the classic &#x27;king - man + woman = queen&#x27; analogy) by dragging arrows in real-time.</p>
+            <span class="duration">8m 20s to build</span>
+            <p class="stage-breakdown">Planner 13s &middot; Coder 1m 33s &middot; Reflect 6m 34s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/nn-ornith-35b-no-think-n11/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">An embeddings explorer showing how items become vectors in a space where similar things sit close together. A 2D map holds labeled points - for example words such as king, queen, man, woman, apple, orange, dog, cat - positioned so related items cluster. Selecting or hovering a point highlights its nearest neighbours under the chosen metric, drawing connecting lines annotated with the similarity scores, so the learner sees semantic neighbourhoods form. A similarity readout reports the cosine similarity between two selected points as the cosine of the angle between their vectors. A vector-arithmetic mode demonstrates the classic analogy: pick a - b + c (for example king - man + woman) and the applet draws the resulting vector with arrows and marks the nearest actual point (queen). Controls: a point/word selector, a &#x27;nearest k&#x27; slider, a metric toggle (cosine / Euclidean), a &#x27;vector arithmetic&#x27; mode with three pickers for a, b, c, and a &#x27;Reset&#x27;. Acceptance criteria: the nearest-neighbour highlighting matches the actual ranking under the selected metric; the reported cosine similarity equals the cosine of the angle between the two vectors (1 for identical directions, 0 for perpendicular); semantically related points are visibly clustered; and in arithmetic mode the resultant vector&#x27;s nearest point is the expected analogy answer.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/nn-ornith-35b-no-think-n12/">
+          <div class="card-body">
+            <h2>Interactive Self-Attention Mechanism Explorer for Transformers</h2>
+            <p class="description">This applet demystifies the core operation of Transformer models by visualizing scaled dot-product attention in real-time. Learners manipulate query and key vectors to see how similarity drives &#x27;attention weights,&#x27; which determine how information flows between tokens via value vectors. It bridges the gap between abstract linear algebra and the functional logic of AI, making the &#x27;why&#x27; of transformers tangible.</p>
+            <span class="duration">7m 24s to build</span>
+            <p class="stage-breakdown">Planner 12s &middot; Coder 1m 16s &middot; Reflect 5m 57s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/nn-ornith-35b-no-think-n12/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">An attention-mechanism explorer that reveals the heart of a transformer. A short sequence of tokens (words) is shown, each carrying small query, key, and value vectors. The learner picks a query token, and the applet computes an attention weight from that query to every token as the softmax of the scaled dot-product of the query with each key (score = query.key / sqrt(d)); the weights are drawn both as a row of weighted connection lines and as a heatmap strip where brighter means more attention, and the token&#x27;s output is formed as the attention-weighted sum of the value vectors. A self-attention mode shows the full N x N attention matrix as a heatmap in which every row sums to one. Editing or randomizing a token&#x27;s query/key vectors lets the learner watch attention shift toward the tokens whose keys are most similar to the query, and a temperature/scale control on the softmax sharpens or flattens the distribution. Controls: a query-token selector, a &#x27;self-attention matrix&#x27; toggle, editable/randomizable token vectors, a softmax temperature (scale) control, a toggle for the value-weighted output, and a &#x27;Reset&#x27;. Acceptance criteria: the attention weights equal softmax(query.key / sqrt(d)) and each attention distribution sums to one; a token attends most strongly to the tokens whose keys are most similar to its query; the output vector equals the attention-weighted sum of the value vectors; and in self-attention mode every row of the N x N matrix sums to one and brightens along the most-similar query-key pairs.</pre>
+        </details>
+      </div>
+</div>
+<footer><a class="back-link" href="/llm-applets/neural-networks/">&larr; Back to Neural Networks models</a></footer>
+</body>
+</html>

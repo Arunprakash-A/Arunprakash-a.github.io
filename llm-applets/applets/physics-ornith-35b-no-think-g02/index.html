@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buoyancy Explorer: Float or Sink?</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: rgba(30, 41, 59, 0.6);
+            --border-light: rgba(148, 163, 184, 0.2);
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8; /* Water / Float */
+            --accent-pink: #f472b6; /* Sink */
+            --accent-violet: #a78bfa; /* UI Highlight */
+            --success: #4ade80;
+            --font-display: 'Quicksand', sans-serif;
+            --font-body: 'Nunito', sans-serif;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Layout */
+        #app {
+            width: 100%;
+            max-width: 1200px;
+            height: 95vh;
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            font-family: var(--font-display);
+            margin: 0 0 15px 0;
+            font-size: 1.4rem;
+            color: var(--accent-violet);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        /* Lists */
+        .list-container {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 5px;
+        }
+        
+        .list-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .list-item.float { border-left: 4px solid var(--accent-blue); }
+        .list-item.sink { border-left: 4px solid var(--accent-pink); }
+
+        /* Center Stage */
+        #stage-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #canvas-wrapper {
+            flex: 1;
+            background: rgba(0,0,0,0.2);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border-light);
+        }
+
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* Controls */
+        .controls-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+        }
+
+        .toggle-group {
+            display: flex;
+            background: #1e293b;
+            padding: 4px;
+            border-radius: 50px;
+            position: relative;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px 24px;
+            font-family: var(--font-display);
+            font-weight: 700;
+            cursor: pointer;
+            z-index: 2;
+            transition: color 0.3s ease;
+        }
+
+        .toggle-btn.active { color: white; }
+
+        .slider-bg {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            height: calc(100% - 8px);
+            width: calc(50% - 4px);
+            background: var(--accent-blue);
+            border-radius: 50px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+        }
+
+        .slider-bg.sink-mode {
+            background: var(--accent-pink);
+            transform: translateX(100%);
+        }
+
+        #drop-btn {
+            background: linear-gradient(135deg, var(--accent-violet), #8b5cf6);
+            border: none;
+            color: white;
+            font-family: var(--font-display);
+            font-weight: 700;
+            padding: 12px 32px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #drop-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+        }
+
+        #reset-btn {
+            background: transparent;
+            border: 1px solid var(--border-light);
+            color: var(--text-muted);
+            padding: 12px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: var(--font-body);
+            transition: all 0.2s ease;
+        }
+
+        #reset-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        /* Tray */
+        .tray-panel {
+            grid-column: 1 / -1;
+            height: auto;
+            padding: 15px;
+        }
+
+        #object-tray {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tray-item {
+            width: 70px;
+            height: 70px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            cursor: grab;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .tray-item:hover {
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.1);
+        }
+
+        .tray-item.selected {
+            border-color: var(--accent-violet);
+            background: rgba(167, 139, 250, 0.15);
+            box-shadow: 0 0 15px rgba(167, 139, 250, 0.3);
+        }
+
+        .tray-item.used {
+            opacity: 0.4;
+            pointer-events: none;
+            transform: scale(0.9);
+        }
+
+        /* Feedback Overlay */
+        #feedback-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(15, 23, 42, 0.95);
+            padding: 30px 50px;
+            border-radius: 20px;
+            text-align: center;
+            pointer-events: none;
+            z-index: 100;
+            border: 1px solid var(--border-light);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        #feedback-icon { font-size: 4rem; margin-bottom: 10px; display: block; }
+        #feedback-text { 
+            font-family: var(--font-display); 
+            font-size: 2rem; 
+            font-weight: 800; 
+            color: white;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            #app { grid-template-columns: 1fr; height: auto; overflow-y: auto; display: block; }
+            .panel { margin-bottom: 20px; min-height: 300px; }
+            #stage-container { height: 60vh; }
+            #object-tray { justify-content: flex-start; overflow-x: auto; padding-bottom: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- Left Panel: Floats -->
+    <div class="panel">
+        <h2 style="color: var(--accent-blue)">Floats</h2>
+        <div id="float-list" class="list-container"></div>
+    </div>
+
+    <!-- Center Stage -->
+    <div id="stage-container" class="panel">
+        <div id="canvas-wrapper">
+            <!-- Canvas is created dynamically to avoid sizing race conditions (Fix #6) -->
+            <div id="feedback-overlay">
+                <span id="feedback-icon"></span>
+                <div id="feedback-text"></div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-area">
+            <div class="toggle-group" id="prediction-toggle">
+                <div class="slider-bg" id="slider-bg"></div>
+                <button class="toggle-btn active" data-val="float">FLOAT</button>
+                <button class="toggle-btn" data-val="sink">SINK</button>
+            </div>
+            
+            <button id="drop-btn">DROP!</button>
+            <button id="reset-btn">Reset All</button>
+        </div>
+
+        <!-- Tray -->
+        <div class="tray-panel panel">
+            <h2>Select Object</h2>
+            <div id="object-tray"></div>
+        </div>
+    </div>
+
+    <!-- Right Panel: Sinks -->
+    <div class="panel">
+        <h2 style="color: var(--accent-pink)">Sinks</h2>
+        <div id="sink-list" class="list-container"></div>
+    </div>
+</div>
+
+<script>
+/**
+ * Configuration & Data
+ */
+const OBJECTS = [
+    { id: 'cork', name: 'Cork', icon: '🪵', type: 'float', density: 0.24 },
+    { id: 'coin', name: 'Coin', icon: '🪙', type: 'sink', density: 7.8 },
+    { id: 'nail', name: 'Nail', icon: '📌', type: 'sink', density: 7.85 },
+    { id: 'stone', name: 'Stone', icon: '🪨', type: 'sink', density: 2.6 },
+    { id: 'leaf', name: 'Leaf', icon: '🍃', type: 'float', density: 0.8 },
+    { id: 'marble', name: 'Marble', icon: '🔮', type: 'sink', density: 2.5 },
+    { id: 'wood', name: 'Wood Block', icon: '🟫', type: 'float', density: 0.6 },
+    { id: 'spoon', name: 'Spoon', icon: '🥄', type: 'sink', density: 8.0 }
+];
+
+const STATE = {
+    selectedId: null,
+    prediction: 'float', // 'float' or 'sink'
+    usedIds: new Set(),
+    isAnimating: false
+};
+
+/**
+ * Matter.js Setup
+ */
+const Engine = Matter.Engine,
+      Render = Matter.Render,
+      Runner = Matter.Runner,
+      Bodies = Matter.Bodies,
+      Composite = Matter.Composite,
+      Events = Matter.Events,
+      Body = Matter.Body,
+      Vector = Matter.Vector;
+
+// Create engine
+const engine = Engine.create();
+engine.world.gravity.y = 1.2; // Slightly heavier gravity for snappier feel
+
+/**
+ * Canvas Setup (Fix #6: Remove HTML canvas, create dynamically)
+ */
+const canvasWrapper = document.getElementById('canvas-wrapper');
+const canvas = document.createElement('canvas');
+canvasWrapper.appendChild(canvas);
+
+let width, height;
+let waterLevel; // Will be set in resize()
+
+// Boundaries
+const wallOptions = { 
+    isStatic: true, 
+    render: { visible: false },
+    friction: 0.5,
+    restitution: 0.2
+};
+
+let walls = [];
+
+function createWalls() {
+    Composite.remove(engine.world, walls);
+    const t = 100; // thickness
+    walls = [
+        Bodies.rectangle(width/2, height + t/2 - 10, width, t, wallOptions), // Floor
+        Bodies.rectangle(-t/2, height/2, t, height * 2, wallOptions), // Left
+        Bodies.rectangle(width + t/2, height/2, t, height * 2, wallOptions) // Right
+    ];
+    Composite.add(engine.world, walls);
+}
+
+/**
+ * Initialization (Fix #1: Fix race condition)
+ */
+function init() {
+    const rect = canvasWrapper.getBoundingClientRect();
+    width = rect.width;
+    height = rect.height;
+    
+    if (width === 0 || height === 0) {
+        // If still zero, try again in next frame
+        requestAnimationFrame(init);
+        return;
+    }
+
+    waterLevel = height * 0.6;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    createWalls();
+    
+    // Start the loop only after valid dimensions exist
+    requestAnimationFrame(loop);
+}
+
+// Trigger init on load to ensure DOM is ready
+window.addEventListener('load', init);
+
+
+/**
+ * Custom Rendering & Water Logic (Fix #3: Ensure animation runs)
+ */
+const ctx = canvas.getContext('2d');
+let time = 0;
+
+// Particle system for splashes
+let particles = [];
+
+class SplashParticle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        const angle = Math.random() * Math.PI - Math.PI / 2; // Upward arc
+        const speed = Math.random() * 3 + 2;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.life = 1.0;
+        this.decay = Math.random() * 0.02 + 0.02;
+        this.size = Math.random() * 4 + 2;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.15; // Gravity
+        this.life -= this.decay;
+    }
+
+    draw(ctx) {
+        ctx.globalAlpha = Math.max(0, this.life);
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+}
+
+function createSplash(x, y, intensity) {
+    const count = Math.floor(intensity * 5);
+    for(let i=0; i<count; i++) {
+        particles.push(new SplashParticle(x, y));
+    }
+}
+
+// Water Ripple Logic
+const ripples = [];
+function addRipple(x, y) {
+    ripples.push({ x, y, radius: 10, opacity: 0.8 });
+}
+
+function drawWater() {
+    // Draw water body with gradient (Fix #7 - ensure visible)
+    const grad = ctx.createLinearGradient(0, waterLevel, 0, height);
+    grad.addColorStop(0, 'rgba(56, 189, 248, 0.3)');
+    grad.addColorStop(1, 'rgba(56, 189, 248, 0.6)');
+
+    ctx.fillStyle = grad;
+    
+    ctx.beginPath();
+    ctx.moveTo(0, height);
+    
+    // Draw surface with sine wave
+    for (let x = 0; x <= width; x += 10) {
+        const y = waterLevel + Math.sin((x + time * 2) * 0.02) * 3 + Math.sin((x - time * 3) * 0.05) * 2;
+        ctx.lineTo(x, y);
+    }
+    
+    ctx.lineTo(width, height);
+    ctx.closePath();
+    ctx.fill();
+
+    // Draw surface line (brighter)
+    ctx.strokeStyle = 'rgba(186, 230, 253, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = 0; x <= width; x += 10) {
+        const y = waterLevel + Math.sin((x + time * 2) * 0.02) * 3 + Math.sin((x - time * 3) * 0.05) * 2;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Draw ripples
+    for (let i = ripples.length - 1; i >= 0; i--) {
+        const r = ripples[i];
+        r.radius += 0.5;
+        r.opacity -= 0.02;
+        
+        if (r.opacity <= 0) {
+            ripples.splice(i, 1);
+            continue;
+        }
+
+        ctx.strokeStyle = `rgba(255, 255, 255, ${r.opacity})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        // Elliptical ripple to simulate perspective
+        ctx.ellipse(r.x, waterLevel, r.radius * 1.5, r.radius * 0.4, 0, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+}
+
+/**
+ * Physics Logic (Fix #4: Implement Buoyancy)
+ */
+Events.on(engine, 'beforeUpdate', function() {
+    const bodies = Composite.allBodies(engine.world);
+    
+    for (let body of bodies) {
+        if (body.isStatic) continue;
+
+        // Calculate submerged volume fraction based on depth
+        // We approximate the object as a circle/sphere for buoyancy calculation
+        let radius = 0;
+        if (body.circleRadius) {
+            radius = body.circleRadius;
+        } else {
+            // Approximate radius from bounds
+            const w = body.bounds.max.x - body.bounds.min.x;
+            const h = body.bounds.max.y - body.bounds.min.y;
+            radius = Math.sqrt(w*w + h*h) / 2;
+        }
+
+        const bottomY = body.position.y + radius;
+        
+        // If object is fully above water, no buoyancy
+        if (bottomY <= waterLevel) continue;
+
+        // Calculate how much of the object is submerged
+        // Simple approximation: fraction of diameter below surface
+        let submergedFraction = 0;
+        const diameter = radius * 2;
+        
+        if (body.position.y - radius >= waterLevel) {
+            submergedFraction = 0;
+        } else if (body.position.y + radius <= waterLevel) {
+            submergedFraction = 1.0; // Fully submerged
+        } else {
+            // Partially submerged: calculate based on depth below surface
+            const depthBelowSurface = bottomY - waterLevel;
+            submergedFraction = depthBelowSurface / diameter;
+            
+            // Adjust for circular shape (area of segment) - simplified linear approx is okay for visual, 
+            // but let's use a slightly more accurate curve: 1 - acos(1-2f)/pi + ...
+            // For this applet, simple linear fraction works well enough visually.
+        }
+
+        if (submergedFraction > 0) {
+            // Archimedes' principle: F_b = weight of displaced fluid
+            // We apply an upward force proportional to submerged volume and inversely proportional to density
+            
+            const waterDensity = 0.001; // Reference density for water in our scale
+            const objectVolume = Math.PI * radius * radius; // Approximate area (2D)
+            
+            // Buoyant Force Magnitude
+            // F_b = rho_fluid * V_submerged * g
+            // We need to normalize this against the body's mass to get acceleration
+            const buoyancyForceMagnitude = waterDensity * objectVolume * submergedFraction * engine.world.gravity.y;
+            
+            // Apply force upwards
+            Body.applyForce(body, body.position, { x: 0, y: -buoyancyForceMagnitude });
+        }
+    }
+});
+
+/**
+ * Main Loop (Fix #3: Continuous animation)
+ */
+function loop() {
+    Engine.update(engine, 1000 / 60);
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    drawWater();
+    
+    // Draw Bodies
+    const bodies = Composite.allBodies(engine.world);
+    
+    for (let body of bodies) {
+        if (body.isStatic) continue;
+
+        ctx.save();
+        ctx.translate(body.position.x, body.position.y);
+        ctx.rotate(body.angle);
+
+        // Get object data from label
+        const objData = OBJECTS.find(o => o.id === body.label);
+        
+        if (objData) {
+            // Draw Emoji centered
+            ctx.font = '32px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Subtle shadow for depth
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 10;
+            ctx.fillText(objData.icon, 0, 2);
+        } else {
+            // Debug / Wall rendering (invisible usually)
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(-body.bounds.max.x + body.position.x, -10, 20, 20);
+        }
+
+        ctx.restore();
+    }
+
+    // Update and draw particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw(ctx);
+        if (particles[i].life <= 0) particles.splice(i, 1);
+    }
+
+    time++;
+    requestAnimationFrame(loop);
+}
+
+
+/**
+ * Interaction Logic
+ */
+
+// UI Elements
+const tray = document.getElementById('object-tray');
+const floatList = document.getElementById('float-list');
+const sinkList = document.getElementById('sink-list');
+const toggleBtns = document.querySelectorAll('.toggle-btn');
+const sliderBg = document.getElementById('slider-bg');
+const dropBtn = document.getElementById('drop-btn');
+const resetBtn = document.getElementById('reset-btn');
+const feedbackOverlay = document.getElementById('feedback-overlay');
+const feedbackIcon = document.getElementById('feedback-icon');
+const feedbackText = document.getElementById('feedback-text');
+
+// Initialize Tray
+function initTray() {
+    tray.innerHTML = '';
+    OBJECTS.forEach(obj => {
+        const el = document.createElement('div');
+        el.className = 'tray-item';
+        el.textContent = obj.icon;
+        el.title = obj.name;
+        el.dataset.id = obj.id;
+        
+        // Click to select (Fix #1 - Ensure click handler works)
+        el.addEventListener('click', () => selectObject(obj.id));
+        
+        tray.appendChild(el);
+    });
+}
+
+function selectObject(id) {
+    if (STATE.usedIds.has(id)) return;
+    
+    STATE.selectedId = id;
+    
+    // Update UI
+    document.querySelectorAll('.tray-item').forEach(el => {
+        el.classList.toggle('selected', el.dataset.id === id);
+    });
+}
+
+// Prediction Toggle (Fix #3 - Ensure visual state change)
+toggleBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const val = btn.dataset.val;
+        STATE.prediction = val;
+        
+        toggleBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        if (val === 'sink') sliderBg.classList.add('sink-mode');
+        else sliderBg.classList.remove('sink-mode');
+    });
+});
+
+// Drop Logic (Fix #2 - Ensure physics and rendering work)
+dropBtn.addEventListener('click', () => {
+    console.log("Drop button clicked"); // Debug log
+    if (!STATE.selectedId || STATE.isAnimating) return;
+    
+    const objData = OBJECTS.find(o => o.id === STATE.selectedId);
+    dropObject(objData);
+});
+
+function dropObject(objData) {
+    STATE.isAnimating = true;
+    STATE.usedIds.add(STATE.selectedId);
+    
+    // Mark tray item as used
+    const trayItem = document.querySelector(`.tray-item[data-id="${objData.id}"]`);
+    if (trayItem) trayItem.classList.add('used');
+
+    // Calculate spawn position (center top of tank)
+    const startX = width / 2 + (Math.random() * 40 - 20);
+    const startY = height * 0.3;
+
+    // Create Matter Body (Fix #5 - Use density for buoyancy simulation)
+    const size = 25; // radius equivalent
+    
+    // Calculate density relative to water (1.0). 
+    // Matter.js uses kg/m^2 roughly. We'll scale it so water is ~0.001.
+    // Objects < 1.0 float, > 1.0 sink.
+    const waterDensity = 0.001;
+    let density = objData.density * waterDensity;
+
+    let body;
+    
+    if (objData.id === 'leaf') {
+        // Leaf shape approximation (oval)
+        body = Bodies.ellipse(startX, startY, size * 1.8, size, {
+            angle: Math.random() * Math.PI,
+            label: objData.id,
+            restitution: 0.2,
+            friction: 0.5,
+            density: density // Use calculated density
+        });
+    } else if (objData.id === 'spoon') {
+         body = Bodies.rectangle(startX, startY, size * 1.5, size/2, {
+            angle: Math.random() * Math.PI,
+            label: objData.id,
+            restitution: 0.3,
+            friction: 0.6,
+            density: density // Use calculated density
+        });
+    } else {
+        body = Bodies.circle(startX, startY, size/2, {
+            label: objData.id,
+            restitution: 0.1,
+            friction: 0.5,
+            density: density // Use calculated density
+        });
+    }
+
+    Composite.add(engine.world, body);
+
+    // Animate entry (GSAP) - Fix #2: Ensure GSAP works with Matter.js Body
+    gsap.from(body.position, {
+        y: startY - 100,
+        duration: 0.4,
+        ease: "bounce.out",
+        onUpdate: () => {
+            // Keep X roughly centered during drop to prevent weird drift
+            Body.setPosition(body, {x: startX + (Math.random()-0.5)*2, y: body.position.y});
+        }
+    });
+
+    // Wait for splash moment (approximate)
+    setTimeout(() => {
+        createSplash(startX, waterLevel, 1);
+        addRipple(startX, waterLevel);
+        
+        // Check result after physics settle
+        setTimeout(() => checkResult(objData), 2000);
+    }, 600);
+
+    STATE.selectedId = null;
+    document.querySelectorAll('.tray-item').forEach(el => el.classList.remove('selected'));
+}
+
+function checkResult(objData) {
+    const body = Composite.allBodies(engine.world).find(b => b.label === objData.id);
+    if (!body) return;
+
+    // Determine actual result based on Y position relative to water level
+    // If object is mostly submerged but floating, or at bottom.
+    // Simple heuristic: Is it resting near the bottom?
+    const isAtBottom = body.position.y > height - 60;
+    
+    let actualResult;
+    if (isAtBottom) {
+        actualResult = 'sink';
+    } else {
+        // Check if it's floating on water. 
+        // If density was low, it should be near waterLevel.
+        actualResult = 'float';
+    }
+
+    const isCorrect = STATE.prediction === actualResult;
+    
+    showFeedback(isCorrect, actualResult);
+    
+    // Add to list
+    addToList(objData, actualResult);
+    
+    STATE.isAnimating = false;
+}
+
+function showFeedback(isCorrect, result) {
+    feedbackOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
+    
+    if (isCorrect) {
+        feedbackIcon.textContent = '🎉';
+        feedbackText.textContent = 'Correct!';
+        feedbackText.style.color = '#4ade80';
+        
+        // Confetti burst?
+        for(let i=0; i<20; i++) particles.push(new SplashParticle(width/2, height/2));
+    } else {
+        feedbackIcon.textContent = '🤔';
+        feedbackText.textContent = `Oops! It ${result === 'float' ? 'Floats!' : 'Sinks!'}`;
+        feedbackText.style.color = '#f472b6';
+    }
+
+    // Hide after delay
+    setTimeout(() => {
+        gsap.to(feedbackOverlay, { scale: 0, duration: 0.3 });
+    }, 2500);
+}
+
+function addToList(objData, result) {
+    const list = result === 'float' ? floatList : sinkList;
+    
+    // Check if already exists (idempotent)
+    if (document.getElementById(`list-item-${objData.id}`)) return;
+
+    const item = document.createElement('div');
+    item.className = `list-item ${result}`;
+    item.id = `list-item-${objData.id}`;
+    item.innerHTML = `<span>${objData.icon}</span> <strong>${objData.name}</strong>`;
+    
+    // Prepend or Append? Let's append.
+    list.appendChild(item);
+}
+
+// Reset (Fix #4 - Ensure reset works)
+resetBtn.addEventListener('click', () => {
+    console.log("Reset button clicked"); // Debug log
+    
+    // Clear world bodies (except walls)
+    const allBodies = Composite.allBodies(engine.world);
+    // Filter to only remove non-static bodies
+    allBodies.filter(b => !b.isStatic).forEach(b => Composite.remove(engine.world, b));
+    
+    // Clear lists
+    floatList.innerHTML = '';
+    sinkList.innerHTML = '';
+    
+    // Reset state
+    STATE.usedIds.clear();
+    STATE.selectedId = null;
+    STATE.prediction = 'float';
+    
+    // Reset UI
+    document.querySelectorAll('.tray-item').forEach(el => {
+        el.classList.remove('used', 'selected');
+    });
+    toggleBtns.forEach(b => b.classList.remove('active'));
+    toggleBtns[0].classList.add('active');
+    sliderBg.classList.remove('sink-mode');
+});
+
+// Initialize
+initTray();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Motion under Gravity Explorer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Inconsolata:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --surface:#1e1e2e;
+  --accent:#22d3ee;
+  --accent2:#a78bfa;
+  --border:#27293d;
+  --text-primary:#f4f6fb;
+  --text-secondary:#cbd5e1;
+}
+html,body{
+  margin:0; padding:0; height:100%; font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color:var(--text-primary);
+  background:radial-gradient(circle at center,#0a0c12 0%,#12151f 100%);
+}
+.app{
+  display:flex; height:100vh; overflow:hidden;
+}
+.sidebar{
+  width:25%; min-width:250px; background:rgba(30,30,46,.8); padding:16px; box-sizing:border-box; overflow-y:auto;
+}
+.stage-container{flex:1; position:relative;}
+canvas#stage{width:100%; height:100%; display:block;}
+.card{
+  background:var(--surface); border-radius:12px; padding:12px; margin-bottom:12px;
+  backdrop-filter:saturate(180%) blur(10px); box-shadow:0 4px 6px rgba(0,0,0,.3);
+}
+.card h3{margin-top:0; color:var(--accent2); font-size:1.1rem;}
+label{display:block; margin-top:8px; font-weight:500; font-size:.9rem;}
+input[type=range]{width:100%; -webkit-appearance:none; background:transparent; margin-top:4px;}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none; width:16px; height:16px; border-radius:50%; background:var(--accent); cursor:pointer; transition:background .2s;
+}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;transition:background .2s;}
+input[type=range]::-ms-thumb{width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;transition:background .2s;}
+input[type=range]:focus-visible{outline:none;}
+input[type=checkbox]{transform:scale(1.4); margin-right:8px; vertical-align:middle;}
+button{
+  padding:.5rem 1rem; background:var(--accent); color:white; border:none; border-radius:6px;
+  cursor:pointer; font-weight:600; transition:background .2s; margin-top:8px;
+}
+button:hover{background:#18b9d4;}
+button:disabled{background:gray; cursor:not-allowed;}
+span#speedValue, span#angleValue{
+  font-family:'Inconsolata',monospace; color:var(--accent); display:inline-block; width:80px;
+}
+@media (max-width:800px){
+  .app{flex-direction:column;}
+  .sidebar{
+    position:absolute; top:0; left:0; height:100%; width:250px;
+    transform:translateX(-260px);
+    transition:transform 0.3s ease-in-out;
+    z-index:10;
+  }
+  .sidebar.open{transform:translateX(0);}
+}
+input:focus-visible{
+  outline:2px solid var(--accent);
+}
+/* Topbar */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; background:rgba(30,30,46,.8); color:var(--text-primary);
+  backdrop-filter:saturate(180%) blur(10px); position:relative; z-index:11;
+}
+#menuToggle{
+  font-size:1.5rem; background:none; border:none; color:var(--accent); cursor:pointer;
+}
+#launchPad{
+  position:absolute; left:20px; bottom:20px; width:120px; height:120px; pointer-events:auto; z-index:12;
+  filter: drop-shadow(0 0 6px var(--accent));
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <h1>Motion under Gravity Explorer</h1>
+    <button id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+  </header>
+
+  <aside class="sidebar">
+    <div class="card">
+      <h3>Launch Parameters</h3>
+      <label for="speedSlider">Speed (m/s)</label>
+      <input type="range" id="speedSlider" min="0" max="50" value="20" step="1" aria-label="Launch speed slider">
+      <span id="speedValue"></span>
+
+      <label for="angleSlider">Angle (°)</label>
+      <input type="range" id="angleSlider" min="0" max="90" value="45" step="1" aria-label="Launch angle slider">
+      <span id="angleValue"></span>
+    </div>
+
+    <div class="card">
+      <h3>Gravity</h3>
+      <label for="gravityToggle">Earth / Moon</label>
+      <input type="checkbox" id="gravityToggle" aria-label="Gravity toggle Earth/Moon">
+      <span id="gravityLabel"></span>
+    </div>
+
+    <div class="card">
+      <h3>Display Options</h3>
+      <label for="velocityToggle">Velocity Vector</label>
+      <input type="checkbox" id="velocityToggle" checked aria-label="Show velocity vector toggle">
+
+      <label for="traceToggle">Path Trace</label>
+      <input type="checkbox" id="traceToggle" checked aria-label="Show path trace toggle">
+    </div>
+
+    <div class="card">
+      <h3>Controls</h3>
+      <button id="launchBtn">Launch</button>
+      <button id="resetBtn">Reset</button>
+    </div>
+
+    <div class="card">
+      <h3>Live Readouts</h3>
+      <p>Max Height: <span id="maxHeight">0.00 m</span></p>
+      <p>Total Range: <span id="totalRange">0.00 m</span></p>
+      <p>Flight Time: <span id="flightTime">0.00 s</span></p>
+    </div>
+  </aside>
+
+  <main class="stage-container">
+    <canvas id="stage"></canvas>
+    <!-- Launch Pad with draggable knob -->
+    <div id="launchPad" aria-label="Launch angle knob">
+      <svg viewBox="0 0 100 100" width="120" height="120">
+        <circle cx="50" cy="50" r="45" fill="#1e1e2e" stroke="var(--accent)" stroke-width="4"/>
+        <line id="knobLine" x1="50" y1="50" x2="90" y2="50" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </main>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const speedSlider = document.getElementById('speedSlider');
+  const angleSlider = document.getElementById('angleSlider');
+  const gravityToggle = document.getElementById('gravityToggle');
+  const velocityToggle = document.getElementById('velocityToggle');
+  const traceToggle = document.getElementById('traceToggle');
+  const launchBtn = document.getElementById('launchBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  const speedValueSpan = document.getElementById('speedValue');
+  const angleValueSpan = document.getElementById('angleValue');
+  const gravityLabel = document.getElementById('gravityLabel');
+
+  const maxHeightSpan = document.getElementById('maxHeight');
+  const totalRangeSpan = document.getElementById('totalRange');
+  const flightTimeSpan = document.getElementById('flightTime');
+
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d', { alpha: false });
+
+  let animationFrameId;
+  let simulationRunning = false;
+
+  let cssWidth, cssHeight;
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    cssWidth = rect.width;
+    cssHeight = rect.height;
+    canvas.width = cssWidth * window.devicePixelRatio;
+    canvas.height = cssHeight * window.devicePixelRatio;
+    ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function updateDisplayValues() {
+    const speed = parseFloat(speedSlider.value);
+    const angleDeg = parseFloat(angleSlider.value);
+    speedValueSpan.textContent = `${speed.toFixed(1)} m/s`;
+    angleValueSpan.textContent = `${angleDeg.toFixed(0)}°`;
+    gravityLabel.textContent = gravityToggle.checked ? 'Moon' : 'Earth';
+  }
+  updateDisplayValues();
+
+  function computeTheoretical() {
+    const v0 = parseFloat(speedSlider.value);
+    const thetaRad = (parseFloat(angleSlider.value) * Math.PI) / 180;
+    const g = gravityToggle.checked ? 1.62 : 9.81;
+
+    const maxHeight = (v0 * v0 * Math.sin(thetaRad) ** 2) / (2 * g);
+    const range = (v0 * v0 * Math.sin(2 * thetaRad)) / g;
+    const flightTime = (2 * v0 * Math.sin(thetaRad)) / g;
+
+    return { maxHeight, range, flightTime };
+  }
+
+  function updateReadouts() {
+    maxHeightSpan.textContent = `0.00 m`;
+    totalRangeSpan.textContent = `0.00 m`;
+    flightTimeSpan.textContent = `0.00 s`;
+  }
+  updateReadouts();
+
+  speedSlider.addEventListener('input', () => {
+    updateDisplayValues();
+  });
+  angleSlider.addEventListener('input', () => {
+    updateDisplayValues();
+    const angle = parseFloat(angleSlider.value);
+    updateKnob(angle);
+  });
+  gravityToggle.addEventListener('change', () => {
+    updateDisplayValues();
+  });
+
+  // Launch Pad Knob
+  const launchPad = document.getElementById('launchPad');
+  const knobLine = document.getElementById('knobLine');
+  let isDragging = false;
+  const centerX = 50, centerY = 50;
+
+  function updateKnob(angle) {
+    knobLine.setAttribute('transform', `rotate(${angle} ${centerX} ${centerY})`);
+  }
+  // Initialize knob
+  updateKnob(parseFloat(angleSlider.value));
+
+  launchPad.addEventListener('pointerdown', (e)=>{isDragging=true; e.preventDefault();});
+  document.addEventListener('pointermove',(e)=>{
+    if(!isDragging)return;
+    const rect = launchPad.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    let dx = x - centerX;
+    let dy = centerY - y; // invert Y
+    let angleRad = Math.atan2(dy, dx);
+    let deg = angleRad * 180/Math.PI;
+    if(deg < 0) deg += 360;
+    if(deg > 90) deg = 90;
+    angleSlider.value = deg.toFixed(1);
+    updateDisplayValues();
+    updateKnob(deg);
+  });
+  document.addEventListener('pointerup',()=>{isDragging=false;});
+  document.addEventListener('pointercancel',()=>{isDragging=false;});
+
+  // Hamburger menu
+  const sidebar = document.querySelector('.sidebar');
+  document.getElementById('menuToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+  });
+
+  launchBtn.addEventListener('click', () => {
+    if (simulationRunning) return;
+    simulationRunning = true;
+    launchBtn.disabled = true;
+    speedSlider.disabled = true;
+    angleSlider.disabled = true;
+    gravityToggle.disabled = true;
+
+    const v0 = parseFloat(speedSlider.value);
+    const thetaRad = (parseFloat(angleSlider.value) * Math.PI) / 180;
+    const g = gravityToggle.checked ? 1.62 : 9.81;
+
+    if (v0 === 0) {
+      simulationRunning = false;
+      launchBtn.disabled = false;
+      speedSlider.disabled = false;
+      angleSlider.disabled = false;
+      gravityToggle.disabled = false;
+      return;
+    }
+
+    const { range: maxRange, maxHeight } = computeTheoretical();
+
+    const padding = 40; // px
+    const scaleX = (cssWidth - 2 * padding) / maxRange;
+    const scaleY = (cssHeight - 2 * padding) / maxHeight;
+    const worldScale = Math.min(scaleX, scaleY);
+
+    let t = 0;
+    const dt = 1 / 60; // seconds per frame
+    let tracePoints = [];
+    const fadeDuration = 2000; // ms
+    let currentMaxHeight = 0;
+    let lastX = 0;
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawGrid();
+
+      const x = v0 * Math.cos(thetaRad) * t;
+      const y = v0 * Math.sin(thetaRad) * t - 0.5 * g * t * t;
+
+      if (y < 0 && t > 0) {
+        // Landed
+        cancelAnimationFrame(animationFrameId);
+        simulationRunning = false;
+        launchBtn.disabled = false;
+        speedSlider.disabled = false;
+        angleSlider.disabled = false;
+        gravityToggle.disabled = false;
+        return;
+      }
+
+      const cx = padding + x * worldScale;
+      const cy = cssHeight - padding - y * worldScale;
+
+      // Trace
+      if (traceToggle.checked) {
+        tracePoints.push({ x: cx, y: cy, ts: performance.now() });
+        const now = performance.now();
+        ctx.strokeStyle = 'rgba(34,211,238,1)';
+        ctx.lineWidth = 2;
+        for (let i = 1; i < tracePoints.length; i++) {
+          const p1 = tracePoints[i - 1];
+          const p2 = tracePoints[i];
+          let age = now - p2.ts;
+          let alpha = Math.max(0, 1 - age / fadeDuration);
+          ctx.globalAlpha = alpha;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+        // Remove old points
+        while (tracePoints.length > 0 && now - tracePoints[0].ts > fadeDuration) {
+          tracePoints.shift();
+        }
+        ctx.globalAlpha = 1;
+      } else {
+        tracePoints = [];
+      }
+
+      // Projectile
+      ctx.fillStyle = '#22d3ee';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Velocity arrow
+      if (velocityToggle.checked) {
+        const vx = v0 * Math.cos(thetaRad);
+        const vy = v0 * Math.sin(thetaRad) - g * t;
+        const speedMag = Math.sqrt(vx * vx + vy * vy);
+        const arrowLen = 30; // px for max speed
+        const scaleArrow = (speedMag / v0) * arrowLen;
+
+        ctx.strokeStyle = '#a78bfa';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        const ax = cx + (vx / speedMag) * scaleArrow;
+        const ay = cy - (vy / speedMag) * scaleArrow; // subtract because canvas y down
+        ctx.lineTo(ax, ay);
+        ctx.stroke();
+
+        // Arrowhead
+        const headLen = 8;
+        const angle = Math.atan2(ay - cy, ax - cx);
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(
+          ax - headLen * Math.cos(angle - Math.PI / 6),
+          ay - headLen * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.lineTo(
+          ax - headLen * Math.cos(angle + Math.PI / 6),
+          ay - headLen * Math.sin(angle + Math.PI / 6)
+        );
+        ctx.closePath();
+        ctx.fillStyle = '#a78bfa';
+        ctx.fill();
+      }
+
+      // Free-fall markers
+      if (Math.abs(parseFloat(angleSlider.value) - 90) < 0.01) {
+        const markerInterval = 0.5; // seconds
+        const numMarkers = Math.floor(t / markerInterval);
+        for (let i = 1; i <= numMarkers; i++) {
+          const tm = i * markerInterval;
+          const ym = v0 * tm - 0.5 * g * tm * tm; // vertical motion with initial velocity
+          if (ym < 0) continue;
+          const mx = padding + 0 * worldScale;
+          const my = cssHeight - padding - ym * worldScale;
+          ctx.fillStyle = '#ffca28';
+          ctx.beginPath();
+          ctx.arc(mx, my, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Update live readouts
+      if (y > currentMaxHeight) currentMaxHeight = y;
+      lastX = x;
+      maxHeightSpan.textContent = `${currentMaxHeight.toFixed(2)} m`;
+      totalRangeSpan.textContent = `${lastX.toFixed(2)} m`;
+      flightTimeSpan.textContent = `${t.toFixed(2)} s`;
+
+      t += dt;
+      animationFrameId = requestAnimationFrame(draw);
+    }
+
+    draw();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    if (simulationRunning) {
+      cancelAnimationFrame(animationFrameId);
+      simulationRunning = false;
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    launchBtn.disabled = false;
+    speedSlider.disabled = false;
+    angleSlider.disabled = false;
+    gravityToggle.disabled = false;
+    updateReadouts();
+  });
+
+  function drawGrid() {
+    const padding = 40;
+    const { range: maxRange, maxHeight } = computeTheoretical();
+    const scaleX = (cssWidth - 2 * padding) / maxRange;
+    const scaleY = (cssHeight - 2 * padding) / maxHeight;
+    const worldScale = Math.min(scaleX, scaleY);
+
+    ctx.strokeStyle = 'rgba(255,255,255,.1)';
+    ctx.lineWidth = 1;
+
+    // vertical lines
+    const numVLines = 10;
+    for (let i = 0; i <= numVLines; i++) {
+      const x = padding + (i / numVLines) * maxRange * worldScale;
+      ctx.beginPath();
+      ctx.moveTo(x, cssHeight - padding);
+      ctx.lineTo(x, padding);
+      ctx.stroke();
+    }
+
+    // horizontal lines
+    const numHLines = 10;
+    for (let i = 0; i <= numHLines; i++) {
+      const y = cssHeight - padding - (i / numHLines) * maxHeight * worldScale;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(cssWidth - padding, y);
+      ctx.stroke();
+    }
+  }
+
+});
+</script>
+</body>
+</html>

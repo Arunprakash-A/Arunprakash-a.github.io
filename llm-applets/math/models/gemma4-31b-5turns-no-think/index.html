@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gemma4-31b (5 turns) &middot; Building Interactive Simulations Using Agentic AI</title>
+<link rel="stylesheet" href="/llm-applets/style.css">
+</head>
+<body>
+<header>
+  <a class="back-link" href="/llm-applets/math/">&larr; Math models</a>
+  <h1>gemma4-31b (5 turns)</h1>
+  <p>12 applets &middot; ran on A100 40GB</p>
+  <p class="browser-tip">Tip: if an applet's animations don't appear to run, try shrinking your browser window to about 80% width.</p>
+</header>
+<div class="grid">
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g01/">
+          <div class="card-body">
+            <h2>One-to-One Correspondence Counting (1-20)</h2>
+            <p class="description">A tactile, high-feedback counting playground for first graders. The applet teaches children to pair one physical touch with one number name and one visual marker in a ten-frame, bridging the gap between concrete objects and abstract numerals.</p>
+            <span class="duration">8m 53s to build</span>
+            <p class="stage-breakdown">Planner 37s &middot; Coder 2m 27s &middot; Reflect 5m 49s (3 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g01/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A playful counting playground for six- to seven-year-olds (grade 1) learning to count from 1 to 20 with one-to-one correspondence. A large friendly stage shows a group of countable objects (e.g. apples, stars, or ducks) and a big &#x27;How many?&#x27; number readout. The learner taps each object to count it: each tap highlights that object, gives it a gentle bounce, and advances a large count label (1, 2, 3 ...), while a ten-frame beside the stage fills in so quantities up to 20 are seen as &#x27;ten and some more&#x27;. Controls: +/- buttons or a slider to set how many objects appear (1-20), a &#x27;New set&#x27; button that reshuffles their positions, and a big &#x27;Check&#x27; button that confirms whether the child counted them all. Design for very young users: oversized tap targets, high-contrast friendly colours on the dark stage, almost no text, and celebratory feedback (a star burst or confetti) on a correct full count. Acceptance criteria: each object can be counted exactly once and cannot be double-counted; the ten-frame and the number readout always agree with the running count; the number of objects is adjustable from 1 to 20; and &#x27;Check&#x27; correctly recognises when every object has been counted.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g02/">
+          <div class="card-body">
+            <h2>Two-Digit Addition &amp; Subtraction with Regrouping</h2>
+            <p class="description">A high-fidelity place-value workbench that bridges the gap between concrete base-ten blocks and abstract column arithmetic. The applet visually demonstrates &#x27;carrying&#x27; and &#x27;borrowing&#x27; by animating the physical bundling and unbundling of tens rods and ones cubes.</p>
+            <span class="duration">19m 32s to build</span>
+            <p class="stage-breakdown">Planner 31s &middot; Coder 3m 32s &middot; Reflect 15m 28s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g02/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">An interactive place-value workbench for grade 2 learners adding and subtracting two-digit numbers within 100, with regrouping (carrying and borrowing). Two numbers are shown as base-ten blocks (tens rods and ones cubes) arranged in labelled columns: tens | ones. The learner chooses an operation (+ or -) and two operands with steppers or sliders (0-99). The applet animates combining the blocks; when the ones exceed nine it visibly bundles ten ones into one ten-rod (regroup up), and for subtraction it unbundles a ten into ten ones when needed (regroup down). A column-arithmetic view mirrors the blocks digit-by-digit, with the small carried or borrowed digit appearing in step. Controls: operand steppers (0-99), a +/- operation toggle, a &#x27;Step&#x27; button to advance the regrouping one stage at a time, an &#x27;Auto&#x27; button to play the whole process, and a &#x27;Reset&#x27;. Acceptance criteria: the block counts always equal the numeric operands; regrouping animates only when it is actually required; the column view&#x27;s carried/borrowed digits are correct; and the final block total and numeric answer match the correct result.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g03/">
+          <div class="card-body">
+            <h2>Multiplication Array Explorer</h2>
+            <p class="description">A tactile, visually-driven tool for 3rd graders to bridge the gap between repeated addition and multiplication. The applet transforms abstract factors into a concrete grid of tiles, allowing learners to see how groups combine to form a total product.</p>
+            <span class="duration">15m 37s to build</span>
+            <p class="stage-breakdown">Planner 29s &middot; Coder 2m 37s &middot; Reflect 12m 31s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g03/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A multiplication array explorer for grade 3 learners building the idea that multiplication is repeated addition of equal groups. The learner sets two factors (1-12) with steppers or sliders and a rectangular array of tiles (rows x columns) is drawn; the product is shown as the total tile count alongside the repeated-addition sentence (e.g. 4 x 6 = 6 + 6 + 6 + 6 = 24). Tapping or hovering a row highlights that group and its running subtotal. Include a &#x27;commutative&#x27; toggle that swaps rows and columns, visibly rotating the array to show a x b = b x a, and a small times-table grid that highlights the current fact. Controls: two factor steppers (1-12), the commutative flip, a &#x27;Skip-count&#x27; animation button that lights up the array group by group while counting (6, 12, 18, 24 ...), and a &#x27;Reset&#x27;. Acceptance criteria: the array dimensions always match the two factors; the tile count equals the product; the repeated-addition sentence stays consistent with the array; and the commutative flip preserves the product while swapping the dimensions.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g04/">
+          <div class="card-body">
+            <h2>Equivalent Fractions Explorer</h2>
+            <p class="description">A high-fidelity interactive tool for 4th graders to visualize the relationship between fractions, decimals, and their spatial representations. The applet focuses on building intuition for equivalence by comparing a user-defined fraction against a reference &#x27;fraction wall&#x27; of unit fractions.</p>
+            <span class="duration">18m 24s to build</span>
+            <p class="stage-breakdown">Planner 30s &middot; Coder 3m 14s &middot; Reflect 14m 41s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g04/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">An equivalent-fractions explorer for grade 4 learners. The learner builds a fraction with numerator and denominator steppers (denominator 1-12) and sees it three ways at once: a divided bar (or circle) with the numerator shaded, its position marked on a 0-1 number line, and its decimal value. A &#x27;fraction wall&#x27; below stacks unit fractions (1/2, 1/3, 1/4 ... 1/12) so learners can line them up and discover equivalences such as 1/2 = 2/4 = 3/6; when the current fraction equals a bar on the wall, both glow to signal equivalence. Controls: numerator and denominator steppers, a &#x27;Simplify&#x27; button that animates reducing to lowest terms (showing the common factor being divided out), a toggle between the bar model and the circle model, and a &#x27;Reset&#x27;. Acceptance criteria: the shaded region, the number-line position, and the decimal always represent the same fraction; &#x27;Simplify&#x27; produces the correct lowest-terms fraction; and equivalent fractions are highlighted correctly on the wall.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g05/">
+          <div class="card-body">
+            <h2>Decimals-Fractions-Percentages Connector</h2>
+            <p class="description">A high-fidelity interactive tool for 5th grade learners to visualize the equivalence between fractions, decimals, and percentages. By manipulating a 10x10 hundredths grid, students build a concrete spatial intuition for how these three numerical representations describe the same portion of a whole.</p>
+            <span class="duration">18m 54s to build</span>
+            <p class="stage-breakdown">Planner 32s &middot; Coder 3m 32s &middot; Reflect 14m 50s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g05/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A decimals-fractions-percentages connector for grade 5 learners, showing that 0.25 = 1/4 = 25%. A 10x10 hundredths grid is the centrepiece: the learner shades cells (by dragging, or with a 0-100 slider of hundredths) and the applet simultaneously reports the shaded amount as a fraction in lowest terms, a decimal, and a percentage, all updating together. A place-value chart (ones . tenths hundredths) shows the decimal&#x27;s digits, and a 0-1 number line marks the value. Controls: a 0-100 hundredths slider; quick-set benchmark buttons (10%, 25%, 50%, 75%); a mode toggle to enter the value as a decimal, a fraction, or a percent and watch the other two forms update; and a &#x27;Reset&#x27;. Acceptance criteria: the three representations are always mathematically equal; the grid shading matches the value exactly; the benchmark buttons produce the correct shading and equivalents; and entering any one form updates the other two correctly.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g06/">
+          <div class="card-body">
+            <h2>Introduction to Linear Functions: The Function Machine</h2>
+            <p class="description">A tactile, visual metaphor for algebraic expressions where a &#x27;machine&#x27; transforms an input x into an output y. The goal is to demystify variables and the order of operations by decomposing the expression ax + b into discrete, animated stages.</p>
+            <span class="duration">18m 47s to build</span>
+            <p class="stage-breakdown">Planner 29s &middot; Coder 3m 19s &middot; Reflect 14m 59s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g06/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">An algebra &#x27;function machine&#x27; for grade 6 learners meeting variables and expressions for the first time. An input value x drops into a machine that applies the rule a*x + b; the learner sets the coefficient a and constant b with steppers, and the machine computes and shows the output with each step annotated (multiply by a, then add b). The same rule is displayed symbolically (e.g. 3x + 2) with the current x substituted in (3*5 + 2 = 17), and a table of x -&gt; value pairs fills in as different inputs are tried. Optionally plot the (x, value) pairs as points on a small grid to hint that the relationship is linear. Controls: steppers/sliders for a and b, an input stepper or slider for x, a &#x27;Run&#x27; button that animates one value through the machine, a &#x27;Fill table&#x27; button, and a &#x27;Reset&#x27;. Acceptance criteria: the machine&#x27;s output always equals a*x + b for the current values; the substituted-expression display matches that computation; the table entries are all correct; and any plotted points lie on the line y = a*x + b.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g07/">
+          <div class="card-body">
+            <h2>Balance-Scale Linear Equation Solver</h2>
+            <p class="description">A physical metaphor for algebraic equality where a balance scale represents the equation. The applet teaches learners that solving for x is the process of maintaining equilibrium while isolating the variable through inverse operations.</p>
+            <span class="duration">19m 24s to build</span>
+            <p class="stage-breakdown">Planner 29s &middot; Coder 3m 26s &middot; Reflect 15m 28s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g07/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A balance-scale equation solver for grade 7 learners solving one-variable linear equations such as 2x + 3 = 11. The equation is shown as a physical balance: x-boxes and unit weights sit on each pan, and the beam tips when the sides are unequal and is level when they are equal. The learner isolates x by doing the same thing to both sides using a palette of legal operations (&#x27;subtract 3 from both sides&#x27;, &#x27;divide both sides by 2&#x27;, and so on); blocks animate off or relabel while the symbolic equation updates in lockstep beneath the scale, so the picture and the algebra never disagree until x stands alone. Controls: an equation setup (choose the coefficient, the variable-side constant, and the right-hand value as integers), a palette of &#x27;do to both sides&#x27; operations, an &#x27;Undo&#x27;, and a &#x27;Check&#x27; that confirms the solution. Acceptance criteria: the beam is level exactly when the two sides are numerically equal; every offered operation is applied identically to both sides; the symbolic equation and the balance always stay consistent; and isolating x yields the correct solution.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g08/">
+          <div class="card-body">
+            <h2>Slope-Intercept Form Explorer (y = mx + c)</h2>
+            <p class="description">An interactive coordinate geometry tool designed for 8th graders to build a visceral connection between the algebraic parameters of a linear equation and its geometric representation. The applet transforms abstract coefficients into tangible visual changes in steepness and position.</p>
+            <span class="duration">19m 54s to build</span>
+            <p class="stage-breakdown">Planner 33s &middot; Coder 3m 30s &middot; Reflect 15m 52s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g08/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A slope-intercept line explorer for grade 8 learners studying linear functions y = m*x + c. A coordinate grid shows the line, and sliders for the slope m and the y-intercept c reshape it in real time. The applet marks the y-intercept, draws a &#x27;slope triangle&#x27; showing rise over run with the current m as a ratio, and reads out the equation with live values. A draggable point on the line reports its (x, y) coordinates and confirms they satisfy the equation. Include a mode that shows a second line so learners can explore parallel lines (equal slopes) and perpendicular lines (negative-reciprocal slopes). Controls: slope and intercept sliders that allow negative and fractional values, a draggable point on the line, and toggles for the slope triangle, the grid, and the second line. Acceptance criteria: the drawn line always matches y = m*x + c; the slope triangle&#x27;s rise/run equals m; the y-intercept marker sits at (0, c); the draggable point&#x27;s coordinates satisfy the equation; and the parallel/perpendicular relationships are shown correctly.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g09/">
+          <div class="card-body">
+            <h2>Pythagorean Theorem &amp; Coordinate Geometry Explorer</h2>
+            <p class="description">An interactive visualization that bridges the gap between geometric area and coordinate distance. Learners manipulate a right triangle to see how the sum of the areas of squares on the legs equals the area of the square on the hypotenuse, while simultaneously seeing these lengths derived from coordinates.</p>
+            <span class="duration">19m 32s to build</span>
+            <p class="stage-breakdown">Planner 30s &middot; Coder 3m 22s &middot; Reflect 15m 40s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g09/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A right-triangle and Pythagorean-theorem explorer for grade 9 learners connecting geometry with coordinates. The learner drags the two legs (or two points on a coordinate grid) to set a right triangle; squares are drawn on both legs and on the hypotenuse with their areas labelled, visually demonstrating a^2 + b^2 = c^2. The applet computes the side lengths (using the distance formula when the two points are placed on the grid), shows the equation with the current values substituted, and indicates when the result is a whole-number Pythagorean triple (e.g. 3-4-5, 5-12-13), optionally snapping to celebrate them. Controls: draggable vertices/points; a toggle between &#x27;drag the legs&#x27; and &#x27;plot two points on the grid&#x27;; a button that reveals an area-rearrangement visual proof; a snap-to-triples toggle; and a &#x27;Reset&#x27;. Acceptance criteria: the three square areas always satisfy area_a + area_b = area_c within rounding; the computed side lengths match the drawn geometry and the distance formula on the grid; and the substituted equation is correct.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g10/">
+          <div class="card-body">
+            <h2>Unit Circle Trigonometry Explorer</h2>
+            <p class="description">A dual-view interactive environment that bridges the gap between circular geometry and wave functions. By synchronizing a unit circle with a Cartesian coordinate system, learners visualize how sine, cosine, and tangent emerge as both geometric ratios and continuous periodic functions.</p>
+            <span class="duration">20m 37s to build</span>
+            <p class="stage-breakdown">Planner 32s &middot; Coder 3m 40s &middot; Reflect 16m 25s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g10/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A unit-circle trigonometry explorer for grade 10 learners meeting sine, cosine, and tangent both as ratios and as functions. A unit circle sits beside a graph: as the learner drags the angle theta (or moves a slider, in degrees and radians), the point on the circle shows its coordinates (cos theta, sin theta), the vertical and horizontal legs are drawn and labelled as sin theta and cos theta, and a tangent segment illustrates tan theta. At the same time the sine curve (and optionally the cosine curve) traces out to the right as theta sweeps, linking the rotating point to the wave. A readout gives theta, sin, cos, and tan, with exact values at the special angles (0, 30, 45, 60, 90 ...). Controls: an angle slider or drag (0-360 degrees) with a degree/radian toggle; checkboxes to show/hide the sine curve, the cosine curve, and the tangent; and a &#x27;Sweep&#x27; animation button. Acceptance criteria: the point is always at (cos theta, sin theta); the labelled legs equal sin theta and cos theta; the traced curve&#x27;s height equals sin theta at each angle; and the special-angle readouts are exact.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g11/">
+          <div class="card-body">
+            <h2>Quadratic Function Transformations</h2>
+            <p class="description">An interactive explorer that bridges the gap between algebraic vertex form and geometric transformations. The applet allows learners to manipulate a parabola in real-time to visualize how parameters &#x27;a&#x27;, &#x27;h&#x27;, and &#x27;k&#x27; physically shift, stretch, and reflect the parent function y = x².</p>
+            <span class="duration">19m 6s to build</span>
+            <p class="stage-breakdown">Planner 31s &middot; Coder 3m 19s &middot; Reflect 15m 16s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g11/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A quadratic-function and transformations explorer for grade 11 learners studying functions and their graphs. The parabola is presented in vertex form y = a(x - h)^2 + k with sliders for a, h, and k; the graph updates in real time and the applet marks the vertex (h, k), the axis of symmetry, and the real roots, and reports the discriminant and the equivalent standard form y = a x^2 + b x + c (expanded live). A &#x27;transformations&#x27; panel narrates how each slider moves or stretches the base parabola y = x^2 (horizontal shift by h, vertical shift by k, vertical stretch by a, and reflection when a is negative), optionally showing a faint reference copy of y = x^2. Controls: sliders for a (including negative values, for reflection), h, and k; a form toggle to enter either vertex form or standard form with the other kept in sync; and toggles for the axis of symmetry, the vertex, and the roots. Acceptance criteria: the plotted curve matches a(x - h)^2 + k; the vertex, axis, and root markers are correct; the expanded standard form equals the vertex form; and the sign of the discriminant agrees with the number of real roots shown.</pre>
+        </details>
+      </div>
+      <div class="card applet-card">
+        <a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g12/">
+          <div class="card-body">
+            <h2>The Derivative as a Limit of Secant Slopes</h2>
+            <p class="description">A high-fidelity interactive explorer that bridges the gap between the average rate of change (secant line) and the instantaneous rate of change (tangent line). By manipulating a distance parameter &#x27;h&#x27;, learners visually and numerically witness the limit process that defines the derivative.</p>
+            <span class="duration">16m 33s to build</span>
+            <p class="stage-breakdown">Planner 33s &middot; Coder 2m 52s &middot; Reflect 13m 8s (5 turns)</p>
+            <p class="context-info">context window 96k tokens &middot; max output 31.2k tokens</p>
+          </div>
+        </a>
+        <div class="card-footer"><a href="/llm-applets/applets/gemma4-31b-5turns-no-think-g12/">Open applet &rarr;</a></div>
+        <details class="prompt-toggle">
+          <summary>View user's prompt</summary>
+          <pre class="prompt-text">A derivative-as-slope explorer for grade 12 calculus learners. A function f(x) is plotted (chosen from a few presets such as x^2, sin x, and a cubic); the learner drags a point along the curve and the applet draws the tangent line there and reports the instantaneous slope f&#x27;(x). A secant-to-tangent panel lets the learner shrink the interval h toward 0 with a slider, watching the secant line through (x, f(x)) and (x+h, f(x+h)) rotate into the tangent while the difference quotient [f(x+h) - f(x)]/h approaches f&#x27;(x) numerically, making the limit definition visible. A second, vertically synced graph traces the derivative function f&#x27;(x) as the point moves, so learners see where the slope is zero, positive, or negative and link f&#x27;(x) = 0 to the function&#x27;s maxima and minima. Controls: a preset-function selector; a draggable point x on the curve; an h slider for the secant-&gt;tangent limit; and toggles for the tangent line, the secant line, and the derivative graph. Acceptance criteria: the tangent&#x27;s slope equals f&#x27;(x) for the chosen function; the difference quotient converges to that slope as h -&gt; 0; and the traced derivative curve matches the true derivative (for example, it crosses zero at the function&#x27;s turning points).</pre>
+        </details>
+      </div>
+</div>
+<footer><a class="back-link" href="/llm-applets/math/">&larr; Back to Math models</a></footer>
+</body>
+</html>

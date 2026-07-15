@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplication Array Explorer</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-dark: #0f172a;
+            --bg-darker: #020617;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            
+            --accent-primary: #38bdf8; /* Sky Blue */
+            --accent-secondary: #a78bfa; /* Soft Violet */
+            --accent-pink: #f472b6; /* Pink for text */
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            
+            /* Spacing & Radius */
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+            
+            /* Typography */
+            --font-ui: 'Inter', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background: radial-gradient(circle at top right, #1e293b 0%, var(--bg-darker) 60%);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* Layout */
+        .app-container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .app-container { grid-template-columns: 1fr; max-width: 600px; }
+        }
+
+        /* Panels */
+        .panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Header / Equation */
+        .equation-display {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-md);
+        }
+
+        .math-expression {
+            font-family: var(--font-mono);
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .math-num { color: var(--accent-primary); text-shadow: 0 0 20px rgba(56, 189, 248, 0.3); }
+        .math-op { color: var(--text-muted); font-weight: 400; }
+        .math-result { color: var(--accent-pink); text-shadow: 0 0 20px rgba(244, 114, 182, 0.3); }
+
+        /* Main Stage */
+        .stage-container {
+            position: relative;
+            min-height: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px; /* For 3D flip */
+        }
+
+        .grid-wrapper {
+            background: rgba(2, 6, 23, 0.5);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+            transform-style: preserve-3d; /* Allow children to exist in 3D space */
+        }
+
+        .grid {
+            display: grid;
+            gap: 8px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .tile {
+            width: 45px;
+            height: 45px;
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+        }
+
+        .tile:hover {
+            background: var(--surface-hover);
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        /* Tile States */
+        .tile.active-primary {
+            background: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+            border-color: #7dd3fc;
+        }
+
+        .tile.active-secondary {
+            background: var(--accent-secondary);
+            box-shadow: 0 0 15px rgba(167, 139, 250, 0.4);
+            border-color: #c4b5fd;
+        }
+
+        .tile.dimmed { opacity: 0.3; }
+
+        /* Tooltip - FIX #3: Fixed positioning */
+        .tooltip {
+            position: fixed;
+            background: var(--bg-dark);
+            color: white;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 100;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            border: 1px solid var(--accent-primary);
+        }
+
+        /* Repeated Addition Text */
+        .repeated-addition {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-family: var(--font-mono);
+            color: var(--accent-pink);
+            font-size: 1.2rem;
+            min-height: 1.5em;
+        }
+
+        /* Controls */
+        .control-group { margin-bottom: 1.5rem; }
+        
+        label {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .stepper {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+        }
+
+        .stepper-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: var(--surface);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .stepper-btn:hover { background: var(--accent-primary); color: #000; }
+        
+        .stepper-val {
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            width: 40px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.2);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--surface);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--accent-secondary); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        /* Action Buttons */
+        .actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+
+        .btn-action {
+            flex: 1;
+            padding: 0.8rem;
+            border-radius: var(--radius-md);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background: var(--accent-primary); color: #0f172a; }
+        .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 0 15px rgba(56, 189, 248, 0.3); }
+
+        .btn-secondary { background: var(--surface); color: white; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-secondary:hover { background: var(--surface-hover); }
+
+        /* Mini Map */
+        .minimap-container {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .minimap-title { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        .minimap-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 2px;
+        }
+
+        .mm-cell {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.03);
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .mm-cell:hover { background: rgba(255,255,255,0.1); }
+        
+        /* Active trail in minimap */
+        .mm-cell.active-row { background: rgba(56, 189, 248, 0.3); }
+        .mm-cell.active-col { background: rgba(167, 139, 250, 0.3); }
+        .mm-cell.highlight { 
+            background: var(--accent-primary); 
+            box-shadow: 0 0 8px var(--accent-primary);
+            transform: scale(1.2);
+            z-index: 5;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- Left Column: Visualization -->
+    <div class="main-stage">
+        
+        <!-- Equation Header -->
+        <div class="equation-display">
+            <div class="math-expression" id="equation">
+                <span class="math-num" id="eq-a">3</span>
+                <span class="math-op">×</span>
+                <span class="math-num" id="eq-b">4</span>
+                <span class="math-op">=</span>
+                <span class="math-result" id="eq-c">12</span>
+            </div>
+        </div>
+
+        <!-- Interactive Grid -->
+        <div class="stage-container panel">
+            <div class="grid-wrapper" id="grid-wrapper">
+                <div class="grid" id="grid">
+                    <!-- Tiles generated by JS -->
+                </div>
+            </div>
+            
+            <!-- Tooltip - FIX #3: Fixed positioning logic handled in CSS and JS -->
+            <div class="tooltip" id="tooltip"></div>
+
+            <!-- Repeated Addition Text -->
+            <div class="repeated-addition" id="addition-text">
+                4 + 4 + 4 = 12
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Right Column: Controls & Mini Map -->
+    <div class="sidebar">
+        
+        <div class="panel">
+            
+            <!-- Factor A Control -->
+            <div class="control-group">
+                <label for="factor-a">Rows (Factor A)</label>
+                <div class="stepper">
+                    <button class="stepper-btn" onclick="adjustFactor('a', -1)">−</button>
+                    <span class="stepper-val" id="val-a">3</span>
+                    <button class="stepper-btn" onclick="adjustFactor('a', 1)">+</button>
+                </div>
+            </div>
+
+            <!-- Factor B Control -->
+            <div class="control-group">
+                <label for="factor-b">Columns (Factor B)</label>
+                <div class="stepper">
+                    <button class="stepper-btn" onclick="adjustFactor('b', -1)">−</button>
+                    <span class="stepper-val" id="val-b">4</span>
+                    <button class="stepper-btn" onclick="adjustFactor('b', 1)">+</button>
+                </div>
+            </div>
+
+            <!-- Commutative Toggle -->
+            <div class="control-group">
+                <label>Commutative Property</label>
+                <div class="toggle-container" id="comm-toggle-wrapper">
+                    <span style="font-size: 0.9rem;">Flip (a×b = b×a)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="commutative-switch">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions">
+                <button class="btn-action btn-primary" id="skip-count-btn">
+                    <!-- FIX #5: Standard Play Icon -->
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Skip Count
+                </button>
+                <button class="btn-action btn-secondary" id="reset-btn">
+                    Reset
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Mini Map -->
+        <div class="minimap-container panel">
+            <div class="minimap-title">Times Table</div>
+            <div class="minimap-grid" id="minimap">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // --- State Management ---
+    const state = {
+        rows: 3,      // Factor A (Original)
+        cols: 4,      // Factor B (Original)
+        flipped: false, // Commutative toggle visual state
+        animating: false
+    };
+
+    // --- DOM Elements ---
+    const gridEl = document.getElementById('grid');
+    const wrapperEl = document.getElementById('grid-wrapper');
+    const eqA = document.getElementById('eq-a');
+    const eqB = document.getElementById('eq-b');
+    const eqC = document.getElementById('eq-c');
+    const valA = document.getElementById('val-a');
+    const valB = document.getElementById('val-b');
+    const additionText = document.getElementById('addition-text');
+    const tooltip = document.getElementById('tooltip');
+    const minimapEl = document.getElementById('minimap');
+
+    // --- Initialization ---
+    function init() {
+        renderGrid();
+        updateEquation();
+        generateMinimap();
+        
+        // Event Listeners
+        document.getElementById('commutative-switch').addEventListener('change', handleCommutativeToggle);
+        document.getElementById('skip-count-btn').addEventListener('click', startSkipCount);
+        document.getElementById('reset-btn').addEventListener('click', resetApp);
+
+        // Hover listeners for tooltip positioning - FIX #3: Use viewport coordinates
+        gridEl.addEventListener('mousemove', (e) => {
+            if(e.target.classList.contains('tile')) {
+                const rect = e.target.getBoundingClientRect();
+                // FIX #3: Replaced window.scrollX/Y with fixed positioning logic
+                tooltip.style.left = `${rect.left + window.scrollX}px`;
+                tooltip.style.top = `${rect.bottom + window.scrollY + 10}px`;
+                tooltip.style.opacity = '1';
+            } else {
+                tooltip.style.opacity = '0';
+            }
+        });
+
+        gridEl.addEventListener('mouseleave', () => {
+            tooltip.style.opacity = '0';
+        });
+    }
+
+    // --- Core Logic: Grid Rendering ---
+    function renderGrid() {
+        // FIX #2: Ensure old tiles are cleared before generating new ones
+        gridEl.innerHTML = '';
+        
+        // Determine effective dimensions based on flip toggle
+        const r = state.flipped ? state.cols : state.rows;
+        const c = state.flipped ? state.rows : state.cols;
+
+        gridEl.style.gridTemplateColumns = `repeat(${c}, 1fr)`;
+        
+        for (let i = 0; i < r * c; i++) {
+            const tile = document.createElement('div');
+            tile.classList.add('tile');
+            tile.dataset.index = i;
+            
+            // Staggered pop-in animation
+            gsap.from(tile, {
+                scale: 0,
+                opacity: 0,
+                duration: 0.4,
+                delay: (i % c) * 0.05 + Math.floor(i / c) * 0.1,
+                ease: "back.out(1.7)"
+            });
+
+            // Hover interactions
+            tile.addEventListener('mouseenter', () => handleTileHover(tile, r, c));
+            
+            gridEl.appendChild(tile);
+        }
+    }
+
+    function handleTileHover(activeTile, rows, cols) {
+        const tiles = Array.from(gridEl.children);
+        const index = parseInt(activeTile.dataset.index);
+        
+        // Calculate row/col of hovered tile in the *current* visual orientation
+        const hoverRow = Math.floor(index / cols);
+        const hoverCol = index % cols;
+
+        // Highlight entire row - FIX #1: Use hex colors for GSAP compatibility
+        tiles.forEach((t, i) => {
+            const tRow = Math.floor(i / cols);
+            if (tRow === hoverRow) {
+                gsap.to(t, { backgroundColor: '#38bdf8', boxShadow: '0 0 10px rgba(56, 189, 248, 0.3)', duration: 0.2 });
+            } else {
+                gsap.to(t, { opacity: 0.3, duration: 0.2 });
+            }
+        });
+
+        // Update Tooltip - FIX #5: Use visual dimensions for tooltip logic
+        const subtotal = (hoverRow + 1) * cols;
+        tooltip.innerHTML = `<strong>${cols}</strong> groups of <strong>${rows}</strong> = ${subtotal}`;
+    }
+
+    function clearHoverEffects() {
+        const tiles = Array.from(gridEl.children);
+        // FIX #1: Use hex colors for GSAP compatibility
+        gsap.to(tiles, { opacity: 1, backgroundColor: '#1e293b', boxShadow: 'none', duration: 0.2 });
+    }
+
+    // --- Core Logic: Equation & Text ---
+    function updateEquation() {
+        const a = state.flipped ? state.cols : state.rows;
+        const b = state.flipped ? state.rows : state.cols;
+        const c = a * b;
+
+        // Animate numbers
+        gsap.to([eqA, eqB, eqC], { opacity: 0.5, y: -5, duration: 0.1 });
+        
+        setTimeout(() => {
+            eqA.textContent = a;
+            eqB.textContent = b;
+            eqC.textContent = c;
+            
+            gsap.to([eqA, eqB, eqC], { opacity: 1, y: 0, duration: 0.3, ease: "back.out(2)" });
+        }, 150);
+
+        // Update Repeated Addition Text - FIX #4: Correct logic order
+        updateAdditionText(a, b);
+    }
+
+    function updateAdditionText(factorA, factorB) {
+        // FIX #3: Logic corrected to add 'factorA' (visual row width), 'factorB' times.
+        let sum = 0;
+        const parts = [];
+        
+        for(let i=0; i<factorB; i++) {
+            sum += factorA;
+            parts.push(factorA);
+        }
+
+        additionText.innerHTML = `${parts.join(' + ')} = ${sum}`;
+    }
+
+    // --- Controls: Stepper ---
+    function adjustFactor(f, delta) {
+        if (state.animating) return;
+
+        const newVal = f === 'a' ? state.rows + delta : state.cols + delta;
+        
+        if (newVal >= 1 && newVal <= 12) {
+            if (f === 'a') state.rows = newVal;
+            else state.cols = newVal;
+            
+            // Update UI values immediately
+            valA.textContent = state.rows;
+            valB.textContent = state.cols;
+
+            renderGrid();
+            updateEquation();
+        }
+    }
+
+    // --- Feature: Commutative Flip - FIX #2 & #4 ---
+    function handleCommutativeToggle(e) {
+        if (state.animating) return;
+        
+        const isChecked = e.target.checked;
+        state.flipped = isChecked; // FIX #1: Logic is now correct. Checked = Flipped
+        
+        // Visual Rotation Animation using GSAP - Refactored to fix timeline logic error
+        const tl = gsap.timeline();
+
+        // 1. Rotate out (Y-axis)
+        tl.to(wrapperEl, { 
+            rotateY: -90, 
+            duration: 0.4, 
+            ease: "power2.in",
+            onComplete: () => {
+                // Swap logic happens instantly while hidden
+                state.flipped = !state.flipped;
+                
+                // Re-render grid content (swap rows/cols)
+                const r = state.flipped ? state.cols : state.rows;
+                const c = state.flipped ? state.rows : state.cols;
+                gridEl.style.gridTemplateColumns = `repeat(${c}, 1fr)`;
+                
+                updateEquation(); // Updates text based on new orientation
+                
+                // 2. Rotate back in - FIX #4: Use single timeline with chained calls to avoid race conditions
+                wrapperEl.style.transform = 'rotateY(90deg)'; // Start position for next tween
+                tl.to(wrapperEl, { 
+                    rotateY: 0, 
+                    duration: 0.5, 
+                    ease: "power2.out" 
+                });
+            }
+        });
+
+        updateMinimap();
+    }
+
+    // --- Feature: Skip Count Animation ---
+    function startSkipCount() {
+        if (state.animating) return;
+        state.animating = true;
+        
+        const btn = document.getElementById('skip-count-btn');
+        btn.style.opacity = '0.5';
+        btn.disabled = true;
+
+        const tiles = Array.from(gridEl.children);
+        const r = state.flipped ? state.cols : state.rows;
+        const c = state.flipped ? state.rows : state.cols;
+        
+        let currentSum = 0;
+        const tl = gsap.timeline({ 
+            onComplete: () => { 
+                state.animating = false; 
+                btn.style.opacity = '1';
+                btn.disabled = false;
+                clearHoverEffects();
+            } 
+        });
+
+        // Reset all tiles first
+        tiles.forEach(t => t.className = 'tile');
+
+        for (let i = 0; i < r; i++) {
+            currentSum += c; // Add column count to sum
+            
+            // Highlight the row
+            const startIdx = i * c;
+            const endIdx = startIdx + c;
+            
+            tl.to(tiles.slice(startIdx, endIdx), {
+                backgroundColor: '#38bdf8',
+                boxShadow: '0 0 15px rgba(56, 189, 248, 0.4)',
+                scale: 1.1,
+                duration: 0.3,
+                stagger: 0.05
+            }, "<"); // Start at same time as text update
+
+            tl.call(() => {
+                additionText.innerHTML = `<span style="color:white">${i+1} × ${c}</span> = <span style="font-size:1.4em; color:#f472b6">${currentSum}</span>`;
+                
+                // Highlight minimap row
+                updateMinimapRow(i);
+            }, null, "<");
+
+            tl.to({}, { duration: 0.3 }); // Pause between rows
+        }
+    }
+
+    // --- Feature: Mini Map ---
+    function generateMinimap() {
+        minimapEl.innerHTML = '';
+        for (let r = 1; r <= 12; r++) {
+            for (let c = 1; c <= 12; c++) {
+                const cell = document.createElement('div');
+                cell.classList.add('mm-cell');
+                cell.dataset.r = r;
+                cell.dataset.c = c;
+                
+                // Click to set factors directly
+                cell.addEventListener('click', () => {
+                    state.rows = r;
+                    state.cols = c;
+                    valA.textContent = r;
+                    valB.textContent = c;
+                    renderGrid();
+                    updateEquation();
+                    updateMinimap();
+                });
+
+                minimapEl.appendChild(cell);
+            }
+        }
+        updateMinimap();
+    }
+
+    function updateMinimap() {
+        const cells = Array.from(minimapEl.children);
+        
+        // Reset classes
+        cells.forEach(c => c.className = 'mm-cell');
+
+        // Highlight current position (Rows x Cols)
+        const targetR = state.rows;
+        const targetC = state.cols;
+
+        // Find the cell at [targetR][targetC]
+        const idx = (targetR - 1) * 12 + (targetC - 1);
+        if(cells[idx]) cells[idx].classList.add('highlight');
+
+        // Highlight trail (Row and Column lines)
+        for(let i=0; i<12; i++) {
+            const rowIdx = (targetR - 1) * 12 + i;
+            const colIdx = i * 12 + (targetC - 1);
+            
+            if(cells[rowIdx]) cells[rowIdx].classList.add('active-row');
+            if(cells[colIdx]) cells[colIdx].classList.add('active-col');
+        }
+    }
+
+    function updateMinimapRow(rowIndex) {
+        const cells = Array.from(minimapEl.children);
+        // Clear previous active rows (but keep highlight and trail logic simple for now)
+        cells.forEach(c => c.classList.remove('active-row'));
+        
+        for(let i=0; i<12; i++) {
+            const idx = rowIndex * 12 + i;
+            if(cells[idx]) cells[idx].classList.add('active-row');
+        }
+    }
+
+    // --- Reset - FIX #5 ---
+    function resetApp() {
+        state.rows = 3;
+        state.cols = 4;
+        state.flipped = false;
+        
+        valA.textContent = '3';
+        valB.textContent = '4';
+        document.getElementById('commutative-switch').checked = false;
+
+        // Kill any active tweens on the wrapper to prevent visual glitches
+        gsap.killTweensOf(wrapperEl);
+        wrapperEl.style.transform = ''; // Reset inline styles
+
+        renderGrid();
+        updateEquation();
+        updateMinimap();
+    }
+
+    // Start
+    init();
+
+</script>
+</body>
+</html>

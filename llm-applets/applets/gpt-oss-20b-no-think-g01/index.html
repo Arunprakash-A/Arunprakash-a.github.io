@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Counting Playground</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{
+  --bg-gradient: radial-gradient(circle at center, #0a0c12 0%, #12151f 100%);
+  --surface:#1e1e2e;
+  --accent-cyan:#22d3ee;
+  --accent-amber:#ffca28;
+  --text-primary:#ffffff;
+  --text-secondary:#a0a0a0;
+}
+html,body{
+  height:100%;
+  margin:0;
+  font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  color:var(--text-primary);
+  background:var(--bg-gradient);
+  overflow-x:hidden;
+}
+*{box-sizing:border-box;}
+.app{
+  display:flex;
+  flex-direction:row;
+  gap:24px;
+  padding:24px;
+  max-width:1200px;
+  margin:auto;
+  height:100%;
+}
+@media(max-width:800px){
+  .app{flex-direction:column;}
+}
+.stage-card, .sidebar-card{
+  background:rgba(30,30,46,0.8);
+  backdrop-filter:blur(10px);
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.5);
+  padding:24px;
+}
+.stage-card{flex:1 1 70%; position:relative;}
+.sidebar-card{flex:0 0 30%; display:flex; flex-direction:column; gap:12px;}
+.count-display{
+  font-size:4rem;
+  text-align:center;
+  margin-bottom:8px;
+  transition:transform 300ms ease-out, opacity 300ms ease-out;
+}
+.apples-grid{
+  display:grid;
+  grid-template-columns:auto auto auto auto auto;
+  gap:12px;
+  justify-content:center;
+  margin-top:16px;
+}
+.apple{
+  width:70px; height:70px;
+  background-color:var(--accent-cyan);
+  border-radius:50%;
+  position:relative;
+  cursor:pointer;
+  transition:transform 0.3s ease-out, box-shadow 0.2s;
+}
+.apple::after{
+  content:"";
+  width:20px; height:20px;
+  background-color:#4caf50;
+  position:absolute;
+  top:-10px; left:25%;
+  border-radius:50% 50% 0 0;
+}
+.apple:not(.counted):hover{box-shadow:0 0 8px var(--accent-cyan);}
+.apple.counted{
+  background-color:#444;
+  cursor:default;
+  pointer-events:none;
+}
+@keyframes bounce{
+  0%{transform:translateY(0);}
+  50%{transform:translateY(-10px);}
+  100%{transform:translateY(0);}
+}
+.apple.bounce{animation:bounce 150ms cubic-bezier(0.4,0,0.2,1);}
+
+.ten-frame{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  justify-content:center;
+  margin-top:16px;
+}
+.ten-square,.extra-square{
+  width:30px; height:30px;
+  border:1px solid var(--text-secondary);
+  background-color:var(--surface);
+  opacity:0;
+  transition:opacity 300ms ease-out, transform 300ms ease-out;
+}
+.ten-square.filled,.extra-square.filled{
+  background-color:var(--accent-cyan);
+  opacity:1;
+}
+.confetti-container{
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  pointer-events:none; overflow:hidden;
+}
+@keyframes confettiMove{
+  0%{transform:translate(0,0) rotate(0deg); opacity:1;}
+  100%{transform:translate(calc(var(--dx)*1px),calc(var(--dy)*1px)) rotate(calc(var(--rot)*1deg)); opacity:0;}
+}
+.confetti-piece{
+  position:absolute;
+  width:6px; height:6px;
+  background-color:var(--accent-amber);
+  animation:confettiMove 1.5s forwards;
+}
+
+button{
+  padding:12px 20px;
+  background-color:var(--accent-cyan);
+  color:white;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:1rem;
+  transition:background 0.3s ease-out, transform 0.2s;
+}
+button:hover{background-color:var(--accent-amber);}
+button:focus-visible{
+  outline:2px solid var(--accent-amber);
+  outline-offset:2px;
+}
+
+input[type=range]{
+  -webkit-appearance:none; appearance:none;
+  width:100%; height:8px; border-radius:4px;
+  background:var(--surface); outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none;
+  width:20px; height:20px; border-radius:50%;
+  background:var(--accent-cyan); cursor:pointer;
+  transition:background 0.3s ease-out;
+}
+input[type=range]:hover::-webkit-slider-thumb{background:var(--accent-amber);}
+.toast{
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+  background-color:rgba(30,30,46,0.9); color:white;
+  padding:12px 24px; border-radius:8px;
+  opacity:0; transition:opacity 300ms ease-out;
+}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="stage-card" id="stageCard">
+    <div class="count-display" id="countDisplay">0</div>
+    <div class="apples-grid" id="applesGrid"></div>
+    <div class="ten-frame" id="tenFrame"></div>
+    <div class="confetti-container" id="confettiContainer"></div>
+  </div>
+  <div class="sidebar-card">
+    <label for="objectSlider">Number of objects: <span id="sliderValue">5</span></label>
+    <input type="range" id="objectSlider" min="1" max="20" value="5" aria-label="Set number of objects">
+    <button id="newSetBtn">New Set</button>
+    <button id="checkBtn">Check</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const applesGrid = document.getElementById('applesGrid');
+  const tenFrame = document.getElementById('tenFrame');
+  const countDisplay = document.getElementById('countDisplay');
+  const slider = document.getElementById('objectSlider');
+  const sliderValue = document.getElementById('sliderValue');
+  const newSetBtn = document.getElementById('newSetBtn');
+  const checkBtn = document.getElementById('checkBtn');
+  const confettiContainer = document.getElementById('confettiContainer');
+  const toast = document.getElementById('toast');
+
+  let totalObjects = parseInt(slider.value);
+  let count = 0;
+  let displayedCount = 0;
+  let squares = [];
+  let extraSquare;
+
+  function init() {
+    generateObjects(totalObjects);
+    slider.addEventListener('input', onSliderChange);
+    newSetBtn.addEventListener('click', () => generateObjects(totalObjects));
+    checkBtn.addEventListener('click', onCheck);
+  }
+
+  // Fisher–Yates shuffle
+  function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function generateObjects(n) {
+    totalObjects = n;
+    count = 0;
+    displayedCount = 0;
+    updateCountDisplay(0);
+    applesGrid.innerHTML = '';
+    // Create shuffled indices
+    const indices = Array.from({ length: n }, (_, i) => i + 1);
+    shuffleArray(indices);
+    for (const idx of indices) {
+      const apple = document.createElement('div');
+      apple.className='apple';
+      apple.dataset.id=idx;
+      apple.dataset.counted='false';
+      apple.setAttribute('role','button');
+      apple.setAttribute('tabindex','0');
+      apple.setAttribute('aria-label',`Apple ${idx}`);
+      apple.addEventListener('click', onAppleClick);
+      apple.addEventListener('keydown',(e)=>{if(e.key==='Enter'||e.key===' ') {e.preventDefault(); apple.click();}});
+      applesGrid.appendChild(apple);
+    }
+    resetTenFrame();
+  }
+
+  function resetTenFrame() {
+    tenFrame.innerHTML = '';
+    squares = [];
+    for (let i=0;i<10;i++) {
+      const sq=document.createElement('div');
+      sq.className='ten-square';
+      tenFrame.appendChild(sq);
+      squares.push(sq);
+    }
+    extraSquare=document.createElement('div');
+    extraSquare.className='extra-square';
+    extraSquare.style.display='none';
+    tenFrame.appendChild(extraSquare);
+  }
+
+  function onAppleClick(e) {
+    const apple=e.currentTarget;
+    if (apple.dataset.counted==='true') return;
+    apple.dataset.counted='true';
+    apple.classList.add('counted');
+    apple.classList.add('bounce');
+    setTimeout(()=>{apple.classList.remove('bounce');},150);
+    count++;
+    updateCountDisplay(count);
+    updateTenFrame(count);
+  }
+
+  function updateCountDisplay(target) {
+    const start=displayedCount;
+    const duration=300;
+    const startTime=performance.now();
+    function step(now){
+      const elapsed=now-startTime;
+      if(elapsed>=duration){ displayedCount=target; countDisplay.textContent=displayedCount; return;}
+      const progress=elapsed/duration;
+      const current=Math.round(start+(target-start)*progress);
+      countDisplay.textContent=current;
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function updateTenFrame(c) {
+    squares.forEach((sq,i)=>{
+      if(i<c && c<=10){
+        setTimeout(()=>{sq.classList.add('filled');},i*50);
+      } else {
+        sq.classList.remove('filled');
+      }
+    });
+    if(c>10){
+      extraSquare.style.display='block';
+      setTimeout(()=>{extraSquare.classList.add('filled');},10);
+    } else {
+      extraSquare.style.display='none';
+      extraSquare.classList.remove('filled');
+    }
+  }
+
+  function onSliderChange(e){
+    const val=parseInt(e.target.value);
+    sliderValue.textContent=val;
+    generateObjects(val);
+  }
+
+  function onCheck(){
+    if(count===totalObjects){
+      showConfetti();
+      showToast("Great job! All counted!");
+    } else {
+      showToast(`Keep going! Counted ${count} of ${totalObjects}.`);
+    }
+  }
+
+  function showConfetti(){
+    const numPieces=30;
+    for(let i=0;i<numPieces;i++){
+      createConfettiPiece();
+    }
+  }
+
+  function createConfettiPiece(){
+    const piece=document.createElement('div');
+    piece.className='confetti-piece';
+    const size=Math.random()*4+2;
+    piece.style.width=size+'px';
+    piece.style.height=size+'px';
+    const color=Math.random()<0.5? '#22d3ee' : '#ffca28';
+    piece.style.backgroundColor=color;
+    const angle=Math.random()*360;
+    const distance=Math.random()*80+20;
+    const dx=Math.cos(angle*Math.PI/180)*distance;
+    const dy=Math.sin(angle*Math.PI/180)*distance;
+    piece.style.setProperty('--dx',dx);
+    piece.style.setProperty('--dy',dy);
+    piece.style.setProperty('--rot',angle);
+    const rect=confettiContainer.getBoundingClientRect();
+    piece.style.left=(rect.width/2 - size/2)+'px';
+    piece.style.top=(rect.height/2 - size/2)+'px';
+    confettiContainer.appendChild(piece);
+    setTimeout(()=>{piece.remove();},1500);
+  }
+
+  function showToast(msg){
+    toast.textContent=msg;
+    toast.classList.add('show');
+    setTimeout(()=>{toast.classList.remove('show');},2000);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

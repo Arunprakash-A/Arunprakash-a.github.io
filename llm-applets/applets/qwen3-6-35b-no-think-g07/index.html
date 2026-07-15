@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance Scale Equation Solver</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0B0F19',
+                            panel: '#151B2B',
+                            border: '#2A3447',
+                            text: '#E2E8F0'
+                        },
+                        accent: {
+                            primary: '#3B82F6', // Blue
+                            success: '#10B981', // Green
+                            danger: '#EF4444',  // Red
+                            warning: '#F59E0B', // Amber
+                            x: '#8B5CF6'        // Purple
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+
+    <style>
+        body {
+            background-color: #0B0F19;
+            color: #E2E8F0;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0F19; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2A3447; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3B82F6; 
+        }
+
+        .glass-panel {
+            background: rgba(21, 27, 43, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(42, 52, 71, 0.5);
+        }
+
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3B82F6;
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        .slider-track::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #2A3447;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+        const { motion, AnimatePresence } = window.Motion;
+
+        // --- Icons ---
+        const UndoIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+        );
+        const RefreshIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+        );
+        const CheckIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        );
+        const PlusIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        );
+        const MinusIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        );
+        const DivideIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="6" r="2"></circle><line x1="4" y1="12" x2="20" y2="12"></line><circle cx="12" cy="18" r="2"></circle></svg>
+        );
+        const MultiplyIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        );
+
+        // --- Components ---
+
+        const WeightBlock = ({ type, value, color, label, isGhost = false }) => {
+            return (
+                <motion.div 
+                    layout
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: isGhost ? 0.3 : 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className={`
+                        relative flex items-center justify-center 
+                        w-12 h-12 sm:w-16 sm:h-16 rounded-xl shadow-lg
+                        border-2 font-mono font-bold text-lg sm:text-xl
+                        ${isGhost ? 'border-dashed border-gray-600 bg-gray-800/30' : ''}
+                        ${color === 'x' ? 'bg-accent-x/20 border-accent-x text-accent-x' : ''}
+                        ${color === 'unit' ? 'bg-accent-warning/20 border-accent-warning text-accent-warning' : ''}
+                        ${color === 'negative' ? 'bg-accent-danger/20 border-accent-danger text-accent-danger' : ''}
+                        ${color === 'neutral' ? 'bg-accent-primary/20 border-accent-primary text-accent-primary' : ''}
+                    `}
+                >
+                    {type === 'x' ? (
+                        <span className="text-2xl sm:text-3xl">x</span>
+                    ) : (
+                        <span>{value}</span>
+                    )}
+                    {label && (
+                        <span className="absolute -bottom-6 text-[10px] text-gray-400 font-sans uppercase tracking-wider">
+                            {label}
+                        </span>
+                    )}
+                </motion.div>
+            );
+        };
+
+        // BalanceScale component now accepts items as props to fix scope issues
+        const BalanceScale = ({ leftItems, rightItems, leftTotal, rightTotal, isSolved }) => {
+            // Calculate tilt: -15deg to 15deg
+            const diff = leftTotal - rightTotal;
+            const maxTilt = 15;
+            const tilt = Math.max(-maxTilt, Math.min(maxTilt, diff * 1.5));
+            
+            // Determine visual state
+            const isBalanced = Math.abs(diff) < 0.001;
+            const beamColor = isBalanced ? '#10B981' : '#3B82F6'; // Green if solved, Blue otherwise
+
+            return (
+                <div className="relative w-full h-64 flex items-end justify-center pb-8">
+                    {/* Base */}
+                    <div className="absolute bottom-0 w-64 h-4 bg-gray-700 rounded-full opacity-50 blur-sm"></div>
+                    <div className="absolute bottom-0 w-4 h-32 bg-gray-800 rounded-t-lg"></div>
+                    
+                    {/* Pivot Point */}
+                    <div className="absolute bottom-32 w-6 h-6 bg-gray-600 rounded-full border-4 border-gray-900 z-20"></div>
+
+                    {/* Moving Beam Group */}
+                    <motion.div 
+                        className="absolute bottom-32 w-[500px] h-4 origin-center z-10"
+                        animate={{ rotate: tilt }}
+                        transition={{ type: "spring", stiffness: 100, damping: 15 }}
+                    >
+                        {/* The Beam */}
+                        <div className="w-full h-2 bg-gray-600 rounded-full relative">
+                            {/* Center Marker */}
+                            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-gray-400 rounded-full"></div>
+                        </div>
+
+                        {/* Left Pan Assembly */}
+                        <div className="absolute left-0 top-2 flex flex-col items-center">
+                            {/* String */}
+                            <div className="w-px h-24 bg-gray-500"></div>
+                            {/* Pan */}
+                            <div className="w-32 h-4 bg-gray-700 rounded-full border-t border-gray-500 relative">
+                                {/* Content Container */}
+                                <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-28 flex flex-wrap justify-center gap-1 content-start">
+                                    <AnimatePresence>
+                                        {leftItems.map((item, i) => (
+                                            <WeightBlock key={`${item.type}-${item.value}-${i}`} {...item} />
+                                        ))}
+                                    </AnimatePresence>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Pan Assembly */}
+                        <div className="absolute right-0 top-2 flex flex-col items-center">
+                            {/* String */}
+                            <div className="w-px h-24 bg-gray-500"></div>
+                            {/* Pan */}
+                            <div className="w-32 h-4 bg-gray-700 rounded-full border-t border-gray-500 relative">
+                                {/* Content Container */}
+                                <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-28 flex flex-wrap justify-center gap-1 content-start">
+                                    <AnimatePresence>
+                                        {rightItems.map((item, i) => (
+                                            <WeightBlock key={`${item.type}-${item.value}-${i}`} {...item} />
+                                        ))}
+                                    </AnimatePresence>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            );
+        };
+
+        // --- Main App ---
+
+        const App = () => {
+            // State
+            const [coeff, setCoeff] = useState(2);
+            const [leftConst, setLeftConst] = useState(3);
+            const [rightVal, setRightVal] = useState(11);
+            
+            const [history, setHistory] = useState([]);
+            const [feedback, setFeedback] = useState(null); // { type: 'success'|'error', msg: '' }
+            const [userAnswer, setUserAnswer] = useState('');
+            const [isSolved, setIsSolved] = useState(false);
+
+            // Derived State for Visualization
+            // FIX: Calculate tilt based on equation parameters directly, handling empty input
+            const leftSideValue = coeff * (parseFloat(userAnswer) || 0) + leftConst;
+            const rightSideValue = rightVal;
+            const diff = leftSideValue - rightSideValue;
+            const tilt = Math.max(-15, Math.min(15, diff * 2)); // Scale factor for visibility
+            const isBalanced = Math.abs(diff) < 0.001;
+
+            // FIX: Move definition of leftItems and rightItems to App component scope
+            // and pass them as props to BalanceScale.
+            const leftItems = useMemo(() => {
+                const items = [];
+                for(let i=0; i<coeff; i++) items.push({ type: 'x', value: 'x', color: 'x' });
+                for(let i=0; i<leftConst; i++) items.push({ type: 'unit', value: 1, color: 'unit' });
+                if(leftConst < 0) {
+                    for(let i=0; i<Math.abs(leftConst); i++) items.push({ type: 'unit', value: -1, color: 'negative' });
+                }
+                return items;
+            }, [coeff, leftConst]);
+
+            const rightItems = useMemo(() => {
+                const items = [];
+                for(let i=0; i<rightVal; i++) items.push({ type: 'unit', value: 1, color: 'unit' });
+                if(rightVal < 0) {
+                    for(let i=0; i<Math.abs(rightVal); i++) items.push({ type: 'unit', value: -1, color: 'negative' });
+                }
+                return items;
+            }, [rightVal]);
+
+            // Handlers
+            const handleUndo = () => {
+                if (history.length === 0) return;
+                const prev = history[history.length - 1];
+                setCoeff(prev.coeff);
+                setLeftConst(prev.leftConst);
+                setRightVal(prev.rightVal);
+                setHistory(history.slice(0, -1));
+                setFeedback(null);
+                setIsSolved(false);
+                setUserAnswer('');
+            };
+
+            const handleReset = () => {
+                setCoeff(2);
+                setLeftConst(3);
+                setRightVal(11);
+                setHistory([]);
+                setFeedback(null);
+                setIsSolved(false);
+                setUserAnswer('');
+            };
+
+            const applyOperation = (type, val) => {
+                // Save state to history
+                setHistory([...history, { coeff, leftConst, rightVal }]);
+                
+                if (type === 'add') {
+                    setLeftConst(prev => prev + val);
+                    setRightVal(prev => prev + val);
+                } else if (type === 'subtract') {
+                    setLeftConst(prev => prev - val);
+                    setRightVal(prev => prev - val);
+                } else if (type === 'multiply') {
+                    setCoeff(prev => prev * val);
+                    setLeftConst(prev => prev * val);
+                    setRightVal(prev => prev * val);
+                } else if (type === 'divide') {
+                    if (coeff % val !== 0 || leftConst % val !== 0 || rightVal % val !== 0) {
+                        setFeedback({ type: 'error', msg: 'Cannot divide evenly. Choose a different operation.' });
+                        // Revert history
+                        setHistory(history.slice(0, -1));
+                        return;
+                    }
+                    setCoeff(prev => prev / val);
+                    setLeftConst(prev => prev / val);
+                    setRightVal(prev => prev / val);
+                }
+                setFeedback(null);
+            };
+
+            const checkSolution = () => {
+                const val = parseFloat(userAnswer);
+                if (isNaN(val)) {
+                    setFeedback({ type: 'error', msg: 'Please enter a number.' });
+                    return;
+                }
+                const leftVal = coeff * val + leftConst;
+                if (Math.abs(leftVal - rightVal) < 0.001) {
+                    setFeedback({ type: 'success', msg: 'Correct! The scale is balanced.' });
+                    setIsSolved(true);
+                } else {
+                    setFeedback({ type: 'error', msg: `Incorrect. Left side is ${leftVal}, Right side is ${rightVal}.` });
+                    setIsSolved(false);
+                }
+            };
+
+            // Generate available operations
+            const getAvailableOps = () => {
+                const ops = [];
+                // Add/Subtract constant
+                if (leftConst !== 0) {
+                    const opVal = leftConst;
+                    const opType = opVal > 0 ? 'subtract' : 'add';
+                    const absVal = Math.abs(opVal);
+                    ops.push({ 
+                        type: opType, 
+                        val: absVal, 
+                        label: `${opType === 'add' ? 'Add' : 'Subtract'} ${absVal}`, 
+                        icon: opType === 'add' ? <PlusIcon /> : <MinusIcon /> 
+                    });
+                }
+                
+                // Divide/Multiply coefficient
+                if (coeff !== 1 && coeff !== -1) {
+                    // Find factors
+                    const factors = [];
+                    for(let i=2; i<=Math.abs(coeff); i++) {
+                        if (coeff % i === 0) factors.push(i);
+                    }
+                    // Also offer the coefficient itself
+                    factors.push(Math.abs(coeff));
+                    
+                    factors.forEach(f => {
+                        ops.push({
+                            type: 'divide',
+                            val: f,
+                            label: `Divide by ${f}`,
+                            icon: <DivideIcon />
+                        });
+                    });
+                }
+                
+                // Always offer multiply by -1 if signs are messy?
+                if (coeff < 0) {
+                    ops.push({ type: 'multiply', val: -1, label: 'Multiply by -1', icon: <MultiplyIcon /> });
+                }
+
+                return ops;
+            };
+
+            const availableOps = getAvailableOps();
+
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 font-sans text-dark-text">
+                    
+                    {/* Header */}
+                    <div className="mb-8 text-center">
+                        <h1 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-accent-primary to-accent-x mb-2">
+                            Balance Scale Solver
+                        </h1>
+                        <p className="text-gray-400 text-sm">Visualize and solve linear equations</p>
+                    </div>
+
+                    {/* Main Container */}
+                    <div className="w-full max-w-4xl glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl border border-dark-border">
+                        
+                        {/* Top: Configuration & Equation */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                            
+                            {/* Controls */}
+                            <div className="space-y-6">
+                                <div className="bg-dark-bg/50 p-4 rounded-xl border border-dark-border">
+                                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Equation Parameters</h3>
+                                    
+                                    <div className="space-y-4">
+                                        <div>
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="text-accent-x">Coefficient (a)</span>
+                                                <span className="font-mono">{coeff}</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="1" max="9" step="1" 
+                                                value={coeff} onChange={(e) => setCoeff(parseInt(e.target.value))}
+                                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
+                                            />
+                                        </div>
+                                        
+                                        <div>
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="text-accent-warning">Constant (b)</span>
+                                                <span className="font-mono">{leftConst}</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="-10" max="10" step="1" 
+                                                value={leftConst} onChange={(e) => setLeftConst(parseInt(e.target.value))}
+                                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="text-accent-primary">Right Value (c)</span>
+                                                <span className="font-mono">{rightVal}</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="-20" max="20" step="1" 
+                                                value={rightVal} onChange={(e) => setRightVal(parseInt(e.target.value))}
+                                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={handleUndo}
+                                        disabled={history.length === 0}
+                                        className="flex-1 py-2 px-4 rounded-lg bg-dark-panel border border-dark-border hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+                                    >
+                                        <UndoIcon /> Undo
+                                    </button>
+                                    <button 
+                                        onClick={handleReset}
+                                        className="flex-1 py-2 px-4 rounded-lg bg-dark-panel border border-dark-border hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+                                    >
+                                        <RefreshIcon /> Reset
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Symbolic Equation */}
+                            <div className="flex flex-col justify-center items-center bg-dark-bg/50 p-6 rounded-xl border border-dark-border relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent-x via-accent-primary to-accent-warning opacity-50"></div>
+                                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 self-start">Symbolic Equation</h3>
+                                
+                                <div className="text-3xl sm:text-4xl font-mono font-bold text-white flex items-center gap-2 flex-wrap justify-center">
+                                    <span className="text-accent-x">{coeff}x</span>
+                                    <span className="text-accent-warning">{leftConst >= 0 ? '+' : '-'} {Math.abs(leftConst)}</span>
+                                    <span className="text-gray-400">=</span>
+                                    <span className="text-accent-primary">{rightVal}</span>
+                                </div>
+
+                                {/* Solution Input */}
+                                <div className="mt-8 flex gap-2 w-full max-w-xs">
+                                    <input 
+                                        type="number" 
+                                        placeholder="x = ?" 
+                                        value={userAnswer}
+                                        onChange={(e) => setUserAnswer(e.target.value)}
+                                        className="flex-1 bg-dark-panel border border-dark-border rounded-lg px-4 py-2 text-white font-mono focus:outline-none focus:border-accent-primary transition-colors"
+                                    />
+                                    <button 
+                                        onClick={checkSolution}
+                                        className="bg-accent-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 font-medium"
+                                    >
+                                        <CheckIcon /> Check
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Middle: Visualization */}
+                        <div className="relative w-full h-64 mb-8 flex items-end justify-center">
+                            {/* Scale Visualization */}
+                            <BalanceScale 
+                                leftItems={leftItems}
+                                rightItems={rightItems}
+                                leftTotal={leftSideValue} 
+                                rightTotal={rightSideValue} 
+                                isSolved={isBalanced}
+                            />
+                        </div>
+
+                        {/* Bottom: Operations & Feedback */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            
+                            {/* Feedback Area */}
+                            <div className="lg:col-span-1">
+                                <AnimatePresence mode="wait">
+                                    {feedback && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            className={`p-4 rounded-xl border ${
+                                                feedback.type === 'success' 
+                                                ? 'bg-accent-success/10 border-accent-success text-accent-success' 
+                                                : 'bg-accent-danger/10 border-accent-danger text-accent-danger'
+                                            }`}
+                                        >
+                                            <p className="font-medium text-sm">{feedback.msg}</p>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                                {!feedback && (
+                                    <div className="p-4 rounded-xl border border-dark-border bg-dark-bg/30 text-gray-500 text-sm text-center">
+                                        {isBalanced ? "Equation Balanced!" : "Select an operation to simplify."}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Operation Palette */}
+                            <div className="lg:col-span-2">
+                                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Available Operations</h3>
+                                <div className="flex flex-wrap gap-3">
+                                    {availableOps.length > 0 ? availableOps.map((op, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => applyOperation(op.type, op.val)}
+                                            className="flex items-center gap-2 px-4 py-3 bg-dark-panel border border-dark-border hover:border-accent-primary hover:bg-gray-800 rounded-xl transition-all text-sm font-medium text-gray-300 hover:text-white group"
+                                        >
+                                            <span className="text-accent-primary group-hover:text-accent-x transition-colors">{op.icon}</span>
+                                            {op.label}
+                                        </button>
+                                    )) : (
+                                        <div className="text-gray-500 italic text-sm">No further simplification steps available.</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <div className="mt-8 text-gray-600 text-xs">
+                        Interactive Math Visualization • Built with React & Framer Motion
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

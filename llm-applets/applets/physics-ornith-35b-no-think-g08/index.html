@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound: Vibrations & Waves</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-deep: #020617;
+            --bg-top: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            --border: #334155;
+            
+            --accent-primary: #38bdf8; /* Sky Blue */
+            --accent-secondary: #a78bfa; /* Soft Violet */
+            --accent-tertiary: #f472b6; /* Pink */
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Typography */
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+            /* Spacing & Radius */
+            --radius-lg: 16px;
+            --radius-md: 8px;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background: radial-gradient(circle at center top, var(--bg-top), var(--bg-deep));
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        /* Layout */
+        .app-container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .app-container { grid-template-columns: 1fr; }
+        }
+
+        /* Panels */
+        .panel {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        h1 { font-size: 1.5rem; margin-bottom: 0.25rem; color: var(--text-main); letter-spacing: -0.02em; }
+        .subtitle { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 2rem; display: block; }
+
+        /* Controls */
+        .control-group { margin-bottom: 1.75rem; }
+        
+        label { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 0.85rem; 
+            color: var(--text-muted); 
+            margin-bottom: 0.5rem; 
+            font-weight: 500;
+        }
+
+        .value-display {
+            color: var(--accent-primary);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            cursor: pointer;
+        }
+        
+        input[type=range]:focus { outline: none; }
+
+        /* Track */
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-deep);
+            border-radius: 3px;
+            border: 1px solid var(--border);
+        }
+        
+        /* Thumb */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--accent-secondary);
+            margin-top: -7px; /* center on track */
+            box-shadow: 0 0 10px rgba(167, 139, 250, 0.4);
+            transition: transform 0.1s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #b8a3fb;
+        }
+
+        /* Source Picker */
+        .picker-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .picker-btn {
+            background: var(--bg-deep);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.75rem 0.25rem;
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .picker-btn:hover { background: var(--surface-hover); color: var(--text-main); }
+        
+        .picker-btn.active {
+            background: rgba(56, 189, 248, 0.1);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+        }
+
+        /* Action Buttons */
+        .actions { display: flex; gap: 1rem; margin-top: 2rem; }
+
+        .btn {
+            flex: 1;
+            padding: 0.875rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-play {
+            background: transparent;
+            color: var(--accent-tertiary);
+            border: 1px solid var(--accent-tertiary);
+        }
+
+        .btn-play:hover { background: rgba(244, 114, 182, 0.1); box-shadow: 0 0 15px rgba(244, 114, 182, 0.2); }
+        
+        .btn-play.active {
+            background: var(--accent-tertiary);
+            color: white;
+            box-shadow: 0 0 20px rgba(244, 114, 182, 0.4);
+        }
+
+        .btn-reset {
+            background: var(--surface-hover);
+            color: var(--text-main);
+        }
+        
+        .btn-reset:hover { background: #475569; }
+
+        /* Visualization Area */
+        .viz-area { display: flex; flex-direction: column; gap: 1.5rem; height: 100%; }
+
+        .source-panel, .scope-panel {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            min-height: 280px;
+        }
+
+        .panel-header {
+            position: absolute;
+            top: 1rem;
+            left: 1.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            z-index: 2;
+        }
+
+        /* Canvas */
+        canvas { width: 100%; height: 100%; display: block; }
+
+        /* SVG Source Animation Container */
+        .source-visualizer {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Readout Overlay */
+        .readout-overlay {
+            position: absolute;
+            bottom: 1rem;
+            right: 1.5rem;
+            text-align: right;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        
+        .readout-value { color: var(--accent-primary); margin-left: 0.5rem; }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- Sidebar Controls -->
+    <aside class="panel control-panel">
+        <h1>Sound Explorer</h1>
+        <span class="subtitle">Vibrations, Frequency & Amplitude</span>
+
+        <!-- Source Picker -->
+        <div class="control-group">
+            <label style="margin-bottom: 0.75rem;">Source Type</label>
+            <div class="picker-grid" id="source-picker">
+                <button class="picker-btn active" data-source="string">Plucked String</button>
+                <button class="picker-btn" data-source="fork">Tuning Fork</button>
+                <button class="picker-btn" data-source="speaker">Speaker Cone</button>
+            </div>
+        </div>
+
+        <!-- Frequency Slider -->
+        <div class="control-group">
+            <label>
+                Frequency (Hz)
+                <span id="freq-display" class="value-display">440 Hz</span>
+            </label>
+            <input type="range" id="freq-slider" min="100" max="800" step="10" value="440">
+            <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">
+                <span>Lower Pitch</span>
+                <span>Higher Pitch</span>
+            </div>
+        </div>
+
+        <!-- Amplitude Slider -->
+        <div class="control-group">
+            <label>
+                Amplitude (%)
+                <span id="amp-display" class="value-display">75%</span>
+            </label>
+            <input type="range" id="amp-slider" min="10" max="100" step="5" value="75">
+            <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">
+                <span>Softer</span>
+                <span>Louder</span>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            <button id="play-btn" class="btn btn-play">Play Tone</button>
+            <button id="reset-btn" class="btn btn-reset">Reset</button>
+        </div>
+    </aside>
+
+    <!-- Main Visualization Area -->
+    <main class="viz-area">
+        
+        <!-- Vibrating Source Panel -->
+        <section class="panel source-panel">
+            <span class="panel-header">Vibrating Source</span>
+            <div class="source-visualizer" id="source-container">
+                <!-- SVG injected by JS -->
+            </div>
+        </section>
+
+        <!-- Oscilloscope Panel -->
+        <section class="panel scope-panel">
+            <span class="panel-header">Oscilloscope</span>
+            <canvas id="scope-canvas"></canvas>
+            <div class="readout-overlay">
+                Pitch: <span id="pitch-readout" class="value-display">Medium</span><br>
+                Loudness: <span id="loudness-readout" class="value-display">Loud</span>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<script type="module">
+/**
+ * Sound Explorer Application Logic
+ */
+
+// --- State Management ---
+const state = {
+    frequency: 440,
+    amplitude: 75, // 10-100
+    sourceType: 'string', // string, fork, speaker
+    isPlaying: false,
+    phase: 0
+};
+
+// --- DOM Elements ---
+const els = {
+    freqSlider: document.getElementById('freq-slider'),
+    ampSlider: document.getElementById('amp-slider'),
+    freqDisplay: document.getElementById('freq-display'),
+    ampDisplay: document.getElementById('amp-display'),
+    pitchReadout: document.getElementById('pitch-readout'),
+    loudnessReadout: document.getElementById('loudness-readout'),
+    playBtn: document.getElementById('play-btn'),
+    resetBtn: document.getElementById('reset-btn'),
+    sourcePicker: document.getElementById('source-picker'),
+    sourceContainer: document.getElementById('source-container'),
+    canvas: document.getElementById('scope-canvas')
+};
+
+// --- Audio Context (Lazy Init) ---
+let audioCtx = null;
+let oscillator = null;
+let gainNode = null;
+
+function initAudio() {
+    if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        
+        // Master Gain (Volume)
+        gainNode = audioCtx.createGain();
+        gainNode.connect(audioCtx.destination);
+        
+        // Oscillator
+        oscillator = audioCtx.createOscillator();
+        oscillator.type = 'sine';
+        oscillator.connect(gainNode);
+        oscillator.start();
+    }
+}
+
+function updateAudio() {
+    if (!audioCtx || !oscillator) return;
+
+    const now = audioCtx.currentTime;
+    
+    // Update Frequency
+    oscillator.frequency.setTargetAtTime(state.frequency, now, 0.05);
+    
+    // Update Volume (Amplitude % to Gain 0-1)
+    const targetGain = state.amplitude / 100;
+    gainNode.gain.setTargetAtTime(targetGain, now, 0.05);
+}
+
+// --- Interaction Handlers ---
+
+function updateState() {
+    state.frequency = parseInt(els.freqSlider.value);
+    state.amplitude = parseInt(els.ampSlider.value);
+    
+    // Update Displays
+    els.freqDisplay.textContent = `${state.frequency} Hz`;
+    els.ampDisplay.textContent = `${state.amplitude}%`;
+
+    // Update Readouts (Perception)
+    updateReadouts();
+    
+    // Update Audio if playing
+    if (state.isPlaying) {
+        updateAudio();
+    } else {
+        // If not playing, we still want to hear it when toggled on
+        if(audioCtx && audioCtx.state === 'running') {
+            updateAudio();
+        }
+    }
+}
+
+function updateReadouts() {
+    const f = state.frequency;
+    let pitch = "Low";
+    
+    // FIX: Correct logic for Low/Medium/High mapping using strict if/else if
+    if (f < 300) {
+        pitch = "Low";
+    } else if (f >= 300 && f <= 600) {
+        pitch = "Medium";
+    } else {
+        pitch = "High";
+    }
+    
+    els.pitchReadout.textContent = pitch;
+
+    const a = state.amplitude;
+    let loudness = "Soft";
+    
+    // FIX: Correct logic for Soft/Medium/Loud mapping using strict if/else if
+    if (a < 40) {
+        loudness = "Soft";
+    } else if (a >= 40 && a <= 70) {
+        loudness = "Medium";
+    } else {
+        loudness = "Loud";
+    }
+    
+    els.loudnessReadout.textContent = loudness;
+}
+
+// --- Source Visualizer (SVG) - Refactored for Static DOM + Animation ---
+
+function renderSource() {
+    const container = els.sourceContainer;
+    
+    // FIX #1: Replaced infinite loop with safe innerHTML assignment
+    container.innerHTML = '';
+    
+    const width = 400;
+    const height = 300;
+    
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    svg.style.width = "100%";
+    svg.style.height = "100%";
+
+    // --- Plucked String (Static) ---
+    const gString = document.createElementNS(svgNS, "g");
+    
+    // Anchor points
+    const x1 = 50, y1 = height/2;
+    const x2 = width - 50, y2 = height/2;
+
+    // String Path (Quadratic Bezier)
+    const pathString = document.createElementNS(svgNS, "path");
+    pathString.setAttribute("d", `M ${x1} ${y1} Q ${width/2} ${y1} ${x2} ${y2}`);
+    pathString.classList.add("source-part", "string-stroke");
+    
+    // Decorative pillars
+    const pillar = (x, y) => {
+        const rect = document.createElementNS(svgNS, "rect");
+        rect.setAttribute("x", x - 10);
+        rect.setAttribute("y", y - 40);
+        rect.setAttribute("width", 20);
+        rect.setAttribute("height", 80);
+        rect.setAttribute("fill", "#475569");
+        return rect;
+    };
+
+    gString.appendChild(pillar(x1, y1));
+    gString.appendChild(pillar(x2, y2));
+    gString.appendChild(pathString);
+    
+    // --- Tuning Fork (Static) ---
+    const gFork = document.createElementNS(svgNS, "g");
+    
+    // Center of fork
+    const cx = width / 2;
+    const cy = height / 2 - 40;
+
+    // U Shape path for tines + handle
+    const pathFork = document.createElementNS(svgNS, "path");
+    let d = `M ${cx-30} ${cy-60}`; 
+    d += ` L ${cx-30} ${cy+40}`; 
+    d += ` Q ${cx-30} ${cy+80}, ${cx} ${cy+80}`; 
+    d += ` Q ${cx+30} ${cy+80}, ${cx+30} ${cy+40}`; 
+    d += ` L ${cx+30} ${cy-60}`; 
+    pathFork.setAttribute("d", d);
+    pathFork.classList.add("source-part", "fork-tine");
+
+    gFork.appendChild(pathFork);
+    
+    // Handle base
+    const handle = document.createElementNS(svgNS, "rect");
+    handle.setAttribute("x", cx - 15);
+    handle.setAttribute("y", cy + 80);
+    handle.setAttribute("width", 30);
+    handle.setAttribute("height", 60);
+    handle.setAttribute("fill", "#475569");
+    gFork.appendChild(handle);
+
+    // --- Speaker Cone (Static) ---
+    const gSpeaker = document.createElementNS(svgNS, "g");
+    
+    const speakerCx = width / 2;
+    const speakerCy = height / 2;
+    const rOuter = 90;
+    const rInner = 60;
+
+    // Outer Box (Frame)
+    const box = document.createElementNS(svgNS, "rect");
+    box.setAttribute("x", speakerCx - 130);
+    box.setAttribute("y", speakerCy - 130);
+    box.setAttribute("width", 260);
+    box.setAttribute("height", 260);
+    box.setAttribute("rx", 8);
+    box.classList.add("speaker-body");
+    
+    // Cone (Circle)
+    const cone = document.createElementNS(svgNS, "circle");
+    cone.setAttribute("cx", speakerCx);
+    cone.setAttribute("cy", speakerCy);
+    cone.setAttribute("r", rOuter);
+    cone.classList.add("source-part", "speaker-cone");
+
+    // Inner Dust Cap
+    const cap = document.createElementNS(svgNS, "circle");
+    cap.setAttribute("cx", speakerCx);
+    cap.setAttribute("cy", speakerCy);
+    cap.setAttribute("r", 30);
+    cap.setAttribute("fill", "#1e293b");
+    cap.setAttribute("stroke", "#475569");
+
+    gSpeaker.appendChild(box);
+    gSpeaker.appendChild(cone);
+    gSpeaker.appendChild(cap);
+
+    // --- Visibility Management ---
+    
+    function updateVisibility() {
+        gString.style.display = state.sourceType === 'string' ? 'block' : 'none';
+        gFork.style.display = state.sourceType === 'fork' ? 'block' : 'none';
+        gSpeaker.style.display = state.sourceType === 'speaker' ? 'block' : 'none';
+    }
+
+    // Initial visibility
+    updateVisibility();
+
+    svg.appendChild(gString);
+    svg.appendChild(gFork);
+    svg.appendChild(gSpeaker);
+    
+    container.appendChild(svg);
+}
+
+// --- Oscilloscope (Canvas) ---
+
+const ctx = els.canvas.getContext('2d');
+let animationFrameId;
+
+function resizeCanvas() {
+    const rect = els.canvas.parentElement.getBoundingClientRect();
+    // FIX #4: Handle HiDPI correctly by setting attribute width/height to scaled values
+    const dpr = window.devicePixelRatio || 1;
+    els.canvas.width = rect.width * dpr;
+    els.canvas.height = rect.height * dpr;
+    
+    // Reset transform before scaling to avoid accumulation issues
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+}
+
+function drawOscilloscope() {
+    const width = els.canvas.clientWidth; // Use CSS size for drawing logic
+    const height = els.canvas.clientHeight;
+    
+    // Clear
+    ctx.clearRect(0, 0, width, height);
+
+    // Grid
+    drawGrid(width, height);
+
+    // Waveform
+    ctx.beginPath();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#38bdf8'; // Sky Blue
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = 'rgba(56, 189, 248, 0.5)';
+
+    const centerY = height / 2;
+    const amplitudePx = (height * 0.4) * (state.amplitude / 100); // Max 40% of height
+    
+    // Frequency scaling: 
+    // We want to see roughly 1-8 cycles depending on frequency.
+    // Map 100Hz -> ~1 cycle visible, 800Hz -> ~6 cycles visible.
+    const freqScale = (state.frequency - 50) / 200; 
+
+    for (let x = 0; x < width; x++) {
+        // Wave equation: y = A * sin(kx - wt)
+        // k determines spatial frequency (cycles per pixel)
+        const k = freqScale * 0.15; 
+        
+        let phaseOffset = 0;
+        
+        if (state.isPlaying) {
+            // Scroll speed proportional to frequency for visual consistency
+            const timeSpeed = state.frequency * 0.05; 
+            phaseOffset = -state.phase * (timeSpeed / state.frequency); 
+        } else {
+            // FIX: Add subtle animation even when not playing to represent traveling wave
+            // Use a slow drift so it doesn't look like a standing wave
+            phaseOffset = Math.sin(Date.now() * 0.001) * Math.PI; 
+        }
+
+        const y = centerY + amplitudePx * Math.sin(k * x + phaseOffset);
+        
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    
+    ctx.stroke();
+    ctx.shadowBlur = 0; // Reset shadow
+
+    // Update Phase for next frame
+    state.phase += (state.frequency * 0.01); 
+}
+
+function drawGrid(w, h) {
+    ctx.strokeStyle = '#334155'; // Dark slate border
+    ctx.lineWidth = 1;
+    
+    // Center Crosshair
+    ctx.beginPath();
+    ctx.moveTo(0, h/2);
+    ctx.lineTo(w, h/2);
+    ctx.moveTo(w/2, 0);
+    ctx.lineTo(w/2, h);
+    ctx.stroke();
+
+    // Subtle Grid Lines
+    const stepX = w / 10;
+    const stepY = h / 8;
+    
+    ctx.strokeStyle = 'rgba(51, 65, 85, 0.3)';
+    ctx.beginPath();
+    for (let x = 0; x <= w; x += stepX) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+    }
+    for (let y = 0; y <= h; y += stepY) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+    }
+    ctx.stroke();
+}
+
+// --- Animation Loop ---
+
+function animate() {
+    drawOscilloscope();
+    
+    // Animate Source SVG based on frequency (Direct property manipulation)
+    if (state.sourceType === 'string') {
+        const stringPath = els.sourceContainer.querySelector('.string-stroke');
+        if (stringPath) {
+            const amplitudePx = 40 * (state.amplitude / 100);
+            // Calculate displacement at center of string (x=200)
+            const displacement = Math.sin(state.phase * 0.5) * amplitudePx;
+            
+            // Re-draw path with new control point Y
+            const x1=50, y1=150, x2=350, y2=150;
+            const cpx = 200;
+            const cpy = 150 + displacement;
+            
+            stringPath.setAttribute("d", `M ${x1} ${y1} Q ${cpx} ${cpy} ${x2} ${y2}`);
+        }
+    } 
+    else if (state.sourceType === 'fork') {
+        const forkGroup = els.sourceContainer.querySelector('g'); // Get the first g which is fork group
+        if (forkGroup) {
+            const amplitudePx = 15 * (state.amplitude / 100);
+            const offset = Math.sin(state.phase * 0.5) * amplitudePx;
+            // Translate the whole group left/right slightly to simulate vibration
+            forkGroup.setAttribute("transform", `translate(${offset}, 0)`);
+        }
+    }
+    else if (state.sourceType === 'speaker') {
+        const cone = els.sourceContainer.querySelector('.speaker-cone');
+        if (cone) {
+            const scale = 1 + (Math.sin(state.phase * 0.5) * 0.1 * (state.amplitude/100));
+            // We need to keep the center fixed, so we use transform-origin or translate
+            cone.style.transformOrigin = "center";
+            cone.setAttribute("transform", `scale(${scale})`);
+        }
+    }
+
+    animationFrameId = requestAnimationFrame(animate);
+}
+
+
+// --- Event Listeners ---
+
+els.freqSlider.addEventListener('input', updateState);
+els.ampSlider.addEventListener('input', updateState);
+
+els.sourcePicker.addEventListener('click', (e) => {
+    if (!e.target.classList.contains('picker-btn')) return;
+    
+    // Update UI
+    document.querySelectorAll('.picker-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    
+    // Update State & Re-render
+    state.sourceType = e.target.dataset.source;
+    renderSource();
+});
+
+els.playBtn.addEventListener('click', () => {
+    initAudio(); // Ensure context exists
+    
+    if (state.isPlaying) {
+        state.isPlaying = false;
+        els.playBtn.textContent = "Play Tone";
+        els.playBtn.classList.remove('active');
+        
+        if (audioCtx && audioCtx.state === 'running') {
+            gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+        }
+    } else {
+        state.isPlaying = true;
+        els.playBtn.textContent = "Stop Tone";
+        els.playBtn.classList.add('active');
+        
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        updateAudio();
+    }
+});
+
+els.resetBtn.addEventListener('click', () => {
+    // Reset State
+    state.frequency = 440;
+    state.amplitude = 75;
+    state.sourceType = 'string';
+    
+    // Reset UI
+    els.freqSlider.value = 440;
+    els.ampSlider.value = 75;
+    
+    document.querySelectorAll('.picker-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('[data-source="string"]').classList.add('active');
+    
+    if (state.isPlaying) {
+        state.isPlaying = false;
+        els.playBtn.textContent = "Play Tone";
+        els.playBtn.classList.remove('active');
+        
+        // FIX #3: Stop oscillator and clean up audio node on reset
+        if (oscillator) {
+            try {
+                oscillator.stop();
+            } catch(e) { /* ignore if already stopped */ }
+            oscillator = null;
+        }
+    }
+
+    updateState();
+    renderSource();
+});
+
+// --- Initialization ---
+
+window.addEventListener('resize', () => {
+    resizeCanvas();
+    drawOscilloscope(); // Redraw immediately on resize
+});
+
+// Initial Setup - Order matters: Render -> Resize -> Draw -> Animate
+renderSource();
+resizeCanvas();
+updateReadouts();
+drawOscilloscope(); // First static draw
+animate(); // Start loop (requestAnimationFrame called once here)
+
+</script>
+</body>
+</html>

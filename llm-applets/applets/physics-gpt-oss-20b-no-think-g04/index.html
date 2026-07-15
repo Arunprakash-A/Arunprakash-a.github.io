@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Balancing Beam Seesaw Explorer</title>
+<style>
+:root{
+  --bg: radial-gradient(circle at center,#12151f 0%,#0a0c12 100%);
+  --surface:#1e293b;
+  --accent:#22d3ee;
+  --accent2:#a78bfa;
+  --border:#2e3d4f;
+  --text-primary:#f8fafc;
+  --text-secondary:#94a3b8;
+}
+html,body{
+  margin:0;padding:0;height:100%;
+  font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;
+  color:var(--text-primary);
+  background:var(--bg);
+  overflow:hidden;
+}
+#app{display:flex;height:100vh;}
+.sidebar{
+  width:25%;min-width:250px;background:rgba(0,0,0,.1);padding:16px;box-sizing:border-box;
+}
+.card{
+  background:var(--surface);border-radius:12px;padding:16px;margin-bottom:16px;
+  box-shadow:0 4px 8px rgba(0,0,0,.3);
+  backdrop-filter:saturate(180%) blur(20px);
+}
+.weight-tray{display:flex;flex-wrap:wrap;}
+.weight-block{
+  background:var(--accent);color:white;font-family:'JetBrains Mono',ui-monospace,monospace;
+  width:24px;height:24px;border-radius:6px;margin:4px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;user-select:none;
+}
+button{
+  background:var(--accent);color:white;border:none;padding:10px 16px;border-radius:6px;font-size:1rem;
+  cursor:pointer;margin-right:8px;transition:background .2s;
+}
+button[disabled]{opacity:.5;cursor:not-allowed;}
+.stage{flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;}
+#beamContainer{
+  position:relative;width:80%;max-width:800px;height:200px;
+}
+#beam{
+  position:absolute;top:50%;left:50%;
+  width:100%;height:6px;background:var(--surface);
+  transform-origin:center center;transform:translate(-50%,-50%) rotate(0deg);
+}
+.leftNotches,.rightNotches{
+  position:absolute;top:50%;height:0;width:50%;display:flex;justify-content:space-between;
+  transform:translateY(-50%);
+}
+.leftNotches{left:0;flex-direction:row-reverse;}
+.rightNotches{right:0;flex-direction:row;}
+.notch{
+  width:32px;height:32px;border-radius:16px;background:var(--border);
+  display:flex;align-items:center;justify-content:center;
+}
+.readouts{
+  display:flex;align-items:center;justify-content:center;margin-top:32px;font-family:'JetBrains Mono',ui-monospace,monospace;
+}
+#leftReadout,#rightReadout{
+  background:var(--surface);border-radius:6px;padding:8px 12px;color:var(--text-primary);
+}
+.highlight{background:var(--accent2);color:white;border-radius:6px;padding:4px 8px;transition:background .3s;}
+#balanceMeter{margin-top:32px;width:80px;height:60px;margin:auto;}
+@media(max-width:800px){
+  #app{flex-direction:column;}
+  .sidebar{width:100%;max-width:none;margin-bottom:16px;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar">
+    <div class="card" id="trayCard">
+      <h2>Weight Tray</h2>
+      <div class="weight-tray" id="weightTray"></div>
+    </div>
+    <div class="card" id="controlsCard">
+      <button id="checkBtn">Check Balance</button>
+      <button id="resetBtn">Reset</button>
+    </div>
+  </aside>
+  <main class="stage">
+    <div id="beamContainer">
+      <div id="beam"></div>
+      <div class="leftNotches" id="leftNotches"></div>
+      <div class="rightNotches" id="rightNotches"></div>
+    </div>
+    <canvas id="balanceMeter" width="80" height="60"></canvas>
+    <div class="readouts">
+      <div id="leftReadout">Left: 0</div>
+      <div id="rightReadout">Right: 0</div>
+    </div>
+  </main>
+</div>
+
+<script>
+(() => {
+  const weights = []; // {elem, weight, side, notch}
+  let currentAngle = 0;
+  let targetAngle = 0;
+  const duration = 300; // ms
+  let lastTime = null;
+  let highlightNeedle = false;
+
+  let surfaceColor, accentColor, accent2Color;
+
+  function init() {
+    surfaceColor = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim();
+    accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    accent2Color = getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim();
+
+    createTrayBlocks();
+    createNotches();
+    updateTorques();
+    animateBeam();
+    document.getElementById('checkBtn').addEventListener('click', onCheck);
+    document.getElementById('resetBtn').addEventListener('click', onReset);
+  }
+
+  function createTrayBlocks() {
+    const tray = document.getElementById('weightTray');
+    for (let i = 1; i <= 5; i++) {
+      const block = createWeightBlock(i);
+      tray.appendChild(block);
+    }
+  }
+
+  function createWeightBlock(weight) {
+    const div = document.createElement('div');
+    div.className = 'weight-block';
+    div.dataset.weight = weight;
+    div.textContent = weight;
+    div.setAttribute('role', 'button');
+    div.setAttribute('aria-label', `Weight ${weight}`);
+    div.tabIndex = 0;
+    addDragHandlers(div);
+    return div;
+  }
+
+  function createNotches() {
+    const left = document.getElementById('leftNotches');
+    const right = document.getElementById('rightNotches');
+    for (let i = 1; i <= 5; i++) {
+      const notchL = createNotch(i, 'left');
+      const notchR = createNotch(i, 'right');
+      left.appendChild(notchL);
+      right.appendChild(notchR);
+    }
+  }
+
+  function createNotch(notch, side) {
+    const div = document.createElement('div');
+    div.className = 'notch';
+    div.dataset.notch = notch;
+    div.dataset.side = side;
+    return div;
+  }
+
+  // Drag logic
+  let dragInfo = null;
+
+  function addDragHandlers(el) {
+    el.addEventListener('pointerdown', onPointerDown);
+  }
+
+  function onPointerDown(e) {
+    const target = e.target.closest('.weight-block');
+    if (!target) return;
+    e.preventDefault();
+    const rect = target.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    dragInfo = { elem: target, offsetX, offsetY };
+    target.setPointerCapture(e.pointerId);
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+  }
+
+  function onPointerMove(e) {
+    if (!dragInfo) return;
+    const { elem, offsetX, offsetY } = dragInfo;
+    elem.style.position = 'absolute';
+    elem.style.zIndex = 1000;
+    elem.style.left = `${e.clientX - offsetX}px`;
+    elem.style.top = `${e.clientY - offsetY}px`;
+  }
+
+  function onPointerUp(e) {
+    if (!dragInfo) return;
+    const { elem } = dragInfo;
+    const beamRect = document.getElementById('beamContainer').getBoundingClientRect();
+    const trayRect = document.getElementById('weightTray').getBoundingClientRect();
+    const x = e.clientX, y = e.clientY;
+
+    if (x >= beamRect.left && x <= beamRect.right &&
+        y >= beamRect.top && y <= beamRect.bottom) {
+      // Inside beam area
+      const notches = document.querySelectorAll('.notch');
+      let best = null;
+      let bestDist = Infinity;
+      notches.forEach(n => {
+        const nrect = n.getBoundingClientRect();
+        const nx = (nrect.left + nrect.right) / 2;
+        const ny = (nrect.top + nrect.bottom) / 2;
+        const dist = Math.hypot(x - nx, y - ny);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = n;
+        }
+      });
+      if (best && bestDist <= 40) {
+        placeWeightInNotch(elem, best);
+      } else {
+        returnToTray(elem);
+      }
+    } else if (x >= trayRect.left && x <= trayRect.right &&
+               y >= trayRect.top && y <= trayRect.bottom) {
+      returnToTray(elem);
+    } else {
+      returnToTray(elem);
+    }
+
+    elem.style.position = '';
+    elem.style.zIndex = '';
+    elem.style.left = '';
+    elem.style.top = '';
+
+    dragInfo = null;
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+
+    updateTorques();
+  }
+
+  function placeWeightInNotch(elem, notchEl) {
+    if (notchEl.firstChild && notchEl.firstChild !== elem) {
+      returnToTray(elem);
+      return;
+    }
+    notchEl.appendChild(elem);
+    elem.style.position = 'relative';
+    const weight = parseInt(elem.dataset.weight, 10);
+    const side = notchEl.dataset.side;
+    const notch = parseInt(notchEl.dataset.notch, 10);
+
+    const idx = weights.findIndex(w => w.elem === elem);
+    if (idx >= 0) {
+      weights[idx] = { elem, weight, side, notch };
+    } else {
+      weights.push({ elem, weight, side, notch });
+    }
+  }
+
+  function returnToTray(elem) {
+    const tray = document.getElementById('weightTray');
+    tray.appendChild(elem);
+    elem.style.position = 'relative';
+    const idx = weights.findIndex(w => w.elem === elem);
+    if (idx >= 0) weights.splice(idx, 1);
+  }
+
+  function updateTorques() {
+    let leftPairs = [];
+    let rightPairs = [];
+    let leftSum = 0;
+    let rightSum = 0;
+
+    weights.forEach(w => {
+      const prod = w.weight * w.notch;
+      if (w.side === 'left') {
+        leftPairs.push(`${w.weight}×${w.notch}`);
+        leftSum += prod;
+      } else {
+        rightPairs.push(`${w.weight}×${w.notch}`);
+        rightSum += prod;
+      }
+    });
+
+    const leftText = leftPairs.length
+      ? `Left: ${leftPairs.join(' + ')} = ${leftSum}`
+      : 'Left: 0';
+    const rightText = rightPairs.length
+      ? `Right: ${rightPairs.join(' + ')} = ${rightSum}`
+      : 'Right: 0';
+
+    document.getElementById('leftReadout').textContent = leftText;
+    document.getElementById('rightReadout').textContent = rightText;
+
+    const maxTorque = 25; // 5*5
+    const diff = rightSum - leftSum;
+    if (diff === 0) {
+      targetAngle = 0;
+    } else {
+      const angle = Math.sign(diff) * Math.min(Math.abs(diff) / maxTorque, 1) * 30;
+      targetAngle = angle;
+    }
+    updateButtonsState();
+  }
+
+  function updateButtonsState() {
+    const checkBtn = document.getElementById('checkBtn');
+    if (weights.length === 0) {
+      checkBtn.disabled = true;
+    } else {
+      checkBtn.disabled = false;
+    }
+  }
+
+  function onCheck() {
+    const leftSum = parseInt(document.getElementById('leftReadout').textContent.split('=').pop(), 10);
+    const rightSum = parseInt(document.getElementById('rightReadout').textContent.split('=').pop(), 10);
+    if (leftSum === rightSum) return;
+    const highlightEl = leftSum > rightSum ? document.getElementById('leftReadout') : document.getElementById('rightReadout');
+    highlightEl.classList.add('highlight');
+    setTimeout(() => highlightEl.classList.remove('highlight'), 500);
+
+    // Flash needle
+    if (Math.abs(targetAngle) > 0.01) {
+      highlightNeedle = true;
+      setTimeout(() => { highlightNeedle = false; }, 200);
+    }
+  }
+
+  function onReset() {
+    const copy = weights.slice();
+    copy.forEach(w => returnToTray(w.elem));
+    targetAngle = 0;
+    // currentAngle remains unchanged to allow tween
+    updateTorques();
+  }
+
+  // Animation loop
+  function animateBeam(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const dt = timestamp - lastTime;
+    lastTime = timestamp;
+
+    const diff = targetAngle - currentAngle;
+    if (Math.abs(diff) > 0.01) {
+      const delta = diff * (dt / duration);
+      currentAngle += delta;
+    } else {
+      currentAngle = targetAngle;
+    }
+
+    let angleToApply = currentAngle;
+    // Idle oscillation only when perfectly balanced
+    if (Math.abs(targetAngle) < 0.01) {
+      const osc = Math.sin(performance.now() / 1000 * 2 * Math.PI) * 0.5; // ±0.5°
+      angleToApply += osc;
+    }
+
+    document.getElementById('beam').style.transform = `translate(-50%,-50%) rotate(${angleToApply}deg)`;
+    drawMeter(angleToApply);
+    requestAnimationFrame(animateBeam);
+  }
+
+  function drawMeter(angle) {
+    const canvas = document.getElementById('balanceMeter');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Draw semicircle background
+    ctx.beginPath();
+    ctx.arc(w / 2, h, w / 2 - 4, Math.PI, 0, true);
+    ctx.fillStyle = surfaceColor;
+    ctx.fill();
+
+    // Map beam angle [-30,+30] to needle angle [-90,+90]
+    const maxBeam = 30;
+    let needleAngleDeg;
+    if (Math.abs(targetAngle) < 0.01) {
+      needleAngleDeg = 0; // center
+    } else {
+      needleAngleDeg = (angle / maxBeam) * 90;
+      needleAngleDeg = Math.max(-90, Math.min(90, needleAngleDeg));
+    }
+
+    const rad = needleAngleDeg * Math.PI / 180;
+    const cx = w / 2;
+    const cy = h;
+    const radius = w / 2 - 4;
+    const nx = cx + radius * Math.cos(rad);
+    const ny = cy - radius * Math.sin(rad);
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(nx, ny);
+    ctx.strokeStyle = highlightNeedle ? accent2Color : accentColor;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>

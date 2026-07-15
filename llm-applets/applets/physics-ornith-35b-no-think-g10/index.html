@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ray Optics: Lenses and Mirrors</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --bg-panel: rgba(15, 23, 42, 0.6);
+            --border-color: rgba(56, 189, 248, 0.2);
+            --accent-primary: #38bdf8; /* Cyan */
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            
+            /* Ray Colors */
+            --ray-parallel: #fbbf24; /* Yellow */
+            --ray-center: #fb923c;   /* Orange */
+            --ray-focus: #34d399;    /* Emerald */
+            
+            /* Object/Image */
+            --obj-color: #f472b6;    /* Pink */
+            --img-real: #a78bfa;     /* Violet (Solid) */
+            --img-virtual: rgba(167, 139, 250, 0.5); /* Violet (Ghost) */
+
+            --font-ui: 'Inter', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #020617 80%);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Layout */
+        .app-container {
+            width: 95vw;
+            height: 92vh;
+            max-width: 1600px;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+        }
+
+        /* Canvas Area */
+        .canvas-wrapper {
+            position: relative;
+            background: rgba(2, 6, 23, 0.5);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: var(--accent-primary);
+            margin-bottom: 4px;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        /* Controls */
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        
+        label {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .value-display {
+            font-family: var(--font-mono);
+            color: var(--accent-primary);
+            font-size: 0.85rem;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 2px;
+        }
+
+        /* Toggle Buttons */
+        .toggle-group { display: flex; gap: 8px; }
+        .toggle-btn {
+            flex: 1;
+            padding: 8px 12px;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid #334155;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .toggle-btn.active {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+        /* FIX #3 & #4: Visual feedback for click */
+        .toggle-btn.pressed {
+            transform: scale(0.96);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Checkboxes */
+        .checkbox-group { display: flex; flex-direction: column; gap: 8px; }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .color-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        /* Formula Panel */
+        .formula-panel {
+            background: rgba(2, 6, 23, 0.8);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: var(--font-mono);
+        }
+        .formula-row { margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+        .formula-label { color: var(--text-muted); font-size: 0.8rem; min-width: 60px; }
+        .katex { font-size: 1.1em !important; }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-real { background: rgba(139, 92, 246, 0.2); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+        .status-virtual { background: rgba(52, 211, 153, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .app-container { grid-template-columns: 1fr; height: auto; overflow-y: auto; display: block; }
+            body { overflow-y: auto; padding: 20px 0; }
+            .canvas-wrapper { height: 50vh; width: 100%; margin-bottom: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Visualization Stage -->
+    <div class="canvas-wrapper">
+        <canvas id="opticsCanvas"></canvas>
+    </div>
+
+    <!-- Control Panel -->
+    <aside class="control-panel">
+        <h1>Ray Optics Lab</h1>
+        
+        <!-- Element Type -->
+        <div class="control-group">
+            <div class="section-title">Optical Element</div>
+            <div class="toggle-group">
+                <button class="toggle-btn active" data-type="convex-lens">Convex Lens</button>
+                <button class="toggle-btn" data-type="concave-lens">Concave Lens</button>
+                <button class="toggle-btn" data-type="concave-mirror">Concave Mirror</button>
+            </div>
+        </div>
+
+        <!-- Sliders -->
+        <div class="control-group">
+            <label>Focal Length (f) <span id="val-f" class="value-display">100 px</span></label>
+            <input type="range" id="slider-f" min="50" max="200" value="100" step="1">
+        </div>
+
+        <div class="control-group">
+            <label>Object Distance (u) <span id="val-u" class="value-display">-200 px</span></label>
+            <input type="range" id="slider-u" min="-400" max="-50" value="-200" step="1">
+        </div>
+
+        <div class="control-group">
+            <label>Object Height (h₀) <span id="val-ho" class="value-display">60 px</span></label>
+            <input type="range" id="slider-ho" min="20" max="100" value="60" step="5">
+        </div>
+
+        <!-- Ray Visibility -->
+        <div class="control-group">
+            <div class="section-title">Ray Visibility</div>
+            <div class="checkbox-group">
+                <label class="checkbox-item"><input type="checkbox" checked data-ray="parallel"><span class="color-dot" style="background:var(--ray-parallel)"></span> Parallel Ray</label>
+                <label class="checkbox-item"><input type="checkbox" checked data-ray="center"><span class="color-dot" style="background:var(--ray-center)"></span> Center Ray</label>
+                <label class="checkbox-item"><input type="checkbox" checked data-ray="focus"><span class="color-dot" style="background:var(--ray-focus)"></span> Focus Ray</label>
+            </div>
+        </div>
+
+        <!-- Formula Panel -->
+        <div class="control-group">
+            <div class="section-title">Live Calculation</div>
+            <div id="formula-container" class="formula-panel">
+                <div class="status-badge status-real" id="img-status">Real Image</div>
+                <br><br>
+                <div class="formula-row">
+                    <span class="formula-label">Lens Eq:</span>
+                    <div id="katex-lens"></div>
+                </div>
+                <div class="formula-row">
+                    <span class="formula-label">Mag:</span>
+                    <div id="katex-mag"></div>
+                </div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<script>
+/**
+ * Ray Optics Simulator - Fixed Version
+ * Implements geometric optics for convex lenses, concave lenses, and concave mirrors.
+ */
+
+// --- Configuration & State ---
+const state = {
+    element: 'convex-lens', // 'convex-lens' | 'concave-lens' | 'concave-mirror'
+    f: 100,                 // Focal length magnitude (positive)
+    u: -200,                // Object distance (negative convention for real objects)
+    ho: 60,                 // Object height
+    showRays: { parallel: true, center: true, focus: true },
+    canvasWidth: 0,
+    canvasHeight: 0,
+    originX: 0,             // Optical center X (local coords)
+    originY: 0              // Principal axis Y (local coords)
+};
+
+// --- DOM Elements ---
+const canvas = document.getElementById('opticsCanvas');
+const ctx = canvas.getContext('2d');
+const sliderF = document.getElementById('slider-f');
+const sliderU = document.getElementById('slider-u');
+const sliderHo = document.getElementById('slider-ho');
+const valF = document.getElementById('val-f');
+const valU = document.getElementById('val-u');
+const valHo = document.getElementById('val-ho');
+
+// --- Initialization ---
+function init() {
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Event Listeners
+    sliderF.addEventListener('input', (e) => { state.f = parseInt(e.target.value); updateUI(); });
+    sliderU.addEventListener('input', (e) => { state.u = parseInt(e.target.value); updateUI(); });
+    sliderHo.addEventListener('input', (e) => { state.ho = parseInt(e.target.value); updateUI(); });
+
+    // FIX #3 & #4: Toggle button logic with visual feedback
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const type = btn.dataset.type;
+            
+            // Visual feedback (FIX #4)
+            btn.classList.add('pressed');
+            setTimeout(() => btn.classList.remove('pressed'), 150);
+
+            document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.element = type;
+            updateUI();
+        });
+    });
+
+    // Event listener wiring for ray checkboxes
+    document.querySelectorAll('[data-ray]').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const rayType = e.target.dataset.ray;
+            state.showRays[rayType] = e.target.checked;
+        });
+    });
+
+    // Animation Loop
+    requestAnimationFrame(loop);
+}
+
+function resize() {
+    const wrapper = canvas.parentElement;
+    const dpr = window.devicePixelRatio || 1;
+    
+    state.canvasWidth = wrapper.clientWidth;
+    state.canvasHeight = wrapper.clientHeight;
+    
+    canvas.width = state.canvasWidth * dpr;
+    canvas.height = state.canvasHeight * dpr;
+    
+    ctx.scale(dpr, dpr);
+    
+    // Center the optical bench
+    state.originX = state.canvasWidth / 2;
+    state.originY = state.canvasHeight / 2;
+}
+
+function updateUI() {
+    valF.textContent = `${state.f}px`;
+    valU.textContent = `${state.u}px`;
+    valHo.textContent = `${state.ho}px`;
+    
+    // Update Formula Panel (KaTeX)
+    const v = calculateImageDistance();
+    const m = calculateMagnification();
+    
+    const lensEqEl = document.getElementById('katex-lens');
+    const magEl = document.getElementById('katex-mag');
+    const statusBadge = document.getElementById('img-status');
+
+    // FIX #5: Update KaTeX rendering to use standard Cartesian form with signed values
+    // Using 1/v + 1/|u| = 1/f for display purposes, but showing actual numbers.
+    // For convex lens (f>0): 1/v - 1/u = 1/f -> 1/v + 1/200 = 1/100
+    const absU = Math.abs(state.u);
+    
+    katex.render(`\\frac{1}{v} + \\frac{1}{${absU}} = \\frac{1}{${state.f}}`, lensEqEl, { throwOnError: false });
+    
+    // Render Magnification: m = v/u (using signed values)
+    const vStr = (v === Infinity || isNaN(v)) ? '∞' : v.toFixed(1);
+    katex.render(`m = \\frac{${vStr}}{${state.u}} = ${m.toFixed(2)}`, magEl, { throwOnError: false });
+
+    // Update Status Badge
+    if (state.element === 'convex-lens') {
+        statusBadge.className = `status-badge ${v < 0 ? 'status-virtual' : 'status-real'}`;
+        statusBadge.textContent = v < 0 ? 'Virtual Image' : 'Real Image';
+    } else if (state.element === 'concave-lens') {
+        // Concave lens always forms virtual images for real objects
+        statusBadge.className = `status-badge status-virtual`;
+        statusBadge.textContent = 'Virtual Image';
+    } else {
+        // Mirror: Real if v > 0, Virtual if v < 0 (in standard mirror convention)
+        statusBadge.className = `status-badge ${v < 0 ? 'status-virtual' : 'status-real'}`;
+        statusBadge.textContent = v < 0 ? 'Virtual Image' : 'Real Image';
+    }
+}
+
+// --- Physics Engine ---
+function calculateImageDistance() {
+    // Lens/Mirror Formula: 1/v - 1/u = 1/f (Cartesian Sign Convention)
+    // u is negative. f is positive for convex lens/concave mirror, negative for concave lens.
+    // 1/v = 1/f + 1/u
+    
+    const invF = state.element === 'concave-lens' ? -1 / state.f : 1 / state.f;
+    const invU = 1 / state.u; // u is negative, so this is negative
+    const oneOverV = invF - invU; 
+    
+    if (Math.abs(oneOverV) < 0.0001) return Infinity; // At focus, image at infinity
+    
+    return 1 / oneOverV;
+}
+
+function calculateMagnification() {
+    const v = calculateImageDistance();
+    if (v === Infinity || isNaN(v)) return 0;
+    return v / state.u;
+}
+
+// --- Rendering ---
+function loop() {
+    draw();
+    requestAnimationFrame(loop);
+}
+
+function draw() {
+    // Clear Canvas
+    ctx.clearRect(0, 0, state.canvasWidth, state.canvasHeight);
+    
+    const f = state.f;
+    const u = state.u;
+    const ho = state.ho;
+    const v = calculateImageDistance();
+    const m = calculateMagnification();
+    
+    // --- Grid & Axis ---
+    drawGrid();
+    drawPrincipalAxis();
+    
+    // --- Optical Element (Lens/Mirror) ---
+    if (state.element === 'convex-lens') {
+        drawConvexLens();
+    } else if (state.element === 'concave-lens') {
+        drawConcaveLens();
+    } else {
+        drawConcaveMirror();
+    }
+    
+    // --- Focal Points & 2F ---
+    drawPoints(f);
+
+    // --- Object Arrow ---
+    const objTop = { x: u, y: -ho }; // u is negative, so left of origin
+    const objBottom = { x: u, y: 0 };
+    drawArrow(objBottom, objTop, '#f472b6', true);
+
+    // --- Image Arrow ---
+    if (v !== Infinity && !isNaN(v)) {
+        const hi = m * ho; // Image height. Sign indicates orientation.
+        const imgTop = { x: v, y: -hi };
+        const imgBottom = { x: v, y: 0 };
+        
+        let isVirtual = false;
+        if (state.element === 'convex-lens') {
+            isVirtual = v < 0;
+        } else if (state.element === 'concave-lens') {
+            isVirtual = true; // Concave lens always forms virtual images for real objects
+        } else {
+            // Mirror: Real if v > 0, Virtual if v < 0 (in standard mirror convention)
+            isVirtual = v < 0;
+        }
+        
+        drawArrow(imgBottom, imgTop, '#a78bfa', !isVirtual, isVirtual);
+    }
+
+    // --- Rays ---
+    if (v !== Infinity && !isNaN(v)) {
+        drawRays(u, -ho, f, v, m);
+    } else {
+        drawParallelRays(u, -ho, f);
+    }
+}
+
+function drawGrid() {
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.5)';
+    ctx.lineWidth = 1;
+    const step = 50;
+    
+    for (let x = state.originX % step; x < state.canvasWidth; x += step) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, state.canvasHeight); ctx.stroke();
+    }
+    for (let y = state.originY % step; y < state.canvasHeight; y += step) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(state.canvasWidth, y); ctx.stroke();
+    }
+}
+
+function drawPrincipalAxis() {
+    ctx.strokeStyle = '#38bdf8'; // Cyan
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(0, state.originY);
+    ctx.lineTo(state.canvasWidth, state.originY);
+    ctx.stroke();
+}
+
+function drawPoints(f) {
+    const points = [];
+    
+    if (state.element === 'convex-lens' || state.element === 'concave-mirror') {
+        // Real focus on right, virtual focus on left for convex lens; both real for mirror
+        points.push({ x: -f, label: 'F' });
+        points.push({ x: f, label: "F'" });
+        points.push({ x: -2*f, label: '2F' });
+        points.push({ x: 2*f, label: "2F'" });
+    } else if (state.element === 'concave-lens') {
+        // Virtual focus on left (diverging), real focus on right (converging from other side)
+        points.push({ x: -f, label: "F' (Virtual)" });
+        points.push({ x: f, label: "F (Virtual)" });
+    }
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '12px Inter';
+    ctx.textAlign = 'center';
+    
+    points.forEach(p => {
+        // Draw dot
+        ctx.beginPath();
+        ctx.arc(p.x, 0, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#64748b';
+        ctx.fill();
+        
+        if (p.x > -state.originX + 20 && p.x < state.canvasWidth - state.originX - 20) {
+            ctx.fillText(p.label, p.x, 20);
+        }
+    });
+}
+
+function drawConvexLens() {
+    const h = 150; // Visual height of lens symbol
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    
+    ctx.beginPath();
+    // Top arrow
+    ctx.moveTo(0, -h/2);
+    ctx.lineTo(0, h/2);
+    // Arrowheads
+    ctx.moveTo(-10, -h/2 + 15); ctx.lineTo(0, -h/2); ctx.lineTo(10, -h/2 + 15);
+    ctx.moveTo(-10, h/2 - 15); ctx.lineTo(0, h/2); ctx.lineTo(10, h/2 - 15);
+    ctx.stroke();
+}
+
+function drawConcaveLens() {
+    const h = 150; // Visual height of lens symbol
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    
+    ctx.beginPath();
+    // Bottom arrow (inverted)
+    ctx.moveTo(0, -h/2);
+    ctx.lineTo(0, h/2);
+    // Arrowheads pointing inward
+    ctx.moveTo(-10, -h/2 + 15); ctx.lineTo(0, -h/2); ctx.lineTo(10, -h/2 + 15);
+    ctx.moveTo(-10, h/2 - 15); ctx.lineTo(0, h/2); ctx.lineTo(10, h/2 - 15);
+    // Reverse direction for concave lens symbol
+    ctx.setLineDash([]);
+    ctx.stroke();
+    
+    // Draw the actual concave shape
+    ctx.beginPath();
+    const curveDepth = 20;
+    ctx.moveTo(0, -h/2);
+    ctx.quadraticCurveTo(-curveDepth, 0, 0, h/2);
+    ctx.stroke();
+}
+
+function drawConcaveMirror() {
+    const r = state.f * 2; // Radius of curvature
+    // Draw a simple arc representing the mirror surface
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 4;
+    
+    ctx.beginPath();
+    // Arc from top to bottom, curving towards the object (left)
+    const angle = Math.asin(100 / r); // Half-angle subtended
+    ctx.arc(r, 0, r, -angle, angle, false); 
+    ctx.stroke();
+    
+    // Backing hatching
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2;
+    const topY = Math.sin(angle) * r;
+    const bottomY = -topY;
+    for(let y = topY; y >= bottomY; y -= 10) {
+        // Simple hatching logic would need x calculation, simplified here:
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(-5, y + 5);
+        ctx.stroke();
+    }
+}
+
+function drawArrow(from, to, color, solid = true, ghost = false) {
+    const headLen = 12;
+    
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 3;
+    
+    if (ghost) {
+        ctx.setLineDash([6, 4]);
+        ctx.globalAlpha = 0.5;
+    } else {
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1.0;
+    }
+
+    // Line
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(to.x, to.y);
+    ctx.stroke();
+
+    // Arrowhead
+    const angle = Math.atan2(to.y - from.y, to.x - from.x);
+    ctx.beginPath();
+    ctx.moveTo(to.x, to.y);
+    ctx.lineTo(to.x - headLen * Math.cos(angle - Math.PI / 6), to.y - headLen * Math.sin(angle - Math.PI / 6));
+    ctx.lineTo(to.x - headLen * Math.cos(angle + Math.PI / 6), to.y - headLen * Math.sin(angle + Math.PI / 6));
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1.0;
+}
+
+function drawRays(u, objY, f, v, m) {
+    const originX = state.originX; // Optical center is at (0,0) in local coords
+    
+    // Ray 1: Parallel to axis -> Through Focus (Lens) / Through Focus (Mirror)
+    if (state.showRays.parallel) {
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 2;
+        
+        const startY = objY;
+        
+        if (state.element === 'convex-lens') {
+            // Incident: (u, objY) -> (0, objY)
+            // Refracted: (0, objY) -> Focus (f, 0)
+            
+            ctx.beginPath();
+            ctx.moveTo(u, startY);
+            ctx.lineTo(0, startY);
+            ctx.stroke();
+            
+            if (v < 0) {
+                // FIX #1: Virtual image case for convex lens
+                // Dashed line from lens plane back through the NEAR focal point (-f, 0) toward the image location
+                drawRayExtension(0, startY, -f, 0, false); 
+            } else {
+                // Solid line from lens plane through focus to edge of canvas
+                const slope = (0 - startY) / (f - 0);
+                const endX = state.canvasWidth;
+                const endY = startY + slope * (endX - 0);
+                ctx.beginPath();
+                ctx.moveTo(0, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+        } else if (state.element === 'concave-lens') {
+            // Incident: (u, objY) -> (0, objY)
+            // Refracted: Diverges as if coming from virtual focus (-f, 0)
+            
+            ctx.beginPath();
+            ctx.moveTo(u, startY);
+            ctx.lineTo(0, startY);
+            ctx.stroke();
+            
+            // FIX #1: Concave lens diverging ray logic - extend back through NEAR focal point (-f, 0)
+            drawRayExtension(0, startY, -f, 0, false);
+        } else { // Concave Mirror
+            // Incident: (u, objY) -> (0, objY) [Mirror vertex]
+            // Reflected: (0, objY) -> Focus (f, 0)
+            
+            ctx.beginPath();
+            ctx.moveTo(u, startY);
+            ctx.lineTo(0, startY);
+            ctx.stroke();
+            
+            if (v < 0) {
+                // Virtual image case for concave mirror - extend back through focus
+                drawRayExtension(0, startY, f, 0, false);
+            } else {
+                // Solid line from vertex through focus to edge of canvas
+                const slope = (0 - startY) / (f - 0);
+                const endX = state.canvasWidth;
+                const endY = startY + slope * (endX - 0);
+                ctx.beginPath();
+                ctx.moveTo(0, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+        }
+    }
+
+    // Ray 2: Through Optical Center (Lens) / Vertex (Mirror) - Straight line
+    if (state.showRays.center) {
+        ctx.strokeStyle = '#fb923c';
+        ctx.lineWidth = 2;
+        
+        const startY = objY;
+        
+        if (state.element === 'convex-lens') {
+            // Straight through origin (0,0)
+            drawRayExtension(u, startY, 0, 0, true);
+            
+            if (v < 0) {
+                // Virtual extension backwards from origin to object
+                drawRayExtension(0, 0, u, startY, false);
+            } else {
+                const slope = (startY - 0) / (u - 0);
+                const endX = state.canvasWidth;
+                const endY = slope * (endX - 0);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+        } else if (state.element === 'concave-lens') {
+            // Straight through origin (0,0) for thin lens approximation
+            drawRayExtension(u, startY, 0, 0, true);
+            
+            if (v < 0) {
+                // Virtual extension backwards from origin to object
+                drawRayExtension(0, 0, u, startY, false);
+            } else {
+                const slope = (startY - 0) / (u - 0);
+                const endX = state.canvasWidth;
+                const endY = slope * (endX - 0);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+        } else { // Concave Mirror
+            // FIX #2: Refactored concave mirror center ray logic
+            
+            const cX = 2 * f; // Center of curvature
+            
+            if (v > 0) {
+                // Real image case: Draw incident ray from object tip to C, then reflected ray back through C to image
+                ctx.beginPath();
+                ctx.moveTo(u, startY);
+                ctx.lineTo(cX, 0);
+                ctx.stroke();
+                
+                // Reflected ray continues from C through the mirror surface (back to object side)
+                // Since it's a real image on the same side as object for concave mirror, 
+                // we draw the reflected ray going back towards the image location
+                const slope = (0 - startY) / (cX - u);
+                const endX = state.canvasWidth;
+                const endY = startY + slope * (endX - u);
+                ctx.beginPath();
+                ctx.moveTo(cX, 0);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            } else {
+                // Virtual image case: Draw incident ray to C, then dashed reflected ray back through object
+                ctx.beginPath();
+                ctx.moveTo(u, startY);
+                ctx.lineTo(cX, 0);
+                ctx.stroke();
+                
+                // Reflected ray appears to come from C (dashed line back through object)
+                drawRayExtension(cX, 0, u, startY, false);
+            }
+        }
+    }
+
+    // Ray 3: Through Focus -> Parallel to Axis (Lens) / From Focus -> Parallel (Mirror)
+    if (state.showRays.focus) {
+        ctx.strokeStyle = '#34d399';
+        ctx.lineWidth = 2;
+        
+        const startY = objY;
+        
+        if (state.element === 'convex-lens') {
+            // Incident: From object tip through Focus (-f, 0) to (0, ?)
+            // Slope from (u, startY) to (-f, 0): m = (startY - 0) / (u - (-f)) = startY / (u + f)
+            // At x=0: y = 0 + m * (0 - (-f)) = m * f
+            
+            const slope = startY / (u - (-f));
+            const interceptY = slope * f; // Height at lens plane
+            
+            ctx.beginPath();
+            ctx.moveTo(u, startY);
+            ctx.lineTo(0, interceptY);
+            ctx.stroke();
+            
+            if (v < 0) {
+                // Virtual extension backwards through focus (-f, 0)
+                drawRayExtension(-f, 0, u, startY, false);
+            } else {
+                const endX = state.canvasWidth;
+                ctx.beginPath();
+                ctx.moveTo(0, interceptY);
+                ctx.lineTo(endX, interceptY);
+                ctx.stroke();
+            }
+        } else if (state.element === 'concave-lens') {
+            // Incident: From object tip towards virtual focus (-f, 0) to (0, ?)
+            // Slope from (u, startY) to (-f, 0): m = (startY - 0) / (u - (-f)) = startY / (u + f)
+            // At x=0: y = 0 + m * (0 - (-f)) = m * f
+            
+            const slope = startY / (u - (-f));
+            const interceptY = slope * f; // Height at lens plane
+            
+            ctx.beginPath();
+            ctx.moveTo(u, startY);
+            ctx.lineTo(0, interceptY);
+            ctx.stroke();
+            
+            // Refracted: Parallel to axis (going right)
+            const endX = state.canvasWidth;
+            ctx.beginPath();
+            ctx.moveTo(0, interceptY);
+            ctx.lineTo(endX, interceptY);
+            ctx.stroke();
+        } else { // Concave Mirror
+            // Incident: From object tip through Focus (f, 0) to vertex? No.
+            // Ray from object tip towards Focus (f, 0). Hits mirror at some point. Reflects parallel.
+            
+            const slope = startY / (u - f);
+            // Find intersection with mirror (x=0 approx for paraxial): y = slope * (0 - u) + startY? No.
+            // Line eq: y - 0 = slope * (x - f). At x=0, y = -slope*f.
+            const hitY = -slope * f;
+            
+            ctx.beginPath();
+            ctx.moveTo(u, startY);
+            ctx.lineTo(0, hitY);
+            ctx.stroke();
+            
+            // Reflected: Parallel to axis (going right)
+            if (v < 0) {
+                // Virtual extension backwards through focus
+                drawRayExtension(f, 0, u, startY, false);
+            } else {
+                const endX = state.canvasWidth;
+                ctx.beginPath();
+                ctx.moveTo(0, hitY);
+                ctx.lineTo(endX, hitY);
+                ctx.stroke();
+            }
+        }
+    }
+}
+
+function drawRayExtension(x1, y1, x2, y2, solid) {
+    // Extend the line from (x1,y1) through (x2,y2) to canvas edge or image plane
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    
+    if (solid) {
+        ctx.strokeStyle = '#fff'; // Default color, overridden by caller context usually
+        // Re-use logic: just extend to canvas edge or far point
+        const len = Math.sqrt(dx*dx + dy*dy);
+        const ux = dx / len;
+        const uy = dy / len;
+        
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        // Extend 2000px in that direction
+        ctx.lineTo(x1 + ux * 2000, y1 + uy * 2000);
+        ctx.stroke();
+    } else {
+        // Dashed extension backwards from (x1,y1) away from (x2,y2)
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.sqrt(dx*dx + dy*dy);
+        const ux = -dx / len; // Reverse direction
+        const uy = -dy / len;
+        
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x1 + ux * 800, y1 + uy * 800);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+}
+
+function drawParallelRays(u, objY, f) {
+    // Object at focus -> Rays emerge parallel
+    const startY = objY;
+    
+    // Ray 1 (Parallel in -> Through Focus out)
+    if (state.showRays.parallel) {
+        ctx.strokeStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.moveTo(u, startY);
+        ctx.lineTo(0, startY);
+        ctx.stroke();
+        
+        // Emerges through focus (f, 0) -> Parallel to axis? No.
+        // Ray parallel to axis hits lens at height h. Refracts through F'.
+        // So it goes from (0, startY) towards (f, 0)? No, that's the reverse path.
+        // Path: Object tip -> Lens plane (height = objY) -> Through Focus (f, 0).
+        // Since object is at F, the ray through center goes to infinity. The parallel ray goes through F'.
+        
+        const slope = (0 - startY) / (f - 0);
+        ctx.beginPath();
+        ctx.moveTo(0, startY);
+        ctx.lineTo(state.canvasWidth, startY + slope * state.canvasWidth);
+        ctx.stroke();
+    }
+    
+    // Ray 2 (Through Center -> Straight)
+    if (state.showRays.center) {
+        ctx.strokeStyle = '#fb923c';
+        const slope = (startY - 0) / (u - 0);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(state.canvasWidth, slope * state.canvasWidth);
+        ctx.stroke();
+    }
+}
+
+// Start
+init();
+
+</script>
+</body>
+</html>

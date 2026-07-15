@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplication Array Explorer</title>
+    <!-- KaTeX for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at center, #1a1f2e 0%, #0f121d 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(100, 116, 139, 0.3);
+            --accent-cyan: #22d3ee;
+            --accent-violet: #a78bfa;
+            --accent-amber: #fbbf24;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --tile-bg: #1e293b;
+            --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+            --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .app-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            height: 95vh;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            grid-template-rows: 1fr auto;
+            gap: 2rem;
+        }
+
+        /* Hero Stage */
+        .stage {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            perspective: 1200px;
+            position: relative;
+            width: 100%;
+        }
+
+        .math-sentence {
+            font-family: var(--font-mono);
+            font-size: 1.75rem;
+            margin-bottom: 3rem;
+            min-height: 2.5rem;
+            color: var(--accent-cyan);
+            text-align: center;
+            text-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+        }
+
+        /* The Array Visual Stage */
+        .visual-viewport {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+        }
+
+        #arrayWrapper {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center center;
+            display: inline-block;
+            position: relative;
+        }
+
+        #arraySvg {
+            display: block;
+            overflow: visible;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Tile Styling & Animations */
+        .tile-rect {
+            cursor: pointer;
+            transition: fill 0.3s ease, stroke 0.3s ease, filter 0.3s ease;
+            stroke: rgba(255,255,255,0.1);
+            stroke-width: 2;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .tile-rect:hover {
+            fill: var(--accent-violet) !important;
+            filter: brightness(1.2);
+        }
+
+        .tile-highlight {
+            fill: var(--accent-violet) !important;
+            filter: drop-shadow(0 0 8px var(--accent-violet));
+            stroke: #fff !important;
+        }
+
+        .row-label-text {
+            font-family: var(--font-mono);
+            font-weight: bold;
+            fill: var(--accent-violet);
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        /* Reference Grid */
+        .ref-grid {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: grid;
+            grid-template-columns: repeat(13, 18px);
+            grid-template-rows: repeat(13, 18px);
+            gap: 2px;
+            background: var(--panel-bg);
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+        }
+
+        .ref-cell {
+            width: 18px;
+            height: 18px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 2px;
+            box-sizing: border-box;
+        }
+
+        /* FIX: Added explicit border pulse to the active cell */
+        .ref-cell.active {
+            background: var(--accent-amber);
+            box-shadow: 0 0 12px var(--accent-amber);
+            border: 2px solid var(--accent-amber);
+            animation: breathe 2s infinite ease-in-out;
+            z-index: 1;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 1; border-color: var(--accent-amber); }
+            50% { transform: scale(1.3); opacity: 0.8; border-color: #fff; }
+        }
+
+        /* Control Panel */
+        .controls {
+            grid-column: 1 / -1;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            padding: 32px;
+            border-radius: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--text-dim);
+            font-weight: 700;
+        }
+
+        .stepper {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(0,0,0,0.4);
+            padding: 6px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn {
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            font-size: 1.4rem;
+            transition: background 0.2s ease;
+        }
+
+        .btn:hover { background: rgba(255,255,255,0.1); }
+        .btn:active { transform: scale(0.9); }
+
+        .val-display {
+            font-family: var(--font-mono);
+            font-size: 1.6rem;
+            min-width: 40px;
+            text-align: center;
+            color: var(--accent-cyan);
+            font-weight: bold;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn-primary {
+            padding: 12px 24px;
+            border-radius: 14px;
+            border: none;
+            font-family: var(--font-ui);
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+        }
+
+        .btn-swap { background: var(--accent-violet); color: #1e1b4b; }
+        .btn-count { background: var(--accent-cyan); color: #0f172a; }
+        .btn-reset { background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid var(--border-color); }
+
+        .btn-primary:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Skip Count Overlay */
+        .count-overlay {
+            position: absolute;
+            top: -60px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            pointer-events: none;
+            font-family: var(--font-mono);
+            color: var(--accent-amber);
+            font-weight: bold;
+            font-size: 1.4rem;
+        }
+
+        .count-num { opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease; transform: translateY(10px); }
+        .count-num.visible { opacity: 1; transform: translateY(0); }
+
+        @keyframes resetFlash {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(2) saturate(1.5); }
+            100% { filter: brightness(1); }
+        }
+        .flash-effect { animation: resetFlash 0.4s ease; }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="ref-grid" id="refGrid"></div>
+
+        <div class="stage">
+            <div id="mathSentence" class="math-sentence"></div>
+            
+            <div class="visual-viewport" id="viewport">
+                <div id="arrayWrapper">
+                    <svg id="arraySvg"></svg>
+                </div>
+                <div id="countOverlay" class="count-overlay"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <span class="label">Rows (Factor A)</span>
+                <div class="stepper">
+                    <button class="btn" onclick="updateFactor('a', -1)">−</button>
+                    <span id="valA" class="val-display">4</span>
+                    <button class="btn" onclick="updateFactor('a', 1)">+</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <span class="label">Cols (Factor B)</span>
+                <div class="stepper">
+                    <button class="btn" onclick="updateFactor('b', -1)">−</button>
+                    <span id="valB" class="val-display">6</span>
+                    <button class="btn" onclick="updateFactor('b', 1)">+</button>
+                </div>
+            </div>
+
+            <div class="action-group">
+                <button class="btn-primary btn-swap" onclick="toggleCommutative()">
+                    <span>🔄</span> Swap Factors
+                </button>
+                <button class="btn-primary btn-count" id="btnCount" onclick="startSkipCount()">
+                    <span>⚡</span> Skip Count
+                </button>
+                <button class="btn-primary btn-reset" onclick="resetApp()">
+                    Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let state = {
+            a: 4,
+            b: 6,
+            isRotating: false,
+            isCounting: false,
+            rotationAngle: 0
+        };
+
+        const TILE_SIZE = 45;
+        const GAP = 10;
+
+        const elements = {
+            svg: document.getElementById('arraySvg'),
+            wrapper: document.getElementById('arrayWrapper'),
+            viewport: document.getElementById('viewport'),
+            valA: document.getElementById('valA'),
+            valB: document.getElementById('valB'),
+            sentence: document.getElementById('mathSentence'),
+            refGrid: document.getElementById('refGrid'),
+            overlay: document.getElementById('countOverlay'),
+            btnCount: document.getElementById('btnCount')
+        };
+
+        function initRefGrid() {
+            elements.refGrid.innerHTML = '';
+            for (let i = 0; i <= 12; i++) {
+                for (let j = 0; j <= 12; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'ref-cell';
+                    cell.id = `ref-${i}-${j}`;
+                    if (i === 0 || j === 0) cell.style.background = 'transparent';
+                    elements.refGrid.appendChild(cell);
+                }
+            }
+        }
+
+        function updateRefGrid() {
+            document.querySelectorAll('.ref-cell').forEach(c => c.classList.remove('active'));
+            const activeCell = document.getElementById(`ref-${state.a}-${state.b}`);
+            if (activeCell) activeCell.classList.add('active');
+        }
+
+        function updateFactor(factor, delta) {
+            if (state.isCounting || state.isRotating) return;
+            if (factor === 'a') state.a = Math.max(1, Math.min(12, state.a + delta));
+            else state.b = Math.max(1, Math.min(12, state.b + delta));
+            render();
+        }
+
+        async function toggleCommutative() {
+            if (state.isCounting || state.isRotating) return;
+            state.isRotating = true;
+
+            const oldA = state.a;
+            const oldB = state.b;
+            state.a = oldB;
+            state.b = oldA;
+
+            state.rotationAngle = (state.rotationAngle + 90) % 360;
+            elements.wrapper.style.transform = `rotate(${state.rotationAngle}deg)`;
+
+            elements.valA.innerText = state.a;
+            elements.valB.innerText = state.b;
+            const additionStr = Array(state.a).fill(state.b).join(' + ');
+            katex.render(`${additionStr} = ${state.a * state.b}`, elements.sentence, { throwOnError: false });
+            updateRefGrid();
+
+            await new Promise(res => setTimeout(res, 400));
+            
+            elements.wrapper.style.transition = 'none';
+            elements.wrapper.style.transform = 'rotate(0deg)';
+            state.rotationAngle = 0;
+            
+            render();
+            
+            setTimeout(() => {
+                elements.wrapper.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                state.isRotating = false;
+            }, 50);
+        }
+
+        function resetApp() {
+            if (state.isRotating) return; 
+            state.isCounting = false;
+            elements.btnCount.disabled = false;
+            elements.overlay.innerHTML = '';
+            document.querySelectorAll('.tile-rect').forEach(t => t.classList.remove('tile-highlight'));
+
+            state.a = 4;
+            state.b = 6;
+            render();
+            
+            elements.viewport.classList.add('flash-effect');
+            setTimeout(() => elements.viewport.classList.remove('flash-effect'), 400);
+        }
+
+        async function startSkipCount() {
+            if (state.isCounting || state.isRotating) return;
+            state.isCounting = true;
+            elements.btnCount.disabled = true;
+
+            const rows = state.a;
+            const cols = state.b;
+            
+            elements.overlay.innerHTML = '';
+            for (let i = 0; i < rows; i++) {
+                const num = document.createElement('div');
+                num.className = 'count-num';
+                num.innerText = `${(i + 1) * cols}`;
+                elements.overlay.appendChild(num);
+            }
+
+            for (let r = 0; r < rows; r++) {
+                const tilesInRow = document.querySelectorAll(`.tile-rect[data-row="${r}"]`);
+                tilesInRow.forEach(t => t.classList.add('tile-highlight'));
+                if (elements.overlay.children[r]) elements.overlay.children[r].classList.add('visible');
+
+                await new Promise(res => setTimeout(res, 700));
+
+                if (r < rows - 1) {
+                    tilesInRow.forEach(t => t.classList.remove('tile-highlight'));
+                }
+            }
+
+            setTimeout(() => {
+                document.querySelectorAll('.tile-rect').forEach(t => t.classList.remove('tile-highlight'));
+                elements.overlay.innerHTML = '';
+                state.isCounting = false;
+                elements.btnCount.disabled = false;
+            }, 1500);
+        }
+
+        function render() {
+            elements.valA.innerText = state.a;
+            elements.valB.innerText = state.b;
+
+            const additionStr = Array(state.a).fill(state.b).join(' + ');
+            const equation = `${additionStr} = ${state.a * state.b}`;
+            katex.render(equation, elements.sentence, { throwOnError: false });
+
+            const width = state.b * TILE_SIZE + (state.b - 1) * GAP;
+            const height = state.a * TILE_SIZE + (state.a - 1) * GAP;
+            elements.svg.setAttribute('width', width);
+            elements.svg.setAttribute('height', height);
+            
+            elements.svg.innerHTML = '';
+
+            for (let r = 0; r < state.a; r++) {
+                for (let c = 0; c < state.b; c++) {
+                    const x = c * (TILE_SIZE + GAP);
+                    const y = r * (TILE_SIZE + GAP);
+                    
+                    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    rect.setAttribute('x', x);
+                    rect.setAttribute('y', y);
+                    rect.setAttribute('width', TILE_SIZE);
+                    rect.setAttribute('height', TILE_SIZE);
+                    rect.setAttribute('rx', 8);
+                    rect.setAttribute('fill', 'var(--tile-bg)');
+                    rect.className.baseVal = 'tile-rect';
+                    rect.setAttribute('data-row', r);
+
+                    rect.onmouseenter = () => {
+                        if (state.isCounting) return;
+                        const rowTiles = document.querySelectorAll(`.tile-rect[data-row="${r}"]`);
+                        rowTiles.forEach(t => t.classList.add('tile-highlight'));
+                        
+                        // FIX: Position the label relative to the start of the row (x=0), not the hovered tile's x
+                        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                        label.setAttribute('x', -10); // Constant offset from left edge of SVG
+                        label.setAttribute('y', y + TILE_SIZE / 2 + 5);
+                        label.setAttribute('class', 'row-label-text');
+                        label.setAttribute('id', 'active-row-label');
+                        label.setAttribute('text-anchor', 'end'); // Align text to the right of the coordinate
+                        label.textContent = `Row ${r + 1}: ${(r + 1) * state.b}`;
+                        label.style.opacity = '1';
+                        elements.svg.appendChild(label);
+                    };
+
+                    rect.onmouseleave = () => {
+                        if (state.isCounting) return;
+                        document.querySelectorAll('.tile-rect').forEach(t => t.classList.remove('tile-highlight'));
+                        const label = document.getElementById('active-row-label');
+                        if (label) label.remove();
+                    };
+
+                    elements.svg.appendChild(rect);
+                }
+            }
+
+            updateRefGrid();
+        }
+
+        initRefGrid();
+        render();
+    </script>
+</body>
+</html>

@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Multiplication Array Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Fira+Code:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-gradient: radial-gradient(circle at center, #0a0c12 0%, #12151f 100%);
+  --surface:#1e1e2e;
+  --accent1:#22d3ee;
+  --accent2:#a78bfa;
+  --text-primary:#ffffff;
+  --text-secondary:#cbd5e1;
+  --border-radius:12px;
+  --shadow:0 4px 8px rgba(0,0,0,.6);
+}
+html,body{
+  margin:0; padding:0; height:100%; background:var(--bg-gradient); color:var(--text-primary); font-family:"Inter",system-ui,-apple-system,"Segoe UI","Roboto",sans-serif;
+  overflow:hidden;
+}
+#app{
+  display:flex; flex-direction:row; height:100%; max-width:1200px; margin:auto;
+}
+.sidebar{
+  width:260px; padding:20px; box-sizing:border-box;
+}
+.card{
+  background:var(--surface); border-radius:var(--border-radius); padding:20px; box-shadow:var(--shadow); backdrop-filter:blur(10px);
+  margin-bottom:20px;
+}
+h1{font-size:32px;font-weight:700;margin:0 0 16px;}
+label{display:block;font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);margin-bottom:4px;}
+.stepper{
+  display:flex; align-items:center; margin-bottom:12px;
+}
+.stepper button{
+  width:32px;height:32px;border:none;background:var(--accent1);color:white;font-size:18px;cursor:pointer;border-radius:4px;transition:background .2s;
+}
+.stepper button:hover{background:#1bb5d6;}
+.stepper input{
+  width:60px;height:32px;margin:0 8px;text-align:center;font-size:16px;background:#272b3a;border:none;color:white;border-radius:4px;
+}
+.toggle-container{
+  display:flex; align-items:center; margin-bottom:12px;
+}
+.toggle-container input[type="checkbox"]{width:20px;height:20px;margin-right:8px;}
+button.action-btn{
+  width:100%;padding:10px;margin-top:8px;border:none;background:var(--accent1);color:white;font-size:16px;cursor:pointer;border-radius:4px;transition:background .2s;
+}
+button.action-btn:hover{background:#1bb5d6;}
+#sentence{margin-top:12px;font-size:18px;color:var(--text-primary);line-height:1.4;}
+.canvas-container{
+  flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
+}
+canvas{
+  background:var(--surface); border-radius:var(--border-radius); box-shadow:var(--shadow);
+}
+.rotated canvas{transform:rotate(90deg);transition:transform 400ms linear;transform-origin:center center;}
+@media (max-width:768px){
+  #app{flex-direction:column;}
+  .sidebar{
+    width:auto;
+    padding:10px 20px;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:12px;
+  }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="sidebar">
+    <div class="card">
+      <h1>Controls</h1>
+      <div class="stepper" aria-label="Factor A">
+        <label for="factorA">Factor A</label>
+        <button type="button" data-factor="a" data-op="-" aria-label="Decrease Factor A">-</button>
+        <input id="factorA" type="number" min="1" max="12" value="4" step="1">
+        <button type="button" data-factor="a" data-op="+" aria-label="Increase Factor A">+</button>
+      </div>
+      <div class="stepper" aria-label="Factor B">
+        <label for="factorB">Factor B</label>
+        <button type="button" data-factor="b" data-op="-" aria-label="Decrease Factor B">-</button>
+        <input id="factorB" type="number" min="1" max="12" value="6" step="1">
+        <button type="button" data-factor="b" data-op="+" aria-label="Increase Factor B">+</button>
+      </div>
+      <div class="toggle-container">
+        <input type="checkbox" id="commutativeToggle">
+        <label for="commutativeToggle">Commutative</label>
+      </div>
+      <button id="skipCountBtn" class="action-btn" aria-label="Skip count animation">Skip‑count</button>
+      <button id="resetBtn" class="action-btn" aria-label="Reset to default values">Reset</button>
+      <div id="sentence"></div>
+    </div>
+  </div>
+  <div class="canvas-container" id="canvasContainer">
+    <canvas id="arrayCanvas"></canvas>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const state = {
+  factorA:4,
+  factorB:6,
+  commutative:false,
+  highlightedIndex:null,
+  skipCountActive:false,
+  rowOpacities:[],
+  targetRowOpacities:[],
+  animating:false
+};
+
+const baseRGB=[34,211,238];
+const highlightRGB=[167,139,250];
+
+const canvas = document.getElementById('arrayCanvas');
+const ctx = canvas.getContext('2d');
+const container = document.getElementById('canvasContainer');
+
+let skipTimer=null;
+
+function clamp(val,min,max){return Math.min(Math.max(val,min),max);}
+
+function getRowsCols(){
+  if(state.commutative){
+    return {rows: state.factorB, cols: state.factorA};
+  } else {
+    return {rows: state.factorA, cols: state.factorB};
+  }
+}
+
+function resizeCanvas(){
+  const rect = container.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.floor(rect.width * dpr);
+  canvas.height = Math.floor(rect.height * dpr);
+  canvas.style.width = `${rect.width}px`;
+  canvas.style.height = `${rect.height}px`;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(dpr,dpr);
+  drawArray();
+}
+
+function updateSentence(){
+  const product = state.factorA * state.factorB;
+  const terms = Array(state.factorA).fill(state.factorB).join(' + ');
+  document.getElementById('sentence').textContent = `${state.factorA} × ${state.factorB} = ${terms} = ${product}`;
+}
+
+function updateHighlightTargets(){
+  const rows = getRowsCols().rows;
+  if(state.rowOpacities.length !== rows){
+    state.rowOpacities = Array(rows).fill(0);
+    state.targetRowOpacities = Array(rows).fill(0);
+  }
+  for(let i=0;i<rows;i++){
+    state.targetRowOpacities[i] = (i===state.highlightedIndex)?1:0;
+  }
+  if(!state.animating){
+    state.animating=true;
+    requestAnimationFrame(animateHighlight);
+  }
+}
+
+function animateHighlight(){
+  let changed=false;
+  for(let i=0;i<state.rowOpacities.length;i++){
+    const current = state.rowOpacities[i];
+    const target = state.targetRowOpacities[i];
+    if(Math.abs(current-target)>0.01){
+      state.rowOpacities[i] += (target-current)*0.2;
+      changed=true;
+    } else {
+      state.rowOpacities[i]=target;
+    }
+  }
+  drawArray();
+  if(changed){
+    requestAnimationFrame(animateHighlight);
+  }else{
+    state.animating=false;
+  }
+}
+
+function drawArray(){
+  const {rows, cols} = getRowsCols();
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.width / dpr;
+  const h = canvas.height / dpr;
+  ctx.clearRect(0,0,w,h);
+  const padding=20;
+  const tileSizeW = (w - 2*padding)/cols;
+  const tileSizeH = (h - 2*padding)/rows;
+  const tileSize = Math.min(tileSizeW, tileSizeH);
+  const startX = (w - tileSize * cols)/2;
+  const startY = (h - tileSize * rows)/2;
+  const innerSize = Math.max(tileSize-4,0);
+
+  for(let i=0;i<rows;i++){
+    for(let j=0;j<cols;j++){
+      const x = startX + j*tileSize;
+      const y = startY + i*tileSize;
+      if(i===state.highlightedIndex){
+        const alpha = state.rowOpacities[i];
+        ctx.fillStyle = `rgba(${highlightRGB[0]},${highlightRGB[1]},${highlightRGB[2]},${alpha})`;
+      }else{
+        ctx.fillStyle = `rgb(${baseRGB[0]},${baseRGB[1]},${baseRGB[2]})`;
+      }
+      ctx.fillRect(x,y,innerSize,innerSize);
+    }
+  }
+
+  if(state.highlightedIndex!==null){
+    const subtotal = (state.highlightedIndex+1)*cols;
+    ctx.font='16px "Fira Code", monospace';
+    ctx.fillStyle='#ffffff';
+    ctx.textAlign='left';
+    ctx.textBaseline='middle';
+    const textX = startX + cols*tileSize + 10;
+    const textY = startY + state.highlightedIndex*tileSize + tileSize/2;
+    ctx.fillText(`Subtotal: ${subtotal}`, textX, textY);
+  }
+
+  updateSentence();
+}
+
+function skipCount(){
+  if(state.skipCountActive) return;
+  state.skipCountActive=true;
+  const {rows} = getRowsCols();
+  let i=0;
+  function nextGroup(){
+    if(i>=rows){
+      state.highlightedIndex=null;
+      updateHighlightTargets(); // fade out
+      setTimeout(()=>{state.skipCountActive=false;},300);
+      return;
+    }
+    state.highlightedIndex=i;
+    updateHighlightTargets();
+    drawArray(); // immediate visual update
+    i++;
+    skipTimer=setTimeout(nextGroup,200);
+  }
+  nextGroup();
+}
+
+document.querySelectorAll('.stepper button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const factor = btn.dataset.factor;
+    const op = btn.dataset.op;
+    let val = state[`factor${factor.toUpperCase()}`];
+    if(op==='+') val++; else val--;
+    val=clamp(val,1,12);
+    state[`factor${factor.toUpperCase()}`]=val;
+    document.getElementById('factor'+factor.toUpperCase()).value=val;
+    drawArray();
+  });
+});
+
+document.getElementById('factorA').addEventListener('input',e=>{
+  let val = parseInt(e.target.value)||1;
+  val=clamp(val,1,12);
+  state.factorA=val;
+  e.target.value=val;
+  drawArray();
+});
+document.getElementById('factorB').addEventListener('input',e=>{
+  let val = parseInt(e.target.value)||1;
+  val=clamp(val,1,12);
+  state.factorB=val;
+  e.target.value=val;
+  drawArray();
+});
+
+document.getElementById('commutativeToggle').addEventListener('change',e=>{
+  state.commutative=e.target.checked;
+  if(state.commutative){
+    container.classList.add('rotated');
+  }else{
+    container.classList.remove('rotated');
+  }
+  state.highlightedIndex=null;
+  updateHighlightTargets();
+});
+
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  state.factorA=4;state.factorB=6;state.commutative=false;
+  document.getElementById('factorA').value=4;
+  document.getElementById('factorB').value=6;
+  document.getElementById('commutativeToggle').checked=false;
+  container.classList.remove('rotated');
+  state.highlightedIndex=null;
+  state.skipCountActive=false;
+  if(skipTimer){clearTimeout(skipTimer);skipTimer=null;}
+  state.animating=false;
+  state.rowOpacities=[];
+  state.targetRowOpacities=[];
+  drawArray();
+});
+
+document.getElementById('skipCountBtn').addEventListener('click',()=>{
+  skipCount();
+});
+
+canvas.addEventListener('mousemove',e=>{
+  const dpr = window.devicePixelRatio || 1;
+  const {rows, cols} = getRowsCols();
+  const w = canvas.width / dpr;
+  const h = canvas.height / dpr;
+  const padding=20;
+  const tileSizeW = (w - 2*padding)/cols;
+  const tileSizeH = (h - 2*padding)/rows;
+  const tileSize = Math.min(tileSizeW, tileSizeH);
+  let idx=null;
+  if(state.commutative){
+    // rotated: use offsetY to compute column index
+    idx = Math.floor((w - e.offsetY) / tileSize);
+  }else{
+    idx = Math.floor(e.offsetY / tileSize);
+  }
+  if(idx>=0 && idx<rows){
+    state.highlightedIndex=idx;
+    updateHighlightTargets();
+  }else{
+    if(state.highlightedIndex!==null){
+      state.highlightedIndex=null;
+      updateHighlightTargets();
+    }
+  }
+});
+
+canvas.addEventListener('mouseleave',()=>{
+  if(state.highlightedIndex!==null){
+    state.highlightedIndex=null;
+    updateHighlightTargets();
+  }
+});
+
+window.addEventListener('resize',resizeCanvas);
+
+document.addEventListener('DOMContentLoaded',()=>{
+  resizeCanvas();
+});
+})();
+</script>
+</body>
+</html>

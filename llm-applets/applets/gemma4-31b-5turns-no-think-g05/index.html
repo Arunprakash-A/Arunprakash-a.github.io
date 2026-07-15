@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decimals-Fractions-Percentages Connector</title>
+    <!-- Google Fonts: Inter for UI, JetBrains Mono for Math -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <!-- KaTeX for beautiful math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at center, #1a1f2e 0%, #0f121d 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(148, 163, 184, 0.2);
+            --accent-cyan: #22d3ee;
+            --accent-violet: #8b5cf6;
+            --accent-yellow: #facc15;
+            --text-bright: #f8fafc;
+            --text-dim: #94a3b8;
+            --surface-dark: #0f121d;
+            --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-gradient);
+            color: var(--text-bright);
+            font-family: var(--font-ui);
+            overflow: hidden; /* Prevent page scroll, app is a single view */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1300px;
+            height: 95vh;
+            display: grid;
+            grid-template-columns: 320px 1fr 320px;
+            grid-template-rows: auto 1fr auto;
+            gap: 2rem;
+            padding: 2rem;
+            position: relative;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            font-weight: 800;
+            font-size: 2.5rem;
+            margin: 0;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, var(--accent-cyan), var(--accent-violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Left Panel: Place Value */
+        .side-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            height: fit-content;
+        }
+
+        .panel-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+            display: block;
+            font-weight: 600;
+        }
+
+        .place-value-chart {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+        .pv-column {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 1rem 0.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        .pv-digit {
+            font-family: var(--font-mono);
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-cyan);
+            transition: transform 0.2s ease, color 0.3s ease;
+        }
+
+        .pv-column.pulse {
+            background: rgba(250, 204, 21, 0.2);
+            border-color: var(--accent-yellow);
+            box-shadow: 0 0 15px rgba(250, 204, 21, 0.3);
+        }
+        .pv-digit.pulse {
+            transform: scale(1.2);
+            color: var(--accent-yellow);
+        }
+
+        .pv-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 8px;
+        }
+
+        /* Center Stage: Grid */
+        .stage {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            min-width: 500px;
+            min-height: 500px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 6px;
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 20px;
+            border: 2px solid var(--border-color);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+            width: 480px; 
+            height: 480px;
+            visibility: visible !important;
+        }
+        .grid-cell {
+            width: 42px;
+            height: 42px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+            transition: background 0.3s var(--transition-smooth), transform 0.3s var(--transition-smooth);
+        }
+        
+        @keyframes cellPop {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .grid-cell.filled {
+            background: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(34, 211, 238, 0.5);
+            animation: cellPop 0.3s var(--transition-smooth) forwards;
+        }
+
+        /* Right Panel: Readouts */
+        .readout-card {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            height: fit-content;
+        }
+        .math-display {
+            text-align: center;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            font-size: 1.8rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Fraction Morphing Logic */
+        .fraction-container {
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 80px;
+        }
+        .math-content {
+            position: absolute;
+            transition: opacity 0.3s var(--transition-smooth), transform 0.3s var(--transition-smooth);
+            opacity: 1;
+            transform: translateY(0);
+            width: 100%;
+            text-align: center;
+        }
+        .math-content.exit {
+            opacity: 0;
+            transform: translateY(-20px);
+            pointer-events: none;
+        }
+        .math-content.enter {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        /* Bottom Area */
+        .bottom-area {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .number-line-container {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            padding: 0 60px;
+        }
+        .number-line-track {
+            width: 100%;
+            height: 12px;
+            background: var(--border-color);
+            border-radius: 6px;
+            position: relative;
+        }
+        .number-line-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: var(--accent-violet);
+            border-radius: 6px;
+            transition: width 0.3s var(--transition-smooth);
+        }
+        .number-line-marker {
+            position: absolute;
+            top: 50%;
+            width: 24px;
+            height: 24px;
+            background: var(--text-bright);
+            border: 4px solid var(--accent-violet);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: left 0.3s var(--transition-smooth);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
+            z-index: 2;
+        }
+        .nl-label {
+            position: absolute;
+            top: 25px;
+            font-family: var(--font-mono);
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            transform: translateX(-50%);
+        }
+
+        /* Controls Panel - FIXED as Floating UI */
+        .controls-panel {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 1.5rem 2.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 2.5rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            z-index: 100;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 220px;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 4px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.6);
+            border: 2px solid white;
+        }
+
+        .segmented-control {
+            display: flex;
+            background: rgba(0,0,0,0.4);
+            padding: 5px;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+        }
+        .segment {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            color: var(--text-dim);
+        }
+        .segment.active {
+            background: var(--accent-violet);
+            color: white;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        .value-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .value-input {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            color: white;
+            font-family: var(--font-mono);
+            padding: 10px 14px;
+            border-radius: 12px;
+            width: 110px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+        .value-input:focus { border-color: var(--accent-cyan); box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.2); }
+
+        .benchmark-group {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn:hover { background: rgba(255,255,255,0.15); border-color: var(--accent-cyan); transform: translateY(-2px); }
+        .btn-reset { color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3); }
+        .btn-reset:hover { background: rgba(255, 77, 77, 0.1); border-color: #ff4d4d; transform: translateY(-2px); }
+
+        @media (max-width: 1100px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                height: auto;
+                overflow: visible;
+                padding-bottom: 300px; /* Space for floating panel */
+            }
+            .side-panel, .readout-card { order: 2; width: 100%; }
+            .stage { order: 1; min-width: unset; min-height: unset; margin: 2rem 0; }
+            .bottom-area { order: 3; }
+            .controls-panel { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 800px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>Numerical Equivalence</h1>
+        <div class="subtitle">Visualize the bridge between Fractions, Decimals, and Percentages</div>
+    </header>
+
+    <!-- Left: Place Value -->
+    <aside class="side-panel">
+        <span class="panel-label">Place Value Chart</span>
+        <div class="place-value-chart">
+            <div id="col-ones" class="pv-column">
+                <div id="pv-ones" class="pv-digit">0</div>
+                <div class="pv-label">Ones</div>
+            </div>
+            <div id="col-tenths" class="pv-column">
+                <div id="pv-tenths" class="pv-digit">0</div>
+                <div class="pv-label">Tenths</div>
+            </div>
+            <div id="col-hundredths" class="pv-column">
+                <div id="pv-hundredths" class="pv-digit">0</div>
+                <div class="pv-label">Hundredths</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Center: Grid -->
+    <main class="stage">
+        <div class="grid-container" id="grid"></div>
+    </main>
+
+    <!-- Right: Readouts -->
+    <aside class="readout-card">
+        <div>
+            <span class="panel-label">Fraction</span>
+            <div id="fraction-display" class="math-display">
+                <div class="fraction-container" id="frac-morph-target"></div>
+            </div>
+        </div>
+        <div>
+            <span class="panel-label">Percentage</span>
+            <div id="percent-display" class="math-display"></div>
+        </div>
+    </aside>
+
+    <!-- Bottom: Number Line -->
+    <section class="bottom-area">
+        <div class="number-line-container">
+            <div class="number-line-track">
+                <div id="nl-progress" class="number-line-progress"></div>
+                <div id="nl-marker" class="number-line-marker"></div>
+            </div>
+            <span class="nl-label" style="left: 0;">0</span>
+            <span class="nl-label" style="left: 50%;">0.5</span>
+            <span class="nl-label" style="left: 100%;">1.0</span>
+        </div>
+
+        <!-- Floating Controls Panel -->
+        <div class="controls-panel">
+            <div class="control-group">
+                <span class="panel-label" style="margin:0">Value</span>
+                <input type="range" id="main-slider" min="0" max="100" value="0">
+            </div>
+
+            <div class="control-group">
+                <div class="segmented-control" id="mode-toggle">
+                    <div class="segment active" data-mode="decimal">Decimal</div>
+                    <div class="segment" data-mode="fraction">Fraction</div>
+                    <div class="segment" data-mode="percent">Percent</div>
+                </div>
+                <div class="value-input-wrapper">
+                    <input type="text" id="manual-input" class="value-input" placeholder="0.00">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="benchmark-group">
+                    <button class="btn" data-val="10">10%</button>
+                    <button class="btn" data-val="25">25%</button>
+                    <button class="btn" data-val="50">50%</button>
+                    <button class="btn" data-val="75">75%</button>
+                </div>
+            </div>
+
+            <button id="reset-btn" class="btn btn-reset">Reset</button>
+        </div>
+    </section>
+</div>
+
+<script>
+    const state = {
+        value: 0, 
+        mode: 'decimal'
+    };
+
+    // DOM Elements
+    const gridEl = document.getElementById('grid');
+    const sliderEl = document.getElementById('main-slider');
+    const manualInputEl = document.getElementById('manual-input');
+    const modeToggleEl = document.getElementById('mode-toggle');
+    const fracMorphTarget = document.getElementById('frac-morph-target');
+    const percentDisplayEl = document.getElementById('percent-display');
+    const nlProgressEl = document.getElementById('nl-progress');
+    const nlMarkerEl = document.getElementById('nl-marker');
+    const pvOnesEl = document.getElementById('pv-ones');
+    const pvTenthsEl = document.getElementById('pv-tenths');
+    const pvHundsEl = document.getElementById('pv-hundredths');
+    const colOnesEl = document.getElementById('col-ones');
+    const colTenthsEl = document.getElementById('col-tenths');
+    const colHundsEl = document.getElementById('col-hundredths');
+
+    // Initialize Grid immediately for visual detection and layout stability
+    for (let i = 0; i < 100; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        gridEl.appendChild(cell);
+    }
+    const cells = document.querySelectorAll('.grid-cell');
+
+    function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+    function simplifyFraction(numerator, denominator) {
+        if (numerator === 0) return { n: 0, d: 1 };
+        const common = gcd(numerator, denominator);
+        return { n: numerator / common, d: denominator / common };
+    }
+
+    /**
+     * FIX: Liquid Pour Effect with Scale Pop.
+     * We use staggered animation delays to create the "pour" feel while triggering a scale pop.
+     */
+    function updateGrid(val) {
+        cells.forEach((cell, index) => {
+            if (index < val) {
+                if (!cell.classList.contains('filled')) {
+                    // Staggered delay for the "pour" effect
+                    cell.style.animationDelay = `${index * 4}ms`;
+                    cell.classList.add('filled');
+                }
+            } else {
+                cell.classList.remove('filled');
+                cell.style.animationDelay = '0ms';
+            }
+        });
+    }
+
+    function updateUI() {
+        const val = state.value;
+
+        // 1. Grid Shading (Liquid Pour + Pop)
+        updateGrid(val);
+
+        // 2. Number Line
+        nlProgressEl.style.width = `${val}%`;
+        nlMarkerEl.style.left = `${val}%`;
+
+        // 3. Place Value Chart
+        const decStr = (val / 100).toFixed(2);
+        const parts = decStr.split('.');
+        const ones = parts[0];
+        const tenths = parts[1][0];
+        const hunds = parts[1][1];
+
+        if (pvOnesEl.innerText !== ones) { 
+            pvOnesEl.innerText = ones; 
+            triggerPulse(pvOnesEl, colOnesEl); 
+        }
+        if (pvTenthsEl.innerText !== tenths) { 
+            pvTenthsEl.innerText = tenths; 
+            triggerPulse(pvTenthsEl, colTenthsEl); 
+        }
+        if (pvHundsEl.innerText !== hunds) { 
+            pvHundsEl.innerText = hunds; 
+            triggerPulse(pvHundsEl, colHundsEl); 
+        }
+
+        // 4. Fraction Display with Morphing Transition
+        const simplified = simplifyFraction(val, 100);
+        const fracTex = `\\frac{${simplified.n}}{${simplified.d}}`;
+        renderMathMorph(fracMorphTarget, fracTex);
+
+        // 5. Percent Display (Simple transition)
+        renderMathSimple(percentDisplayEl, `${val}\%`);
+
+        sliderEl.value = val;
+        updateManualInputText();
+    }
+
+    function triggerPulse(digitEl, colEl) {
+        digitEl.classList.add('pulse');
+        colEl.classList.add('pulse');
+        setTimeout(() => {
+            digitEl.classList.remove('pulse');
+            colEl.classList.remove('pulse');
+        }, 400);
+    }
+
+    /**
+     * FIX: Fraction Morphing Transition.
+     * Uses a cross-fade and slide (Y-axis) to make the simplification feel cohesive.
+     */
+    function renderMathMorph(container, tex) {
+        const currentContent = container.querySelector('.math-content');
+        if (currentContent && currentContent.dataset.tex === tex) return;
+
+        const newDiv = document.createElement('div');
+        newDiv.className = 'math-content enter';
+        newDiv.dataset.tex = tex;
+        katex.render(tex, newDiv, { throwOnError: false });
+
+        if (!currentContent) {
+            container.appendChild(newDiv);
+            void newDiv.offsetWidth; 
+            newDiv.classList.remove('enter');
+            return;
+        }
+
+        // Transition out old, transition in new
+        currentContent.classList.add('exit');
+        container.appendChild(newDiv);
+
+        setTimeout(() => {
+            if (container.contains(currentContent)) {
+                container.removeChild(currentContent);
+            }
+            const activeNew = container.querySelector(`[data-tex="${tex}"]`);
+            if (activeNew) {
+                activeNew.classList.remove('enter');
+            }
+        }, 300);
+    }
+
+    function renderMathSimple(container, tex) {
+        const currentContent = container.querySelector('.math-content');
+        if (currentContent && currentContent.dataset.tex === tex) return;
+
+        const newDiv = document.createElement('div');
+        newDiv.className = 'math-content enter';
+        newDiv.dataset.tex = tex;
+        katex.render(tex, newDiv, { throwOnError: false });
+
+        if (!currentContent) {
+            container.appendChild(newDiv);
+            void newDiv.offsetWidth; 
+            newDiv.classList.remove('enter');
+            return;
+        }
+
+        currentContent.classList.add('exit');
+        container.appendChild(newDiv);
+
+        setTimeout(() => {
+            if (container.contains(currentContent)) {
+                container.removeChild(currentContent);
+            }
+            const activeNew = container.querySelector(`[data-tex="${tex}"]`);
+            if (activeNew) {
+                activeNew.classList.remove('enter');
+            }
+        }, 300);
+    }
+
+    function updateManualInputText() {
+        let text = "";
+        if (state.mode === 'decimal') {
+            text = (state.value / 100).toFixed(2);
+        } else if (state.mode === 'percent') {
+            text = `${state.value}`;
+        } else {
+            const simplified = simplifyFraction(state.value, 100);
+            text = `${simplified.n}/${simplified.d}`;
+        }
+        manualInputEl.value = text;
+    }
+
+    function setValue(newVal) {
+        let clamped = Math.max(0, Math.min(100, Math.round(newVal)));
+        if (clamped !== state.value) {
+            state.value = clamped;
+            updateUI();
+        }
+    }
+
+    sliderEl.addEventListener('input', (e) => setValue(parseInt(e.target.value)));
+
+    manualInputEl.addEventListener('change', (e) => {
+        const input = e.target.value;
+        let numericVal = 0;
+        if (state.mode === 'decimal') {
+            numericVal = parseFloat(input) * 100;
+        } else if (state.mode === 'percent') {
+            numericVal = parseFloat(input);
+        } else if (state.mode === 'fraction') {
+            const parts = input.split('/');
+            if (parts.length === 2) {
+                const n = parseFloat(parts[0]);
+                const d = parseFloat(parts[1]);
+                numericVal = (n / d) * 100;
+            }
+        }
+        if (!isNaN(numericVal)) setValue(numericVal); else updateManualInputText();
+    });
+
+    modeToggleEl.addEventListener('click', (e) => {
+        const seg = e.target.closest('.segment');
+        if (!seg) return;
+        document.querySelectorAll('.segment').forEach(s => s.classList.remove('active'));
+        seg.classList.add('active');
+        state.mode = seg.dataset.mode;
+        updateManualInputText();
+    });
+
+    document.querySelectorAll('.benchmark-group .btn').forEach(btn => {
+        btn.addEventListener('click', () => setValue(parseInt(btn.dataset.val)));
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', () => setValue(0));
+
+    window.onload = () => {
+        updateUI();
+    };
+</script>
+</body>
+</html>

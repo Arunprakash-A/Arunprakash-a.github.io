@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equivalent Fractions Explorer</title>
+    
+    <!-- KaTeX for Math Rendering (Fixed: Removed integrity hash to prevent load failure) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    
+    <!-- GSAP for Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --bg-top: #0f172a;
+            --bg-bottom: #020617;
+            --surface: rgba(30, 41, 59, 0.7);
+            --border: rgba(51, 65, 85, 0.5);
+            
+            --primary: #38bdf8;   /* Sky Blue */
+            --secondary: #f472b6; /* Pink */
+            --success: #10b981;   /* Emerald */
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'SF Mono', 'JetBrains Mono', ui-monospace, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* Layout */
+        .app-container {
+            width: 100%;
+            max-width: 900px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, var(--primary), #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Main Visualization Panel */
+        .viz-panel {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .stepper-group {
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .stepper-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            padding: 0 12px;
+        }
+
+        button {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            font-size: 1.2rem;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        button:hover {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+        }
+
+        .stepper-value {
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            font-weight: 700;
+            width: 40px;
+            text-align: center;
+            color: var(--primary);
+        }
+
+        /* Segmented Control */
+        .segmented-control {
+            display: flex;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .seg-btn {
+            font-size: 0.9rem;
+            width: auto;
+            padding: 6px 16px;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .seg-btn.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        /* Action Buttons */
+        .action-group {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-action {
+            font-size: 0.9rem;
+            width: auto;
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03);
+            color: var(--text-main);
+            border-radius: 6px;
+        }
+
+        .btn-action:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: var(--primary);
+        }
+
+        /* Visualization Area */
+        .visualization-stage {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            min-height: 350px;
+        }
+
+        @media (max-width: 768px) {
+            .visualization-stage {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Canvas Container */
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Number Line Specifics */
+        .number-line-container {
+            width: 100%;
+            padding-top: 2rem;
+        }
+
+        /* Decimal Display */
+        .decimal-display {
+            text-align: center;
+            margin-top: 1rem;
+            font-family: var(--font-mono);
+        }
+
+        .decimal-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .decimal-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--secondary);
+            line-height: 1.2;
+            text-shadow: 0 0 20px rgba(244, 114, 82, 0.3);
+        }
+
+        /* Fraction Wall */
+        .fraction-wall {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .wall-header {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .wall-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 8px;
+        }
+
+        .wall-bar-container {
+            position: relative;
+            height: 40px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .wall-bar-container:hover {
+            transform: translateY(-2px);
+        }
+
+        .wall-bar-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%; /* Animated */
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0.6;
+        }
+
+        .wall-bar-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.8rem;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+
+        /* Equivalence Glow */
+        .wall-bar-container.equivalent {
+            border: 1px solid var(--secondary);
+            box-shadow: 0 0 15px rgba(244, 114, 82, 0.2);
+        }
+
+        .wall-bar-container.equivalent .wall-bar-fill {
+            background: var(--secondary);
+            opacity: 1;
+        }
+
+        /* Math Expressions */
+        .math-expressions {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            opacity: 0.8;
+            min-height: 40px; /* Reserve space */
+        }
+
+        /* Animations */
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 10px rgba(244, 114, 82, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(244, 114, 82, 0.6); }
+            100% { box-shadow: 0 0 10px rgba(244, 114, 82, 0.3); }
+        }
+
+        .pulse-active {
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>Equivalent Fractions Explorer</h1>
+        <p class="subtitle">Manipulate fractions and discover equivalences visually.</p>
+    </header>
+
+    <!-- Controls -->
+    <div class="controls">
+        <!-- Numerator Stepper -->
+        <div class="stepper-group">
+            <button id="num-minus" aria-label="Decrease numerator">−</button>
+            <span class="stepper-value" id="num-display">1</span>
+            <button id="num-plus" aria-label="Increase numerator">+</button>
+        </div>
+
+        <!-- Denominator Stepper -->
+        <div class="stepper-group">
+            <button id="den-minus" aria-label="Decrease denominator">−</button>
+            <span class="stepper-value" id="den-display">2</span>
+            <button id="den-plus" aria-label="Increase denominator">+</button>
+        </div>
+
+        <!-- Model Toggle -->
+        <div class="segmented-control">
+            <button class="seg-btn active" data-model="bar">Bar</button>
+            <button class="seg-btn" data-model="circle">Circle</button>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-group">
+            <button id="btn-simplify" class="btn-action">Simplify</button>
+            <button id="btn-reset" class="btn-action">Reset</button>
+        </div>
+    </div>
+
+    <!-- Main Visualization -->
+    <div class="viz-panel">
+        <div class="visualization-stage">
+            <!-- Dynamic Model (Bar/Circle) -->
+            <div class="canvas-container">
+                <canvas id="model-canvas"></canvas>
+            </div>
+
+            <!-- Number Line & Decimal -->
+            <div class="number-line-container">
+                <canvas id="line-canvas" height="200"></canvas>
+                <div class="decimal-display">
+                    <div class="decimal-label">Decimal Value</div>
+                    <div class="decimal-value" id="decimal-output">0.50</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fraction Wall -->
+        <div class="fraction-wall">
+            <div class="wall-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Equivalent Fractions Wall (Find matches!)
+            </div>
+            <div class="wall-grid" id="fraction-wall">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+
+        <!-- Math Context -->
+        <div class="math-expressions" id="katex-container">
+            <!-- Rendered by KaTeX -->
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * State Management
+ */
+const state = {
+    numerator: 1,
+    denominator: 2,
+    model: 'bar', // 'bar' or 'circle'
+};
+
+// DOM Elements
+const els = {
+    numDisplay: document.getElementById('num-display'),
+    denDisplay: document.getElementById('den-display'),
+    decimalOutput: document.getElementById('decimal-output'),
+    canvasModel: document.getElementById('model-canvas'),
+    canvasLine: document.getElementById('line-canvas'),
+    fractionWall: document.getElementById('fraction-wall'),
+    katexContainer: document.getElementById('katex-container'),
+};
+
+// Canvas Contexts
+const ctxModel = els.canvasModel.getContext('2d');
+const ctxLine = els.canvasLine.getContext('2d');
+
+/**
+ * Math Helpers
+ */
+function gcd(a, b) {
+    return b === 0 ? a : gcd(b, a % b);
+}
+
+function simplifyFraction(n, d) {
+    const common = gcd(n, d);
+    return { n: n / common, d: d / common };
+}
+
+function getDecimal(n, d) {
+    if (d === 0) return "N/A";
+    return (n / d).toFixed(2);
+}
+
+/**
+ * Rendering Functions
+ */
+
+// --- Model Canvas (Bar/Circle) ---
+function drawModel() {
+    const canvas = els.canvasModel;
+    // Handle HiDPI
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    
+    if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctxModel.scale(dpr, dpr);
+    }
+
+    const w = rect.width;
+    const h = rect.height;
+    const n = state.numerator;
+    const d = state.denominator;
+    
+    // Clear
+    ctxModel.clearRect(0, 0, w, h);
+
+    if (state.model === 'bar') {
+        drawBarModel(w, h, n, d);
+    } else {
+        drawCircleModel(w, h, n, d);
+    }
+}
+
+function drawBarModel(w, h, n, d) {
+    const padding = 20;
+    const barHeight = Math.min(h * 0.6, 100);
+    const barY = (h - barHeight) / 2;
+    const totalWidth = w - (padding * 2);
+    
+    // Draw Container
+    ctxModel.strokeStyle = '#38bdf8';
+    ctxModel.lineWidth = 2;
+    ctxModel.strokeRect(padding, barY, totalWidth, barHeight);
+
+    // Draw Segments
+    const segmentWidth = totalWidth / d;
+    
+    for (let i = 0; i < d; i++) {
+        const x = padding + (i * segmentWidth);
+        
+        if (i < n) {
+            // Shaded
+            ctxModel.fillStyle = '#38bdf8';
+            ctxModel.fillRect(x, barY, segmentWidth, barHeight);
+            
+            // Inner border for definition
+            ctxModel.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctxModel.strokeRect(x, barY, segmentWidth, barHeight);
+        } else {
+            // Empty
+            ctxModel.fillStyle = 'rgba(255,255,255,0.05)';
+            ctxModel.fillRect(x, barY, segmentWidth, barHeight);
+        }
+
+        // Divider Line
+        if (i < d - 1) {
+            ctxModel.beginPath();
+            ctxModel.moveTo(padding + ((i + 1) * segmentWidth), barY);
+            ctxModel.lineTo(padding + ((i + 1) * segmentWidth), barY + barHeight);
+            ctxModel.strokeStyle = '#94a3b8';
+            ctxModel.lineWidth = 2;
+            ctxModel.stroke();
+        }
+    }
+
+    // Labels
+    ctxModel.fillStyle = '#f8fafc';
+    ctxModel.font = 'bold 16px Inter, sans-serif';
+    ctxModel.textAlign = 'center';
+    
+    if (d <= 12) {
+        for (let i = 0; i < d; i++) {
+            const x = padding + (i * segmentWidth) + (segmentWidth / 2);
+            // Label below bar
+            ctxModel.fillText(i + 1, x, h - 5);
+        }
+    }
+}
+
+function drawCircleModel(w, h, n, d) {
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = Math.min(w, h) * 0.35;
+
+    // Draw Slices
+    for (let i = 0; i < d; i++) {
+        const startAngle = -Math.PI / 2 + (i * 2 * Math.PI / d);
+        const endAngle = -Math.PI / 2 + ((i + 1) * 2 * Math.PI / d);
+
+        ctxModel.beginPath();
+        ctxModel.moveTo(cx, cy);
+        ctxModel.arc(cx, cy, radius, startAngle, endAngle);
+        ctxModel.closePath();
+
+        if (i < n) {
+            ctxModel.fillStyle = '#38bdf8';
+            ctxModel.fill();
+            // Subtle gradient overlay for depth
+            const grad = ctxModel.createRadialGradient(cx, cy, 0, cx, cy, radius);
+            grad.addColorStop(0, 'rgba(255,255,255,0.3)');
+            grad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctxModel.fillStyle = grad;
+            ctxModel.fill();
+        } else {
+            ctxModel.fillStyle = 'rgba(255,255,255,0.05)';
+            ctxModel.fill();
+        }
+
+        // Border
+        ctxModel.strokeStyle = '#1e293b';
+        ctxModel.lineWidth = 2;
+        ctxModel.stroke();
+    }
+
+    // Center Hole (Donut style for elegance)
+    ctxModel.beginPath();
+    ctxModel.arc(cx, cy, radius * 0.4, 0, 2 * Math.PI);
+    ctxModel.fillStyle = '#0f172a'; // Match bg
+    ctxModel.fill();
+
+    // Label in center
+    ctxModel.fillStyle = '#f8fafc';
+    ctxModel.font = 'bold 20px Inter, sans-serif';
+    ctxModel.textAlign = 'center';
+    ctxModel.textBaseline = 'middle';
+    ctxModel.fillText(`${n}/${d}`, cx, cy);
+}
+
+// --- Number Line Canvas (FIX #3: Dynamic Ticks) ---
+function drawNumberLine() {
+    const canvas = els.canvasLine;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    
+    if (canvas.width !== rect.width * dpr) {
+        canvas.width = rect.width * dpr;
+        ctxLine.scale(dpr, dpr);
+    }
+
+    const w = rect.width;
+    const h = rect.height || 200; // Use attribute height fallback
+    
+    ctxLine.clearRect(0, 0, w, h);
+
+    const paddingX = 40;
+    const lineY = h / 2 + 10;
+    const lineWidth = w - (paddingX * 2);
+
+    // Draw Main Line
+    ctxLine.beginPath();
+    ctxLine.moveTo(paddingX, lineY);
+    ctxLine.lineTo(w - paddingX, lineY);
+    ctxLine.strokeStyle = '#94a3b8';
+    ctxLine.lineWidth = 2;
+    ctxLine.stroke();
+
+    // FIX #3: Dynamic Ticks based on current denominator
+    const currentDenom = state.denominator;
+    
+    for (let i = 0; i <= currentDenom; i++) {
+        const x = paddingX + (i * (lineWidth / currentDenom));
+        
+        // Tick height varies by denominator size (larger for smaller denominators)
+        let tickH = 8;
+        if (currentDenom % i === 0 && i !== currentDenom) {
+            tickH = 14;
+        }
+
+        ctxLine.beginPath();
+        ctxLine.moveTo(x, lineY - tickH);
+        ctxLine.lineTo(x, lineY + tickH);
+        ctxLine.strokeStyle = '#94a3b8';
+        ctxLine.lineWidth = 2;
+        ctxLine.stroke();
+
+        // Label (only for integers or halves)
+        if (i === 0 || i === currentDenom || (currentDenom % i === 0 && i !== currentDenom)) {
+            let label = '';
+            if (i === 0) label = '0';
+            else if (i === currentDenom) label = '1';
+            else {
+                // Simplify fraction i/12 for display
+                const g = gcd(i, currentDenom);
+                label = `${i/g}/${currentDenom/g}`;
+            }
+            
+            ctxLine.fillStyle = '#94a3b8';
+            ctxLine.font = '12px Inter, sans-serif';
+            ctxLine.textAlign = 'center';
+            ctxLine.fillText(label, x, lineY + 25);
+        }
+    }
+
+    // Current Position Dot
+    const fractionVal = state.numerator / state.denominator;
+    const dotX = paddingX + (fractionVal * lineWidth);
+
+    // Glow effect
+    ctxLine.beginPath();
+    ctxLine.arc(dotX, lineY, 12, 0, 2 * Math.PI);
+    ctxLine.fillStyle = 'rgba(244, 114, 82, 0.3)';
+    ctxLine.fill();
+
+    // Dot
+    ctxLine.beginPath();
+    ctxLine.arc(dotX, lineY, 6, 0, 2 * Math.PI);
+    ctxLine.fillStyle = '#f472b6';
+    ctxLine.fill();
+    ctxLine.strokeStyle = '#fff';
+    ctxLine.lineWidth = 2;
+    ctxLine.stroke();
+
+    // Label above dot
+    ctxLine.fillStyle = '#f8fafc';
+    ctxLine.font = 'bold 14px Inter, sans-serif';
+    ctxLine.textAlign = 'center';
+    ctxLine.fillText(`${state.numerator}/${state.denominator}`, dotX, lineY - 25);
+}
+
+// --- Fraction Wall Generation (FIX #4: Strict Unit Fractions) ---
+function initFractionWall() {
+    els.fractionWall.innerHTML = '';
+    
+    const wallFractions = [];
+    
+    // Add 1/2, 1/3... 1/12 (Unit fractions only as per plan)
+    for(let d=2; d<=12; d++) {
+        wallFractions.push({n:1, d:d});
+    }
+
+    // Render
+    wallFractions.forEach(f => {
+        const container = document.createElement('div');
+        container.className = 'wall-bar-container';
+        container.dataset.n = f.n;
+        container.dataset.d = f.d;
+        
+        const fill = document.createElement('div');
+        fill.className = 'wall-bar-fill';
+        fill.style.width = `${(f.n / f.d) * 100}%`;
+        
+        const label = document.createElement('div');
+        label.className = 'wall-bar-label';
+        label.textContent = `1/${f.d}`;
+
+        container.appendChild(fill);
+        container.appendChild(label);
+        
+        // Click to select
+        container.addEventListener('click', () => {
+            state.numerator = f.n;
+            state.denominator = f.d;
+            updateUI();
+        });
+
+        els.fractionWall.appendChild(container);
+    });
+}
+
+function updateFractionWall() {
+    const currentVal = state.numerator / state.denominator;
+    
+    const containers = document.querySelectorAll('.wall-bar-container');
+    
+    containers.forEach(c => {
+        const n = parseInt(c.dataset.n);
+        const d = parseInt(c.dataset.d);
+        const val = n / d;
+
+        // Check equivalence (within floating point tolerance)
+        if (Math.abs(val - currentVal) < 0.001) {
+            c.classList.add('equivalent');
+            c.classList.add('pulse-active');
+        } else {
+            c.classList.remove('equivalent');
+            c.classList.remove('pulse-active');
+        }
+    });
+}
+
+/**
+ * UI Updates & Interactions
+ */
+function updateUI() {
+    // Update Stepper Displays
+    els.numDisplay.textContent = state.numerator;
+    els.denDisplay.textContent = state.denominator;
+    
+    // FIX #2: Update Decimal synchronously with state change
+    const dec = getDecimal(state.numerator, state.denominator);
+    els.decimalOutput.textContent = dec;
+
+    // Redraw Visuals (Synchronous)
+    drawModel();
+    drawNumberLine();
+    updateFractionWall();
+    
+    // Update KaTeX
+    updateMathExpressions();
+}
+
+function updateMathExpressions() {
+    const n = state.numerator;
+    const d = state.denominator;
+    const g = gcd(n, d);
+    const simpleN = n / g;
+    const simpleD = d / g;
+
+    let html = '';
+    
+    // General Formula
+    html += `<span style="font-family: 'SF Mono', monospace;">\\frac{${n}}{${d}} = \\frac{${n} \\times ${g === 1 ? '1' : g}}{${d} \\times ${g === 1 ? '1' : g}}</span>`;
+    
+    // Simplification Step
+    if (g > 1) {
+        html += `<span style="color: var(--success);">\\implies \\frac{${simpleN}}{${simpleD}}</span>`;
+    } else {
+        html += `<span style="color: var(--text-muted);">\\text{(Simplest form)}</span>`;
+    }
+
+    // Decimal conversion
+    const dec = (n/d).toFixed(2);
+    html += `<span>\\approx ${dec}</span>`;
+
+    // FIX #3: Guard against KaTeX not being defined yet
+    if (typeof katex !== 'undefined') {
+        try {
+            katex.render(html, els.katexContainer, {
+                throwOnError: false,
+                displayMode: true,
+                output: 'html'
+            });
+        } catch (e) {
+            console.error("KaTeX render error:", e);
+            els.katexContainer.textContent = html; // Fallback text
+        }
+    } else {
+        // Fallback if KaTeX fails to load
+        els.katexContainer.textContent = `\\frac{${n}}{${d}} ≈ ${dec}`;
+    }
+}
+
+/**
+ * Event Listeners
+ */
+
+// Steppers
+document.getElementById('num-minus').addEventListener('click', () => {
+    if (state.numerator > 0) state.numerator--;
+    updateUI();
+});
+
+document.getElementById('num-plus').addEventListener('click', () => {
+    if (state.numerator < state.denominator + 5) state.numerator++; // Allow improper for fun, but cap at reasonable
+    updateUI();
+});
+
+document.getElementById('den-minus').addEventListener('click', () => {
+    if (state.denominator > 1 && state.numerator < state.denominator) {
+        state.denominator--;
+        updateUI();
+    }
+});
+
+document.getElementById('den-plus').addEventListener('click', () => {
+    if (state.denominator < 12) {
+        state.denominator++;
+        updateUI();
+    }
+});
+
+// Model Toggle
+document.querySelectorAll('.seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelector('.seg-btn.active').classList.remove('active');
+        btn.classList.add('active');
+        state.model = btn.dataset.model;
+        
+        // Animate transition
+        gsap.fromTo(els.canvasModel, 
+            { opacity: 0.5, scale: 0.98 },
+            { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(1.7)" }
+        );
+        
+        drawModel();
+    });
+});
+
+// Simplify Button (FIX #2 & #4)
+document.getElementById('btn-simplify').addEventListener('click', () => {
+    const g = gcd(state.numerator, state.denominator);
+    
+    if (g === 1) return; // Already simple
+
+    const targetN = state.numerator / g;
+    const targetD = state.denominator / g;
+
+    // FIX #2: Update State Immediately so visual feedback is accurate during animation
+    state.numerator = targetN;
+    state.denominator = targetD;
+    
+    // Synchronous update to ensure decimal and wall reflect new values immediately
+    els.numDisplay.textContent = targetN;
+    els.denDisplay.textContent = targetD;
+    drawModel();
+    drawNumberLine();
+    updateFractionWall();
+
+    // FIX #4: Animate the NUMBERS (stepper displays) instead of canvas
+    gsap.fromTo(els.numDisplay, 
+        { scale: 1.5, color: '#f472b6' }, 
+        { scale: 1, color: 'var(--primary)', duration: 0.4, ease: "elastic.out(1, 0.3)" }
+    );
+    
+    gsap.fromTo(els.denDisplay, 
+        { scale: 1.5, color: '#f472b6' }, 
+        { scale: 1, color: 'var(--primary)', duration: 0.4, ease: "elastic.out(1, 0.3)", delay: 0.1 }
+    );
+
+    // Visual feedback on canvas (subtle pulse)
+    gsap.fromTo(els.canvasModel, 
+        { scale: 1 }, 
+        { scale: 1.02, duration: 0.2, ease: "power2.in", yoyo: true, repeat: 1 }
+    );
+});
+
+// Reset Button
+document.getElementById('btn-reset').addEventListener('click', () => {
+    state.numerator = 1;
+    state.denominator = 2;
+    
+    // Reset model to Bar
+    document.querySelector('.seg-btn.active').classList.remove('active');
+    document.querySelector('[data-model="bar"]').classList.add('active');
+    state.model = 'bar';
+
+    updateUI();
+});
+
+/**
+ * Initialization
+ */
+window.addEventListener('resize', () => {
+    drawModel();
+    drawNumberLine();
+});
+
+// Initial Render
+initFractionWall();
+updateUI();
+
+</script>
+</body>
+</html>

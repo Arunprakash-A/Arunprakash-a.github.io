@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Decimals, Fractions, Percentages Connector</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<style>
+:root{
+  --bg-gradient: radial-gradient(circle at center, #12151f 0%, #0a0c12 100%);
+  --surface:#1e2139;
+  --accent-primary:#22d3ee;
+  --accent-secondary:#a78bfa;
+  --text-primary:#ffffff;
+  --text-secondary:#cbd5e1;
+}
+html,body{
+  margin:0;padding:0;height:100%;background:var(--bg-gradient);color:var(--text-primary);
+  font-family:system-ui,-apple-system,'Segoe UI',Inter,Roboto,sans-serif;line-height:1.6;overflow:hidden;
+}
+.app{display:flex;flex-direction:row;width:100%;height:100%;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;}
+.sidebar{
+  background-color:var(--surface);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.5);
+  padding:20px;width:30%;min-width:260px;max-width:320px;
+  display:flex;flex-direction:column;gap:16px;
+}
+.sidebar h2{margin-top:0;font-size:1.4rem;color:var(--text-primary);}
+.control-group label{font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;}
+input[type=range]{
+  width:100%;-webkit-appearance:none;appearance:none;height:8px;border-radius:4px;background:#3a3f5b;
+}
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent-primary);cursor:pointer;transition:transform 150ms ease-in-out;}
+input[type=range]:focus::-webkit-slider-thumb{transform:scale(1.2);}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--accent-primary);cursor:pointer;transition:transform 150ms ease-in-out;}
+input[type=range]:focus::-moz-range-thumb{transform:scale(1.2);}
+.benchmark-buttons button{
+  background-color:var(--accent-secondary);color:white;border:none;border-radius:6px;padding:8px 12px;font-size:0.9rem;cursor:pointer;
+  transition:background-color 200ms ease-in-out;
+}
+.benchmark-buttons button:hover{background-color:#8c5fbf;}
+.benchmark-buttons button:focus{outline:2px solid var(--accent-primary);}
+.mode-toggle label{display:inline-block;margin-right:12px;}
+.mode-toggle input[type=radio]{margin-right:4px;}
+.mode-inputs > div{display:none;flex-direction:column;gap:8px;}
+.mode-inputs > div.active{display:flex;}
+input[type=number]{
+  width:100%;padding:6px 8px;border-radius:6px;border:1px solid #3a3f5b;background-color:#2a2e3b;color:var(--text-primary);font-family:ui-monospace,monospace;
+}
+input[type=number]:focus{outline:none;border-color:var(--accent-primary);box-shadow:0 0 4px var(--accent-primary);}
+.reset{
+  background-color:var(--accent-secondary);color:white;border:none;border-radius:6px;padding:10px 12px;font-size:1rem;cursor:pointer;
+  transition:background-color 200ms ease-in-out;
+}
+.reset:hover{background-color:#8c5fbf;}
+.reset:focus{outline:2px solid var(--accent-primary);}
+.stage{
+  flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;width:100%;max-width:600px;
+}
+.display span{margin-right:12px;font-size:1.1rem;}
+#fractionDisplay{font-family:ui-monospace,monospace;}
+.grid{
+  display:grid;grid-template-columns:repeat(10,1fr);gap:2px;width:100%;max-width:400px;aspect-ratio:1;
+}
+.cell{
+  background-color:transparent;transition:background-color 200ms ease-in-out;cursor:pointer;
+}
+.cell.shaded{background-color:rgba(34,211,238,0.8);}
+.number-line{
+  position:relative;width:100%;max-width:400px;height:30px;background:#3a3f5b;border-radius:15px;overflow:hidden;margin-top:auto;
+}
+.marker{
+  position:absolute;left:0;top:0;bottom:0;width:4px;background-color:var(--accent-primary);transition:left 200ms ease-in-out;
+}
+.place-value{display:flex;gap:8px;}
+.digit-box{
+  width:40px;height:60px;background-color:var(--surface);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:1.5rem;color:var(--text-primary);
+}
+@keyframes flip{
+  0%{transform:rotateX(0deg);}
+  50%{transform:rotateX(-90deg);}
+  100%{transform:rotateX(0deg);}
+}
+.digit-box.flip{animation:flip 300ms ease-in-out forwards;}
+@keyframes pulse{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.05);}
+  100%{transform:scale(1);}
+}
+.pulse{animation:pulse 2s infinite;}
+.error{color:#ff6b6b;font-size:0.8rem;margin-top:4px;}
+@media (max-width:768px){
+  .app{flex-direction:column;}
+  .sidebar{width:100%;max-width:none;min-width:auto;margin-bottom:20px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <h2>Controls</h2>
+    <div class="control-group">
+      <label for="slider">Hundredths Slider</label>
+      <input type="range" id="slider" min="0" max="100" step="1" aria-label="Hundredths slider">
+    </div>
+
+    <div class="benchmark-buttons control-group">
+      <button data-percent="10" class="benchmark" aria-label="Set to 10%">10%</button>
+      <button data-percent="25" class="benchmark" aria-label="Set to 25%">25%</button>
+      <button data-percent="50" class="benchmark" aria-label="Set to 50%">50%</button>
+      <button data-percent="75" class="benchmark" aria-label="Set to 75%">75%</button>
+    </div>
+
+    <div class="control-group">
+      <label>Mode</label>
+      <div class="mode-toggle">
+        <label for="modeDecimal"><input type="radio" id="modeDecimal" name="mode" value="decimal" checked aria-label="Decimal mode">Decimal</label>
+        <label for="modeFraction"><input type="radio" id="modeFraction" name="mode" value="fraction" aria-label="Fraction mode">Fraction</label>
+        <label for="modePercent"><input type="radio" id="modePercent" name="mode" value="percent" aria-label="Percent mode">Percent</label>
+      </div>
+    </div>
+
+    <div class="control-group mode-inputs">
+      <div id="decimalInputContainer" class="active">
+        <label for="decimalInput">Decimal (0–1)</label>
+        <input type="number" step="0.01" min="0" max="1" id="decimalInput" aria-label="Decimal input">
+        <span class="error" id="decimalError"></span>
+      </div>
+
+      <div id="fractionInputContainer">
+        <label for="numeratorInput">Numerator</label>
+        <input type="number" min="0" max="10000" id="numeratorInput" aria-label="Fraction numerator">
+        <label for="denominatorInput">Denominator</label>
+        <input type="number" min="1" max="10000" id="denominatorInput" aria-label="Fraction denominator">
+        <span class="error" id="fractionError"></span>
+      </div>
+
+      <div id="percentInputContainer">
+        <label for="percentInput">Percent (0–100)</label>
+        <input type="number" step="1" min="0" max="100" id="percentInput" aria-label="Percent input">
+        <span class="error" id="percentError"></span>
+      </div>
+    </div>
+
+    <button class="reset" id="resetButton" aria-label="Reset all inputs">Reset</button>
+  </aside>
+
+  <main class="stage">
+    <div class="display">
+      <span>Decimal: <span id="decimalDisplay"></span></span>
+      <span>Fraction: <span id="fractionDisplay"></span></span>
+      <span>Percent: <span id="percentDisplay"></span></span>
+    </div>
+
+    <div class="grid" id="gridContainer" aria-label="Hundredths grid" role="grid">
+      <!-- cells will be inserted by script -->
+    </div>
+
+    <div class="place-value" id="placeValueChart" aria-label="Place value chart">
+      <div class="digit-box" id="onesBox"><span id="onesDigit">0</span></div>
+      <div class="digit-box" id="tenthsBox"><span id="tenthsDigit">0</span></div>
+      <div class="digit-box" id="hundredthsBox"><span id="hundredthsDigit">0</span></div>
+    </div>
+
+    <div class="number-line" id="numberLine" aria-label="Number line from 0 to 1">
+      <div class="marker" id="marker"></div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script>
+(() => {
+  const cellState = Array(100).fill(false);
+  let currentNumerator = 0;
+  let currentDenominator = 1;
+
+  // Last valid values for validation
+  let lastValidDecimal = 0;
+  let lastValidFraction = {num:0, den:1};
+  let lastValidPercent = 0;
+
+  // Elements
+  const slider = document.getElementById('slider');
+  const benchmarkButtons = document.querySelectorAll('.benchmark');
+  const modeRadios = document.querySelectorAll('input[name="mode"]');
+
+  const decimalInputContainer = document.getElementById('decimalInputContainer');
+  const fractionInputContainer = document.getElementById('fractionInputContainer');
+  const percentInputContainer = document.getElementById('percentInputContainer');
+
+  const decimalInput = document.getElementById('decimalInput');
+  const numeratorInput = document.getElementById('numeratorInput');
+  const denominatorInput = document.getElementById('denominatorInput');
+  const percentInput = document.getElementById('percentInput');
+
+  const resetButton = document.getElementById('resetButton');
+
+  const decimalDisplay = document.getElementById('decimalDisplay');
+  const fractionDisplay = document.getElementById('fractionDisplay');
+  const percentDisplay = document.getElementById('percentDisplay');
+
+  const gridContainer = document.getElementById('gridContainer');
+  const marker = document.getElementById('marker');
+
+  const onesBox = document.getElementById('onesBox');
+  const tenthsBox = document.getElementById('tenthsBox');
+  const hundredthsBox = document.getElementById('hundredthsBox');
+  const onesDigit = document.getElementById('onesDigit');
+  const tenthsDigit = document.getElementById('tenthsDigit');
+  const hundredthsDigit = document.getElementById('hundredthsDigit');
+
+  // Create grid cells
+  for (let i = 0; i < 100; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.index = i;
+    cell.setAttribute('role', 'gridcell');
+    gridContainer.appendChild(cell);
+  }
+
+  function gcd(a, b) { while (b !== 0) { [a, b] = [b, a % b]; } return a; }
+  function reduceFraction(num, den) {
+    const g = gcd(Math.abs(num), Math.abs(den));
+    return { num: num / g, den: den / g };
+  }
+
+  // Convert decimal to fraction
+  function decimalToFraction(d){
+    let str = d.toString();
+    if (str.includes('e')) {
+      const [base, exp] = str.split('e');
+      const e = parseInt(exp,10);
+      if (e > 0) {
+        return {num: Math.round(parseFloat(base)*Math.pow(10,e)), den:1};
+      } else {
+        const denom = Math.pow(10,-e);
+        return {num: Math.round(parseFloat(base)*denom), den: denom};
+      }
+    } else if (str.includes('.')) {
+      const parts = str.split('.');
+      const intPart = parseInt(parts[0],10) || 0;
+      const fracPart = parts[1];
+      const denom = Math.pow(10,fracPart.length);
+      const num = intPart*denom + parseInt(fracPart,10);
+      return {num, den: denom};
+    } else {
+      return {num:parseInt(str,10), den:1};
+    }
+  }
+
+  function updateFromFraction(num, den) {
+    const reduced = reduceFraction(num, den);
+    currentNumerator = reduced.num;
+    currentDenominator = reduced.den;
+
+    // Update last valid fraction
+    lastValidFraction = {num:currentNumerator, den:currentDenominator};
+
+    const value = currentNumerator / currentDenominator;
+    const count = Math.round(value * 100);
+    setCellStateToCount(count);
+    updateUI();
+  }
+
+  function setValueFromNumber(value) {
+    // Clamp to [0,1]
+    if (value < 0) value = 0;
+    if (value > 1) value = 1;
+
+    const frac = decimalToFraction(value);
+    updateFromFraction(frac.num, frac.den);
+
+    // Update last valid decimal and percent
+    lastValidDecimal = value;
+    lastValidPercent = Math.round(value * 100);
+  }
+
+  function formatDecimal(v) {
+    let s = v.toFixed(6);
+    return s.replace(/\.?0+$/, '');
+  }
+  function formatPercent(v) {
+    let s = v.toFixed(4);
+    return s.replace(/\.?0+$/, '');
+  }
+
+  function setCellStateToCount(count) {
+    for (let i = 0; i < 100; i++) cellState[i] = i < count;
+  }
+
+  function updateGridShading() {
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach((c, i) => {
+      if (cellState[i]) c.classList.add('shaded'); else c.classList.remove('shaded');
+    });
+  }
+
+  function flipBox(box) { box.classList.add('flip'); setTimeout(() => box.classList.remove('flip'), 300); }
+
+  function updateDisplaysOnly() {
+    const currentValue = currentNumerator / currentDenominator;
+    slider.value = Math.round(currentValue * 100);
+    marker.style.left = `${currentValue * 100}%`;
+
+    const ones = Math.floor(currentValue);
+    const tenths = Math.floor((currentValue - ones) * 10);
+    const hundredths = Math.floor(currentValue * 100) % 10;
+
+    if (onesDigit.textContent !== String(ones)) { onesDigit.textContent = String(ones); flipBox(onesBox); }
+    if (tenthsDigit.textContent !== String(tenths)) { tenthsDigit.textContent = String(tenths); flipBox(tenthsBox); }
+    if (hundredthsDigit.textContent !== String(hundredths)) { hundredthsDigit.textContent = String(hundredths); flipBox(hundredthsBox); }
+
+    decimalDisplay.textContent = formatDecimal(currentValue);
+    const percentVal = (currentNumerator * 100) / currentDenominator;
+    percentDisplay.textContent = `${formatPercent(percentVal)}%`;
+
+    if (currentNumerator === 0) {
+      fractionDisplay.textContent = '0';
+    } else if (currentDenominator === 1) {
+      fractionDisplay.textContent = '1';
+    } else {
+      katex.render(`\\\\frac{${currentNumerator}}{${currentDenominator}}`, fractionDisplay, { throwOnError: false });
+    }
+  }
+
+  function updateUI() { updateGridShading(); updateDisplaysOnly(); }
+
+  // Populate active input on mode change
+  function populateActiveInput() {
+    const decimalRadio = document.getElementById('modeDecimal');
+    const fractionRadio = document.getElementById('modeFraction');
+    const percentRadio = document.getElementById('modePercent');
+    if (decimalRadio.checked) {
+      decimalInput.value = formatDecimal(currentNumerator / currentDenominator);
+    } else if (fractionRadio.checked) {
+      numeratorInput.value = currentNumerator;
+      denominatorInput.value = currentDenominator;
+    } else if (percentRadio.checked) {
+      percentInput.value = Math.round((currentNumerator * 100) / currentDenominator).toString();
+    }
+  }
+
+  // Event listeners
+  slider.addEventListener('input', () => { setValueFromNumber(slider.value / 100); });
+
+  benchmarkButtons.forEach(btn => btn.addEventListener('click', () => {
+    const percent = parseInt(btn.dataset.percent, 10);
+    setValueFromNumber(percent / 100);
+  }));
+
+  modeRadios.forEach(radio => radio.addEventListener('change', () => {
+    if (radio.checked) {
+      decimalInputContainer.classList.toggle('active', radio.value === 'decimal');
+      fractionInputContainer.classList.toggle('active', radio.value === 'fraction');
+      percentInputContainer.classList.toggle('active', radio.value === 'percent');
+      populateActiveInput();
+    }
+  }));
+
+  decimalInput.addEventListener('input', () => {
+    const val = parseFloat(decimalInput.value);
+    if (!isNaN(val) && val >=0 && val <=1) {
+      setValueFromNumber(val);
+    } else {
+      decimalInput.value = lastValidDecimal;
+    }
+  });
+
+  function updateFractionFromInputs() {
+    const num = parseInt(numeratorInput.value, 10);
+    const den = parseInt(denominatorInput.value, 10);
+    if (!isNaN(num) && !isNaN(den) && den > 0 && num >=0) {
+      updateFromFraction(num, den);
+    } else {
+      numeratorInput.value = lastValidFraction.num;
+      denominatorInput.value = lastValidFraction.den;
+    }
+  }
+
+  numeratorInput.addEventListener('input', updateFractionFromInputs);
+  denominatorInput.addEventListener('input', updateFractionFromInputs);
+
+  percentInput.addEventListener('input', () => {
+    const val = parseFloat(percentInput.value);
+    if (!isNaN(val) && val >=0 && val <=100) {
+      setValueFromNumber(val / 100);
+    } else {
+      percentInput.value = lastValidPercent;
+    }
+  });
+
+  resetButton.addEventListener('click', () => {
+    decimalInput.value = '';
+    numeratorInput.value = '';
+    denominatorInput.value = '';
+    percentInput.value = '';
+    setValueFromNumber(0);
+  });
+
+  // Grid interactions
+  gridContainer.addEventListener('click', e => {
+    const cell = e.target.closest('.cell');
+    if (cell) {
+      const idx = parseInt(cell.dataset.index, 10);
+      cellState[idx] = !cellState[idx];
+      const count = cellState.filter(Boolean).length;
+      updateFromFraction(count, 100);
+    }
+  });
+
+  let isDragging = false;
+
+  gridContainer.addEventListener('mousedown', e => {
+    isDragging = true;
+    handleGridPointer(e);
+  });
+  document.addEventListener('mousemove', e => { if (isDragging) handleGridPointer(e); });
+  document.addEventListener('mouseup', () => { isDragging = false; });
+
+  function handleGridPointer(event) {
+    const cell = event.target.closest('.cell');
+    if (cell) {
+      const idx = parseInt(cell.dataset.index, 10);
+      cellState[idx] = !cellState[idx];
+      const count = cellState.filter(Boolean).length;
+      updateFromFraction(count, 100);
+    }
+  }
+
+  // Touch support
+  gridContainer.addEventListener('touchstart', e => { e.preventDefault(); isDragging = true; handleGridTouch(e); });
+  document.addEventListener('touchmove', e => { if (isDragging) handleGridTouch(e); });
+  document.addEventListener('touchend', () => { isDragging = false; });
+
+  function handleGridTouch(event) {
+    const touch = event.touches[0];
+    const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cell = elem?.closest('.cell');
+    if (cell) {
+      const idx = parseInt(cell.dataset.index, 10);
+      cellState[idx] = !cellState[idx];
+      const count = cellState.filter(Boolean).length;
+      updateFromFraction(count, 100);
+    }
+  }
+
+  // Pulse animation on focus
+  const allControls = [slider, decimalInput, percentInput, numeratorInput, denominatorInput];
+  allControls.forEach(ctrl => {
+    ctrl.addEventListener('focus', () => ctrl.classList.add('pulse'));
+    ctrl.addEventListener('blur', () => ctrl.classList.remove('pulse'));
+  });
+
+  // Initialize
+  setValueFromNumber(0);
+})();
+</script>
+</body>
+</html>

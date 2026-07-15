@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Right‑Triangle Pythagorean Theorem Explorer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<style>
+:root{
+  --bg-gradient: radial-gradient(circle at center,#0a0c12 0%,#12151f 100%);
+  --accent1:#22d3ee;
+  --accent2:#a78bfa;
+  --surface:#1e293b;
+  --heading-text:#f5f6fb;
+  --secondary-text:#cbd5e1;
+  --ui-font:"Inter",system-ui,sans-serif;
+  --mono-font:"Fira Code",monospace;
+}
+html,body{
+  height:100%;margin:0;padding:0;background:var(--bg-gradient);color:var(--heading-text);
+  font-family:var(--ui-font);font-size:16px;display:flex;justify-content:center;align-items:center;
+}
+#app{
+  max-width:1200px;width:90%;padding:1.5rem;box-sizing:border-box;
+  display:flex;gap:1rem;flex-wrap:wrap;background:rgba(30,41,59,.9);border-radius:12px;
+  backdrop-filter:blur(10px);
+}
+#sidebar{
+  flex:0 0 250px;display:flex;flex-direction:column;gap:1rem;
+}
+.card{
+  background:var(--surface);padding:1rem;border-radius:12px;box-shadow:0 4px 8px rgba(0,0,0,.3);
+  border:1px solid rgba(255,255,255,.05);
+}
+label{display:block;margin-bottom:.5rem;font-size:.9rem;color:var(--secondary-text);}
+input[type=checkbox], input[type=radio]{margin-right:.5rem;}
+button{
+  background:var(--accent1);color:#fff;border:none;padding:.6rem 1.2rem;
+  border-radius:8px;cursor:pointer;font-weight:600;transition:background .3s ease;
+}
+button:hover{background:var(--accent2);}
+#canvas{
+  flex:1 1 auto;background:transparent;overflow:hidden;
+}
+svg{width:100%;height:auto;}
+.square{stroke:var(--accent2);fill:none;stroke-width:2;}
+.leg-square{stroke:var(--accent1);}
+.hyp-square{stroke:var(--accent2);}
+.area-label{
+  font-family:var(--mono-font);font-size:.8rem;color:#fff;
+}
+#equation{
+  margin-top:.5rem;font-size:1rem;text-align:center;
+}
+.bounce{
+  animation:bounce .5s ease-out forwards;
+}
+@keyframes bounce{0%{transform:scale(1);}50%{transform:scale(1.15);}100%{transform:scale(1);}}
+.pulse{
+  animation:pulse 2s infinite alternate;
+}
+@keyframes pulse{0%,100%{filter:none;}50%{filter:brightness(1.3);}}
+.glow{
+  filter:drop-shadow(0 0 8px var(--accent1));
+}
+#proofOverlay{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,.8);display:flex;justify-content:center;
+  align-items:center;visibility:hidden;opacity:0;transition:opacity .3s ease;
+}
+#proofOverlay.show{visibility:visible;opacity:1;}
+#proofContent{
+  position:relative;background:var(--surface);padding:2rem;border-radius:12px;
+  box-shadow:0 8px 16px rgba(0,0,0,.5);
+}
+#closeProof{
+  position:absolute;top:.5rem;right:.5rem;background:none;color:#fff;font-size:1.5rem;
+  cursor:pointer;border:none;
+}
+@media(max-width:800px){
+  #app{flex-direction:column;}
+  #sidebar{flex-basis:auto;width:100%;}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar" class="card">
+    <h2 style="font-size:1.25rem;margin-top:0;">Controls</h2>
+    <label><input type="radio" name="mode" value="drag" checked> Drag Legs</label>
+    <label><input type="radio" name="mode" value="plot"> Plot Points</label>
+    <label><input type="checkbox" id="snapToggle"> Snap to Pythagorean Triples</label>
+    <button id="proofBtn">Show Rearrangement Proof</button>
+    <button id="resetBtn">Reset</button>
+    <div id="equation"></div>
+  </div>
+  <svg id="canvas" viewBox="0 0 500 500"></svg>
+</div>
+
+<div id="proofOverlay">
+  <div id="proofContent">
+    <button id="closeProof">&times;</button>
+    <svg id="proofSvg" width="400" height="400" viewBox="0 0 200 200"></svg>
+  </div>
+</div>
+
+<script>
+'use strict';
+const ORIGIN_X=250,ORIGIN_Y=250;
+let originX=ORIGIN_X; // can move in drag mode
+const originY=ORIGIN_Y;
+let mode='drag', snapEnabled=false;
+let a=3,b=4,c=Math.hypot(3,4);
+let xp=3,yp=0,xq=0,yq=4;
+
+// Generate Pythagorean triples up to c<=200
+const triples=[];
+function gcd(a,b){while(b){[a,b]=[b,a%b];}return a;}
+for(let m=2;m<20;m++){
+  for(let n=1;n<m;n++){
+    if(((m-n)&1) && gcd(m,n)==1){
+      let ta=m*m-n*n, tb=2*m*n, tc=m*m+n*n;
+      for(let k=1;k*tc<=200;k++){
+        triples.push({a:ta*k,b:tb*k,c:tc*k});
+      }
+    }
+  }
+}
+triples.sort((x,y)=>x.c-y.c);
+
+const svg=d3.select('#canvas');
+const triangleGroup=svg.append('g').attr('id','triangle');
+const pointsGroup=svg.append('g').attr('id','points');
+const squaresGroup=svg.append('g').attr('id','squares');
+const labelsGroup=svg.append('g').attr('id','labels');
+
+// Points
+const pointA = pointsGroup.append('circle')
+  .attr('r',6).attr('fill',d=>d3.color('#22d3ee')).attr('stroke','#fff').attr('stroke-width',1);
+const pointB = pointsGroup.append('circle')
+  .attr('r',6).attr('fill',d=>d3.color('#a78bfa')).attr('stroke','#fff').attr('stroke-width',1);
+const pointC = pointsGroup.append('circle')
+  .attr('r',6).attr('fill',d=>d3.color('#22d3ee')).attr('stroke','#fff').attr('stroke-width',1);
+
+// Squares
+const squareA=squaresGroup.append('polygon').classed('square leg-square','true');
+const squareB=squaresGroup.append('polygon').classed('square leg-square','true');
+const squareC=squaresGroup.append('polygon').classed('square hyp-square','true');
+
+// Area labels using foreignObject for KaTeX rendering
+function createLabel(){
+  const fo=labelsGroup.append('foreignObject')
+    .attr('width',50).attr('height',20);
+  fo.append('xhtml:div').attr('class','area-label');
+  return fo;
+}
+const labelA=createLabel();
+const labelB=createLabel();
+const labelC=createLabel();
+
+function mathToSvg(x,y){
+  return [originX + x, originY - y];
+}
+function svgToMath(x,y){
+  return [x-originX, originY-y];
+}
+
+function update(){
+  // Compute lengths
+  if(mode==='drag'){
+    a = Math.max(0, originY - pointC.attr('cy'));
+    b = Math.max(0, pointB.attr('cx')-originX);
+    c = Math.hypot(a,b);
+    // Update points positions
+    pointA.attr('cx',originX).attr('cy',originY);
+    pointB.attr('cx',originX + b).attr('cy',originY);
+    pointC.attr('cx',originX).attr('cy',originY - a);
+  }else{
+    const [xP,yP] = svgToMath(pointA.attr('cx'),pointA.attr('cy'));
+    const [xQ,yQ] = svgToMath(pointB.attr('cx'),pointB.attr('cy'));
+    xp=xP; yp=yP; xq=xQ; yq=yQ;
+    a=Math.hypot(xp,yp);
+    b=Math.hypot(xq,yq);
+    c=Math.hypot(xp-xq,yp-yq);
+  }
+  // Snap to triple if enabled
+  let isTriple=false;
+  if(snapEnabled){
+    const nearest=triples.reduce((best,t)=>{
+      const diff=Math.abs(a-t.a)+Math.abs(b-t.b)+Math.abs(c-t.c);
+      return diff<best.diff?{t,diff}:best;
+    },{diff:Infinity});
+    if(nearest.diff<0.01){ // tolerance
+      a=nearest.t.a; b=nearest.t.b; c=nearest.t.c;
+      isTriple=true;
+      if(mode==='drag'){
+        pointB.attr('cx',originX + b);
+        pointC.attr('cy',originY - a);
+      }else{
+        const dirP=[xp,yp]; const lenP=Math.hypot(...dirP)||0.01;
+        const dirQ=[xq,yq]; const lenQ=Math.hypot(...dirQ)||0.01;
+        pointA.attr('cx',originX+dirP[0]/lenP*a).attr('cy',originY-dirP[1]/lenP*a);
+        pointB.attr('cx',originX+dirQ[0]/lenQ*b).attr('cy',originY-dirQ[1]/lenQ*b);
+      }
+    }
+  }
+
+  // Update triangle lines
+  triangleGroup.selectAll('*').remove();
+  const points=[];
+  if(mode==='drag'){
+    points.push([originX,originY]); // A
+    points.push([originX + b, originY]); // B
+    points.push([originX, originY - a]); // C
+  }else{
+    points.push([originX,originY]); // O
+    points.push([originX + xp, originY - yp]); // P
+    points.push([originX + xq, originY - yq]); // Q
+  }
+  triangleGroup.append('polyline')
+    .attr('points',points.map(p=>p.join(',')).join(' '))
+    .attr('fill','none').attr('stroke','#fff').attr('stroke-width',2);
+
+  // Update squares with transitions
+  if(mode==='drag'){
+    const [x1,y1]=mathToSvg(-a,0); const [x2,y2]=mathToSvg(0,a);
+    squareA.transition().duration(300).ease(d3.easeCubicInOut)
+      .attr('points',[`${x1},${y1}`, `${x2},${y1}`, `${x2},${y2}`, `${x1},${y2}`].join(' '));
+    const [x3,y3]=mathToSvg(0,-b); const [x4,y4]=mathToSvg(b,0);
+    squareB.transition().duration(300).ease(d3.easeCubicInOut)
+      .attr('points',[`${x3},${y3}`, `${x4},${y3}`, `${x4},${y4}`, `${x3},${y4}`].join(' '));
+    const u=[-b/c,a/c];
+    const v=[-u[1],u[0]];
+    const P1=mathToSvg(b,0);
+    const P2=mathToSvg(0,a);
+    const P3=mathToSvg(-a,a-b);
+    const P4=mathToSvg(b-a,-b);
+    squareC.transition().duration(300).ease(d3.easeCubicInOut)
+      .attr('points',[P1,P2,P3,P4].map(p=>p.join(',')).join(' '));
+  }else{
+    function squareFromPoints(v1,v2){
+      const len=Math.hypot(v2[0]-v1[0],v2[1]-v1[1]);
+      const u=[(v2[0]-v1[0])/len,(v2[1]-v1[1])/len];
+      const v=[-u[1],u[0]];
+      const p3=[v2[0]+v[0]*len,v2[1]+v[1]*len];
+      const p4=[v1[0]+v[0]*len,v1[1]+v[1]*len];
+      return [mathToSvg(...v1), mathToSvg(...v2), mathToSvg(...p3), mathToSvg(...p4)];
+    }
+    squareA.transition().duration(300).ease(d3.easeCubicInOut)
+      .attr('points',squareFromPoints([0,0],[xp,yp]).map(p=>p.join(',')).join(' '));
+    squareB.transition().duration(300).ease(d3.easeCubicInOut)
+      .attr('points',squareFromPoints([0,0],[xq,yq]).map(p=>p.join(',')).join(' '));
+    squareC.transition().duration(300).ease(d3.easeCubicInOut)
+      .attr('points',squareFromPoints([xp,yp],[xq,yq]).map(p=>p.join(',')).join(' '));
+  }
+
+  // Update area labels
+  function centerOfPolygon(points){
+    const sum=points.reduce((acc,p)=>[acc[0]+p[0],acc[1]+p[1]],[0,0]);
+    return [sum[0]/4,sum[1]/4];
+  }
+  if(mode==='drag'){
+    const ptsA=[mathToSvg(-a,0),mathToSvg(0,a)];
+    const ptsB=[mathToSvg(0,-b),mathToSvg(b,0)];
+    const ptsC=[mathToSvg(b,0),mathToSvg(0,a),mathToSvg(-a,a-b),mathToSvg(b-a,-b)];
+    const [cxA,cyA]=centerOfPolygon([ptsA[0],ptsA[1]]);
+    const [cxB,cyB]=centerOfPolygon([ptsB[0],ptsB[1]]);
+    const [cxC,cyC]=centerOfPolygon(ptsC);
+    labelA.attr('transform',`translate(${cxA-25},${cyA-10})`);
+    labelB.attr('transform',`translate(${cxB-25},${cyB-10})`);
+    labelC.attr('transform',`translate(${cxC-25},${cyC-10})`);
+    katex.render(`${a.toFixed(2)}^2`,labelA.node().querySelector('div'),{throwOnError:false});
+    katex.render(`${b.toFixed(2)}^2`,labelB.node().querySelector('div'),{throwOnError:false});
+    katex.render(`${c.toFixed(2)}^2`,labelC.node().querySelector('div'),{throwOnError:false});
+  }else{
+    const ptsA=[mathToSvg(0,0),mathToSvg(xp,yp)];
+    const ptsB=[mathToSvg(0,0),mathToSvg(xq,yq)];
+    const ptsC=[mathToSvg(xp,yp),mathToSvg(xq,yq)];
+    const [cxA,cyA]=centerOfPolygon([ptsA[0],ptsA[1]]);
+    const [cxB,cyB]=centerOfPolygon([ptsB[0],ptsB[1]]);
+    const [cxC,cyC]=centerOfPolygon(ptsC);
+    labelA.attr('transform',`translate(${cxA-25},${cyA-10})`);
+    labelB.attr('transform',`translate(${cxB-25},${cyB-10})`);
+    labelC.attr('transform',`translate(${cxC-25},${cyC-10})`);
+    katex.render(`${a.toFixed(2)}^2`,labelA.node().querySelector('div'),{throwOnError:false});
+    katex.render(`${b.toFixed(2)}^2`,labelB.node().querySelector('div'),{throwOnError:false});
+    katex.render(`${c.toFixed(2)}^2`,labelC.node().querySelector('div'),{throwOnError:false});
+  }
+
+  // Update equation
+  const leftVal=a*a+b*b;
+  const rightVal=c*c;
+  const eqStr=`${a.toFixed(2)}^{2} + ${b.toFixed(2)}^{2} = ${(c*c).toFixed(2)}`;
+  const eqDiv=document.getElementById('equation');
+  katex.render(eqStr,eqDiv,{throwOnError:false});
+  const accent1=getComputedStyle(document.documentElement).getPropertyValue('--accent1').trim();
+  const secondaryText=getComputedStyle(document.documentElement).getPropertyValue('--secondary-text').trim();
+  if(Math.abs(leftVal-rightVal)/rightVal<0.0001){
+    eqDiv.style.color=accent1;
+  }else{
+    eqDiv.style.color=secondaryText;
+  }
+
+  // Snap to triple animation
+  squaresGroup.classed('glow',isTriple);
+  if(isTriple){
+    triangleGroup.classed('bounce',true);
+    setTimeout(()=>{triangleGroup.classed('bounce',false);},500);
+  }
+}
+
+function initDrag(){
+  const dragA=d3.drag()
+    .on('drag',function(event){
+      if(mode==='plot'){
+        const [x,y]=d3.pointer(event,svg.node());
+        pointA.attr('cx',x).attr('cy',y);
+        // adjust Q to maintain perpendicular
+        const [dx,dy]=svgToMath(x,y);
+        const len=Math.hypot(dx,dy)||0.01;
+        const dir=[dx/len,dy/len];
+        const perp=[-dir[1],dir[0]];
+        const newX=originX+perp[0]*b;
+        const newY=originY-perp[1]*b;
+        pointB.attr('cx',newX).attr('cy',newY);
+      }else if(mode==='drag'){
+        // move A horizontally only
+        let nx=Math.max(0,Math.min(event.x,500));
+        originX=nx;
+        pointA.attr('cx',originX);
+        pointB.attr('cx',originX + b);
+        pointC.attr('cx',originX);
+      }
+      update();
+    });
+  const dragB=d3.drag()
+    .on('drag',function(event){
+      if(mode==='plot'){
+        const [x,y]=d3.pointer(event,svg.node());
+        pointB.attr('cx',x).attr('cy',y);
+        // adjust A to maintain perpendicular
+        const [dx,dy]=svgToMath(x,y);
+        const len=Math.hypot(dx,dy)||0.01;
+        const dir=[dx/len,dy/len];
+        const perp=[-dir[1],dir[0]];
+        const newX=originX+perp[0]*a;
+        const newY=originY-perp[1]*a;
+        pointA.attr('cx',newX).attr('cy',newY);
+      }else if(mode==='drag'){
+        // move B horizontally only
+        let nx=Math.max(0,Math.min(event.x,500));
+        pointB.attr('cx',nx);
+      }
+      update();
+    });
+  const dragC=d3.drag()
+    .on('drag',function(event){
+      if(mode==='drag'){
+        let ny=Math.max(0,Math.min(event.y,500));
+        pointC.attr('cy',ny);
+      }
+      update();
+    });
+  pointA.call(dragA);
+  pointB.call(dragB);
+  pointC.call(dragC);
+}
+initDrag();
+update();
+
+// Mode toggle
+document.querySelectorAll('input[name="mode"]').forEach(r=>{
+  r.addEventListener('change',e=>{
+    mode=e.target.value;
+    if(mode==='drag'){
+      originX=ORIGIN_X;
+      pointA.attr('cx',originX).attr('cy',originY);
+      pointB.attr('cx',originX + b).attr('cy',originY);
+      pointC.attr('cx',originX).attr('cy',originY - a);
+    }else{
+      pointA.attr('cx',originX+xp).attr('cy',originY-yp);
+      pointB.attr('cx',originX+xq).attr('cy',originY-yq);
+      pointC.attr('display','none');
+    }
+    update();
+  });
+});
+document.getElementById('snapToggle').addEventListener('change',e=>{
+  snapEnabled=e.target.checked;
+  update();
+});
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  a=3;b=4;c=Math.hypot(3,4);
+  xp=3;yp=0;xq=0;yq=4;
+  originX=ORIGIN_X;
+  pointA.attr('cx',originX).attr('cy',originY);
+  pointB.attr('cx',originX + b).attr('cy',originY);
+  pointC.attr('cx',originX).attr('cy',originY - a);
+  document.getElementById('snapToggle').checked=false;
+  snapEnabled=false;
+  update();
+});
+document.getElementById('proofBtn').addEventListener('click',()=>{
+  const overlay=document.getElementById('proofOverlay');
+  overlay.classList.add('show');
+  // Build proof SVG
+  const psvg=d3.select('#proofSvg');
+  psvg.selectAll('*').remove();
+  const scale=1;
+  const bigSide=c*scale;
+  const smallA=a*scale, smallB=b*scale;
+  // Big square
+  psvg.append('rect')
+    .attr('x',0).attr('y',0)
+    .attr('width',bigSide).attr('height',bigSide)
+    .attr('fill','none').attr('stroke','#fff').attr('stroke-width',2);
+  // Small squares initial off-screen
+  const sqA=psvg.append('rect')
+    .attr('x',-smallA).attr('y',0)
+    .attr('width',smallA).attr('height',smallA)
+    .attr('fill','none').attr('stroke','#22d3ee').attr('stroke-width',2);
+  const sqB=psvg.append('rect')
+    .attr('x',bigSide).attr('y',-smallB)
+    .attr('width',smallB).attr('height',smallB)
+    .attr('fill','none').attr('stroke','#a78bfa').attr('stroke-width',2);
+  // Animate into place
+  sqA.transition().duration(800).ease(d3.easeCubicInOut)
+    .attr('x',0).attr('y',0);
+  sqB.transition().duration(800).ease(d3.easeCubicInOut)
+    .attr('x',bigSide-smallB).attr('y',0);
+});
+document.getElementById('closeProof').addEventListener('click',()=>{
+  document.getElementById('proofOverlay').classList.remove('show');
+});
+</script>
+</body>
+</html>

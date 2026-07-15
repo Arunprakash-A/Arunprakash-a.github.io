@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Derivative Explorer: Tangent, Secant, and Limit</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-body: #F8F9FA;
+            --bg-panel: #FFFFFF;
+            --bg-panel-hover: #F1F3F5;
+            --border: #DEE2E6;
+            --text-main: #2C3E50;
+            --text-muted: #6C757D;
+            
+            --accent-primary: #3498DB; /* Blue - Function */
+            --accent-secondary: #E74C3C; /* Red - Secant */
+            --accent-tertiary: #8E44AD; /* Purple - Derivative */
+            --accent-success: #27AE60; /* Green - Tangent */
+            --accent-warning: #F39C12; /* Orange - Error */
+            
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            flex: 1;
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Main Viewport (Left 70%) */
+        .main-viewport {
+            flex: 7; /* 70% */
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            background: #FFFFFF;
+            min-width: 0;
+        }
+
+        /* Sidebar (Right 30%) */
+        .sidebar {
+            flex: 3; /* 30% */
+            background: var(--bg-panel);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+            border-left: 1px solid var(--border);
+            z-index: 10;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.02);
+            min-width: 300px;
+        }
+
+        /* Typography & UI Elements */
+        h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; color: var(--text-main); }
+        h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; font-weight: 600; }
+        
+        .control-group { display: flex; flex-direction: column; gap: 16px; }
+
+        button {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        button:hover { background: var(--bg-panel-hover); border-color: var(--accent-primary); color: var(--accent-primary); }
+
+        .select-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        select {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 6px;
+            width: 100%;
+            font-family: var(--font-sans);
+            outline: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%232C3E50%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px top 50%;
+            background-size: 10px auto;
+        }
+        select:focus { border-color: var(--accent-primary); }
+
+        /* Sliders */
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+            transition: transform 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        /* Toggle Switches */
+        .toggle-row { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 8px 0;
+        }
+        .toggle-label {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+        .custom-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            appearance: none;
+            background: var(--border);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+            outline: none;
+        }
+        .custom-toggle:checked { background: var(--accent-primary); }
+        .custom-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .custom-toggle:checked::after { transform: translateX(20px); }
+
+        /* Data Display */
+        .data-card {
+            background: var(--bg-body);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            /* FIX 3: Typography - Use JetBrains Mono for data values */
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+        .data-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .data-row:last-child { margin-bottom: 0; }
+        .val { font-weight: 700; }
+        .val.primary { color: var(--accent-primary); }
+        .val.secondary { color: var(--accent-secondary); }
+        .val.success { color: var(--accent-success); }
+
+        /* Canvas Area */
+        .canvas-wrapper {
+            flex: 1;
+            position: relative;
+            background: #FFFFFF;
+            overflow: hidden;
+            cursor: crosshair;
+            border-bottom: 1px solid var(--border);
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* Math Overlay */
+        .math-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(4px);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            pointer-events: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .app-container { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; max-height: 40vh; border-left: none; border-top: 1px solid var(--border); }
+            .main-viewport { flex: 1; min-height: 50vh; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- Math & Logic Helpers ---
+
+        // Analytical Derivatives
+        const derivatives = {
+            'x2': (x) => 2 * x,
+            'sin': (x) => Math.cos(x),
+            'cubic': (x) => 3 * Math.pow(x, 2) - 3
+        };
+
+        // --- Components ---
+
+        const MathDisplay = ({ latex }) => {
+            const elRef = useRef(null);
+            useEffect(() => {
+                if (elRef.current && window.renderMathInElement) {
+                    window.renderMathInElement(elRef.current, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ]
+                    });
+                }
+            }, [latex]);
+            return <div ref={elRef} className="katex-display" style={{margin: 0}}>${latex}$</div>;
+        };
+
+        const GraphCanvas = ({ 
+            func, 
+            derivative, 
+            x, 
+            h, 
+            showTangent, 
+            showSecant, 
+            showDerivGraph,
+            onDrag,
+            isSecondary = false
+        }) => {
+            const canvasRef = useRef(null);
+            const containerRef = useRef(null);
+            
+            // Viewport settings
+            const xMin = -6;
+            const xMax = 6;
+            
+            // FIX 4: Dynamic Y-Axis for derivative graph
+            const yMin = isSecondary ? -4 : -6;
+            const yMax = isSecondary ? 4 : 6;
+
+            // Coordinate conversion
+            const toScreenX = (val, width) => ((val - xMin) / (xMax - xMin)) * width;
+            const toScreenY = (val, height) => height - ((val - yMin) / (yMax - yMin)) * height;
+            const toMathX = (screenX, width) => (screenX / width) * (xMax - xMin) + xMin;
+            const toMathY = (screenY, height) => ((height - screenY) / height) * (yMax - yMin) + yMin;
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                const container = containerRef.current;
+                if (!canvas || !container) return;
+
+                const ctx = canvas.getContext('2d');
+                let animationFrameId;
+
+                const render = () => {
+                    const width = container.clientWidth;
+                    const height = container.clientHeight;
+                    
+                    // Handle High DPI
+                    const dpr = window.devicePixelRatio || 1;
+                    if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+                        canvas.width = width * dpr;
+                        canvas.height = height * dpr;
+                        ctx.scale(dpr, dpr);
+                    }
+
+                    // Clear
+                    ctx.clearRect(0, 0, width, height);
+
+                    // Grid & Axes
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    // Vertical grid lines
+                    for(let i = Math.ceil(xMin); i <= Math.floor(xMax); i++) {
+                        const sx = toScreenX(i, width);
+                        ctx.moveTo(sx, 0); ctx.lineTo(sx, height);
+                    }
+                    // Horizontal grid lines
+                    for(let i = Math.ceil(yMin); i <= Math.floor(yMax); i++) {
+                        const sy = toScreenY(i, height);
+                        ctx.moveTo(0, sy); ctx.lineTo(width, sy);
+                    }
+                    ctx.stroke();
+
+                    // Axes
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    // X Axis
+                    const y0 = toScreenY(0, height);
+                    ctx.moveTo(0, y0); ctx.lineTo(width, y0);
+                    // Y Axis
+                    const x0 = toScreenX(0, width);
+                    ctx.moveTo(x0, 0); ctx.lineTo(x0, height);
+                    ctx.stroke();
+
+                    // Helper to draw curve
+                    const drawCurve = (fn, color, width = 2, dash = []) => {
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = width;
+                        ctx.setLineDash(dash);
+                        ctx.beginPath();
+                        let first = true;
+                        for (let px = 0; px <= width; px += 2) {
+                            const mx = toMathX(px, width);
+                            const my = fn(mx);
+                            if (my < yMin - 5 || my > yMax + 5) {
+                                first = true;
+                                continue;
+                            }
+                            const sx = px;
+                            const sy = toScreenY(my, height);
+                            if (first) { ctx.moveTo(sx, sy); first = false; }
+                            else { ctx.lineTo(sx, sy); }
+                        }
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    };
+
+                    // 1. Derivative Graph (Secondary)
+                    if (showDerivGraph) {
+                        // FIX 2: Ensure showDerivGraph is respected
+                        // Progressive Stroke Animation
+                        const currentScreenX = toScreenX(x, width);
+                        
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(0, 0, currentScreenX, height);
+                        ctx.clip();
+                        
+                        drawCurve(derivative, '#8E44AD', 3);
+                        
+                        ctx.restore();
+                    }
+
+                    // 2. Primary Function
+                    drawCurve(func, '#3498DB', 3);
+
+                    // 3. Secant Line (if h > 0)
+                    if (showSecant && Math.abs(h) > 0.001) {
+                        const x1 = x;
+                        const y1 = func(x);
+                        const x2 = x + h;
+                        const y2 = func(x + h);
+                        
+                        // Extend line for visual effect
+                        const slope = (y2 - y1) / (x2 - x1);
+                        const len = 10; // Math units
+                        const startX = x1 - len;
+                        const startY = y1 - slope * len;
+                        const endX = x1 + len;
+                        const endY = y1 + slope * len;
+
+                        ctx.strokeStyle = '#E74C3C'; // Red
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.moveTo(toScreenX(startX, width), toScreenY(startY, height));
+                        ctx.lineTo(toScreenX(endX, width), toScreenY(endY, height));
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+
+                        // Point Q
+                        ctx.fillStyle = '#E74C3C';
+                        ctx.beginPath();
+                        ctx.arc(toScreenX(x2, width), toScreenY(y2, height), 6, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#fff';
+                        ctx.font = '12px Inter';
+                        ctx.fillText(`Q(${x2.toFixed(2)}, ${y2.toFixed(2)})`, toScreenX(x2, width) + 10, toScreenY(y2, height) - 10);
+                    }
+
+                    // 4. Tangent Line
+                    if (showTangent) {
+                        const y1 = func(x);
+                        const slope = derivative(x);
+                        const len = 10;
+                        const startX = x - len;
+                        const startY = y1 - slope * len;
+                        const endX = x + len;
+                        const endY = y1 + slope * len;
+
+                        ctx.strokeStyle = '#27AE60'; // Green
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(toScreenX(startX, width), toScreenY(startY, height));
+                        ctx.lineTo(toScreenX(endX, width), toScreenY(endY, height));
+                        ctx.stroke();
+                    }
+
+                    // 5. Point P (Always visible)
+                    const px = toScreenX(x, width);
+                    const py = toScreenY(func(x), height);
+                    
+                    // Glow
+                    const gradient = ctx.createRadialGradient(px, py, 0, px, py, 20);
+                    gradient.addColorStop(0, 'rgba(52, 152, 219, 0.8)');
+                    gradient.addColorStop(1, 'rgba(52, 152, 219, 0)');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 20, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Dot
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(px, py, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Label
+                    ctx.fillStyle = '#2C3E50';
+                    ctx.font = 'bold 12px Inter';
+                    ctx.fillText(`P(${x.toFixed(2)}, ${func(x).toFixed(2)})`, px + 15, py - 15);
+
+                    animationFrameId = requestAnimationFrame(render);
+                };
+
+                render();
+                return () => cancelAnimationFrame(animationFrameId);
+            }, [func, derivative, x, h, showTangent, showSecant, showDerivGraph]);
+
+            // Interaction Handler
+            const handleInteraction = (e) => {
+                const rect = canvasRef.current.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const mouseX = clientX - rect.left;
+                const width = rect.width;
+                
+                // Map mouse X to Math X
+                let newX = toMathX(mouseX, width);
+                
+                // Clamp
+                newX = Math.max(xMin, Math.min(xMax, newX));
+                
+                // Snap to integers if close
+                const snapDist = 0.1;
+                const nearestInt = Math.round(newX);
+                if (Math.abs(newX - nearestInt) < snapDist) newX = nearestInt;
+
+                onDrag(newX);
+            };
+
+            const handleMouseDown = (e) => handleInteraction(e);
+            const handleMouseMove = (e) => {
+                if (e.buttons === 1 || (e.touches && e.touches.length > 0)) {
+                    handleInteraction(e);
+                }
+            };
+
+            return (
+                <div ref={containerRef} className="canvas-wrapper" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onTouchStart={handleMouseDown} onTouchMove={handleMouseMove}>
+                    <canvas ref={canvasRef} />
+                </div>
+            );
+        };
+
+        const App = () => {
+            // State
+            const [funcName, setFuncName] = useState('x2');
+            const [x, setX] = useState(1.5);
+            const [h, setH] = useState(1.0);
+            const [showTangent, setShowTangent] = useState(true);
+            const [showSecant, setShowSecant] = useState(true);
+            const [showDerivGraph, setShowDerivGraph] = useState(true);
+
+            // Derived Functions
+            const func = useMemo(() => {
+                switch(funcName) {
+                    case 'x2': return (x) => x * x;
+                    case 'sin': return (x) => Math.sin(x);
+                    case 'cubic': return (x) => x*x*x - 3*x;
+                    default: return (x) => x * x;
+                }
+            }, [funcName]);
+
+            const deriv = useMemo(() => {
+                return derivatives[funcName];
+            }, [funcName]);
+
+            // Calculations
+            const f_x = func(x);
+            const f_prime_x = deriv(x);
+            
+            // FIX 1: Handle h=0 in difference quotient
+            const slope_secant = (h === 0) ? f_prime_x : (func(x + h) - func(x)) / h;
+            const error = Math.abs(slope_secant - f_prime_x);
+
+            // Handlers
+            const handleXChange = (newX) => setX(newX);
+            const handleHChange = (e) => setH(parseFloat(e.target.value));
+            const handleReset = () => {
+                setFuncName('x2');
+                setX(1.5);
+                setH(1.0);
+            };
+
+            // Math Strings for Display
+            const funcLatex = funcName === 'x2' ? 'f(x) = x^2' : funcName === 'sin' ? 'f(x) = \\sin(x)' : 'f(x) = x^3 - 3x';
+            const derivLatex = funcName === 'x2' ? "f'(x) = 2x" : funcName === 'sin' ? "f'(x) = \\cos(x)" : "f'(x) = 3x^2 - 3";
+            const limitLatex = "f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}";
+
+            return (
+                <div className="app-container">
+                    {/* Main Viewport */}
+                    <div className="main-viewport">
+                        <div className="math-overlay">
+                            <div style={{fontSize: '0.9rem', color: '#6C757D', marginBottom: '4px'}}>Limit Definition</div>
+                            <MathDisplay latex={limitLatex} />
+                        </div>
+                        
+                        {/* Primary Graph */}
+                        <GraphCanvas 
+                            func={func} 
+                            derivative={deriv} 
+                            x={x} 
+                            h={h} 
+                            showTangent={showTangent}
+                            showSecant={showSecant}
+                            showDerivGraph={showDerivGraph}
+                            onDrag={handleXChange}
+                        />
+
+                        {/* Secondary Derivative Graph Panel */}
+                        <div style={{flex: 1, minHeight: '200px', position: 'relative'}}>
+                            <div style={{position: 'absolute', top: 10, left: 10, zIndex: 5, background: 'rgba(255,255,255,0.8)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', color: '#8E44AD'}}>
+                                f'(x) Trace
+                            </div>
+                            <GraphCanvas 
+                                func={func} 
+                                derivative={deriv} 
+                                x={x} 
+                                h={h} 
+                                showTangent={false}
+                                showSecant={false}
+                                showDerivGraph={true}
+                                onDrag={handleXChange}
+                                isSecondary={true}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Sidebar Controls */}
+                    <div className="sidebar">
+                        <div>
+                            <h1>Derivative Explorer</h1>
+                            <p style={{color: '#6C757D', fontSize: '0.9rem'}}>Visualize the slope of the tangent line as the secant interval approaches zero.</p>
+                        </div>
+
+                        <div className="control-group">
+                            <h2>Function</h2>
+                            <div className="select-wrapper">
+                                <label htmlFor="func-select" style={{fontSize: '0.85rem', fontWeight: 500}}>Function Selector</label>
+                                <select id="func-select" value={funcName} onChange={(e) => setFuncName(e.target.value)}>
+                                    <option value="x2">Quadratic (x²)</option>
+                                    <option value="sin">Sine (sin x)</option>
+                                    <option value="cubic">Cubic (x³ - 3x)</option>
+                                </select>
+                            </div>
+                            <div style={{textAlign: 'center', marginTop: '8px'}}>
+                                <MathDisplay latex={funcLatex} />
+                            </div>
+                        </div>
+
+                        <div className="control-group">
+                            <h2>Visualization</h2>
+                            <div className="toggle-row">
+                                <label className="toggle-label" htmlFor="toggle-tangent">Tangent Line</label>
+                                <input 
+                                    id="toggle-tangent"
+                                    type="checkbox" 
+                                    className="custom-toggle" 
+                                    checked={showTangent} 
+                                    onChange={() => setShowTangent(!showTangent)} 
+                                />
+                            </div>
+                            <div className="toggle-row">
+                                <label className="toggle-label" htmlFor="toggle-secant">Secant Line</label>
+                                <input 
+                                    id="toggle-secant"
+                                    type="checkbox" 
+                                    className="custom-toggle" 
+                                    checked={showSecant} 
+                                    onChange={() => setShowSecant(!showSecant)} 
+                                />
+                            </div>
+                            <div className="toggle-row">
+                                <label className="toggle-label" htmlFor="toggle-deriv">Derivative Graph</label>
+                                <input 
+                                    id="toggle-deriv"
+                                    type="checkbox" 
+                                    className="custom-toggle" 
+                                    checked={showDerivGraph} 
+                                    onChange={() => setShowDerivGraph(!showDerivGraph)} 
+                                />
+                            </div>
+                        </div>
+
+                        <div className="control-group">
+                            <h2>Parameters</h2>
+                            
+                            <div className="slider-group">
+                                <div className="slider-label">
+                                    <span>Point x</span>
+                                    <span style={{fontFamily:'var(--font-mono)', color:'var(--accent-primary)'}}>{x.toFixed(3)}</span>
+                                </div>
+                                <input type="range" min={-5} max={5} step={0.01} value={x} onChange={(e) => setX(parseFloat(e.target.value))} />
+                            </div>
+
+                            <div className="slider-group" style={{marginTop:'16px'}}>
+                                <div className="slider-label">
+                                    <span>Interval h (Δx)</span>
+                                    {/* FIX 1: Display N/A if h is 0 */}
+                                    <span style={{fontFamily:'var(--font-mono)', color:'var(--accent-secondary)'}}>{h === 0 ? 'N/A' : h.toFixed(3)}</span>
+                                </div>
+                                {/* FIX 1: Change min to 0.01 */}
+                                <input 
+                                    type="range" 
+                                    min={0.01} 
+                                    max={2.0} 
+                                    step={0.01} 
+                                    value={h} 
+                                    onChange={handleHChange} 
+                                />
+                                <div style={{fontSize:'0.75rem', color:'#6C757D', marginTop:'4px', textAlign:'right'}}>Drag slider to approach limit</div>
+                            </div>
+                        </div>
+
+                        <div className="control-group">
+                            <h2>Analysis</h2>
+                            <div className="data-card">
+                                <div className="data-row">
+                                    <span style={{color:'#6C757D'}}>f(x)</span>
+                                    <span className="val primary">{f_x.toFixed(4)}</span>
+                                </div>
+                                <div className="data-row">
+                                    <span style={{color:'#6C757D'}}>f'(x) (Exact)</span>
+                                    <span className="val success">{f_prime_x.toFixed(4)}</span>
+                                </div>
+                                <div className="data-row">
+                                    <span style={{color:'#6C757D'}}>Diff. Quotient</span>
+                                    {/* FIX 1: Display N/A if h is 0 */}
+                                    <span className="val secondary">{h === 0 ? 'N/A' : slope_secant.toFixed(4)}</span>
+                                </div>
+                                <div className="data-row" style={{marginTop:'8px', paddingTop:'8px', borderTop:'1px solid var(--border)'}}>
+                                    <span style={{color:'#6C757D'}}>Error</span>
+                                    <span style={{color: error < 0.01 ? '#27AE60' : '#F39C12'}}>{error.toExponential(2)}</span>
+                                </div>
+                            </div>
+                            <div style={{marginTop:'8px'}}>
+                                <MathDisplay latex={derivLatex} />
+                            </div>
+                        </div>
+
+                        <button onClick={handleReset} style={{marginTop:'auto', width:'100%', background:'var(--bg-panel)', border:'1px solid var(--border)'}}>
+                            Reset View
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

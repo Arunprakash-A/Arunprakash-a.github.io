@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loss Function Explorer</title>
+    
+    <!-- KaTeX for Math Formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-dark: #020617;
+            --bg-panel: rgba(15, 23, 42, 0.7);
+            --border-color: rgba(148, 163, 184, 0.15);
+            
+            --accent-cyan: #38bdf8;
+            --accent-pink: #f472b6;
+            --accent-violet: #a78bfa;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            
+            /* Typography */
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+            /* Layout */
+            --radius-lg: 16px;
+            --radius-md: 8px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background: radial-gradient(ellipse at top right, #1e293b 0%, #0f172a 60%, #020617 100%);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- Layout Container --- */
+        #app {
+            width: 100%;
+            max-width: 1400px;
+            height: 95vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        /* --- Header & Toggle --- */
+        header {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .title-group h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .title-group p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* Pill Toggle */
+        .mode-toggle {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border-color);
+            padding: 4px;
+            border-radius: 999px;
+            display: flex;
+            position: relative;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 2;
+            transition: color 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            color: var(--bg-dark);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: calc(50% - 4px);
+            height: calc(100% - 8px);
+            background: var(--accent-cyan);
+            border-radius: 999px;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- Main Stage --- */
+        .stage {
+            flex: 1;
+            display: grid;
+            position: relative;
+            padding: 0 2rem 2rem 2rem;
+            gap: 1.5rem;
+        }
+
+        /* Regression Layout (Default) */
+        .stage.regression {
+            grid-template-columns: 320px 1fr;
+            grid-template-rows: 1fr;
+        }
+
+        /* Classification Layout */
+        .stage.classification {
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr auto;
+            align-items: center;
+        }
+
+        /* --- Glass Panel (Controls) --- */
+        .glass-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .control-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus { outline: none; }
+
+        /* Track */
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: rgba(51, 65, 85, 0.5);
+            border-radius: 3px;
+        }
+
+        /* Thumb */
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px; /* center on track */
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            transition: transform 0.1s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* --- Canvas Stage --- */
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: rgba(2, 6, 23, 0.4);
+            border: 1px solid var(--border-color);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* --- Classification Specifics --- */
+        .classification-controls {
+            grid-column: 1 / -1;
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem 3rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .ce-readout {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            color: var(--accent-pink);
+            min-width: 140px;
+            text-align: right;
+        }
+
+        /* --- MSE Gauge (Regression) --- */
+        .mse-gauge {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .mse-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        .mse-value { 
+            font-family: var(--font-mono); 
+            font-size: 1.5rem; 
+            font-weight: 600; 
+            color: hsl(200, 80%, 70%); /* Default Cyan-ish */
+            transition: color 0.4s ease-out;
+        }
+
+        /* --- Formula Display (KaTeX) --- */
+        .formula-container {
+            position: absolute;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(2, 6, 23, 0.8);
+            padding: 0.5rem 1.5rem;
+            border-radius: 99px;
+            border: 1px solid var(--border-color);
+            pointer-events: none;
+        }
+
+        /* --- Responsive Stacking --- */
+        @media (max-width: 900px) {
+            .stage.regression { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+            .glass-panel { width: 100%; flex-direction: row; flex-wrap: wrap; gap: 1rem; padding: 1rem; }
+            .control-group { flex: 1; min-width: 200px; }
+            .mse-gauge { bottom: 1rem; right: 1rem; padding: 0.75rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <header>
+        <div class="title-group">
+            <h1>Loss Function Explorer</h1>
+            <p>Visualizing MSE & Cross-Entropy</p>
+        </div>
+        
+        <!-- FIX #4: Added explicit ID to the toggle container for robust selection -->
+        <div class="mode-toggle" id="modeToggle">
+            <div class="toggle-slider"></div>
+            <button class="toggle-btn active" data-mode="regression">Regression (MSE)</button>
+            <button class="toggle-btn" data-mode="classification">Classification (CE)</button>
+        </div>
+    </header>
+
+    <div class="stage regression" id="stage">
+        
+        <!-- Left Panel: Controls -->
+        <aside class="glass-panel">
+            
+            <!-- Regression Controls -->
+            <div id="regression-controls">
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Slope (m)</span>
+                        <span id="slope-val" style="color: var(--accent-cyan); font-family: var(--font-mono)">1.0</span>
+                    </div>
+                    <input type="range" id="slope-slider" min="-5" max="5" step="0.1" value="1">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Intercept (b)</span>
+                        <span id="intercept-val" style="color: var(--accent-cyan); font-family: var(--font-mono)">0.0</span>
+                    </div>
+                    <input type="range" id="intercept-slider" min="-10" max="10" step="0.1" value="2">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Display</label>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <!-- FIX #3: Added ID to checkbox for reliable selection -->
+                        <input type="checkbox" id="show-squares" checked style="accent-color: var(--accent-cyan); width: 16px; height: 16px;">
+                        <span style="font-size: 0.9rem; color: var(--text-secondary)">Show Residual Squares</span>
+                    </div>
+                </div>
+
+                <!-- FIX #2: Reset button wired to logic -->
+                <button id="reset-btn" style="margin-top: 1rem; padding: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-secondary); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;">
+                    Reset Defaults
+                </button>
+            </div>
+
+            <!-- Classification Controls (Hidden by default) -->
+            <div id="classification-controls" style="display: none;">
+                <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">
+                    Adjust the predicted probability <strong>p</strong> to see how Cross-Entropy loss changes.
+                </p>
+            </div>
+
+        </aside>
+
+        <!-- Main Canvas Stage -->
+        <main class="canvas-container">
+            
+            <!-- Regression Mode Canvas -->
+            <canvas id="regression-canvas"></canvas>
+            
+            <!-- Classification Mode SVG (Hidden by default) -->
+            <svg id="classification-svg" style="display: none; width: 100%; height: 100%;" viewBox="0 0 800 500" preserveAspectRatio="none">
+                <!-- Grid & Axes -->
+                <defs>
+                    <linearGradient id="curveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#f472b6; stop-opacity: 1" />
+                        <stop offset="100%" style="stop-color:#a78bfa; stop-opacity: 1" />
+                    </linearGradient>
+                </defs>
+                
+                <!-- Axes -->
+                <line x1="50" y1="450" x2="750" y2="450" stroke="#334155" stroke-width="2" />
+                <line x1="50" y1="450" x2="50" y2="50" stroke="#334155" stroke-width="2" />
+                
+                <!-- Axis Labels -->
+                <text x="760" y="470" fill="#94a3b8" font-family="Inter">p (Predicted Prob)</text>
+                <text x="20" y="40" fill="#94a3b8" font-family="Inter" transform="rotate(-90, 20, 40)">Loss -log(p)</text>
+
+                <!-- The Curve: y = -ln(x) for x in [0.01, 1] -->
+                <path id="ce-curve-path" fill="none" stroke="url(#curveGrad)" stroke-width="3" />
+
+                <!-- Interactive Elements Group -->
+                <g id="interactive-group">
+                    <!-- Drop lines -->
+                    <line x1="0" y1="0" x2="0" y2="450" stroke="#f472b6" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6" id="drop-line"/>
+                    <line x1="50" y1="0" x2="0" y2="0" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6" id="horiz-line"/>
+                    
+                    <!-- The Dot -->
+                    <circle cx="0" cy="0" r="8" fill="#fff" stroke="#f472b6" stroke-width="3" />
+                </g>
+
+                <!-- Text Readouts inside SVG -->
+                <text id="svg-p-label" x="0" y="0" fill="#94a3b8" font-family="JetBrains Mono" font-size="12">p=</text>
+                <text id="svg-loss-label" x="0" y="0" fill="#f472b6" font-family="JetBrains Mono" font-size="12">-log(p)=</text>
+            </svg>
+
+            <!-- FIX #2: Added ID 'mse-gauge' to the MSE gauge container -->
+            <div class="mse-gauge" id="mse-gauge">
+                <div style="display: flex; flex-direction: column;">
+                    <span class="mse-label">Mean Squared Error</span>
+                    <!-- FIX #4: Initial value set for clarity -->
+                    <span class="mse-value" id="mse-display">0.00</span>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Classification Slider (Bottom) -->
+        <div class="classification-controls" id="ce-slider-container">
+            <div style="flex: 1;">
+                <input type="range" id="prob-slider" min="0.01" max="0.99" step="0.01" value="0.5">
+            </div>
+            <div class="ce-readout">
+                Loss: <span id="ce-display">0.693</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+/**
+ * APP STATE & CONFIGURATION
+ */
+const state = {
+    mode: 'regression', // 'regression' | 'classification'
+    
+    regression: {
+        slope: 1.0,
+        intercept: 2.0,
+        showSquares: true,
+        dataPoints: [
+            {x: 1, y: 3}, {x: 2, y: 5}, {x: 3, y: 4}, 
+            {x: 4, y: 7}, {x: 5, y: 6.5}, {x: 6, y: 9}
+        ]
+    },
+
+    classification: {
+        p: 0.5
+    }
+};
+
+/**
+ * DOM ELEMENTS
+ */
+const dom = {
+    app: document.getElementById('app'),
+    stage: document.getElementById('stage'),
+    modeToggle: document.getElementById('modeToggle'),
+    
+    // Regression
+    regCanvas: document.getElementById('regression-canvas'),
+    slopeSlider: document.getElementById('slope-slider'),
+    interceptSlider: document.getElementById('intercept-slider'),
+    slopeVal: document.getElementById('slope-val'),
+    interceptVal: document.getElementById('intercept-val'),
+    showSquaresCheck: document.getElementById('show-squares'), // FIX #3: ID used here
+    
+    mseGauge: document.getElementById('mse-gauge'), // FIX #2: Now defined correctly
+    mseDisplay: document.getElementById('mse-display'),
+    
+    // Classification
+    ceSvg: document.getElementById('classification-svg'),
+    probSlider: document.getElementById('prob-slider'),
+    ceDisplay: document.getElementById('ce-display'),
+    ceSliderContainer: document.getElementById('ce-slider-container'),
+
+    // SVG Interactive Elements
+    svgCurvePath: document.getElementById('ce-curve-path'),
+    interactiveGroup: document.getElementById('interactive-group'),
+    dropLine: document.getElementById('drop-line'),
+    horizLine: document.getElementById('horiz-line'),
+    svgPLabel: document.getElementById('svg-p-label'),
+    svgLossLabel: document.getElementById('svg-loss-label')
+};
+
+/**
+ * INITIALIZATION & EVENT LISTENERS
+ */
+function init() {
+    setupModeToggle();
+    setupRegressionControls();
+    setupClassificationControls();
+    
+    // Initial Render
+    renderCurvePath();
+    resizeCanvas();
+    requestAnimationFrame(animate);
+}
+
+// --- Mode Toggle Logic (FIX #4) ---
+function setupModeToggle() {
+    const btns = dom.modeToggle.querySelectorAll('.toggle-btn');
+    const slider = document.querySelector('.toggle-slider');
+    
+    // Use event delegation on the container for robustness
+    dom.modeToggle.addEventListener('click', (e) => {
+        const btn = e.target.closest('.toggle-btn');
+        if (!btn) return;
+
+        const mode = btn.dataset.mode;
+        
+        state.mode = mode;
+        
+        // Update UI classes
+        btns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Move slider pill
+        if (mode === 'classification') {
+            slider.style.transform = 'translateX(100%)';
+        } else {
+            slider.style.transform = 'translateX(0)';
+        }
+
+        // Update Layout & Visibility
+        dom.stage.className = `stage ${mode}`;
+        
+        if (mode === 'regression') {
+            dom.regCanvas.style.display = 'block';
+            dom.ceSvg.style.display = 'none';
+            dom.mseGauge.style.opacity = 1;
+            dom.ceSliderContainer.style.display = 'none';
+            document.getElementById('regression-controls').style.display = 'flex';
+        } else {
+            dom.regCanvas.style.display = 'none';
+            dom.ceSvg.style.display = 'block';
+            dom.mseGauge.style.opacity = 0;
+            dom.ceSliderContainer.style.display = 'flex';
+            document.getElementById('regression-controls').style.display = 'none';
+        }
+
+        // Re-render immediately to avoid flicker
+        renderCurvePath();
+    });
+}
+
+// --- Regression Controls (FIX #3) ---
+function setupRegressionControls() {
+    dom.slopeSlider.addEventListener('input', (e) => {
+        state.regression.slope = parseFloat(e.target.value);
+        dom.slopeVal.textContent = state.regression.slope.toFixed(1);
+    });
+
+    dom.interceptSlider.addEventListener('input', (e) => {
+        state.regression.intercept = parseFloat(e.target.value);
+        dom.interceptVal.textContent = state.regression.intercept.toFixed(1);
+    });
+
+    dom.showSquaresCheck.addEventListener('change', (e) => {
+        state.regression.showSquares = e.target.checked;
+        // FIX #3: Force re-render on change event
+        requestAnimationFrame(renderRegression); 
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+        // Reset State
+        state.regression.slope = 1.0;
+        state.regression.intercept = 2.0;
+        
+        // Update UI Controls
+        dom.slopeSlider.value = 1.0;
+        dom.interceptSlider.value = 2.0;
+        dom.slopeVal.textContent = "1.0";
+        dom.interceptVal.textContent = "2.0";
+
+        // FIX #5: Reset Show Squares checkbox to default (checked)
+        state.regression.showSquares = true;
+        dom.showSquaresCheck.checked = true;
+
+        // FIX #2: Switch back to regression mode if currently in classification
+        if (state.mode !== 'regression') {
+            const regBtn = document.querySelector('.toggle-btn[data-mode="regression"]');
+            regBtn.click();
+        }
+
+        // FIX #2: Explicitly trigger re-render so user sees the reset effect immediately
+        requestAnimationFrame(renderRegression);
+    });
+}
+
+// --- Classification Controls ---
+function setupClassificationControls() {
+    dom.probSlider.addEventListener('input', (e) => {
+        state.classification.p = parseFloat(e.target.value);
+        updateClassificationVisuals();
+    });
+}
+
+/**
+ * CANVAS RENDERING (REGRESSION MODE)
+ */
+const canvasCtx = () => dom.regCanvas.getContext('2d');
+
+function resizeCanvas() {
+    const container = dom.regCanvas.parentElement;
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Only resize if visible to save performance
+    if (state.mode === 'regression') {
+        dom.regCanvas.width = container.clientWidth * dpr;
+        dom.regCanvas.height = container.clientHeight * dpr;
+        
+        const ctx = canvasCtx();
+        ctx.scale(dpr, dpr);
+    } else {
+        // For SVG mode, we just need the viewBox set (already done in HTML)
+        // but let's ensure the container has size
+        dom.ceSvg.style.width = '100%';
+        dom.ceSvg.style.height = '100%';
+    }
+}
+
+function renderRegression() {
+    const w = dom.regCanvas.clientWidth;
+    const h = dom.regCanvas.clientHeight;
+    const ctx = canvasCtx();
+    
+    // Clear Canvas completely (FIX #5: Ensures no residual squares remain)
+    ctx.clearRect(0, 0, w, h);
+
+    // --- Coordinate System Setup ---
+    // Data range: x [0, 7], y [0, 12] roughly. 
+    // Let's map data coords to pixel coords with padding.
+    const pad = { top: 40, right: 40, bottom: 40, left: 50 };
+    const plotW = w - pad.left - pad.right;
+    const plotH = h - pad.top - pad.bottom;
+
+    // Data bounds (fixed for stability)
+    const xMin = 0, xMax = 7;
+    const yMin = 0, yMax = 12;
+
+    const toPixelX = (x) => pad.left + (x / xMax) * plotW;
+    const toPixelY = (y) => pad.top + plotH - (y / yMax) * plotH; // Invert Y for canvas
+
+    // --- Draw Grid & Axes ---
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)';
+    ctx.lineWidth = 1;
+    ctx.font = "12px Inter";
+    ctx.fillStyle = "#94a3b8";
+    ctx.textAlign = "center";
+
+    // Vertical grid lines (x axis)
+    for(let i=0; i<=7; i++) {
+        const x = toPixelX(i);
+        ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, h - pad.bottom); ctx.stroke();
+        if (i > 0) ctx.fillText(i.toString(), x, h - pad.bottom + 20);
+    }
+
+    // Horizontal grid lines (y axis)
+    ctx.textAlign = "right";
+    for(let i=0; i<=12; i+=2) {
+        const y = toPixelY(i);
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+        if (i > 0) ctx.fillText(i.toString(), pad.left - 10, y + 4);
+    }
+
+    // --- Draw Data Points & Calculate MSE ---
+    const points = state.regression.dataPoints;
+    
+    let mseSum = 0;
+    const residuals = [];
+
+    ctx.fillStyle = '#a78bfa'; // Violet accent
+    points.forEach(p => {
+        const px = toPixelX(p.x);
+        const py = toPixelY(p.y);
+        
+        // Draw Point
+        ctx.beginPath();
+        ctx.arc(px, py, 6, 0, Math.PI * 2);
+        ctx.fill();
+        // Glow
+        ctx.shadowColor = '#a78bfa';
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Calculate Prediction: y_hat = mx + b
+        const yHat = state.regression.slope * p.x + state.regression.intercept;
+        
+        // FIX #1: Use raw prediction for MSE calculation, not clamped value.
+        residuals.push({
+            x: p.x, 
+            y: p.y, 
+            yHat: yHat, // Raw value used for math
+            residual: p.y - yHat // Raw residual used for math
+        });
+    });
+
+    // --- Draw Residual Squares & Lines (FIX #5) ---
+    if (state.regression.showSquares) {
+        residuals.forEach(r => {
+            const px = toPixelX(r.x);
+            const pyActual = toPixelY(r.y);
+            
+            // Clamp YHat for VISUALIZATION only (to keep line on screen)
+            const clampedYHat = Math.max(yMin, Math.min(yMax, r.yHat));
+            const pyHat = toPixelY(clampedYHat);
+
+            // Vertical line connecting point to line
+            ctx.beginPath();
+            ctx.moveTo(px, pyActual);
+            ctx.lineTo(px, pyHat);
+            ctx.strokeStyle = 'rgba(244, 114, 182, 0.5)'; // Pink semi-transparent
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // FIX #2: Calculate side length in data units (literal representation)
+            const residualDataUnits = Math.abs(r.residual);
+            
+            // Draw Square (Area proportional to error squared)
+            // We use a visual scaling factor so squares aren't huge or tiny
+            const scale = 15; 
+            const side = residualDataUnits * scale;
+
+            ctx.fillStyle = 'rgba(244, 114, 182, 0.3)'; // Pink fill
+            ctx.strokeStyle = '#f472b6'; // Pink border
+            ctx.lineWidth = 1.5;
+
+            const squareX = px - side / 2;
+            const squareY = pyHat - side / 2; // Centered on the line intersection
+            
+            // Draw Square centered at intersection for visual balance
+            ctx.beginPath();
+            ctx.rect(squareX, squareY, side, side);
+            ctx.fill();
+            ctx.stroke();
+
+            mseSum += r.residual * r.residual;
+        });
+    }
+
+    // --- Draw Model Line ---
+    const m = state.regression.slope;
+    const b = state.regression.intercept;
+    
+    // Find two points far apart to draw the line across the canvas
+    const x1 = 0, y1 = m * x1 + b;
+    const x2 = xMax, y2 = m * x2 + b;
+
+    ctx.beginPath();
+    ctx.moveTo(toPixelX(x1), toPixelY(y1));
+    ctx.lineTo(toPixelX(x2), toPixelY(y2));
+    
+    // Gradient Line
+    const grad = ctx.createLinearGradient(pad.left, 0, w - pad.right, 0);
+    grad.addColorStop(0, '#38bdf8');
+    grad.addColorStop(1, '#a78bfa');
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // --- Update MSE Display (FIX #4: Smooth HSL interpolation) ---
+    const mse = mseSum / points.length;
+    
+    // FIX #1: Direct assignment logic - removed smoothing block
+    dom.mseDisplay.textContent = mse.toFixed(2);
+
+    // FIX #5: Continuous HSL interpolation based on MSE magnitude
+    // Low MSE (<1) -> Cyan/Blue (Hue ~200)
+    // High MSE (>10) -> Pink/Red (Hue ~340)
+    const hue = Math.max(0, 200 - (mse * 15)); 
+    dom.mseDisplay.style.color = `hsl(${hue}, 80%, 70%)`;
+}
+
+/**
+ * CLASSIFICATION VISUALS (SVG)
+ */
+function renderCurvePath() {
+    // y = -ln(x). 
+    // We map x in [0.01, 1] to SVG width [50, 750].
+    // We map y in [0, ~4.6] to SVG height [450, 50].
+    
+    const steps = 50;
+    let pathD = "";
+    
+    for (let i = 0; i <= steps; i++) {
+        const x = 0.01 + (i / steps) * (1 - 0.01); // 0.01 to 1
+        const y = -Math.log(x);
+        
+        // Normalize coordinates
+        const svgX = 50 + ((x - 0.01) / (1 - 0.01)) * 700;
+        // Scale Y: max log(0.01) ≈ 4.6. Map 0..4.6 to 450..50
+        const svgY = 450 - ((y / 5) * 400); 
+        
+        if (i === 0) pathD += `M ${svgX} ${svgY}`;
+        else pathD += ` L ${svgX} ${svgY}`;
+    }
+    
+    dom.svgCurvePath.setAttribute('d', pathD);
+}
+
+function updateClassificationVisuals() {
+    const p = state.classification.p;
+    const loss = -Math.log(p);
+    
+    // Update Text Readouts (FIX #3: Ensures text updates)
+    dom.ceDisplay.textContent = loss.toFixed(4);
+    
+    // Map to SVG coordinates
+    // X: 0.01 -> 50, 0.99 -> 750
+    const svgX = 50 + ((p - 0.01) / (1 - 0.01)) * 700;
+    
+    // Y: Loss range [0, ~4.6]. Map to 450 (bottom) -> 50 (top). 
+    const clampedLoss = Math.min(loss, 4.8); 
+    const svgY = 450 - ((clampedLoss / 5) * 400);
+
+    // Update Interactive Group Position
+    dom.interactiveGroup.setAttribute('transform', `translate(${svgX}, ${svgY})`);
+    
+    // Drop Line (Vertical to x-axis)
+    dom.dropLine.setAttribute('x1', svgX);
+    dom.dropLine.setAttribute('y1', svgY);
+    dom.dropLine.setAttribute('x2', svgX);
+    dom.dropLine.setAttribute('y2', 450);
+
+    // Horizontal Line (to y-axis)
+    dom.horizLine.setAttribute('x1', 50);
+    dom.horizLine.setAttribute('y1', svgY);
+    dom.horizLine.setAttribute('x2', svgX);
+    dom.horizLine.setAttribute('y2', svgY);
+
+    // Labels positioning
+    dom.svgPLabel.textContent = `p=${p.toFixed(2)}`;
+    dom.svgPLabel.setAttribute('x', svgX + 10);
+    dom.svgPLabel.setAttribute('y', 450 - 10);
+
+    dom.svgLossLabel.textContent = `-log(p)=${loss.toFixed(3)}`;
+    dom.svgLossLabel.setAttribute('x', 20);
+    dom.svgLossLabel.setAttribute('y', svgY - 10);
+}
+
+/**
+ * ANIMATION LOOP
+ */
+function animate() {
+    if (state.mode === 'regression') {
+        renderRegression();
+    } else {
+        // In classification mode, we mostly rely on event listeners for updates,
+        // but we can add subtle animations here later.
+    }
+    
+    requestAnimationFrame(animate);
+}
+
+// Handle Window Resize
+window.addEventListener('resize', () => {
+    resizeCanvas();
+});
+
+// Start
+init();
+
+</script>
+</body>
+</html>

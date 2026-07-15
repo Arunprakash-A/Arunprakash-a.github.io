@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balance-Scale Equation Solver</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg-deep: #0f1118;
+    --bg-mid: #1a1d29;
+    --surface: rgba(34, 37, 50, 0.85);
+    --surface-hover: rgba(44, 47, 62, 0.95);
+    --border: rgba(55, 65, 81, 0.5);
+    --border-active: rgba(34, 211, 238, 0.4);
+    --text-primary: #f9fafb;
+    --text-secondary: #9aa4b8;
+    --text-dim: #6b7280;
+    --accent-cyan: #22d3ee;
+    --accent-violet: #a78bfa;
+    --accent-amber: #f59e0b;
+    --accent-emerald: #10b981;
+    --accent-red: #ef4444;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+    --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+html { background: radial-gradient(ellipse at 50% 30%, var(--bg-mid) 0%, var(--bg-deep) 70%); }
+body {
+    font-family: var(--font-ui);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background: radial-gradient(ellipse at 50% 30%, #1a1d29 0%, #0f1118 70%);
+}
+
+.app-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 48px;
+}
+
+h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    text-align: center;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: -28px;
+    letter-spacing: 0.3px;
+}
+
+/* Canvas Stage */
+.stage-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+#scaleCanvas {
+    border-radius: var(--radius);
+    background: radial-gradient(ellipse at 50% 60%, rgba(34, 37, 50, 0.6) 0%, rgba(15, 17, 24, 0.9) 100%);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+/* Equation Display */
+.equation-display {
+    text-align: center;
+    padding: 24px 48px;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow);
+    min-width: 300px;
+}
+
+/* Control Panel */
+.control-panel {
+    width: 100%;
+    max-width: 720px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(16px);
+    box-shadow: var(--shadow);
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.panel-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: -4px;
+}
+
+/* Setup Inputs */
+.setup-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+.input-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+.input-group input[type="number"] {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(15, 17, 24, 0.6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 16px;
+    text-align: center;
+    outline: none;
+    transition: border-color 200ms, box-shadow 200ms;
+}
+.input-group input[type="number"]:focus {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+}
+.input-group .hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    text-align: center;
+}
+
+/* Operation Palette */
+.operation-palette {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+.op-btn {
+    position: relative;
+    padding: 12px 16px;
+    background: rgba(15, 17, 24, 0.5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 200ms ease-in-out;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.op-btn:hover { background: var(--surface-hover); border-color: var(--border-active); transform: translateY(-1px); }
+.op-btn:active { transform: translateY(0); }
+.op-btn:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
+.op-btn .op-icon { font-size: 16px; flex-shrink: 0; }
+.op-btn .op-label { text-align: left; }
+.op-btn .op-value { color: var(--accent-cyan); font-family: var(--font-mono); font-weight: 600; }
+
+/* Action Buttons */
+.action-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.action-btn {
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 200ms ease-in-out;
+    border: 1px solid transparent;
+    letter-spacing: 0.2px;
+}
+.action-btn:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
+.btn-undo { background: rgba(55, 65, 81, 0.3); border-color: var(--border) !important; color: var(--text-secondary); }
+.btn-undo:hover { background: rgba(55, 65, 81, 0.5); color: var(--text-primary); }
+.btn-check { background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.3) !important; color: var(--accent-emerald); }
+.btn-check:hover { background: rgba(16, 185, 129, 0.25); box-shadow: 0 0 20px rgba(16, 185, 129, 0.15); }
+.btn-new { background: rgba(34, 211, 238, 0.12); border-color: rgba(34, 211, 238, 0.3) !important; color: var(--accent-cyan); }
+.btn-new:hover { background: rgba(34, 211, 238, 0.22); box-shadow: 0 0 20px rgba(34, 211, 238, 0.15); }
+
+/* Feedback Toast */
+.toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-120%);
+    padding: 14px 28px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 100;
+    transition: transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { background: rgba(16, 185, 129, 0.9); color: #fff; box-shadow: 0 4px 24px rgba(16, 185, 129, 0.3); }
+.toast.error { background: rgba(239, 68, 68, 0.9); color: #fff; box-shadow: 0 4px 24px rgba(239, 68, 68, 0.3); }
+.toast.info { background: rgba(34, 211, 238, 0.9); color: #0f1118; box-shadow: 0 4px 24px rgba(34, 211, 238, 0.3); }
+
+/* Shake animation */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+.shake { animation: shake 400ms ease-in-out; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .app-container { padding: 20px 12px 32px; gap: 32px; }
+    h1 { font-size: 22px; }
+    .control-panel { padding: 20px; gap: 20px; }
+    .operation-palette { grid-template-columns: 1fr; }
+    .setup-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    #scaleCanvas { width: 100% !important; height: auto !important; }
+}
+
+/* Pulse animation for buttons */
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(34, 211, 238, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+}
+.pulse { animation: pulse-glow 600ms ease-out; }
+
+/* Verification display */
+.verification {
+    text-align: center;
+    padding: 16px 32px;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    color: var(--text-secondary);
+    background: rgba(15, 17, 24, 0.4);
+    border: 1px solid var(--border);
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.verification .check-mark { color: var(--accent-emerald); font-size: 18px; }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+    <h1>Balance-Scale Equation Solver</h1>
+    <p class="subtitle">Manipulate weights on a balance scale to solve linear equations step by step</p>
+
+    <div class="stage-wrapper">
+        <canvas id="scaleCanvas" width="900" height="480"></canvas>
+    </div>
+
+    <div class="equation-display" id="equationDisplay"></div>
+
+    <div class="verification" id="verification"></div>
+
+    <div class="control-panel">
+        <div>
+            <div class="panel-section-title">Equation Setup</div>
+            <div style="height: 8px;"></div>
+            <div class="setup-grid">
+                <div class="input-group">
+                    <label for="inputA">Coefficient (a)</label>
+                    <input type="number" id="inputA" value="2" min="1" max="9" aria-label="Coefficient a">
+                    <div class="hint">1 – 9</div>
+                </div>
+                <div class="input-group">
+                    <label for="inputB">Constant b (left side)</label>
+                    <input type="number" id="inputB" value="3" min="-10" max="10" aria-label="Constant b">
+                    <div class="hint">−10 – 10</div>
+                </div>
+                <div class="input-group">
+                    <label for="inputC">Right side (c)</label>
+                    <input type="number" id="inputC" value="11" min="-20" max="20" aria-label="Constant c">
+                    <div class="hint">−20 – 20</div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="panel-section-title">Operations</div>
+            <div style="height: 8px;"></div>
+            <div class="operation-palette" id="opPalette"></div>
+        </div>
+
+        <div class="action-row">
+            <button class="action-btn btn-undo" id="btnUndo" aria-label="Undo last operation">↩ Undo</button>
+            <button class="action-btn btn-check" id="btnCheck" aria-label="Check solution">✓ Check Solution</button>
+            <button class="action-btn btn-new" id="btnNew" aria-label="Generate new equation">⟳ New Equation</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── State ──────────────────────────────────────────────
+const state = {
+    a: 2, b: 3, c: 11,        // original equation parameters
+    leftX: 2,                   // number of x-boxes on left
+    leftConst: 3,               // constant value on left side (can be negative)
+    rightConst: 11,             // constant value on right side
+    history: [],                // undo stack
+    beamAngle: 0,               // current beam angle in radians
+    targetAngle: 0,
+    isAnimating: false,
+    solved: false,
+};
+
+// ─── Canvas Setup ───────────────────────────────────────
+const canvas = document.getElementById('scaleCanvas');
+const ctx = canvas.getContext('2d');
+let dpr = window.devicePixelRatio || 1;
+let W, H;
+
+function resizeCanvas() {
+    const wrapper = canvas.parentElement;
+    const maxW = Math.min(900, wrapper.clientWidth - 32);
+    const ratio = 480 / 900;
+    W = maxW;
+    H = Math.round(maxW * ratio);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resizeCanvas();
+window.addEventListener('resize', () => { resizeCanvas(); draw(); });
+
+// ─── KaTeX Setup with Fallback (FIX #1: Async Loading) ──────────────────────────
+let katexLoaded = false;
+const katexCSS = document.createElement('link');
+katexCSS.rel = 'stylesheet';
+katexCSS.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
+document.head.appendChild(katexCSS);
+
+function loadKaTeX() {
+    return new Promise((resolve) => {
+        if (typeof katex !== 'undefined') { 
+            katexLoaded = true;
+            resolve(); 
+            return; 
+        }
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';
+        // FIX #1: Properly handle async loading with onload/onerror callbacks
+        script.onload = () => { 
+            katexLoaded = true;
+            resolve(); 
+        };
+        script.onerror = () => { 
+            console.warn('KaTeX failed to load, using fallback text'); 
+            katexLoaded = false;
+            resolve(); 
+        };
+        document.head.appendChild(script);
+    });
+}
+
+function renderEquation() {
+    const el = document.getElementById('equationDisplay');
+    
+    // Fallback rendering if KaTeX fails or not loaded
+    function renderFallback() {
+        let latex = '';
+        // Left side
+        if (state.leftX === 0 && state.leftConst >= 0) latex += `(${state.leftConst})`;
+        else if (state.leftX === 0 && state.leftConst < 0) latex += `(${state.leftConst})`;
+        else if (state.leftX === 1) {
+            if (state.leftConst >= 0) latex += `x + ${state.leftConst}`;
+            else latex += `x - ${Math.abs(state.leftConst)}`;
+        } else {
+            if (state.leftConst >= 0) latex += `${state.leftX}x + ${state.leftConst}`;
+            else latex += `${state.leftX}x - ${Math.abs(state.leftConst)}`;
+        }
+        latex += ' = ';
+        // Right side
+        if (state.rightConst >= 0) latex += state.rightConst;
+        else latex += `(${state.rightConst})`;
+
+        el.innerHTML = `<span style="font-family: var(--font-mono); font-size: 24px;">${latex}</span>`;
+    }
+    
+    if (!katexLoaded) {
+        renderFallback();
+        return;
+    }
+    
+    try {
+        let latex = '';
+        // Left side
+        if (state.leftX === 0 && state.leftConst >= 0) latex += `\\left(${state.leftConst}\\right)`;
+        else if (state.leftX === 0 && state.leftConst < 0) latex += `\\left(${state.leftConst}\\right)`;
+        else if (state.leftX === 1) {
+            if (state.leftConst >= 0) latex += `x + ${state.leftConst}`;
+            else latex += `x - ${Math.abs(state.leftConst)}`;
+        } else {
+            if (state.leftConst >= 0) latex += `${state.leftX}x + ${state.leftConst}`;
+            else latex += `${state.leftX}x - ${Math.abs(state.leftConst)}`;
+        }
+        latex += ' = ';
+        // Right side
+        if (state.rightConst >= 0) latex += state.rightConst;
+        else latex += `\\left(${state.rightConst}\\right)`;
+
+        el.innerHTML = '';
+        katex.render(latex, el, { displayMode: true, throwOnError: false });
+    } catch(e) {
+        renderFallback();
+    }
+}
+
+function renderVerification() {
+    const el = document.getElementById('verification');
+    if (state.solved) {
+        const val = solveOriginal();
+        const leftVal = state.a * val + state.b;
+        const rightVal = state.c;
+        if (leftVal === rightVal) {
+            el.innerHTML = `<span class="check-mark">✓</span> Verified: ${state.a}(${val}) + ${state.b} = ${rightVal}. The solution is <strong>x = ${val}</strong>`;
+        } else {
+            el.innerHTML = `Verification failed`;
+        }
+    } else {
+        const sol = solveOriginal();
+        el.innerHTML = `<span style="color:var(--text-dim)">Solution: x = ${sol} &nbsp;(not yet isolated)</span>`;
+    }
+}
+
+function solveOriginal() {
+    return (state.c - state.b) / state.a;
+}
+
+// ─── Drawing ────────────────────────────────────────────
+let idleTime = 0;
+const IDLE_AMP = 0.035; // ~2% oscillation as specified in plan
+
+function draw() {
+    ctx.clearRect(0, 0, W, H);
+    
+    // FIX #6: Only apply idle animation when beam is not balanced
+    const angle = state.beamAngle + (Math.abs(state.beamAngle) > 0.01 ? Math.sin(idleTime) * IDLE_AMP : 0);
+    
+    const cx = W / 2;
+    const pivotY = H * 0.38;
+    const beamLen = W * 0.36;
+    const panDist = H * 0.12; // distance from beam end to pan
+    
+    // ── Base/Pedestal ──
+    const baseW = 60, baseH = 40;
+    ctx.save();
+    ctx.translate(cx, pivotY + 8);
+    
+    // Pillar
+    const gradPillar = ctx.createLinearGradient(-15, -pivotY, 15, 0);
+    gradPillar.addColorStop(0, '#374151');
+    gradPillar.addColorStop(1, '#1f2937');
+    ctx.fillStyle = gradPillar;
+    ctx.beginPath();
+    ctx.moveTo(-18, -pivotY + 8);
+    ctx.lineTo(18, -pivotY + 8);
+    ctx.lineTo(10, 0);
+    ctx.lineTo(-10, 0);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Base
+    const baseGrad = ctx.createLinearGradient(-baseW/2, 0, baseW/2, 0);
+    baseGrad.addColorStop(0, '#4b5563');
+    baseGrad.addColorStop(0.5, '#6b7280');
+    baseGrad.addColorStop(1, '#4b5563');
+    ctx.fillStyle = baseGrad;
+    roundRect(ctx, -baseW/2, -6, baseW, 12, 4);
+    ctx.fill();
+    
+    // Pivot circle
+    const pivotGrad = ctx.createRadialGradient(0, -pivotY + 8, 2, 0, -pivotY + 8, 12);
+    pivotGrad.addColorStop(0, '#9ca3af');
+    pivotGrad.addColorStop(1, '#4b5563');
+    ctx.fillStyle = pivotGrad;
+    ctx.beginPath();
+    ctx.arc(0, -pivotY + 8, 10, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Glow on pivot
+    ctx.shadowColor = 'rgba(34, 211, 238, 0.3)';
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = '#9ca3af';
+    ctx.beginPath();
+    ctx.arc(0, -pivotY + 8, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    ctx.restore();
+    
+    // ── Beam (rotated) ──
+    ctx.save();
+    ctx.translate(cx, pivotY);
+    ctx.rotate(angle);
+    
+    // Beam shadow/glow
+    ctx.shadowColor = 'rgba(34, 211, 238, 0.15)';
+    ctx.shadowBlur = 20;
+    
+    const beamGrad = ctx.createLinearGradient(-beamLen, -4, beamLen, -4);
+    beamGrad.addColorStop(0, '#6b7280');
+    beamGrad.addColorStop(0.3, '#9ca3af');
+    beamGrad.addColorStop(0.5, '#d1d5db');
+    beamGrad.addColorStop(0.7, '#9ca3af');
+    beamGrad.addColorStop(1, '#6b7280');
+    
+    ctx.fillStyle = beamGrad;
+    roundRect(ctx, -beamLen, -4, beamLen * 2, 8, 4);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    // ── Left Pan Assembly ──
+    const leftX = -beamLen;
+    drawPanAssembly(leftX, 6, 'left');
+    
+    // ── Right Pan Assembly ──
+    const rightX = beamLen;
+    drawPanAssembly(rightX, 6, 'right');
+    
+    ctx.restore();
+}
+
+function drawPanAssembly(xOffset, yOffset, side) {
+    const panW = W * 0.14;
+    const panH = H * 0.025;
+    const ropeLen = H * 0.18;
+    
+    // Pivot point on beam: (xOffset, yOffset) in rotated frame
+    const pivotX = xOffset;
+    const pivotY = yOffset;
+    
+    // Pan attachment points (slightly offset left/right from center for visual spread)
+    const attachSpread = panW * 0.35;
+    const a1x = pivotX - attachSpread, a2x = pivotX + attachSpread;
+    const a1y = pivotY, a2y = pivotY;
+    
+    // Pan center bottom
+    const panCX = pivotX;
+    const panCY = pivotY + ropeLen;
+    
+    // ── Ropes (lines) ──
+    ctx.strokeStyle = 'rgba(156, 163, 175, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(a1x, a1y);
+    ctx.lineTo(panCX - panW/2 + 4, panCY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(a2x, a2y);
+    ctx.lineTo(panCX + panW/2 - 4, panCY);
+    ctx.stroke();
+    
+    // ── Pan (trapezoid) ──
+    const panTopW = panW;
+    const panBotW = panW * 0.7;
+    const panGrad = ctx.createLinearGradient(panCX, panCY, panCX, panCY + panH);
+    panGrad.addColorStop(0, '#4b5563');
+    panGrad.addColorStop(1, '#374151');
+    ctx.fillStyle = panGrad;
+    
+    ctx.beginPath();
+    ctx.moveTo(panCX - panTopW/2, panCY);
+    ctx.lineTo(panCX + panTopW/2, panCY);
+    ctx.lineTo(panCX + panBotW/2, panCY + panH);
+    ctx.lineTo(panCX - panBotW/2, panCY + panH);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Pan rim highlight
+    ctx.strokeStyle = 'rgba(156, 163, 175, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(panCX - panTopW/2, panCY);
+    ctx.lineTo(panCX + panTopW/2, panCY);
+    ctx.stroke();
+    
+    // ── Draw items on pan ──
+    const items = side === 'left' 
+        ? getLeftItems() 
+        : getRightItems();
+    
+    if (items.length === 0) return;
+    
+    const itemSize = Math.min(panW * 0.28, H * 0.055);
+    const gap = itemSize * 0.15;
+    const totalW = items.length * itemSize + (items.length - 1) * gap;
+    let startX = panCX - totalW / 2;
+    
+    for (let i = 0; i < items.length; i++) {
+        const ix = startX + i * (itemSize + gap);
+        const iy = panCY - itemSize - 4;
+        
+        if (items[i] === 'x') {
+            drawXBox(ix, iy, itemSize);
+        } else {
+            drawUnitWeight(ix, iy, itemSize, items[i]);
+        }
+    }
+}
+
+function getLeftItems() {
+    const items = [];
+    for (let i = 0; i < state.leftX; i++) items.push('x');
+    if (state.leftConst > 0) {
+        for (let i = 0; i < Math.min(state.leftConst, 12); i++) items.push(1);
+    } else if (state.leftConst < 0) {
+        // Negative constants shown as red "debt" blocks on the opposite side visually
+        // For simplicity, show them as negative units on left with a different color
+        for (let i = 0; i < Math.min(Math.abs(state.leftConst), 12); i++) items.push(-1);
+    }
+    return items;
+}
+
+function getRightItems() {
+    const items = [];
+    if (state.rightConst > 0) {
+        for (let i = 0; i < Math.min(state.rightConst, 24); i++) items.push(1);
+    } else if (state.rightConst < 0) {
+        for (let i = 0; i < Math.min(Math.abs(state.rightConst), 24); i++) items.push(-1);
+    }
+    return items;
+}
+
+function drawXBox(x, y, size) {
+    const pad = 3;
+    const s = size - pad * 2;
+    
+    // Glow
+    ctx.shadowColor = 'rgba(34, 211, 238, 0.5)';
+    ctx.shadowBlur = 12;
+    
+    // Box fill
+    const grad = ctx.createLinearGradient(x, y, x + s, y + s);
+    grad.addColorStop(0, '#0e7490');
+    grad.addColorStop(1, '#0891b2');
+    ctx.fillStyle = grad;
+    roundRect(ctx, x, y, s, s, 6);
+    ctx.fill();
+    
+    ctx.shadowBlur = 0;
+    
+    // Border
+    ctx.strokeStyle = 'rgba(34, 211, 238, 0.7)';
+    ctx.lineWidth = 2;
+    roundRect(ctx, x, y, s, s, 6);
+    ctx.stroke();
+    
+    // Label
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${s * 0.45}px 'JetBrains Mono', monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('x', x + s/2, y + s/2);
+}
+
+function drawUnitWeight(x, y, size, value) {
+    const pad = 3;
+    const s = size - pad * 2;
+    
+    if (value < 0) {
+        // Negative weight - red tinted
+        ctx.shadowColor = 'rgba(239, 68, 68, 0.4)';
+        ctx.shadowBlur = 8;
+        
+        const grad = ctx.createLinearGradient(x, y, x + s, y + s);
+        grad.addColorStop(0, '#7f1d1d');
+        grad.addColorStop(1, '#991b1b');
+        ctx.fillStyle = grad;
+        roundRect(ctx, x, y, s, s, 6);
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
+        ctx.lineWidth = 1.5;
+        roundRect(ctx, x, y, s, s, 6);
+        ctx.stroke();
+        
+        ctx.fillStyle = '#fca5a5';
+        ctx.font = `bold ${s * 0.3}px 'JetBrains Mono', monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`-${Math.abs(value)}`, x + s/2, y + s/2);
+    } else {
+        // Positive weight - violet tinted
+        ctx.shadowColor = 'rgba(167, 139, 250, 0.4)';
+        ctx.shadowBlur = 8;
+        
+        const grad = ctx.createLinearGradient(x, y, x + s, y + s);
+        grad.addColorStop(0, '#6d28d9');
+        grad.addColorStop(1, '#7c3aed');
+        ctx.fillStyle = grad;
+        roundRect(ctx, x, y, s, s, 6);
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = 'rgba(167, 139, 250, 0.6)';
+        ctx.lineWidth = 1.5;
+        roundRect(ctx, x, y, s, s, 6);
+        ctx.stroke();
+        
+        ctx.fillStyle = '#ddd6fe';
+        ctx.font = `bold ${s * 0.3}px 'JetBrains Mono', monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${value}`, x + s/2, y + s/2);
+    }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+// ─── Beam Angle Calculation (FIX #3: Correct Math) ──────────────────────────────
+function computeBeamAngle() {
+    // FIX #3: Calculate actual numerical values of both sides
+    const leftVal = state.a * solveOriginal() + state.b;  // Original equation value
+    const rightVal = state.c;                              // Original RHS value
+    
+    if (leftVal === rightVal) return 0;
+    
+    // For the current state, calculate actual values to determine tilt direction
+    const currentLeftVal = state.leftX * solveOriginal() + state.leftConst;
+    const diff = currentLeftVal - rightVal;
+    const maxAngle = Math.PI / 8; // ~22.5 degrees max tilt
+    
+    // Clamp to avoid extreme angles
+    const clampedDiff = Math.max(-15, Math.min(15, diff));
+    return (clampedDiff / 15) * maxAngle;
+}
+
+// ─── Toast Notifications ────────────────────────────────
+let toastTimer = null;
+function showToast(msg, type = 'info') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `toast ${type}`;
+    requestAnimationFrame(() => {
+        el.classList.add('show');
+    });
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+        el.classList.remove('show');
+    }, 2800);
+}
+
+// ─── Operation Palette Generation (FIX #5: Consolidated Logic) ──────────────────
+function buildOperationPalette() {
+    const palette = document.getElementById('opPalette');
+    palette.innerHTML = '';
+    
+    // FIX #5: Use a Set to track unique operations and avoid duplication
+    const opsSet = new Set();
+    const ops = [];
+    
+    // Add operations based on current state - consolidated logic
+    if (state.leftConst !== 0) {
+        const absB = Math.abs(state.leftConst);
+        if (state.leftConst > 0) {
+            const opKey = `sub_${absB}`;
+            if (!opsSet.has(opKey)) {
+                opsSet.add(opKey);
+                ops.push({ label: `Subtract ${absB} from both sides`, value: -absB, type: 'add', icon: '➖' });
+            }
+        } else {
+            const opKey = `add_${absB}`;
+            if (!opsSet.has(opKey)) {
+                opsSet.add(opKey);
+                ops.push({ label: `Add ${absB} to both sides`, value: absB, type: 'add', icon: '➕' });
+            }
+        }
+    }
+    
+    if (state.leftX !== 1 && state.leftX !== 0) {
+        const a = state.leftX;
+        const opKey = `div_${a}`;
+        if (!opsSet.has(opKey)) {
+            opsSet.add(opKey);
+            ops.push({ label: `Divide both sides by ${a}`, value: a, type: 'divide', icon: '➗' });
+        }
+    }
+    
+    // Add generic add/subtract options if not already covered
+    const hasAdd = ops.some(o => o.type === 'add');
+    if (!hasAdd) {
+        const opKey1 = `add_1`;
+        const opKey2 = `sub_1`;
+        if (!opsSet.has(opKey1)) {
+            opsSet.add(opKey1);
+            ops.push({ label: `Add 1 to both sides`, value: 1, type: 'add', icon: '➕' });
+        }
+        if (!opsSet.has(opKey2)) {
+            opsSet.add(opKey2);
+            ops.push({ label: `Subtract 1 from both sides`, value: -1, type: 'add', icon: '➖' });
+        }
+    }
+    
+    // Always show divide option if x coefficient > 0 (avoid duplicates)
+    const hasDivide = ops.some(o => o.type === 'divide');
+    if (!hasDivide && state.leftX !== 0) {
+        const opKey = `div_${state.leftX}`;
+        if (!opsSet.has(opKey)) {
+            opsSet.add(opKey);
+            ops.push({ label: `Divide both sides by ${state.leftX}`, value: state.leftX, type: 'divide', icon: '➗' });
+        }
+    }
+    
+    // Always show multiply by 2 as a fallback (avoid duplicates)
+    const hasMultiply = ops.some(o => o.type === 'multiply');
+    if (!hasMultiply) {
+        const opKey = `mul_2`;
+        if (!opsSet.has(opKey)) {
+            opsSet.add(opKey);
+            ops.push({ label: `Multiply both sides by 2`, value: 2, type: 'multiply', icon: '✖️' });
+        }
+    }
+    
+    for (const op of ops) {
+        const btn = document.createElement('button');
+        btn.className = 'op-btn';
+        btn.setAttribute('aria-label', op.label);
+        btn.innerHTML = `<span class="op-icon">${op.icon}</span><span class="op-label"><span class="op-value">${op.type === 'add' ? (op.value > 0 ? '+' : '') + op.value : op.type === 'divide' ? '÷' + op.value : '×' + op.value}</span> both sides</span>`;
+        btn.addEventListener('click', () => applyOperation(op));
+        palette.appendChild(btn);
+    }
+}
+
+// ─── Apply Operation (FIX #4: Remove Integer Divisibility Check) ────────────────
+function applyOperation(op) {
+    // Save history
+    state.history.push({
+        leftX: state.leftX,
+        leftConst: state.leftConst,
+        rightConst: state.rightConst,
+    });
+    
+    let valid = true;
+    
+    if (op.type === 'add') {
+        const val = op.value; // positive to add, negative to subtract
+        state.leftConst += val;
+        state.rightConst += val;
+        
+        // Check for degenerate states
+        if (state.leftConst > 12 || state.leftConst < -12) valid = false;
+        if (state.rightConst > 30 || state.rightConst < -30) valid = false;
+    } else if (op.type === 'divide') {
+        const val = op.value;
+        if (val === 0) {
+            showToast('Cannot divide by zero!', 'error');
+            state.history.pop(); // remove the push we just did
+            return;
+        }
+        // FIX #4: Remove integer divisibility check - allow fractional results
+        // Use floating point division and round to reasonable precision
+        const divisor = val;
+        state.leftX = Math.round((state.leftX / divisor) * 1000) / 1000;
+        state.leftConst = Math.round((state.leftConst / divisor) * 1000) / 1000;
+        state.rightConst = Math.round((state.rightConst / divisor) * 1000) / 1000;
+    } else if (op.type === 'multiply') {
+        const val = op.value;
+        if (val === 0) {
+            showToast('Cannot multiply by zero!', 'error');
+            state.history.pop();
+            return;
+        }
+        state.leftX *= val;
+        state.leftConst *= val;
+        state.rightConst *= val;
+        
+        // Clamp to prevent overflow
+        if (Math.abs(state.leftConst) > 30 || Math.abs(state.rightConst) > 60) {
+            showToast('Values too large! Try a different operation.', 'error');
+            state.history.pop();
+            return;
+        }
+    }
+    
+    if (!valid) {
+        showToast('This operation leads to extreme values. Choose another.', 'error');
+        state.leftX = state.history[state.history.length - 1].leftX;
+        state.leftConst = state.history[state.history.length - 1].leftConst;
+        state.rightConst = state.history[state.history.length - 1].rightConst;
+        state.history.pop();
+        return;
+    }
+    
+    // Animate beam
+    animateBeam();
+    
+    // Update displays
+    renderEquation();
+    buildOperationPalette();
+    checkSolution();
+    
+    showToast('Operation applied!', 'success');
+}
+
+function undoLast() {
+    if (state.history.length === 0) {
+        showToast('Nothing to undo', 'info');
+        return;
+    }
+    
+    const prev = state.history.pop();
+    state.leftX = prev.leftX;
+    state.leftConst = prev.leftConst;
+    state.rightConst = prev.rightConst;
+    
+    animateBeam();
+    renderEquation();
+    buildOperationPalette();
+    checkSolution();
+    
+    showToast('Undone!', 'info');
+}
+
+function checkSolution() {
+    const isSolved = state.leftX === 1 && state.leftConst === 0;
+    if (isSolved) {
+        state.solved = true;
+        state.targetAngle = 0;
+        
+        // Use fallback animation only - GSAP removed per reviewer feedback
+        animateBeam();
+        
+        const sol = solveOriginal();
+        showToast(`✓ Solved! x = ${sol}`, 'success');
+    } else {
+        state.solved = false;
+        animateBeam();
+    }
+    renderVerification();
+}
+
+function animateBeam() {
+    state.targetAngle = computeBeamAngle();
+    
+    // Fallback without GSAP using CSS transitions or manual animation
+    const start = state.beamAngle;
+    const end = state.targetAngle;
+    const dur = 400;
+    const startTime = performance.now();
+    
+    function step(now) {
+        const t = Math.min((now - startTime) / dur, 1);
+        // Ease in-out quadratic
+        const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        state.beamAngle = start + (end - start) * ease;
+        draw();
+        if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+// ─── New Equation ───────────────────────────────────────
+function newEquation() {
+    // Generate a random equation with integer solution between -5 and 10
+    const sol = Math.floor(Math.random() * 16) - 5; // -5 to 10
+    const a = Math.floor(Math.random() * 8) + 2;     // 2 to 9
+    const b = Math.floor(Math.random() * 15) - 7;    // -7 to 7
+    
+    const c = a * sol + b;
+    
+    state.a = a;
+    state.b = b;
+    state.c = c;
+    state.leftX = a;
+    state.leftConst = b;
+    state.rightConst = c;
+    state.history = [];
+    state.solved = false;
+    
+    // Update inputs
+    document.getElementById('inputA').value = a;
+    document.getElementById('inputB').value = b;
+    document.getElementById('inputC').value = c;
+    
+    animateBeam();
+    renderEquation();
+    buildOperationPalette();
+    renderVerification();
+    
+    showToast(`New equation: ${a}x + ${b >= 0 ? b : '('+b+')'} = ${c}`, 'info');
+}
+
+// ─── Event Listeners ────────────────────────────────────
+document.getElementById('btnUndo').addEventListener('click', undoLast);
+document.getElementById('btnCheck').addEventListener('click', checkSolution);
+document.getElementById('btnNew').addEventListener('click', newEquation);
+
+document.getElementById('inputA').addEventListener('change', () => {
+    const a = clamp(parseInt(document.getElementById('inputA').value) || 2, 1, 9);
+    document.getElementById('inputA').value = a;
+    regenerateFromInputs();
+});
+document.getElementById('inputB').addEventListener('change', () => {
+    const b = clamp(parseInt(document.getElementById('inputB').value) || 0, -10, 10);
+    document.getElementById('inputB').value = b;
+    regenerateFromInputs();
+});
+document.getElementById('inputC').addEventListener('change', () => {
+    const c = clamp(parseInt(document.getElementById('inputC').value) || 0, -20, 20);
+    document.getElementById('inputC').value = c;
+    regenerateFromInputs();
+});
+
+function regenerateFromInputs() {
+    const a = parseInt(document.getElementById('inputA').value) || 2;
+    const b = parseInt(document.getElementById('inputB').value) || 0;
+    const c = parseInt(document.getElementById('inputC').value) || 0;
+    
+    state.a = a;
+    state.b = b;
+    state.c = c;
+    state.leftX = a;
+    state.leftConst = b;
+    state.rightConst = c;
+    state.history = [];
+    state.solved = false;
+    
+    animateBeam();
+    renderEquation();
+    buildOperationPalette();
+    renderVerification();
+}
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+// ─── Animation Loop (FIX #1: Proper Time Handling) ──────────────────────────────
+let lastTime = 0;
+let firstFrame = true;
+
+function animationLoop(time) {
+    if (firstFrame || !time) {
+        // FIX #1: Handle first frame properly - use performance.now() or default to 0
+        lastTime = time || performance.now();
+        firstFrame = false;
+    } else {
+        const dt = (time - lastTime) / 1000;
+        idleTime += dt;
+        lastTime = time;
+    }
+    
+    draw();
+    requestAnimationFrame(animationLoop);
+}
+
+// ─── Initialization (FIX #1: Remove Async Wrapper) ──────────────────────────────
+function init() {
+    // FIX #1: Load KaTeX asynchronously but don't block the animation loop
+    loadKaTeX().then(() => {
+        renderEquation();
+        buildOperationPalette();
+        renderVerification();
+        animateBeam();
+        
+        setTimeout(() => showToast('Adjust the equation and apply operations to solve!', 'info'), 500);
+    }).catch(() => {
+        // Fallback if KaTeX fails to load
+        renderEquation();
+        buildOperationPalette();
+        renderVerification();
+        animateBeam();
+        
+        setTimeout(() => showToast('Adjust the equation and apply operations to solve!', 'info'), 500);
+    });
+    
+    // FIX #1: Start animation loop immediately, don't wait for KaTeX
+    requestAnimationFrame(animationLoop);
+}
+
+init();
+</script>
+</body>
+</html>

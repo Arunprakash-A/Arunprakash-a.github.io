@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Place Value Workbench | Regrouping Visualizer</title>
+    <!-- KaTeX for math notation -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <!-- GSAP for high-fidelity animations -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at center, #1a1f2e 0%, #0f121d 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(148, 163, 184, 0.2);
+            --accent-violet: #a78bfa;
+            --tens-cyan: #38bdf8;
+            --ones-amber: #fbbf24;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, monospace;
+        }
+
+        * { box-sizing: border-box; }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+            padding: 2rem;
+            gap: 2rem;
+        }
+
+        /* --- Column Arithmetic View --- */
+        .arithmetic-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 3rem 4rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            min-width: 300px;
+            position: relative;
+        }
+
+        .column-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            gap: 10px;
+            font-family: var(--font-mono);
+            font-size: 3rem;
+            text-align: right;
+            position: relative;
+        }
+
+        .digit {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            transition: color 0.3s ease;
+            font-family: var(--font-mono); /* FIX: Explicit mono font */
+            width: 60px; /* FIX: Fixed width for tabular alignment */
+        }
+
+        /* FIX: Dynamic carry positioning relative to the tens column cell */
+        .digit-cell {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .carry-digit {
+            position: absolute;
+            top: -30px;
+            right: 0;
+            font-size: 1.2rem; /* FIX: Requested size */
+            color: var(--accent-violet);
+            opacity: 0;
+            transform: translateY(5px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none;
+        }
+        .carry-digit.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .operator {
+            position: absolute;
+            left: -60px;
+            bottom: 80px;
+            font-size: 3rem;
+            font-family: var(--font-mono);
+        }
+
+        .line {
+            grid-column: 1 / span 3;
+            height: 4px;
+            background: var(--text-primary);
+            margin: 10px 0;
+            border-radius: 2px;
+        }
+
+        /* --- Visualization Canvas (SVG) --- */
+        .viz-stage {
+            position: relative;
+            width: 800px;
+            height: 450px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 32px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        #viz-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .zone-rect {
+            fill: transparent;
+            transition: fill 0.5s ease, stroke 0.5s ease;
+            stroke: transparent;
+            stroke-width: 2;
+        }
+        .zone-rect.active {
+            fill: rgba(167, 139, 250, 0.1);
+            stroke: var(--accent-violet);
+        }
+
+        .zone-label {
+            font-family: var(--font-main);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-size: 12px;
+            fill: var(--text-secondary);
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .divider-line {
+            stroke: var(--border-color);
+            stroke-width: 1;
+        }
+
+        /* --- Controls Panel --- */
+        .controls {
+            display: flex;
+            gap: 1.5rem;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 1.5rem 2.5rem;
+            border-radius: 24px;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        .stepper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stepper input {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            width: 60px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .step-btn {
+            background: #1e293b;
+            color: white;
+            border: 1px solid var(--border-color);
+            width: 30px;
+            height: 34px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .step-btn:hover { background: #334155; }
+
+        select {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 0.6rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-main);
+        }
+
+        button.action {
+            background: var(--accent-violet);
+            color: #000;
+            border: none;
+            padding: 0.7rem 1.2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-main);
+        }
+
+        button.action:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+            box-shadow: 0 4px 12px rgba(167, 139, 250, 0.4);
+        }
+
+        button.action:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        button.secondary {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 0.7rem 1.2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button.secondary:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .warning {
+            position: absolute;
+            top: -40px;
+            color: #ef4444;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            width: 100%;
+            text-align: center;
+        }
+
+        .warning.visible { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="arithmetic-stage">
+        <div id="warn" class="warning">Operand B cannot be larger than A in subtraction</div>
+        <div class="column-grid">
+            <!-- Tens Column -->
+            <div class="digit-cell">
+                <div id="carry" class="carry-digit">1</div>
+                <div id="a-tens" class="digit">2</div>
+                <div id="b-tens" class="digit">1</div>
+                <div id="res-tens" class="digit">4</div>
+            </div>
+            <!-- Ones Column -->
+            <div class="digit-cell">
+                <div class="carry-digit"></div> <!-- Spacer for alignment -->
+                <div id="a-ones" class="digit">5</div>
+                <div id="b-ones" class="digit">8</div>
+                <div id="res-ones" class="digit">3</div>
+            </div>
+            <!-- Empty Column for spacing/alignment if needed, or just 2 cols -->
+            <div class="digit-cell"></div>
+
+            <div class="operator" id="op-symbol">+</div>
+            <div class="line" style="grid-column: 1 / span 2;"></div>
+        </div>
+    </div>
+
+    <div class="viz-stage">
+        <svg id="viz-svg" viewBox="0 0 800 450">
+            <!-- Zones -->
+            <rect id="zone-tens-bg" x="0" y="0" width="400" height="450" class="zone-rect" />
+            <rect id="zone-ones-bg" x="400" y="0" width="400" height="450" class="zone-rect" />
+            
+            <!-- Labels -->
+            <text x="200" y="30" text-anchor="middle" class="zone-label">Tens</text>
+            <text x="600" y="30" text-anchor="middle" class="zone-label">Ones</text>
+            
+            <!-- Divider -->
+            <line x1="400" y1="0" x2="400" y2="450" class="divider-line" />
+            
+            <!-- Blocks Container -->
+            <g id="blocks-layer"></g>
+        </svg>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>Operand A</label>
+            <div class="stepper">
+                <button class="step-btn" onclick="adjustVal('A', -1)">−</button>
+                <input type="number" id="valA" value="25" min="0" max="99">
+                <button class="step-btn" onclick="adjustVal('A', 1)">+</button>
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Operand B</label>
+            <div class="stepper">
+                <button class="step-btn" onclick="adjustVal('B', -1)">−</button>
+                <input type="number" id="valB" value="18" min="0" max="99">
+                <button class="step-btn" onclick="adjustVal('B', 1)">+</button>
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Operation</label>
+            <select id="opType">
+                <option value="add">+</option>
+                <option value="sub">−</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+            <button id="btnStep" class="action">Next Step</button>
+            <button id="btnAuto" class="secondary">Auto Play</button>
+            <button id="btnReset" class="secondary">Reset</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const state = {
+        a: 25,
+        b: 18,
+        op: 'add',
+        step: 0, 
+        isAnimating: false,
+        autoPlayActive: false
+    };
+
+    const DOM = {
+        valA: document.getElementById('valA'),
+        valB: document.getElementById('valB'),
+        opType: document.getElementById('opType'),
+        btnStep: document.getElementById('btnStep'),
+        btnAuto: document.getElementById('btnAuto'),
+        btnReset: document.getElementById('btnReset'),
+        zoneTensBg: document.getElementById('zone-tens-bg'),
+        zoneOnesBg: document.getElementById('zone-ones-bg'),
+        blocksLayer: document.getElementById('blocks-layer'),
+        carry: document.getElementById('carry'),
+        warn: document.getElementById('warn'),
+        opSymbol: document.getElementById('op-symbol'),
+        digits: {
+            aT: document.getElementById('a-tens'),
+            aO: document.getElementById('a-ones'),
+            bT: document.getElementById('b-tens'),
+            bO: document.getElementById('b-ones'),
+            rT: document.getElementById('res-tens'),
+            rO: document.getElementById('res-ones')
+        }
+    };
+
+    function updateDigits() {
+        const aTens = Math.floor(state.a / 10);
+        const aOnes = state.a % 10;
+        const bTens = Math.floor(state.b / 10);
+        const bOnes = state.b % 10;
+
+        DOM.digits.aT.innerText = aTens;
+        DOM.digits.aO.innerText = aOnes;
+        DOM.digits.bT.innerText = bTens;
+        DOM.digits.bO.innerText = bOnes;
+        DOM.opSymbol.innerText = state.op === 'add' ? '+' : '−';
+
+        if (state.step < 3) {
+            DOM.digits.rT.innerText = '';
+            DOM.digits.rO.innerText = '';
+        } else {
+            let resVal;
+            if (state.op === 'add') {
+                resVal = state.a + state.b;
+            } else {
+                resVal = Math.max(0, state.a - state.b);
+            }
+            DOM.digits.rT.innerText = Math.floor(resVal / 10);
+            DOM.digits.rO.innerText = resVal % 10;
+        }
+    }
+
+    function createSVGBlock(type, x, y) {
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute('class', `block ${type}`);
+        
+        let rect;
+        if (type === 'rod') {
+            rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            rect.setAttribute('width', '16');
+            rect.setAttribute('height', '120');
+            rect.setAttribute('fill', 'var(--tens-cyan)');
+            rect.setAttribute('stroke', 'rgba(255,255,255,0.3)');
+            rect.setAttribute('stroke-width', '1');
+            rect.setAttribute('rx', '4');
+        } else {
+            rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            rect.setAttribute('width', '18');
+            rect.setAttribute('height', '18');
+            rect.setAttribute('fill', 'var(--ones-amber)');
+            rect.setAttribute('stroke', 'rgba(255,255,255,0.3)');
+            rect.setAttribute('stroke-width', '1');
+            rect.setAttribute('rx', '4');
+        }
+
+        rect.setAttribute('x', x);
+        rect.setAttribute('y', y);
+        g.appendChild(rect);
+        
+        // For GSAP to animate SVG attributes, we use the element itself
+        return g;
+    }
+
+    function clearBlocks() {
+        DOM.blocksLayer.innerHTML = '';
+    }
+
+    function renderInitialState() {
+        clearBlocks();
+        const aTens = Math.floor(state.a / 10);
+        const aOnes = state.a % 10;
+        const bTens = Math.floor(state.b / 10);
+        const bOnes = state.b % 10;
+
+        for(let i=0; i<aTens; i++) {
+            DOM.blocksLayer.appendChild(createSVGBlock('rod', 30 + i*25, 60));
+        }
+        for(let i=0; i<aOnes; i++) {
+            const row = Math.floor(i/5);
+            const col = i%5;
+            DOM.blocksLayer.appendChild(createSVGBlock('cube', 430 + col*25, 60 + row*25));
+        }
+
+        for(let i=0; i<bTens; i++) {
+            DOM.blocksLayer.appendChild(createSVGBlock('rod', 30 + i*25, 240));
+        }
+        for(let i=0; i<bOnes; i++) {
+            const row = Math.floor(i/5);
+            const col = i%5;
+            DOM.blocksLayer.appendChild(createSVGBlock('cube', 430 + col*25, 240 + row*25));
+        }
+    }
+
+    async function stepForward() {
+        if (state.isAnimating) return;
+        state.isAnimating = true;
+        DOM.btnStep.disabled = true;
+
+        if (state.op === 'add') {
+            await handleAddition();
+        } else {
+            await handleSubtraction();
+        }
+
+        updateDigits();
+        state.isAnimating = false;
+        DOM.btnStep.disabled = false;
+    }
+
+    async function handleAddition() {
+        const aOnes = state.a % 10;
+        const bOnes = state.b % 10;
+        const totalOnes = aOnes + bOnes;
+
+        if (state.step === 0) {
+            DOM.zoneOnesBg.classList.add('active');
+            DOM.zoneTensBg.classList.remove('active');
+            
+            const cubesB = Array.from(DOM.blocksLayer.querySelectorAll('.cube')).slice(aOnes);
+            const targets = [];
+            for(let i=0; i<bOnes; i++) {
+                targets.push({x: 430 + (i%5)*25, y: 60 + Math.floor(i/5)*25});
+            }
+
+            await Promise.all(cubesB.map((cube, i) => {
+                const rect = cube.querySelector('rect');
+                return gsap.to(rect, { attr: { x: targets[i].x, y: targets[i].y }, duration: 0.6, ease: "power2.out" });
+            }));
+            state.step = 1;
+        } else if (state.step === 1) {
+            if (totalOnes >= 10) {
+                DOM.zoneOnesBg.classList.add('active');
+                const allCubes = Array.from(DOM.blocksLayer.querySelectorAll('.cube'));
+                const toBundle = allCubes.slice(0, 10);
+                
+                await Promise.all(toBundle.map(c => {
+                    return gsap.to(c.querySelector('rect'), { attr: { x: 380, y: 200 }, duration: 0.4 });
+                }));
+                
+                const bundle = createSVGBlock('rod', 380, 150);
+                bundle.querySelector('rect').setAttribute('opacity', '0');
+                DOM.blocksLayer.appendChild(bundle);
+                
+                await Promise.all([
+                    gsap.to(toBundle.map(c => c.querySelector('rect')), { opacity: 0, duration: 0.3 }),
+                    gsap.to(bundle.querySelector('rect'), { attr: { opacity: 1 }, duration: 0.3 })
+                ]);
+                toBundle.forEach(c => c.remove());
+
+                const existingRods = DOM.blocksLayer.querySelectorAll('.rod').length;
+                await gsap.to(bundle.querySelector('rect'), { 
+                    attr: { x: (existingRods - 1) * 25 + 30, y: 60 }, 
+                    duration: 0.6 
+                });
+
+                DOM.carry.classList.add('visible');
+            }
+            state.step = 2;
+        } else if (state.step === 2) {
+            DOM.zoneTensBg.classList.add('active');
+            DOM.zoneOnesBg.classList.remove('active');
+
+            const rodsB = Array.from(DOM.blocksLayer.querySelectorAll('.rod')).filter(r => {
+                return parseInt(r.querySelector('rect').getAttribute('y')) >= 200;
+            });
+            const aTens = Math.floor(state.a / 10);
+            
+            await Promise.all(rodsB.map((rod, i) => {
+                return gsap.to(rod.querySelector('rect'), { 
+                    attr: { x: (aTens + i) * 25 + 30, y: 60 }, 
+                    duration: 0.6, ease: "power2.out" 
+                });
+            }));
+            state.step = 3;
+        }
+    }
+
+    async function handleSubtraction() {
+        const aOnes = state.a % 10;
+        const bOnes = state.b % 10;
+
+        if (state.step === 0) {
+            DOM.zoneOnesBg.classList.add('active');
+            DOM.zoneTensBg.classList.remove('active');
+
+            if (aOnes >= bOnes) {
+                const cubesA = Array.from(DOM.blocksLayer.querySelectorAll('.cube'));
+                await Promise.all(cubesA.slice(0, bOnes).map(c => gsap.to(c.querySelector('rect'), { opacity: 0, scale: 0, duration: 0.5 })));
+                cubesA.slice(0, bOnes).forEach(c => c.remove());
+                state.step = 2; 
+            } else {
+                DOM.carry.classList.add('visible');
+                state.step = 1;
+            }
+        } else if (state.step === 1) {
+            DOM.zoneTensBg.classList.add('active');
+            const rodsA = Array.from(DOM.blocksLayer.querySelectorAll('.rod')).filter(r => parseInt(r.querySelector('rect').getAttribute('y')) < 200);
+            if (rodsA.length === 0) { state.step = 2; return; }
+            
+            const rodToBorrow = rodsA[rodsA.length - 1];
+
+            await gsap.to(rodToBorrow.querySelector('rect'), { attr: { x: 380, y: 200 }, duration: 0.5 });
+            
+            const fragments = [];
+            for(let i=0; i<10; i++) {
+                const c = createSVGBlock('cube', 430 + (i%5)*25, 200 + Math.floor(i/5)*25);
+                c.querySelector('rect').setAttribute('opacity', '0');
+                DOM.blocksLayer.appendChild(c);
+                fragments.push(c);
+            }
+
+            await Promise.all([
+                gsap.to(rodToBorrow.querySelector('rect'), { opacity: 0, duration: 0.3 }),
+                ...fragments.map(f => gsap.to(f.querySelector('rect'), { attr: { opacity: 1 }, duration: 0.3 }))
+            ]);
+            rodToBorrow.remove();
+
+            const allCubes = Array.from(DOM.blocksLayer.querySelectorAll('.cube'));
+            await Promise.all(allCubes.slice(0, bOnes).map(c => gsap.to(c.querySelector('rect'), { opacity: 0, scale: 0, duration: 0.5 })));
+            allCubes.slice(0, bOnes).forEach(c => c.remove());
+
+            state.step = 2;
+        } else if (state.step === 2) {
+            DOM.zoneTensBg.classList.add('active');
+            const rodsA = Array.from(DOM.blocksLayer.querySelectorAll('.rod')).filter(r => parseInt(r.querySelector('rect').getAttribute('y')) < 200);
+            const bTens = Math.floor(state.b / 10);
+
+            await Promise.all(rodsA.slice(0, bTens).map(r => gsap.to(r.querySelector('rect'), { opacity: 0, scale: 0, duration: 0.5 })));
+            rodsA.slice(0, bTens).forEach(r => r.remove());
+
+            state.step = 3;
+        }
+    }
+
+    function adjustVal(operand, delta) {
+        if (operand === 'A') {
+            DOM.valA.value = Math.max(0, Math.min(99, parseInt(DOM.valA.value) + delta));
+        } else {
+            DOM.valB.value = Math.max(0, Math.min(99, parseInt(DOM.valB.value) + delta));
+        }
+        init();
+    }
+
+    function init() {
+        state.a = parseInt(DOM.valA.value) || 0;
+        state.b = parseInt(DOM.valB.value) || 0;
+        state.op = DOM.opType.value;
+        state.step = 0;
+        state.autoPlayActive = false;
+        DOM.carry.classList.remove('visible');
+
+        if (state.op === 'sub' && state.b > state.a) {
+            DOM.warn.classList.add('visible');
+            DOM.btnStep.disabled = true;
+            DOM.btnAuto.disabled = true;
+        } else {
+            DOM.warn.classList.remove('visible');
+            DOM.btnStep.disabled = false;
+            DOM.btnAuto.disabled = false;
+        }
+
+        updateDigits();
+        renderInitialState();
+    }
+
+    async function autoPlay() {
+        if (state.isAnimating) return;
+        if (state.step === 3) init();
+
+        state.autoPlayActive = true;
+        DOM.btnAuto.disabled = true;
+        DOM.btnStep.disabled = true;
+
+        while(state.step < 3 && state.autoPlayActive) {
+            await stepForward();
+            await new Promise(r => setTimeout(r, 1000));
+        }
+        
+        state.autoPlayActive = false;
+        DOM.btnAuto.disabled = false;
+        DOM.btnStep.disabled = false;
+    }
+
+    DOM.valA.addEventListener('input', init);
+    DOM.valB.addEventListener('input', init);
+    DOM.opType.addEventListener('change', init);
+    DOM.btnReset.addEventListener('click', () => {
+        state.autoPlayActive = false;
+        init();
+    });
+    DOM.btnStep.addEventListener('click', stepForward);
+    DOM.btnAuto.addEventListener('click', autoPlay);
+
+    window.onload = init;
+</script>
+</body>
+</html>

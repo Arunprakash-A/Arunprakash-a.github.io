@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Place‑Value Workbench</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<style>
+:root{
+  --bg-gradient: radial-gradient(circle at center, #12151f 0%, #0a0c12 100%);
+  --surface:#1e293b;
+  --accent1:#22d3ee;
+  --accent2:#a78bfa;
+  --heading-text:#f5f6fb;
+  --secondary-text:#cbd5e1;
+}
+html,body{
+  margin:0; padding:0; height:100%; background:var(--bg-gradient);
+  color:var(--secondary-text); font-family:'Inter',sans-serif;
+  overflow-x:hidden;
+}
+.app{display:flex; flex-direction:row; gap:20px; max-width:1200px; margin:auto; padding:20px;}
+.stage{flex:0 0 70%; display:flex; flex-direction:column; gap:20px;}
+.operands{display:flex; gap:40px; justify-content:center;}
+.operand{
+  background:var(--surface); border-radius:12px; padding:15px;
+  width:200px; box-shadow:0 4px 6px rgba(0,0,0,.3);
+}
+.operand h3{margin-top:0;color:var(--heading-text);font-size:1.2rem;text-align:center;}
+.tens-row,.ones-row{
+  display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin-top:8px;
+}
+.tens-row .rod, .ones-row .cube{
+  background:var(--accent1); border-radius:4px;
+  transition:transform 300ms cubic-bezier(0.4,0,0.2,1), opacity 300ms cubic-bezier(0.4,0,0.2,1);
+}
+.tens-row .rod{width:20px; height:80px;}
+.ones-row .cube{width:20px; height:20px;}
+.column-view{
+  background:var(--surface); border-radius:12px; padding:15px;
+  box-shadow:0 4px 6px rgba(0,0,0,.3);
+}
+.row{display:flex; align-items:center; margin-bottom:8px;}
+.label{width:80px; color:var(--secondary-text); font-size:.9rem; text-transform:uppercase; letter-spacing:.05em;}
+.digit{
+  background:var(--accent2); color:var(--heading-text);
+  font-family:'Fira Code',monospace;
+  padding:4px 8px; border-radius:6px; margin-right:4px;
+  min-width:24px; text-align:center;
+}
+.carry-row .digit{background:var(--accent1);}
+.controls-card{
+  flex:0 0 30%; display:flex; flex-direction:column; gap:15px;
+}
+.card{
+  background:rgba(30,41,59,.8); backdrop-filter:blur(10px);
+  border-radius:12px; box-shadow:0 4px 6px rgba(0,0,0,.3);
+  padding:20px;
+}
+.control-group{display:flex; flex-direction:column; gap:8px;}
+label{color:var(--heading-text); font-weight:700; margin-bottom:4px;}
+input[type=number]{
+  width:100%; padding:6px 10px; border:none; border-radius:6px;
+  background:var(--surface); color:var(--heading-text);
+  font-family:'Inter',sans-serif;
+}
+button{
+  cursor:pointer; padding:8px 12px; border:none; border-radius:6px;
+  background:var(--accent1); color:var(--heading-text);
+  font-weight:700; transition:background .2s ease-in-out;
+}
+button:hover{background:var(--accent2);}
+button:disabled{opacity:.5; cursor:not-allowed;}
+@keyframes pulse{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.15);}
+  100%{transform:scale(1);}
+}
+.pulse{animation:pulse .2s ease-in-out;}
+@media (max-width:600px){
+  .app{flex-direction:column; align-items:center;}
+  .operands{flex-wrap:wrap; justify-content:center;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="stage">
+    <div class="operands">
+      <div id="operandA" class="operand">
+        <h3>Number 1</h3>
+        <div class="label">Tens</div>
+        <div class="tens-row"></div>
+        <div class="label">Ones</div>
+        <div class="ones-row"></div>
+      </div>
+      <div id="operandB" class="operand">
+        <h3>Number 2</h3>
+        <div class="label">Tens</div>
+        <div class="tens-row"></div>
+        <div class="label">Ones</div>
+        <div class="ones-row"></div>
+      </div>
+    </div>
+    <div class="column-view">
+      <div class="row"><span class="label">Number 1</span><span id="a-tens" class="digit"></span><span id="a-ones" class="digit"></span></div>
+      <div class="row"><span class="label">Number 2</span><span id="b-tens" class="digit"></span><span id="b-ones" class="digit"></span></div>
+      <div class="row carry-row"><span class="label">Carry/Borrow</span><span id="carry" class="digit"></span></div>
+      <div class="row"><span class="label">Result</span><span id="res-tens" class="digit"></span><span id="res-ones" class="digit"></span></div>
+    </div>
+  </div>
+  <div class="controls-card card">
+    <div class="control-group">
+      <label for="operandA-input">Number 1</label>
+      <input type="number" id="operandA-input" min="0" max="99" value="0" aria-label="Number 1">
+    </div>
+    <div class="control-group">
+      <label for="operandB-input">Number 2</label>
+      <input type="number" id="operandB-input" min="0" max="99" value="0" aria-label="Number 2">
+    </div>
+    <div class="control-group">
+      <label>Operation</label>
+      <button id="operation-toggle" aria-pressed="true">+</button>
+    </div>
+    <div class="control-group">
+      <button id="step-btn">Step</button>
+      <button id="auto-btn">Auto</button>
+      <button id="reset-btn">Reset</button>
+    </div>
+  </div>
+</div>
+<div id="visual" style="display:none;"></div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const state = {operandA:0, operandB:0, operation:'+', steps:[], currentStepIndex:-1, isPlayingAuto:false};
+
+  const operandAInput=document.getElementById('operandA-input');
+  const operandBInput=document.getElementById('operandB-input');
+  const operationToggle=document.getElementById('operation-toggle');
+  const stepBtn=document.getElementById('step-btn');
+  const autoBtn=document.getElementById('auto-btn');
+  const resetBtn=document.getElementById('reset-btn');
+
+  const operandATensRow=document.querySelector('#operandA .tens-row');
+  const operandAOnesRow=document.querySelector('#operandA .ones-row');
+  const operandBTensRow=document.querySelector('#operandB .tens-row');
+  const operandBOnesRow=document.querySelector('#operandB .ones-row');
+
+  const aTensDigit=document.getElementById('a-tens');
+  const aOnesDigit=document.getElementById('a-ones');
+  const bTensDigit=document.getElementById('b-tens');
+  const bOnesDigit=document.getElementById('b-ones');
+  const carryDigit=document.getElementById('carry');
+  const resTensDigit=document.getElementById('res-tens');
+  const resOnesDigit=document.getElementById('res-ones');
+
+  function showOperandB(){
+    document.getElementById('operandB').style.display='';
+  }
+
+  function renderOperand(operand, value){
+    const tens=Math.floor(value/10);
+    const ones=value%10;
+    let tensRow, onesRow;
+    if(operand==='a'){tensRow=operandATensRow; onesRow=operandAOnesRow;}
+    else{tensRow=operandBTensRow; onesRow=operandBOnesRow;}
+    tensRow.innerHTML=''; onesRow.innerHTML='';
+    for(let i=0;i<tens;i++){
+      const rod=document.createElement('div'); rod.className='rod';
+      tensRow.appendChild(rod);
+    }
+    for(let i=0;i<ones;i++){
+      const cube=document.createElement('div'); cube.className='cube';
+      onesRow.appendChild(cube);
+    }
+  }
+
+  function clearOperand(operand){
+    const tensRow=operand==='a'?operandATensRow:operandBTensRow;
+    const onesRow=operand==='a'?operandAOnesRow:operandBOnesRow;
+    tensRow.innerHTML=''; onesRow.innerHTML='';
+  }
+
+  function clearOnesRow(operand){
+    const onesRow=operand==='a'?operandAOnesRow:operandBOnesRow;
+    onesRow.innerHTML='';
+  }
+
+  function updateColumnView(step){
+    aTensDigit.textContent=Math.floor(state.operandA/10).toString();
+    aOnesDigit.textContent=(state.operandA%10).toString();
+    bTensDigit.textContent=Math.floor(state.operandB/10).toString();
+    bOnesDigit.textContent=(state.operandB%10).toString();
+    carryDigit.textContent=''; resTensDigit.textContent=''; resOnesDigit.textContent='';
+    if(!step)return;
+    if(step.type==='ones'){
+      if(state.operation==='+'){
+        if(step.carry>0)carryDigit.textContent=step.carry.toString();
+        resOnesDigit.textContent=step.resultOnes.toString();
+      }else{
+        if(step.borrow>0)carryDigit.textContent='1';
+        resOnesDigit.textContent=step.resultOnes.toString();
+      }
+    }else if(step.type==='tens'){
+      resTensDigit.textContent=step.resultTens.toString();
+    }
+    const pulseTargets=[];
+    if(carryDigit.textContent)pulseTargets.push(carryDigit);
+    if(resOnesDigit.textContent)pulseTargets.push(resOnesDigit);
+    if(resTensDigit.textContent)pulseTargets.push(resTensDigit);
+    pulseTargets.forEach(el=>{el.classList.add('pulse'); setTimeout(()=>el.classList.remove('pulse'),200);});
+  }
+
+  function computeSteps(){
+    const a=state.operandA, b=state.operandB, op=state.operation;
+    const steps=[];
+    if(op==='+' ){
+      const aOnes=a%10, aTens=Math.floor(a/10);
+      const bOnes=b%10, bTens=Math.floor(b/10);
+      const sumOnes=aOnes+bOnes;
+      const carry=Math.floor(sumOnes/10);
+      const resultOnes=sumOnes%10;
+      steps.push({type:'ones',carry,resultOnes});
+      const resultTens=aTens+bTens+carry;
+      steps.push({type:'tens',resultTens});
+    }else{
+      if(a<b){return [];}
+      const aOnes=a%10, aTens=Math.floor(a/10);
+      const bOnes=b%10, bTens=Math.floor(b/10);
+      let borrow=0,resultOnes;
+      if(aOnes<bOnes){
+        borrow=1; resultOnes=aOnes+10-bOnes;
+      }else{
+        resultOnes=aOnes-bOnes;
+      }
+      steps.push({type:'ones',borrow,resultOnes});
+      const aTensAfterBorrow=aTens - borrow;
+      const resultTens = aTensAfterBorrow - bTens;
+      steps.push({type:'tens',resultTens});
+    }
+    return steps;
+  }
+
+  async function bundleCubes(count){
+    const row = operandAOnesRow;
+    const cubes=[];
+    while(row.children.length>0 && cubes.length<count){cubes.push(row.lastElementChild);}
+    await Promise.all(cubes.map(cube=>new Promise(res=>{
+      anime({targets:cube,opacity:[1,0],scaleX:[1,0.5],duration:300,easing:'cubicBezier(.4,0,.2,1)',complete:()=>{
+        cube.remove();res();
+      }});
+    })));
+  }
+
+  async function addRodToTensRow(operand){
+    const tensRow=operand==='a'?operandATensRow:operandBTensRow;
+    const rod=document.createElement('div'); rod.className='rod';
+    rod.style.opacity=0; rod.style.transform='scaleY(0.5)';
+    tensRow.appendChild(rod);
+    await new Promise(res=>anime({targets:rod,opacity:[0,1],scaleY:[0.5,1],duration:300,easing:'cubicBezier(.4,0,.2,1)',complete:res}));
+  }
+
+  async function unbundleRod(operand){
+    const tensRow=operand==='a'?operandATensRow:operandBTensRow;
+    const onesRow=operand==='a'?operandAOnesRow:operandBOnesRow;
+    if(tensRow.children.length===0)return;
+    const rod=tensRow.lastElementChild;
+    await new Promise(res=>anime({targets:rod,opacity:[1,0],scaleY:[1,0.5],duration:300,easing:'cubicBezier(.4,0,.2,1)',complete:()=>{rod.remove();res();}}));
+    for(let i=0;i<10;i++){
+      const cube=document.createElement('div'); cube.className='cube';
+      cube.style.opacity=0; cube.style.transform='translateY(-20px)';
+      onesRow.appendChild(cube);
+      await new Promise(res=>anime({targets:cube,opacity:[0,1],translateY:['-20px','0'],duration:300,easing:'cubicBezier(.4,0,.2,1)',complete:res}));
+    }
+  }
+
+  async function removeRods(operand,count){
+    const tensRow=operand==='a'?operandATensRow:operandBTensRow;
+    const rods=[...tensRow.children].slice(-count);
+    await Promise.all(rods.map(r=>new Promise(res=>{
+      anime({targets:r,opacity:[1,0],scaleY:[1,0.5],duration:300,easing:'cubicBezier(.4,0,.2,1)',complete:()=>{r.remove();res();}});
+    })));
+  }
+
+  async function removeCubesFromOperandOnes(operand,count){
+    const onesRow=operand==='a'?operandAOnesRow:operandBOnesRow;
+    const cubes=[...onesRow.children].slice(-count);
+    await Promise.all(cubes.map(c=>new Promise(res=>{
+      anime({targets:c,opacity:[1,0],scaleX:[1,0.5],duration:300,easing:'cubicBezier(.4,0,.2,1)',complete:()=>{c.remove();res();}});
+    })));
+  }
+
+  async function addRodsToA(count){
+    const tensRow=operandATensRow;
+    for(let i=0;i<count;i++){
+      const rod=document.createElement('div'); rod.className='rod';
+      rod.style.opacity=0; rod.style.transform='scaleY(0.5)';
+      tensRow.appendChild(rod);
+      await new Promise(res=>anime({targets:rod,opacity:[0,1],scaleY:[0.5,1],duration:300,easing:'cubicBezier(.4,0,.2,1)',complete:res}));
+    }
+  }
+
+  async function addCubesToA(count){
+    const onesRow=operandAOnesRow;
+    for(let i=0;i<count;i++){
+      const cube=document.createElement('div'); cube.className='cube';
+      cube.style.opacity=0; cube.style.transform='translateY(-20px)';
+      onesRow.appendChild(cube);
+      await new Promise(res=>anime({targets:cube,opacity:[0,1],translateY:['-20px','0'],duration:300,easing:'cubicBezier(.4,0,.2,1)',complete:res}));
+    }
+  }
+
+  async function mergeAndAnimateAddition(step){
+    const aOnesRow = operandAOnesRow;
+    const bOnesRow = operandBOnesRow;
+    // Move all cubes from B into A
+    while(bOnesRow.firstChild){
+      aOnesRow.appendChild(bOnesRow.firstChild);
+    }
+    if(step.carry>0){
+      await bundleCubes(10); // remove 10 from combined set
+      await addRodToTensRow('a');
+    } else {
+      clearOnesRow('a'); // remove all cubes (since we merged)
+    }
+    // After bundling, ensure only resultOnes remain in A's ones row
+    clearOnesRow('a');
+    await addCubesToA(step.resultOnes);
+    // Restore B's ones row to original count
+    const bOnesCount = state.operandB % 10;
+    while(bOnesRow.children.length < bOnesCount){
+      const cube=document.createElement('div'); cube.className='cube';
+      bOnesRow.appendChild(cube);
+    }
+  }
+
+  async function performStep(){
+    if(state.isPlayingAuto)return;
+    stepBtn.classList.add('pulse');
+    setTimeout(()=>stepBtn.classList.remove('pulse'),200);
+
+    const nextIndex=state.currentStepIndex+1;
+    if(nextIndex>=state.steps.length)return;
+    state.currentStepIndex=nextIndex;
+    const step=state.steps[nextIndex];
+    updateColumnView(step);
+    if(step.type==='ones'){
+      if(state.operation==='+'){
+        await mergeAndAnimateAddition(step);
+      }else{
+        if(step.borrow>0){
+          await unbundleRod('a');
+          const bOnes=state.operandB%10;
+          await removeCubesFromOperandOnes('a',bOnes);
+          clearOnesRow('a'); // ensure only resultOnes remain
+          await addCubesToA(step.resultOnes); // added
+        }else{
+          clearOnesRow('a');
+          await addCubesToA(step.resultOnes);
+        }
+      }
+    }else if(step.type==='tens'){
+      const bTens=Math.floor(state.operandB/10);
+      if(state.operation==='+'){
+        await addRodsToA(bTens);
+      }else{
+        await removeRods('a',bTens);
+      }
+    }
+
+    if(state.currentStepIndex >= state.steps.length-1){
+      clearOperand('b');
+    }
+
+    updateControls();
+  }
+
+  async function playAuto(){
+    if(state.isPlayingAuto)return;
+    state.isPlayingAuto=true; stepBtn.disabled=true; autoBtn.disabled=true;
+    while(state.currentStepIndex<state.steps.length-1){
+      await performStep(); await new Promise(r=>setTimeout(r,400));
+    }
+    state.isPlayingAuto=false; updateControls();
+  }
+
+  function reset(){
+    state.operandA=0; state.operandB=0; state.operation='+'; operationToggle.textContent='+';
+    operandAInput.value=0; operandBInput.value=0;
+    renderOperand('a',0); renderOperand('b',0);
+    state.steps=computeSteps(); state.currentStepIndex=-1;
+    updateColumnView(null); showOperandB(); updateControls();
+  }
+
+  function updateControls(){
+    const atEnd=state.currentStepIndex>=state.steps.length-1;
+    stepBtn.disabled=atEnd||state.isPlayingAuto||state.steps.length===0;
+    autoBtn.disabled=atEnd||state.isPlayingAuto||state.steps.length===0;
+  }
+
+  operandAInput.addEventListener('input',e=>{
+    const val=Math.min(99,Math.max(0,Number(e.target.value)||0));
+    state.operandA=val; renderOperand('a',val);
+    state.steps=computeSteps(); state.currentStepIndex=-1;
+    updateColumnView(null); showOperandB(); updateControls();
+  });
+
+  operandBInput.addEventListener('input',e=>{
+    const val=Math.min(99,Math.max(0,Number(e.target.value)||0));
+    state.operandB=val; renderOperand('b',val);
+    state.steps=computeSteps(); state.currentStepIndex=-1;
+    updateColumnView(null); showOperandB(); updateControls();
+  });
+
+  operationToggle.addEventListener('click',()=>{
+    state.operation=state.operation==='+'?'-':'+';
+    operationToggle.textContent=state.operation;
+    operationToggle.setAttribute('aria-pressed', state.operation==='+'?'true':'false');
+    state.steps=computeSteps(); state.currentStepIndex=-1;
+    renderOperand('a',state.operandA); renderOperand('b',state.operandB);
+    updateColumnView(null); showOperandB(); updateControls();
+  });
+
+  stepBtn.addEventListener('click',performStep);
+  autoBtn.addEventListener('click',playAuto);
+  resetBtn.addEventListener('click',reset);
+
+  // Initial setup
+  renderOperand('a',0); renderOperand('b',0);
+  state.steps=computeSteps(); updateColumnView(null); showOperandB(); updateControls();
+});
+</script>
+</body>
+</html>

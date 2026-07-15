@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Circle to Sine Wave Explorer</title>
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-dark: #0f172a;
+            --bg-light: #1e293b;
+            --accent-cyan: #22d3ee;
+            --accent-pink: #f472b6;
+            --accent-lime: #a3e635;
+            --accent-orange: #fb923c;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --grid-line: rgba(148, 163, 184, 0.1);
+            
+            /* UI */
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --radius: 16px;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background: radial-gradient(circle at center, var(--bg-light), var(--bg-dark));
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Layout */
+        .app-container {
+            width: 95vw;
+            max-width: 1400px;
+            height: 90vh;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: var(--radius);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+            display: grid;
+            grid-template-columns: 4fr 6fr; /* Split view */
+            overflow: hidden;
+            border: 1px solid var(--panel-border);
+        }
+
+        @media (max-width: 900px) {
+            .app-container { 
+                grid-template-columns: 1fr; 
+                grid-template-rows: 1fr 1fr auto; /* Auto height for controls */
+                height: 100vh; 
+                width: 100vw; 
+                border-radius: 0; 
+            }
+        }
+
+        /* Canvas Areas */
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        /* Overlay Readouts */
+        .readout-overlay {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 5;
+        }
+
+        .math-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--panel-border);
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .math-card .label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; display: block; }
+        .val-cyan { color: var(--accent-cyan); }
+        .val-pink { color: var(--accent-pink); }
+        .val-lime { color: var(--accent-lime); }
+
+        /* Controls Panel - MOVED OUTSIDE CANVAS WRAPPERS */
+        .controls-panel {
+            position: relative;
+            width: 100%;
+            background: rgba(30, 41, 59, 0.9);
+            border-top: 1px solid var(--panel-border);
+            padding: 20px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 10;
+        }
+
+        @media (max-width: 900px) {
+            .controls-panel { 
+                border-radius: 0; 
+                padding: 16px;
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+
+        /* Control Rows */
+        .control-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+        
+        @media (max-width: 900px) {
+            .control-row { flex-wrap: wrap; justify-content: center; }
+        }
+
+        /* Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--text-muted);
+            border-radius: 2px;
+        }
+
+        /* Segmented Button */
+        .segmented-btn {
+            display: flex;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .seg-opt {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-radius: 6px;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+        .seg-opt.active { background: var(--accent-cyan); color: #0f172a; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+
+        /* Custom Checkbox */
+        .checkbox-wrapper { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 0.9rem; color: var(--text-main); }
+        .checkbox-wrapper input { display: none; }
+        .checkmark { width: 18px; height: 18px; border: 2px solid var(--text-muted); border-radius: 4px; position: relative; transition: all 0.2s ease; }
+        .checkbox-wrapper input:checked + .checkmark { background-color: transparent; border-color: currentColor; }
+        .checkbox-wrapper input:checked + .checkmark::after { content: ''; display: block; width: 5px; height: 9px; border: solid #0f172a; border-width: 0 2px 2px 0; transform: rotate(45deg); margin-left: 3px; margin-top: -1px; }
+        
+        .cb-pink { color: var(--accent-pink); }
+        .cb-lime { color: var(--accent-lime); }
+        .cb-orange { color: var(--accent-orange); }
+
+        /* Play Button */
+        .play-btn {
+            background: transparent;
+            border: 1px solid var(--text-muted);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .play-btn:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); background: rgba(34, 211, 238, 0.1); }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Left Panel: Unit Circle -->
+    <div class="canvas-wrapper" id="circleWrapper">
+        <canvas id="circleCanvas"></canvas>
+        
+        <div class="readout-overlay">
+            <div class="math-card">
+                <span class="label">Coordinates</span>
+                <div><span style="color:var(--accent-cyan)">P = </span>(<span id="val-x" class="val-lime">1.00</span>, <span id="val-y" class="val-pink">0.00</span>)</div>
+            </div>
+            <div class="math-card">
+                <span class="label">Angle & Tangent</span>
+                <div><span style="color:var(--text-muted)">θ = </span><span id="val-theta" class="val-cyan">0°</span></div>
+                <div><span style="color:var(--accent-orange)">tan(θ) = </span><span id="val-tan" class="val-orange">0.00</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel: Wave Graph -->
+    <div class="canvas-wrapper" id="waveWrapper">
+        <canvas id="waveCanvas"></canvas>
+    </div>
+
+    <!-- Controls Anchored at Bottom (FIXED POSITION) -->
+    <div class="controls-panel">
+        <div class="control-row">
+            <button class="play-btn" id="sweepBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                Sweep
+            </button>
+            
+            <!-- Unit Toggle (FIXED: Now properly interactive) -->
+            <div class="segmented-btn">
+                <div class="seg-opt active" data-mode="deg">°</div>
+                <div class="seg-opt" data-mode="rad">π rad</div>
+            </div>
+
+            <!-- Slider (FIXED: Bound to input event) -->
+            <input type="range" id="angleSlider" min="0" max="360" value="45" step="1">
+        </div>
+
+        <div class="control-row" style="justify-content: center; gap: 24px;">
+            <label class="checkbox-wrapper cb-pink">
+                <input type="checkbox" id="showSine" checked> Show Sine Curve
+                <span class="checkmark"></span>
+            </label>
+            <label class="checkbox-wrapper cb-lime">
+                <input type="checkbox" id="showCosine" checked> Show Cosine Curve
+                <span class="checkmark"></span>
+            </label>
+            <!-- FIX #4: Default tangent to true for better UX -->
+            <label class="checkbox-wrapper cb-orange">
+                <input type="checkbox" id="showTangent" checked> Show Tangent Line
+                <span class="checkmark"></span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * Unit Circle to Sine Wave Explorer
+ * Pure Vanilla JS + Canvas API
+ */
+
+// --- Configuration & State ---
+const COLORS = {
+    cyan: '#22d3ee',
+    pink: '#f472b6',
+    lime: '#a3e635',
+    orange: '#fb923c',
+    textMuted: '#94a3b8',
+    gridLine: 'rgba(148, 163, 184, 0.1)',
+    white: '#f8fafc'
+};
+
+const state = {
+    theta: Math.PI / 4, // Radians (internal)
+    unit: 'deg',        // 'deg' or 'rad'
+    showSine: true,
+    showCosine: true,
+    showTangent: false,
+    isDragging: false,
+    isPlaying: false,
+    animationId: null,
+    lastFrameTime: 0   // For time-based animation (FIX #4)
+};
+
+// --- DOM Elements ---
+const circleCanvas = document.getElementById('circleCanvas');
+const waveCanvas = document.getElementById('waveCanvas');
+const ctxC = circleCanvas.getContext('2d');
+const ctxW = waveCanvas.getContext('2d');
+
+const slider = document.getElementById('angleSlider');
+const sweepBtn = document.getElementById('sweepBtn');
+const segOpts = document.querySelectorAll('.seg-opt');
+const cbSine = document.getElementById('showSine');
+const cbCosine = document.getElementById('showCosine');
+const cbTangent = document.getElementById('showTangent');
+
+// Readouts
+const valX = document.getElementById('val-x');
+const valY = document.getElementById('val-y');
+const valTheta = document.getElementById('val-theta');
+const valTan = document.getElementById('val-tan');
+
+// --- Initialization & Resize Handling ---
+function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Circle Canvas (Left)
+    const cRect = circleCanvas.getBoundingClientRect();
+    circleCanvas.width = cRect.width * dpr;
+    circleCanvas.height = cRect.height * dpr;
+    ctxC.scale(dpr, dpr);
+
+    // Wave Canvas (Right)
+    const wRect = waveCanvas.getBoundingClientRect();
+    waveCanvas.width = wRect.width * dpr;
+    waveCanvas.height = wRect.height * dpr;
+    ctxW.scale(dpr, dpr);
+
+    draw();
+}
+
+window.addEventListener('resize', resize);
+
+// --- Math Helpers ---
+function getTheta() { return state.theta; }
+
+function updateReadouts(theta) {
+    const x = Math.cos(theta);
+    const y = Math.sin(theta);
+    
+    // Update Text
+    valX.textContent = x.toFixed(3);
+    valY.textContent = y.toFixed(3);
+    
+    if (state.unit === 'deg') {
+        let deg = ((theta * 180 / Math.PI) % 360 + 360) % 360;
+        valTheta.textContent = `${Math.round(deg)}°`;
+        
+        // FIX #1: Sync slider value when in degree mode
+        slider.value = deg; 
+    } else {
+        // Radians (in terms of Pi) - FIX #3: Update readout textually
+        let piVal = theta / Math.PI;
+        if (piVal < 0) piVal += 2;
+        
+        // Format nicely for common fractions
+        let displayStr = '';
+        const tolerance = 0.01;
+        if (Math.abs(piVal - 0) < tolerance) displayStr = '0';
+        else if (Math.abs(piVal - 0.5) < tolerance) displayStr = 'π/2';
+        else if (Math.abs(piVal - 1) < tolerance) displayStr = 'π';
+        else if (Math.abs(piVal - 1.5) < tolerance) displayStr = '3π/2';
+        else if (Math.abs(piVal - 2) < tolerance) displayStr = '2π';
+        else displayStr = `${piVal.toFixed(2)}π`;
+
+        valTheta.textContent = displayStr;
+        
+        // Keep slider synced to degrees for smooth scrubbing, but update readout
+        slider.value = ((theta * 180 / Math.PI) % 360 + 360) % 360; 
+    }
+
+    // Tangent Readout
+    const cosT = Math.cos(theta);
+    if (Math.abs(cosT) < 0.01) {
+        valTan.textContent = "undefined";
+        valTan.style.color = COLORS.textMuted;
+    } else {
+        const tanVal = Math.tan(theta);
+        valTan.textContent = tanVal.toFixed(3);
+        valTan.style.color = COLORS.orange;
+    }
+}
+
+// --- Drawing: Unit Circle (Left) ---
+function drawCircle() {
+    const w = circleCanvas.width / window.devicePixelRatio;
+    const h = circleCanvas.height / window.devicePixelRatio;
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = Math.min(w, h) * 0.35;
+
+    ctxC.clearRect(0, 0, w, h);
+
+    // Grid & Axes
+    ctxC.strokeStyle = COLORS.gridLine;
+    ctxC.lineWidth = 1;
+    
+    // Circle Outline
+    ctxC.beginPath();
+    ctxC.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctxC.stroke();
+
+    // Axes
+    ctxC.beginPath();
+    ctxC.moveTo(cx - radius - 20, cy);
+    ctxC.lineTo(cx + radius + 20, cy);
+    ctxC.moveTo(cx, cy - radius - 20);
+    ctxC.lineTo(cx, cy + radius + 20);
+    ctxC.strokeStyle = COLORS.textMuted;
+    ctxC.lineWidth = 1.5;
+    ctxC.stroke();
+
+    // Angle Arc (Sector)
+    const theta = getTheta();
+    ctxC.beginPath();
+    ctxC.moveTo(cx, cy);
+    ctxC.arc(cx, cy, radius * 0.2, -theta, 0); // Canvas Y is inverted for angles
+    ctxC.fillStyle = 'rgba(34, 211, 238, 0.1)';
+    ctxC.fill();
+    ctxC.strokeStyle = COLORS.cyan;
+    ctxC.lineWidth = 2;
+    ctxC.stroke();
+
+    // Point Coordinates
+    const px = cx + radius * Math.cos(theta);
+    const py = cy - radius * Math.sin(theta);
+
+    // Triangle Legs (Cosine - Green)
+    if (state.showCosine) {
+        ctxC.beginPath();
+        ctxC.moveTo(cx, cy);
+        ctxC.lineTo(px, cy);
+        ctxC.strokeStyle = COLORS.lime;
+        ctxC.lineWidth = 3;
+        ctxC.stroke();
+
+        // Cosine Label on Axis
+        ctxC.fillStyle = COLORS.lime;
+        ctxC.font = '12px "JetBrains Mono"';
+        ctxC.textAlign = 'center';
+        ctxC.fillText('cos', (cx + px)/2, cy + 15);
+    }
+
+    // Triangle Legs (Sine - Pink)
+    if (state.showSine) {
+        ctxC.beginPath();
+        ctxC.moveTo(px, cy);
+        ctxC.lineTo(px, py);
+        ctxC.strokeStyle = COLORS.pink;
+        ctxC.lineWidth = 3;
+        ctxC.stroke();
+
+        // Sine Label on Axis
+        ctxC.fillStyle = COLORS.pink;
+        ctxC.font = '12px "JetBrains Mono"';
+        ctxC.textAlign = 'left';
+        ctxC.fillText('sin', px + 5, (cy + py)/2);
+    }
+
+    // Tangent Line Visualization - FIX #4: Always anchored at x=1
+    if (state.showTangent && Math.abs(Math.cos(theta)) > 0.01) {
+        const tanLen = Math.tan(theta);
+        
+        ctxC.beginPath();
+        ctxC.strokeStyle = COLORS.orange;
+        ctxC.lineWidth = 2;
+        ctxC.setLineDash([5, 3]);
+
+        // Quadrants I & IV: Tangent on the right (x=1 line relative to center)
+        const tx = cx + radius; 
+        const ty = cy - radius * tanLen;
+
+        ctxC.moveTo(cx + radius, cy); // Start at (1,0) relative
+        ctxC.lineTo(tx, ty);          // End at intersection
+        
+        // Visual extension line from origin to tangent point
+        ctxC.beginPath();
+        ctxC.moveTo(cx, cy);
+        ctxC.lineTo(tx, ty);
+        ctxC.strokeStyle = 'rgba(251, 146, 60, 0.3)';
+        ctxC.lineWidth = 1;
+        ctxC.stroke();
+
+        // Dot at tangent end
+        ctxC.beginPath();
+        ctxC.arc(tx, ty, 4, 0, Math.PI*2);
+        ctxC.fillStyle = COLORS.orange;
+        ctxC.fill();
+        
+        ctxC.setLineDash([]);
+    }
+
+    // The Point P (Glowing Cyan) - FIX #1: Visual feedback for drag
+    const isHovered = state.isDragging || 
+                      Math.hypot(
+                          event?.clientX - circleCanvas.getBoundingClientRect().left - rect.width/2,
+                          event?.clientY - circleCanvas.getBoundingClientRect().top - rect.height/2
+                      ) < 20;
+
+    ctxC.shadowBlur = isHovered ? 25 : 15;
+    ctxC.shadowColor = COLORS.cyan;
+    ctxC.beginPath();
+    ctxC.arc(px, py, isHovered ? 8 : 6, 0, Math.PI * 2);
+    ctxC.fillStyle = COLORS.white;
+    ctxC.fill();
+    ctxC.shadowBlur = 0;
+
+    // Radius Line (Hypotenuse)
+    ctxC.beginPath();
+    ctxC.moveTo(cx, cy);
+    ctxC.lineTo(px, py);
+    ctxC.strokeStyle = COLORS.cyan;
+    ctxC.lineWidth = 2;
+    ctxC.stroke();
+}
+
+// --- Drawing: Wave Graph (Right) ---
+function drawWaves() {
+    const w = waveCanvas.width / window.devicePixelRatio;
+    const h = waveCanvas.height / window.devicePixelRatio;
+    
+    // Padding for labels
+    const padTop = 40;
+    const padBot = 30;
+    const padLeft = 50;
+    const plotW = w - padLeft - 20;
+    const plotH = h - padTop - padBot;
+
+    ctxW.clearRect(0, 0, w, h);
+
+    // Axes
+    ctxW.strokeStyle = COLORS.textMuted;
+    ctxW.lineWidth = 1.5;
+    ctxW.beginPath();
+    ctxW.moveTo(padLeft, padTop + plotH/2); // X-axis (y=0)
+    ctxW.lineTo(w - 10, padTop + plotH/2);
+    
+    ctxW.moveTo(padLeft, padTop);
+    ctxW.lineTo(padLeft, h - padBot); // Y-axis
+    ctxW.stroke();
+
+    // Grid lines for period markers (π intervals)
+    const xScale = plotW / (2 * Math.PI);
+    ctxW.strokeStyle = COLORS.gridLine;
+    ctxW.lineWidth = 1;
+    ctxW.beginPath();
+    for(let i=0; i<=4; i++) {
+        let xPos = padLeft + i * (plotW/4);
+        ctxW.moveTo(xPos, padTop);
+        ctxW.lineTo(xPos, h - padBot);
+    }
+    ctxW.stroke();
+
+    // Draw Sine Wave (Pink)
+    if (state.showSine) {
+        drawCurve(ctxW, Math.sin, COLORS.pink, plotH, padLeft, padTop + plotH/2, xScale);
+    }
+
+    // Draw Cosine Wave (Lime)
+    if (state.showCosine) {
+        drawCurve(ctxW, Math.cos, COLORS.lime, plotH, padLeft, padTop + plotH/2, xScale);
+    }
+
+    // Current Position Indicator on Waves
+    const theta = getTheta();
+    const currentX = padLeft + (theta % (2*Math.PI)) * xScale;
+    
+    // Vertical dashed line connecting circle to waves
+    ctxW.strokeStyle = 'rgba(34, 211, 238, 0.5)';
+    ctxW.lineWidth = 1;
+    ctxW.setLineDash([4, 4]);
+    
+    // Connect to Sine peak/trough (if visible)
+    if (state.showSine) {
+        const sinY = padTop + plotH/2 - Math.sin(theta) * (plotH/2);
+        ctxW.beginPath();
+        ctxW.moveTo(currentX, h - padBot);
+        ctxW.lineTo(currentX, sinY);
+        ctxW.stroke();
+        drawWaveDot(ctxW, currentX, sinY, COLORS.pink);
+    }
+
+    // Connect to Cosine peak/trough (if visible)
+    if (state.showCosine) {
+        const cosY = padTop + plotH/2 - Math.cos(theta) * (plotH/2);
+        ctxW.beginPath();
+        ctxW.moveTo(currentX, h - padBot);
+        ctxW.lineTo(currentX, cosY);
+        ctxW.stroke();
+        drawWaveDot(ctxW, currentX, cosY, COLORS.lime);
+    }
+
+    ctxW.setLineDash([]);
+
+    // Labels
+    ctxW.fillStyle = COLORS.textMuted;
+    ctxW.font = '12px "JetBrains Mono"';
+    ctxW.textAlign = 'center';
+    ctxW.fillText('0', padLeft, h - 10);
+    ctxW.fillText('π/2', padLeft + plotW/4, h - 10);
+    ctxW.fillText('π', padLeft + plotW/2, h - 10);
+    ctxW.fillText('3π/2', padLeft + 3*plotW/4, h - 10);
+    ctxW.fillText('2π', w - 20, h - 10);
+
+    // Y-axis labels
+    ctxW.textAlign = 'right';
+    ctxW.fillText('1', padLeft - 5, padTop + plotH/2 - (plotH/2) + 4);
+    ctxW.fillText('-1', padLeft - 5, padTop + plotH/2 + (plotH/2) + 4);
+}
+
+// FIX #2: Corrected amplitude scaling from width to plot height
+function drawCurve(ctx, func, color, plotHeight, startX, centerY, scale) {
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    
+    const steps = 100;
+    for (let i = 0; i <= steps; i++) {
+        const xVal = (i / steps) * 2 * Math.PI;
+        const px = startX + xVal * scale;
+        // Amplitude is now half the plot height to match unit circle radius
+        const py = centerY - func(xVal) * (plotHeight / 2); 
+        
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+}
+
+function drawWaveDot(ctx, x, y, color) {
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = COLORS.white;
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
+
+// --- Main Draw Loop ---
+function draw() {
+    updateReadouts(getTheta());
+    drawCircle();
+    drawWaves();
+}
+
+// --- Interaction Handlers ---
+
+// Slider Input - FIX #1: Ensure this is bound correctly and updates state
+slider.addEventListener('input', (e) => {
+    const deg = parseFloat(e.target.value);
+    // Update internal state from slider value
+    state.theta = deg * Math.PI / 180;
+    
+    // Stop animation if user interacts manually
+    if (state.isPlaying) toggleSweep(); 
+    
+    // Force immediate redraw to ensure visual feedback is instant
+    draw(); 
+});
+
+// Segmented Button - FIX #3: Recalculate and update readouts on switch
+segOpts.forEach(opt => {
+    opt.addEventListener('click', () => {
+        segOpts.forEach(o => o.classList.remove('active'));
+        opt.classList.add('active');
+        state.unit = opt.dataset.mode;
+        
+        // Update slider range based on unit
+        if (state.unit === 'rad') {
+            slider.min = 0;
+            slider.max = 6.28;
+            slider.step = 0.01;
+            slider.value = ((state.theta * 180 / Math.PI) % 360 + 360) % 360; // Keep visual position consistent
+        } else {
+            slider.min = 0;
+            slider.max = 360;
+            slider.step = 1;
+            slider.value = ((state.theta * 180 / Math.PI) % 360 + 360) % 360; // Keep visual position consistent
+        }
+
+        // Force a redraw to update the theta text representation immediately
+        draw(); 
+    });
+});
+
+// Checkboxes
+cbSine.addEventListener('change', (e) => { state.showSine = e.target.checked; draw(); });
+cbCosine.addEventListener('change', (e) => { state.showCosine = e.target.checked; draw(); });
+cbTangent.addEventListener('change', (e) => { state.showTangent = e.target.checked; draw(); });
+
+// Sweep Animation - FIX #4: Time-based animation
+function toggleSweep() {
+    state.isPlaying = !state.isPlaying;
+    
+    if (state.isPlaying) {
+        sweepBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> Pause`;
+        sweepBtn.style.borderColor = COLORS.cyan;
+        sweepBtn.style.color = COLORS.cyan;
+        state.lastFrameTime = performance.now();
+        animate();
+    } else {
+        sweepBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Sweep`;
+        sweepBtn.style.borderColor = COLORS.text-muted;
+        sweepBtn.style.color = COLORS.text-main;
+        cancelAnimationFrame(state.animationId);
+    }
+}
+
+sweepBtn.addEventListener('click', toggleSweep);
+
+function animate(time) {
+    if (!state.isPlaying) return;
+    
+    // Calculate delta time for consistent speed across devices
+    const now = performance.now();
+    const deltaTime = (now - state.lastFrameTime) / 1000; // seconds
+    state.lastFrameTime = now;
+
+    // Increment theta based on time, not frames. 
+    // Speed factor: ~2 radians per second feels natural for a full loop in ~3s
+    const speedFactor = 2.0; 
+    state.theta += speedFactor * deltaTime; 
+    
+    if (state.theta > Math.PI * 2) state.theta -= Math.PI * 2;
+    
+    // FIX #4: Ensure draw() is called which updates the slider value via updateReadouts
+    draw();
+    
+    state.animationId = requestAnimationFrame(animate);
+}
+
+// Dragging on Circle Canvas - FIX #1: Add drag start threshold and hover cursor
+circleCanvas.addEventListener('mousedown', (e) => {
+    const rect = circleCanvas.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const radius = Math.min(rect.width, rect.height) * 0.35;
+    
+    // Calculate distance from click to point P
+    const theta = state.theta;
+    const px = cx + radius * Math.cos(theta);
+    const py = cy - radius * Math.sin(theta);
+    
+    const dist = Math.hypot(e.clientX - rect.left - cx, e.clientY - rect.top - cy);
+    
+    // If click is within 20px of point P, start dragging
+    if (dist < 20) {
+        state.isDragging = true;
+        circleCanvas.style.cursor = 'grabbing';
+        updateThetaFromMouse(e);
+    }
+});
+
+window.addEventListener('mouseup', () => {
+    state.isDragging = false;
+    circleCanvas.style.cursor = 'crosshair';
+});
+
+circleCanvas.addEventListener('mousemove', (e) => {
+    if (!state.isDragging) return;
+    updateThetaFromMouse(e);
+});
+
+// Hover cursor effect - FIX #1: Visual feedback for drag
+circleCanvas.addEventListener('mousemove', (e) => {
+    if (state.isDragging) return;
+    
+    const rect = circleCanvas.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const radius = Math.min(rect.width, rect.height) * 0.35;
+    
+    // Calculate distance from mouse to point P
+    const theta = state.theta;
+    const px = cx + radius * Math.cos(theta);
+    const py = cy - radius * Math.sin(theta);
+    
+    const dist = Math.hypot(e.clientX - rect.left - cx, e.clientY - rect.top - cy);
+    
+    // Change cursor if hovering near point P
+    if (dist < 20) {
+        circleCanvas.style.cursor = 'grab';
+    } else {
+        circleCanvas.style.cursor = 'crosshair';
+    }
+});
+
+function updateThetaFromMouse(e) {
+    const rect = circleCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    
+    // Calculate angle from center, accounting for canvas Y inversion
+    let theta = Math.atan2(-y, x); 
+    if (theta < 0) theta += Math.PI * 2;
+    
+    state.theta = theta;
+    draw();
+}
+
+// --- Initial Setup ---
+resize();
+draw();
+
+</script>
+</body>
+</html>

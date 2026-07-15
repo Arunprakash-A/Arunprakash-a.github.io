@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Equivalent Fractions Explorer</title>
+<style>
+  :root {
+    --bg-gradient: radial-gradient(circle at center, #12151f 0%, #0a0c12 100%);
+    --surface: #1e1e2e;
+    --accent-cyan: #22d3ee;
+    --accent-violet: #a78bfa;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --radius: 12px;
+    --transition: cubic-bezier(0.22,1,0.36,1);
+  }
+  html, body {
+    margin:0; padding:0; height:100%; font-family:Inter, system-ui, sans-serif;
+    background: var(--bg-gradient); color:var(--text-primary);
+    overflow-x:hidden;
+  }
+  #app{
+    display:flex; flex-direction:row; gap:1rem; max-width:1200px; margin:auto; padding:2rem;
+  }
+  @media(max-width:600px){
+    #app{flex-direction:column;}
+  }
+  .sidebar{width:30%; min-width:260px;}
+  .canvas-area{flex:1; display:flex; flex-direction:column; gap:1rem;}
+  .card{
+    background:rgba(30,30,46,0.8); backdrop-filter:blur(10px);
+    border-radius:var(--radius); padding:1.5rem; margin-bottom:1rem;
+    box-shadow:0 4px 12px rgba(0,0,0,.6);
+  }
+  .card h2{font-size:1.25rem;margin-top:0;}
+  .stepper{
+    display:flex; align-items:center; gap:.5rem; margin-bottom:.75rem;
+  }
+  .stepper button{
+    width:32px;height:32px;border:none;background:var(--surface);
+    color:var(--text-primary);font-size:1.25rem;cursor:pointer;
+    border-radius:4px;transition:background .2s var(--transition);
+  }
+  .stepper button:hover{background:var(--accent-cyan);}
+  .stepper span{
+    width:32px;text-align:center;font-family:'Fira Code',monospace;
+    font-size:1.25rem;color:var(--text-primary);display:inline-block;
+  }
+  .btn-group{
+    display:flex; gap:.75rem; flex-wrap:wrap;
+  }
+  button.btn{
+    padding:.5rem 1rem;border:none;background:var(--accent-cyan);color:white;
+    border-radius:4px;font-size:.9rem;cursor:pointer;transition:background .2s var(--transition);
+  }
+  button.btn:hover{background:var(--accent-violet);}
+  button.btn.reset{background:#444;}
+  button.btn.toggle{background:var(--surface);}
+  button.btn.simplify{background:var(--accent-cyan);}
+  button.btn.reset:hover{background:#555;}
+  .fraction-wall{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:.5rem;
+  }
+  .cell{
+    background:rgba(30,30,46,.6); border-radius:6px; padding:.75rem;
+    text-align:center;font-size:.9rem;color:var(--text-secondary);
+    cursor:pointer; position:relative; overflow:hidden;
+  }
+  .cell:hover{background:rgba(30,30,46,.8);}
+  .cell.highlight{
+    color:white;background:var(--accent-cyan); animation:pulse 1.5s infinite;
+  }
+  @keyframes pulse{
+    0%,100%{box-shadow:none;}
+    50%{box-shadow:0 0 12px var(--accent-cyan);}
+  }
+  .visualization{background:var(--surface);border-radius:var(--radius);
+    padding:.5rem; flex:1; display:flex; align-items:center; justify-content:center;
+  }
+  svg{width:100%;height:auto;}
+  #numberLineContainer{
+    width:100%; height:60px; background:var(--surface); border-radius:var(--radius);
+    display:flex; align-items:center; padding:0 .5rem;
+  }
+  #decimalDisplay{
+    text-align:right;font-size:.9rem;color:var(--text-secondary);
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/MorphSVGPlugin.min.js"></script>
+</head>
+<body>
+<div id="app">
+  <div class="sidebar">
+    <div class="card controls-card">
+      <h2>Controls</h2>
+      <div class="stepper" aria-label="Numerator stepper">
+        <button id="numDec" aria-label="Decrease numerator">−</button>
+        <span id="numeratorDisplay">1</span>
+        <button id="numInc" aria-label="Increase numerator">+</button>
+      </div>
+      <div class="stepper" aria-label="Denominator stepper">
+        <button id="denDec" aria-label="Decrease denominator">−</button>
+        <span id="denominatorDisplay">2</span>
+        <button id="denInc" aria-label="Increase denominator">+</button>
+      </div>
+      <div class="btn-group">
+        <button id="simplifyBtn" class="btn simplify" aria-label="Simplify fraction">Simplify</button>
+        <button id="toggleModelBtn" class="btn toggle" aria-label="Toggle bar/circle model">Circle</button>
+        <button id="resetBtn" class="btn reset" aria-label="Reset to default">Reset</button>
+      </div>
+    </div>
+    <div class="card wall-card">
+      <h2>Fraction Wall</h2>
+      <div class="fraction-wall" id="fractionWall"></div>
+    </div>
+  </div>
+  <div class="canvas-area">
+    <div class="visualization" id="visualizationContainer">
+      <svg id="visualization" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid meet">
+        <!-- Bar background -->
+        <rect x="20" y="80" width="360" height="40" fill="#444"/>
+        <!-- Circle background -->
+        <circle cx="200" cy="100" r="70" fill="#444"/>
+        <!-- Shape path for filled portion -->
+        <path id="shapePath" fill="var(--accent-cyan)"/>
+      </svg>
+    </div>
+    <div id="numberLineContainer">
+      <svg viewBox="0 0 400 20" preserveAspectRatio="xMidYMid meet">
+        <rect x="10" y="9" width="380" height="2" fill="#555"/>
+        <circle id="marker" cx="10" cy="10" r="6" fill="var(--accent-cyan)"/>
+      </svg>
+    </div>
+    <div id="decimalDisplay">Decimal: <span id="decimalValue">0.500</span></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const state = { numerator:1, denominator:2, model:'bar', simplified:false };
+  const numDecBtn=document.getElementById('numDec');
+  const numIncBtn=document.getElementById('numInc');
+  const denDecBtn=document.getElementById('denDec');
+  const denIncBtn=document.getElementById('denInc');
+  const numeratorDisplay=document.getElementById('numeratorDisplay');
+  const denominatorDisplay=document.getElementById('denominatorDisplay');
+  const simplifyBtn=document.getElementById('simplifyBtn');
+  const toggleModelBtn=document.getElementById('toggleModelBtn');
+  const resetBtn=document.getElementById('resetBtn');
+  const decimalValue=document.getElementById('decimalValue');
+  const shapePath=document.getElementById('shapePath');
+  const marker=document.getElementById('marker');
+  const fractionWall=document.getElementById('fractionWall');
+
+  function gcd(a,b){ return b===0?a:gcd(b,a%b); }
+
+  function getBarPath(val){
+    const width = Math.min(360, 360*val);
+    return `M20,80 H${20+width} V120 H20 Z`;
+  }
+  function getCirclePath(val){
+    if(val <= 0){return '';}
+    if(val >=1){
+      return `M200,30 A70,70 0 1 1 200,170 A70,70 0 1 1 200,30 Z`;
+    }
+    const radius=70;
+    const cx=200, cy=100;
+    const startAngle = -Math.PI/2; // -90°
+    const endAngle = startAngle + val * Math.PI*2;
+    const x1 = cx + radius*Math.cos(startAngle);
+    const y1 = cy + radius*Math.sin(startAngle);
+    const x2 = cx + radius*Math.cos(endAngle);
+    const y2 = cy + radius*Math.sin(endAngle);
+    const largeArcFlag = val > 0.5 ? 1 : 0;
+    return `M${cx},${cy} L${x1},${y1} A${radius},${radius} 0 ${largeArcFlag} 1 ${x2},${y2} Z`;
+  }
+
+  function updateState(){ 
+    numeratorDisplay.textContent=state.numerator;
+    denominatorDisplay.textContent=state.denominator;
+    const val = state.numerator/state.denominator;
+    decimalValue.textContent=val.toFixed(3);
+    if(state.model==='bar'){
+      updateBar(val);
+    } else {
+      updateCircle(val);
+    }
+    updateMarker(val);
+    updateWallHighlights();
+  }
+
+  function updateBar(val){
+    const path = getBarPath(val);
+    shapePath.setAttribute('d', path);
+    shapePath.setAttribute('fill', state.simplified ? getComputedStyle(document.documentElement).getPropertyValue('--accent-violet') : getComputedStyle(document.documentElement).getPropertyValue('--accent-cyan'));
+  }
+
+  function updateCircle(val){
+    const path = getCirclePath(val);
+    shapePath.setAttribute('d', path);
+    shapePath.setAttribute('fill', state.simplified ? getComputedStyle(document.documentElement).getPropertyValue('--accent-violet') : getComputedStyle(document.documentElement).getPropertyValue('--accent-cyan'));
+  }
+
+  function updateMarker(val){
+    const clampedVal = Math.min(1, Math.max(0,val));
+    const x=10+380*clampedVal;
+    gsap.to(marker,{duration:0.6,attr:{cx:x},ease:"elastic.out(1,0.3)"});
+  }
+
+  function updateWallHighlights(){
+    const g=gcd(state.numerator,state.denominator);
+    const sn=state.numerator/g;
+    const sd=state.denominator/g;
+    document.querySelectorAll('.cell').forEach(cell=>{
+      const n=parseInt(cell.dataset.denominator,10);
+      if(sn * n === sd){
+        cell.classList.add('highlight');
+      } else {
+        cell.classList.remove('highlight');
+      }
+    });
+  }
+
+  function createWall(){
+    for(let n=2;n<=12;n++){
+      const cell=document.createElement('div');
+      cell.className='cell';
+      cell.dataset.denominator=n;
+      cell.textContent=`1/${n}`;
+      cell.addEventListener('click',()=>{state.numerator=1; state.denominator=n; updateState();});
+      fractionWall.appendChild(cell);
+    }
+  }
+
+  function toggleModel(){
+    const val = state.numerator/state.denominator;
+    let targetPath;
+    if(state.model==='bar'){
+      // morph to circle
+      targetPath = getCirclePath(val);
+      gsap.to(shapePath, {duration:0.3, morphSVG: targetPath});
+      state.model='circle';
+      toggleModelBtn.textContent='Bar';
+    } else {
+      // morph to bar
+      targetPath = getBarPath(val);
+      gsap.to(shapePath, {duration:0.3, morphSVG: targetPath});
+      state.model='bar';
+      toggleModelBtn.textContent='Circle';
+    }
+  }
+
+  function simplify(){
+    const g=gcd(state.numerator,state.denominator);
+    if(g>1){
+      // overlay highlight
+      const overlay=document.createElement('div');
+      overlay.style.position='absolute';overlay.style.top='50%';overlay.style.left='50%';
+      overlay.style.transform='translate(-50%,-50%)';
+      overlay.style.fontSize='2rem';
+      overlay.style.color=getComputedStyle(document.documentElement).getPropertyValue('--accent-violet');
+      overlay.textContent=`÷${g}`;
+      document.body.appendChild(overlay);
+      gsap.to(overlay,{duration:0.5,opacity:0,scale:1.5,onComplete:()=>{document.body.removeChild(overlay);}});
+      // animate shrink
+      gsap.to([numeratorDisplay,denominatorDisplay],{
+        duration:0.5,
+        scale:0,
+        opacity:0,
+        ease:"power2.in",
+        onComplete:()=>{
+          state.numerator/=g;
+          state.denominator/=g;
+          state.simplified=true;
+          numeratorDisplay.textContent=state.numerator;
+          denominatorDisplay.textContent=state.denominator;
+          gsap.to([numeratorDisplay,denominatorDisplay],{
+            duration:0.5,
+            scale:1,
+            opacity:1,
+            ease:"power2.out",
+            onComplete:updateState
+          });
+        }
+      });
+    } else {
+      state.simplified=false;
+      updateState();
+    }
+  }
+
+  function reset(){
+    // clear highlights
+    document.querySelectorAll('.cell').forEach(c=>c.classList.remove('highlight'));
+    state.numerator=1; state.denominator=2; state.model='bar'; state.simplified=false;
+    toggleModelBtn.textContent='Circle';
+    updateState();
+  }
+
+  numDecBtn.addEventListener('click',()=>{ if(state.numerator>0){state.numerator--;updateState();}});
+  numIncBtn.addEventListener('click',()=>{ if(state.numerator<12){state.numerator++;updateState();}});
+  denDecBtn.addEventListener('click',()=>{ if(state.denominator>1){state.denominator--;updateState();}});
+  denIncBtn.addEventListener('click',()=>{ if(state.denominator<12){state.denominator++;updateState();}});
+  simplifyBtn.addEventListener('click',simplify);
+  toggleModelBtn.addEventListener('click',toggleModel);
+  resetBtn.addEventListener('click',reset);
+
+  createWall();
+  updateState();
+})();
+</script>
+</body>
+</html>

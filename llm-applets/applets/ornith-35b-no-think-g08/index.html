@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Linear Function Explorer</title>
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://unpkg.com/katex@0.16.9/dist/katex.min.css">
+    <script async src="https://unpkg.com/katex@0.16.9/dist/katex.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-dark: #020617;
+            --bg-light: #0f172a;
+            --cyan: #22d3ee;
+            --pink: #f472b6;
+            --lime: #a3e635;
+            --orange: #fb923c;
+            --white: #ffffff;
+            --slate: #334155;
+            
+            /* Glassmorphism */
+            --glass-bg: rgba(15, 23, 42, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+
+            /* Typography */
+            --font-ui: 'Inter', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+
+            /* Layout */
+            --radius-lg: 16px;
+            --radius-md: 8px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at center, var(--bg-light) 0%, var(--bg-dark) 100%);
+            color: var(--white);
+            font-family: var(--font-ui);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- Layout Containers --- */
+        .app-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- Header / Equation Display --- */
+        .header {
+            position: absolute;
+            top: 2rem;
+            z-index: 10;
+            text-align: center;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1rem 2.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .equation-display {
+            font-family: var(--font-mono);
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: white;
+        }
+        
+        .val-m { color: var(--cyan); text-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
+        .val-c { color: var(--pink); text-shadow: 0 0 10px rgba(244, 114, 182, 0.5); }
+
+        /* --- Canvas Area --- */
+        .canvas-wrapper {
+            position: relative;
+            width: 90vw;
+            height: 75vh;
+            max-width: 1200px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(34, 211, 238, 0.05), 0 20px 60px rgba(0,0,0,0.5);
+            border: 1px solid var(--glass-border);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        /* --- Floating Coordinate Card --- */
+        .coord-card {
+            position: absolute;
+            background: rgba(2, 6, 23, 0.95);
+            border: 1px solid var(--cyan);
+            padding: 8px 14px;
+            border-radius: var(--radius-md);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--white);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 16px rgba(34, 211, 238, 0.2);
+            white-space: nowrap;
+            z-index: 5;
+        }
+
+        /* --- Control Panel (Glassmorphism) --- */
+        .controls {
+            position: absolute;
+            bottom: 2rem;
+            z-index: 20;
+            display: flex;
+            gap: 1.5rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 1.2rem 2rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        /* --- Custom Sliders --- */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 140px;
+            height: 6px;
+            background: var(--slate);
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--white);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+            transition: transform 0.1s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* --- Toggle Switches --- */
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            background: var(--slate);
+            border-radius: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: var(--white);
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        input[type="checkbox"] { display: none; }
+        input[type="checkbox"]:checked + .switch { background: var(--cyan); }
+        input[type="checkbox"]:checked + .switch::after { transform: translateX(18px); }
+
+        /* --- Segmented Control (Dropdown) --- */
+        select {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--slate);
+            color: var(--white);
+            padding: 6px 12px;
+            border-radius: var(--radius-md);
+            font-family: var(--font-ui);
+            cursor: pointer;
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            .controls { flex-direction: column; gap: 1rem; width: 90%; }
+            .control-group { width: 100%; justify-content: space-between; }
+            .equation-display { font-size: 1.5rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- Header / Equation -->
+    <div class="header">
+        <div id="equation" class="equation-display"></div>
+    </div>
+
+    <!-- Canvas Stage -->
+    <div class="canvas-wrapper">
+        <canvas id="graphCanvas"></canvas>
+        <div id="coordCard" class="coord-card">(0, 0)</div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        
+        <div class="control-group">
+            <label for="slopeSlider">Slope (m): <span id="valM" style="color:var(--cyan)">1.0</span></label>
+            <input type="range" id="slopeSlider" min="-5" max="5" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+            <label for="interceptSlider">Intercept (c): <span id="valC" style="color:var(--pink)">0</span></label>
+            <input type="range" id="interceptSlider" min="-10" max="10" step="0.5" value="0">
+        </div>
+
+        <div class="control-group">
+            <label for="showGridToggle">Show Grid</label>
+            <label class="toggle-wrapper">
+                <input type="checkbox" id="showGridToggle" checked>
+                <span class="switch"></span>
+            </label>
+        </div>
+
+        <div class="control-group">
+            <label for="triangleToggle">Slope Triangle</label>
+            <label class="toggle-wrapper">
+                <input type="checkbox" id="triangleToggle" checked>
+                <span class="switch"></span>
+            </label>
+        </div>
+
+        <div class="control-group">
+            <label for="secondLineMode">Second Line</label>
+            <select id="secondLineMode">
+                <option value="off">Off</option>
+                <option value="parallel">Parallel</option>
+                <option value="perpendicular">Perpendicular</option>
+            </select>
+        </div>
+
+    </div>
+</div>
+
+<script>
+/**
+ * Interactive Linear Function Explorer
+ * Core Logic & Rendering Engine
+ */
+
+// --- Configuration & State ---
+const config = {
+    colors: {
+        bg: '#020617',
+        gridMajor: 'rgba(255, 255, 255, 0.08)',
+        gridMinor: 'rgba(255, 255, 255, 0.03)',
+        axis: '#64748b',
+        cyan: '#22d3ee',
+        pink: '#f472b6',
+        lime: '#a3e635',
+        orange: '#fb923c',
+        white: '#ffffff'
+    },
+    grid: {
+        unitSize: 50, // pixels per unit
+        rangeX: 15,   // units visible horizontally (approx)
+        rangeY: 10    // units visible vertically (approx)
+    }
+};
+
+const state = {
+    m: 1.0,       // Slope
+    c: 0.0,       // Y-intercept
+    showGrid: true,
+    showTriangle: true,
+    secondLineMode: 'off', // off, parallel, perpendicular
+    
+    // Dragging state
+    isDragging: false,
+    dragX: 0,     // Current X position in math coordinates
+    snapThreshold: 0.5
+};
+
+// --- DOM Elements ---
+const canvas = document.getElementById('graphCanvas');
+const ctx = canvas.getContext('2d');
+const coordCard = document.getElementById('coordCard');
+const eqDisplay = document.getElementById('equation');
+
+const inputs = {
+    slope: document.getElementById('slopeSlider'),
+    intercept: document.getElementById('interceptSlider'),
+    grid: document.getElementById('showGridToggle'),
+    triangle: document.getElementById('triangleToggle'),
+    mode: document.getElementById('secondLineMode')
+};
+
+const labels = {
+    m: document.getElementById('valM'),
+    c: document.getElementById('valC')
+};
+
+// --- Coordinate Systems ---
+let width, height;
+let originX, originY; // Center of canvas in pixels
+
+function resize() {
+    const wrapper = canvas.parentElement;
+    const dpr = window.devicePixelRatio || 1;
+    
+    width = wrapper.clientWidth;
+    height = wrapper.clientHeight;
+    
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    
+    ctx.scale(dpr, dpr);
+    
+    originX = width / 2;
+    originY = height / 2;
+}
+
+// --- Math Helpers ---
+function mathToPixel(mx, my) {
+    return {
+        x: originX + mx * config.grid.unitSize,
+        y: originY - my * config.grid.unitSize
+    };
+}
+
+function pixelToMath(px, py) {
+    return {
+        x: (px - originX) / config.grid.unitSize,
+        y: (originY - py) / config.grid.unitSize
+    };
+}
+
+// --- Rendering Engine ---
+function drawGrid() {
+    if (!state.showGrid) return;
+
+    const u = config.grid.unitSize;
+    
+    // Minor Grid (0.5 units)
+    ctx.strokeStyle = config.colors.gridMinor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    
+    for (let i = -Math.floor(originX / u); i <= Math.ceil((width - originX) / u); i++) {
+        const x = originX + i * (u/2);
+        ctx.moveTo(x, 0); ctx.lineTo(x, height);
+    }
+    for (let j = -Math.floor(originY / u); j <= Math.ceil((height - originY) / u); j++) {
+        const y = originY + j * (u/2);
+        ctx.moveTo(0, y); ctx.lineTo(width, y);
+    }
+    ctx.stroke();
+
+    // Major Grid (1 unit) & Axes
+    ctx.strokeStyle = config.colors.gridMajor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    
+    for (let i = -Math.floor(originX / u); i <= Math.ceil((width - originX) / u); i++) {
+        const x = originX + i * u;
+        if (i === 0) continue; // Skip Y-axis
+        ctx.moveTo(x, 0); ctx.lineTo(x, height);
+    }
+    for (let j = -Math.floor(originY / u); j <= Math.ceil((height - originY) / u); j++) {
+        const y = originY + j * u;
+        if (j === 0) continue; // Skip X-axis
+        ctx.moveTo(0, y); ctx.lineTo(width, y);
+    }
+    ctx.stroke();
+
+    // Axes (Thicker)
+    ctx.strokeStyle = config.colors.axis;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(originX, 0); ctx.lineTo(originX, height); // Y-axis
+    ctx.moveTo(0, originY); ctx.lineTo(width, originY);   // X-axis
+    ctx.stroke();
+
+    // Axis Labels (Subtle)
+    ctx.fillStyle = '#64748b';
+    ctx.font = '12px Inter';
+    ctx.textAlign = 'center';
+    
+    for(let i = -Math.floor(originX/u); i <= Math.floor((width-originX)/u); i++) {
+        if(i === 0) continue;
+        const px = originX + i * u;
+        ctx.fillText(i, px, originY + 20);
+    }
+    
+    ctx.textAlign = 'right';
+    for(let j = -Math.floor(originY/u); j <= Math.floor((height-originY)/u); j++) {
+        if(j === 0) continue;
+        const py = originY - j * u;
+        ctx.fillText(j, originX - 10, py + 4);
+    }
+}
+
+function drawLine(m, c, color, alpha = 1.0, dashed = false) {
+    // Line equation: y = mx + c
+    // In pixel space: y_pix = originY - (m * x_math + c) * u
+    
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = alpha;
+    
+    if (dashed) {
+        ctx.setLineDash([8, 4]);
+    }
+
+    // Glow effect for primary line
+    if (alpha === 1.0 && !dashed) {
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = color;
+    }
+
+    ctx.beginPath();
+    
+    const xStart = -originX / config.grid.unitSize; 
+    const xEnd = (width - originX) / config.grid.unitSize; 
+    
+    const yStart = m * xStart + c;
+    const yEnd = m * xEnd + c;
+    
+    const p1 = mathToPixel(xStart, yStart);
+    const p2 = mathToPixel(xEnd, yEnd);
+    
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    
+    ctx.restore();
+}
+
+function drawSlopeTriangle(m, c) {
+    if (!state.showTriangle || m === 0) return;
+
+    const u = config.grid.unitSize;
+    const interceptPx = mathToPixel(0, c); // (0, c) in pixels
+    
+    const runUnits = 1; 
+    const riseUnits = m * runUnits;
+    
+    const pA = mathToPixel(0, c);           
+    const pB = mathToPixel(runUnits, c);    
+    const pC = mathToPixel(runUnits, c + riseUnits); 
+
+    ctx.save();
+    
+    // Draw Run (Lime)
+    ctx.strokeStyle = config.colors.lime;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(pA.x, pA.y);
+    ctx.lineTo(pB.x, pB.y);
+    ctx.stroke();
+
+    // Draw Rise (Orange)
+    ctx.strokeStyle = config.colors.orange;
+    ctx.beginPath();
+    ctx.moveTo(pB.x, pB.y);
+    ctx.lineTo(pC.x, pC.y);
+    ctx.stroke();
+
+    // Draw Hypotenuse (Dashed white)
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(pA.x, pA.y);
+    ctx.lineTo(pC.x, pC.y); 
+    ctx.stroke();
+
+    // Labels inside triangle
+    ctx.fillStyle = config.colors.white;
+    ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'center';
+    
+    ctx.fillText('run', (pA.x + pB.x)/2, pA.y + 15);
+    
+    ctx.save();
+    ctx.translate(pB.x + 10, (pB.y + pC.y)/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillText('rise', 0, 0);
+    ctx.restore();
+
+    ctx.restore();
+}
+
+function drawDraggablePoint(mx, my) {
+    const px = mathToPixel(mx, my).x;
+    const py = mathToPixel(mx, my).y;
+
+    // FIX: Snap logic updated to half-unit snapping (0.5 units)
+    let snapY = Math.round(my * 2) / 2;
+
+    // Draw projection lines to axes
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(px, originY);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(originX, py);
+    ctx.stroke();
+    
+    ctx.restore();
+
+    // Draw Point
+    ctx.save();
+    ctx.fillStyle = config.colors.white;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = 'white';
+    ctx.beginPath();
+    ctx.arc(px, mathToPixel(mx, snapY).y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Update Coordinate Card
+    const formattedX = Number(mx.toFixed(1));
+    const formattedY = Number(snapY.toFixed(1));
+    
+    coordCard.style.opacity = '1';
+    coordCard.innerHTML = `<span style="color:var(--cyan)">x</span>=${formattedX}, <span style="color:var(--pink)">y</span>=${formattedY}`;
+    
+    let cardX = px + 15;
+    let cardY = py - 40;
+    if (cardX + 120 > width) cardX = px - 130;
+    if (cardY < 10) cardY = py + 15;
+    
+    coordCard.style.left = `${cardX}px`;
+    coordCard.style.top = `${cardY}px`;
+}
+
+// --- Main Loop ---
+function render() {
+    // Clear Canvas
+    ctx.clearRect(0, 0, width, height);
+
+    drawGrid();
+
+    // Primary Line (Cyan)
+    drawLine(state.m, state.c, config.colors.cyan);
+
+    // Slope Triangle
+    drawSlopeTriangle(state.m, state.c);
+
+    // Second Line Mode
+    if (state.secondLineMode === 'parallel') {
+        const shift = 2; 
+        drawLine(state.m, state.c + shift, config.colors.pink, 0.5, true);
+        
+        ctx.save();
+        ctx.fillStyle = config.colors.pink;
+        ctx.font = '12px Inter';
+        ctx.fillText('Parallel', originX + 60, mathToPixel(0, state.c + shift).y - 10);
+        ctx.restore();
+
+    } else if (state.secondLineMode === 'perpendicular') {
+        // Guard clause for m=0 to prevent Infinity rendering
+        const m2 = Math.abs(state.m) < 0.001 ? 100 : -1 / state.m;
+        
+        drawLine(m2, state.c, config.colors.orange, 0.6, true);
+        
+        ctx.save();
+        ctx.fillStyle = config.colors.orange;
+        ctx.font = '12px Inter';
+        ctx.fillText('Perpendicular', originX + 60, mathToPixel(0, state.c).y - 10);
+        ctx.restore();
+    }
+
+    // Draggable Point (Current position on line)
+    drawDraggablePoint(state.dragX, state.m * state.dragX + state.c);
+
+    requestAnimationFrame(render);
+}
+
+// --- Interaction Logic ---
+
+function updateEquation() {
+    const mStr = Number(state.m).toFixed(1);
+    const cVal = Number(state.c);
+    
+    let cDisplay;
+    if (cVal >= 0) {
+        cDisplay = `+ ${cVal}`;
+    } else {
+        cDisplay = `- ${Math.abs(cVal)}`;
+    }
+
+    const latexStr = `y = ${mStr}x ${cDisplay}`;
+    
+    if (typeof katex !== 'undefined') {
+        try {
+            katex.render(latexStr, eqDisplay, {
+                throwOnError: false,
+                displayMode: true
+            });
+        } catch (e) {
+            eqDisplay.textContent = latexStr;
+        }
+    } else {
+        eqDisplay.textContent = latexStr;
+    }
+
+    labels.m.textContent = mStr;
+    labels.c.textContent = cVal;
+}
+
+// Slider Inputs
+inputs.slope.addEventListener('input', (e) => {
+    state.m = parseFloat(e.target.value);
+    updateEquation();
+});
+
+inputs.intercept.addEventListener('input', (e) => {
+    state.c = parseFloat(e.target.value);
+    updateEquation();
+});
+
+// Toggles - No render() call here, relying on RAF loop for smooth updates
+inputs.grid.addEventListener('change', (e) => { 
+    state.showGrid = e.target.checked;
+});
+
+inputs.triangle.addEventListener('change', (e) => { 
+    state.showTriangle = e.target.checked;
+});
+
+// Second line mode listener - No render() call here, relying on RAF loop
+inputs.mode.addEventListener('change', (e) => { 
+    state.secondLineMode = e.target.value;
+});
+
+// Dragging Logic
+canvas.addEventListener('mousedown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    
+    const mathCoords = pixelToMath(mx, my);
+    
+    // FIX: Distance threshold converted to math units for DPI independence
+    const distToLine = Math.abs(state.m * mathCoords.x - mathCoords.y + state.c) / Math.sqrt(state.m**2 + 1);
+    
+    if (distToLine < 1.5 / config.grid.unitSize) { 
+        state.isDragging = true;
+        canvas.style.cursor = 'grabbing';
+        
+        state.dragX = mathCoords.x;
+    }
+});
+
+window.addEventListener('mousemove', (e) => {
+    if (!state.isDragging) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const mathCoords = pixelToMath(mx, 0); 
+    
+    state.dragX = mathCoords.x;
+});
+
+window.addEventListener('mouseup', () => {
+    if (state.isDragging) {
+        state.isDragging = false;
+        canvas.style.cursor = 'crosshair';
+        
+        // Snap to nearest 0.5 unit on release for "tactile" feel
+        const snappedX = Math.round(state.dragX * 2) / 2;
+        state.dragX = snappedX;
+    }
+});
+
+// --- Initialization ---
+window.addEventListener('resize', resize);
+resize();
+updateEquation(); 
+render(); 
+
+</script>
+</body>
+</html>

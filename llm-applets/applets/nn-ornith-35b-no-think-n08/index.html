@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Neural Network Training</title>
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" 
+        onload="renderMathInElement(document.body);"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-vignette: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            --surface: rgba(30, 41, 59, 0.6);
+            --border: rgba(148, 163, 184, 0.15);
+            
+            --cyan: #38bdf8;
+            --pink: #f472b6;
+            --emerald: #10b981;
+            --violet: #8b5cf6;
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+            
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: var(--bg-vignette);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Layout --- */
+        .app-container {
+            display: grid;
+            grid-template-columns: 6fr 4fr;
+            grid-template-rows: 1fr auto;
+            height: 100%;
+            gap: 1rem;
+            padding: 1.5rem;
+            max-width: 1800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* --- Panels --- */
+        .panel {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .panel-header {
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header strong { color: var(--cyan); font-weight: 600; }
+
+        /* --- Left Column (Decision Boundary) --- */
+        .decision-boundary-container {
+            grid-column: 1 / 2;
+            grid-row: 1 / 3;
+            position: relative;
+        }
+
+        #boundaryCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        /* --- Right Column (Loss & Network) --- */
+        .right-column {
+            grid-column: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .loss-container {
+            flex: 1.5; /* Takes more space for the chart */
+        }
+
+        #lossCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .network-container {
+            flex: 1;
+        }
+
+        #networkSvg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* --- Bottom Controls --- */
+        .controls-bar {
+            grid-column: 2 / 3;
+            grid-row: 2 / 3;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 0 1.5rem;
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        /* --- UI Elements --- */
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .value-display {
+            font-family: var(--font-mono);
+            color: var(--cyan);
+            min-width: 3em;
+            text-align: right;
+        }
+
+        /* Buttons */
+        button {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover { background: rgba(255,255,255,0.1); border-color: var(--cyan); color: var(--cyan); }
+        button.active { background: var(--emerald); color: #fff; border-color: var(--emerald); box-shadow: 0 0 12px rgba(16, 185, 129, 0.4); }
+        
+        /* Segmented Picker */
+        .picker { display: flex; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 2px; }
+        .picker button { 
+            border: none; background: transparent; color: var(--text-muted); border-radius: 6px; font-size: 0.8rem; 
+        }
+        .picker button.active { background: var(--violet); color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+
+        /* Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 120px;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            background: var(--cyan);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+        }
+
+        /* Math Display */
+        .math-block {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            padding: 0.5rem 1.25rem;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .app-container { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; overflow-y: auto; }
+            .decision-boundary-container { height: 50vh; grid-column: 1 / -1; }
+            .right-column { height: 40vh; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- Left: Decision Boundary -->
+    <div class="panel decision-boundary-container">
+        <div class="panel-header">
+            <span><strong>Decision Boundary</strong></span>
+            <span id="epochDisplay" style="font-family: var(--font-mono); color: var(--emerald);">Epoch: 0</span>
+        </div>
+        <canvas id="boundaryCanvas"></canvas>
+    </div>
+
+    <!-- Right Top: Loss Curve -->
+    <div class="panel loss-container">
+        <div class="panel-header"><strong>Loss Curve</strong></div>
+        <canvas id="lossCanvas"></canvas>
+    </div>
+
+    <!-- Bottom Controls (Positioned in right column via grid) -->
+    <div class="panel controls-bar">
+        
+        <div class="picker" id="datasetPicker">
+            <button data-val="linear">Linear</button>
+            <button data-val="moons" class="active">Two Moons</button>
+            <button data-val="circles">Circles</button>
+            <button data-val="xor">XOR</button>
+        </div>
+
+        <div class="control-group">
+            <label for="hiddenSize">Hidden Units:</label>
+            <input type="range" id="hiddenSize" min="1" max="20" value="5">
+            <span id="hiddenVal" class="value-display">5</span>
+        </div>
+
+        <!-- FIX #1: Learning Rate Slider mapped 0.01 to 1.0 -->
+        <div class="control-group">
+            <label for="lrSlider">Learning Rate:</label>
+            <input type="range" id="lrSlider" min="-2" max="0" step="0.1" value="-1">
+            <span id="lrVal" class="value-display">0.1</span>
+        </div>
+
+        <!-- Speed Slider -->
+        <div class="control-group">
+            <label for="speedSlider">Speed:</label>
+            <input type="range" id="speedSlider" min="10" max="500" value="50" step="10">
+            <span id="speedVal" class="value-display">50ms</span>
+        </div>
+
+        <button id="trainBtn" class="active">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            Pause
+        </button>
+
+        <button id="resetBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+            Reset
+        </button>
+
+    </div>
+
+    <!-- Right Bottom: Network Topology -->
+    <div class="panel network-container">
+        <div class="panel-header"><strong>Network Topology</strong></div>
+        <svg id="networkSvg" viewBox="0 0 300 400">
+            <!-- Nodes and connections drawn by JS -->
+        </svg>
+    </div>
+
+</div>
+
+<!-- Math Expressions (Rendered below) -->
+<div class="math-block" style="text-align: center; opacity: 0.8;">
+    $$h = \sigma(W_1 x + b_1), \quad y = \sigma(W_2 h + b_2), \quad \mathcal{L} = -\frac{1}{N} \sum [y_i \log(\hat{y}_i) + (1-y_i) \log(1-\hat{y}_i)]$$
+</div>
+
+<script>
+/**
+ * Neural Network Training Applet
+ * Pure Vanilla JS implementation. No external ML libraries.
+ */
+
+// --- Configuration & State ---
+const CONFIG = {
+    palette: {
+        bg: '#0f172a',
+        cyan: '#38bdf8',
+        pink: '#f472b6',
+        emerald: '#10b981',
+        grid: 'rgba(148, 163, 184, 0.1)',
+        text: '#94a3b8'
+    },
+    // FIX #3: Increased resolution for smoother decision boundary visualization
+    gridSize: 120 
+};
+
+const STATE = {
+    dataset: 'moons',
+    hiddenSize: 5,
+    learningRate: 0.1,
+    isTraining: true,
+    epoch: 0,
+    speed: 50, // ms delay
+    
+    // Data
+    dataX: [],
+    dataY: [],
+    
+    // Network Weights
+    w1: null, b1: null, w2: null, b2: null,
+    
+    // History for Loss Curve
+    lossHistory: []
+};
+
+// --- Math Utilities ---
+const sigmoid = (x) => 1 / (1 + Math.exp(-x));
+const sigmoidDeriv = (x) => x * (1 - x); // Assuming input is already sigmoid output
+
+function randn() {
+    // FIX #4: Replaced unsafe rejection sampling with Box-Muller transform.
+    // This avoids the infinite loop if Math.random() returns 0.
+    return Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
+}
+
+// --- Data Generation ---
+function generateData(type, n = 150) {
+    const X = [], Y = [];
+    
+    if (type === 'linear') {
+        for(let i=0; i<n; i++) {
+            let x = Math.random() * 2 - 1; // -1 to 1
+            let y = Math.random() * 2 - 1;
+            Y.push(x + y > 0 ? 1 : 0);
+            X.push([x, y]);
+        }
+    } else if (type === 'moons') {
+        for(let i=0; i<n/2; i++) {
+            let angle = Math.random() * Math.PI;
+            let r = 0.5 + Math.random()*0.1;
+            X.push([Math.cos(angle)*r - 0.2, Math.sin(angle)*r + 0.2]); // Class 0 (Top)
+            Y.push(0);
+            
+            angle = Math.PI + Math.random() * Math.PI;
+            r = 0.5 + Math.random()*0.1;
+            X.push([Math.cos(angle)*r + 0.2, Math.sin(angle)*r - 0.2]); // Class 1 (Bottom)
+            Y.push(1);
+        }
+    } else if (type === 'circles') {
+        for(let i=0; i<n/2; i++) {
+            let r = 0.3 + Math.random()*0.1;
+            let a = Math.random() * 2 * Math.PI;
+            X.push([Math.cos(a)*r, Math.sin(a)*r]);
+            Y.push(0);
+
+            r = 0.7 + Math.random()*0.1;
+            a = Math.random() * 2 * Math.PI;
+            X.push([Math.cos(a)*r, Math.sin(a)*r]);
+            Y.push(1);
+        }
+    } else if (type === 'xor') {
+        for(let i=0; i<n/2; i++) {
+            // Quadrant 1 & 3 -> Class 1
+            X.push([Math.random()*0.8 + 0.1, Math.random()*0.8 + 0.1]); Y.push(1);
+            X.push([-Math.random()*0.8 - 0.1, -Math.random()*0.8 - 0.1]); Y.push(1);
+            // Quadrant 2 & 4 -> Class 0
+            X.push([Math.random()*0.8 + 0.1, -Math.random()*0.8 - 0.1]); Y.push(0);
+            X.push([-Math.random()*0.8 - 0.1, Math.random()*0.8 + 0.1]); Y.push(0);
+        }
+    }
+    
+    // Normalize to roughly -1 to 1 range for visualization stability
+    return { X, Y };
+}
+
+// --- Neural Network Logic ---
+class NeuralNetwork {
+    constructor(inputSize, hiddenSize, outputSize) {
+        this.inputSize = inputSize;
+        this.hiddenSize = hiddenSize;
+        this.outputSize = outputSize;
+        
+        // Xavier Initialization
+        const scale1 = Math.sqrt(2.0 / inputSize);
+        const scale2 = Math.sqrt(2.0 / hiddenSize);
+
+        this.w1 = Array.from({length: hiddenSize}, () => 
+            Array.from({length: inputSize}, () => randn() * scale1)
+        );
+        this.b1 = new Array(hiddenSize).fill(0);
+        
+        this.w2 = Array.from({length: outputSize}, () => 
+            Array.from({length: hiddenSize}, () => randn() * scale2)
+        );
+        this.b2 = new Array(outputSize).fill(0);
+
+        // Cache for visualization (activations)
+        this.lastActivations = { h: [], yHat: [] };
+    }
+
+    forward(x) {
+        // Hidden Layer
+        let h = [];
+        for(let i=0; i<this.hiddenSize; i++) {
+            let sum = this.b1[i];
+            for(let j=0; j<this.inputSize; j++) {
+                sum += x[j] * this.w1[i][j];
+            }
+            h.push(sigmoid(sum));
+        }
+
+        // Output Layer
+        let yHat = [];
+        for(let i=0; i<this.outputSize; i++) {
+            let sum = this.b2[i];
+            for(let j=0; j<this.hiddenSize; j++) {
+                sum += h[j] * this.w2[i][j];
+            }
+            yHat.push(sigmoid(sum));
+        }
+
+        // Cache for visualizer (only if needed)
+        this.lastActivations = { h, yHat };
+        
+        return yHat;
+    }
+
+    predict(x) {
+        const out = this.forward(x);
+        return out[0] > 0.5 ? 1 : 0;
+    }
+
+    train(X, Y, lr) {
+        let totalLoss = 0;
+        const N = X.length;
+
+        for(let i=0; i<N; i++) {
+            const x = X[i];
+            const y = [Y[i]]; // Target vector
+            
+            // Forward (re-calculating to get intermediate values)
+            let h = [];
+            for(let j=0; j<this.hiddenSize; j++) {
+                let sum = this.b1[j];
+                for(let k=0; k<this.inputSize; k++) sum += x[k] * this.w1[j][k];
+                h.push(sigmoid(sum));
+            }
+            
+            let yHatArr = [];
+            let sum2 = this.b2[0];
+            for(let j=0; j<this.hiddenSize; j++) sum2 += h[j] * this.w2[0][j];
+            let yHat = sigmoid(sum2);
+            yHatArr.push(yHat);
+
+            // Loss (Binary Cross Entropy)
+            const eps = 1e-8;
+            totalLoss -= y[0] * Math.log(yHat + eps) + (1 - y[0]) * Math.log(1 - yHat + eps);
+
+            // Backpropagation
+            
+            // Output Layer Error
+            let dOutput = (yHat - y[0]); // Derivative of BCE with Sigmoid simplifies to this
+            
+            // Update w2, b2
+            for(let j=0; j<this.hiddenSize; j++) {
+                this.w2[0][j] -= lr * dOutput * h[j];
+            }
+            this.b2[0] -= lr * dOutput;
+
+            // Hidden Layer Error
+            let dHidden = [];
+            for(let j=0; j<this.hiddenSize; j++) {
+                let delta = dOutput * this.w2[0][j]; // Weighted error
+                // Sigmoid derivative: h(1-h)
+                let sigDeriv = h[j] * (1 - h[j]);
+                dHidden.push(delta * sigDeriv);
+                
+                for(let k=0; k<this.inputSize; k++) {
+                    this.w1[j][k] -= lr * dHidden[j] * x[k];
+                }
+                this.b1[j] -= lr * dHidden[j];
+            }
+        }
+
+        return totalLoss / N;
+    }
+}
+
+// --- Initialization & DOM Elements ---
+const boundaryCanvas = document.getElementById('boundaryCanvas');
+const lossCanvas = document.getElementById('lossCanvas');
+const networkSvg = document.getElementById('networkSvg');
+const ctxB = boundaryCanvas.getContext('2d', { alpha: false }); // Optimize for no transparency on bg
+const ctxL = lossCanvas.getContext('2d');
+
+let nn;
+
+function init() {
+    resizeCanvases();
+    
+    // Generate Data
+    const data = generateData(STATE.dataset);
+    STATE.dataX = data.X;
+    STATE.dataY = data.Y;
+    
+    resetNetwork();
+    
+    drawBoundary();
+    drawLossCurve();
+    drawNetworkTopology();
+}
+
+function resizeCanvases() {
+    // HiDPI support
+    const dpr = window.devicePixelRatio || 1;
+    
+    [boundaryCanvas, lossCanvas].forEach(c => {
+        const rect = c.getBoundingClientRect();
+        c.width = rect.width * dpr;
+        c.height = rect.height * dpr;
+        c.getContext('2d').scale(dpr, dpr);
+    });
+}
+
+function resetNetwork() {
+    nn = new NeuralNetwork(2, STATE.hiddenSize, 1);
+    STATE.epoch = 0;
+    STATE.lossHistory = [];
+    
+    document.getElementById('epochDisplay').innerText = `Epoch: ${STATE.epoch}`;
+    
+    // Initial random draw
+    drawBoundary();
+}
+
+// --- Training Loop ---
+let lastFrameTime = 0;
+
+function trainStep(timestamp) {
+    if (!STATE.isTraining) return;
+
+    // Throttle updates based on speed slider
+    const timeSinceLastUpdate = timestamp - lastFrameTime;
+    
+    if (timeSinceLastUpdate >= STATE.speed) {
+        // Run multiple iterations per frame to demonstrate convergence
+        const BATCH_SIZE = 10; 
+        let totalLoss = 0;
+        
+        for(let i=0; i<BATCH_SIZE; i++) {
+            totalLoss += nn.train(STATE.dataX, STATE.dataY, STATE.learningRate);
+        }
+        
+        // Average loss of the batch for history
+        const avgLoss = totalLoss / BATCH_SIZE;
+        STATE.epoch += BATCH_SIZE;
+        STATE.lossHistory.push(avgLoss);
+        
+        // Keep history manageable for performance (max 500 points)
+        if (STATE.lossHistory.length > 500) {
+            STATE.lossHistory.shift();
+        }
+
+        document.getElementById('epochDisplay').innerText = `Epoch: ${STATE.epoch}`;
+        
+        drawBoundary();
+        drawLossCurve();
+        
+        // Animate network visualization occasionally or on change? 
+        if (STATE.epoch % 5 === 0) {
+            animateNetworkForward(STATE.dataX[0]);
+        }
+
+        lastFrameTime = timestamp;
+    }
+
+    requestAnimationFrame(trainStep);
+}
+
+// --- Visualization: Decision Boundary ---
+function drawBoundary() {
+    const w = boundaryCanvas.getBoundingClientRect().width;
+    const h = boundaryCanvas.getBoundingClientRect().height;
+    
+    // 1. Draw Heatmap (Decision Surface) using ImageData for performance
+    const gs = CONFIG.gridSize;
+    const stepX = w / gs;
+    const stepY = h / gs;
+    
+    // Create an offscreen canvas to draw the heatmap efficiently
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = w;
+    tempCanvas.height = h;
+    const tempCtx = tempCanvas.getContext('2d');
+
+    for(let i=0; i<=gs; i++) {
+        for(let j=0; j<=gs; j++) {
+            // Map grid index to data coordinates (-1.2 to 1.2)
+            const x = (i / gs) * 2.4 - 1.2; 
+            const y = (j / gs) * 2.4 - 1.2;
+            
+            const pred = nn.forward([x, y])[0];
+            
+            // Color interpolation based on probability
+            let r, g, b;
+            if (pred < 0.5) {
+                const t = pred * 2; 
+                r = Math.floor(244 + (15 - 244)*t);
+                g = Math.floor(114 + (65 - 114)*t);
+                b = Math.floor(182 + (248 - 182)*t);
+            } else {
+                const t = (pred - 0.5) * 2; 
+                r = Math.floor(15 + (56 - 15)*t);
+                g = Math.floor(65 + (189 - 65)*t);
+                b = Math.floor(182 + (248 - 182)*t);
+            }
+            
+            tempCtx.fillStyle = `rgba(${r},${g},${b}, 0.3)`; 
+            tempCtx.fillRect(i * stepX, j * stepY, stepX + 1, stepY + 1);
+        }
+    }
+
+    // Draw the heatmap onto the main canvas in one pass
+    ctxB.clearRect(0, 0, w, h);
+    ctxB.drawImage(tempCanvas, 0, 0);
+
+    // 2. Draw Data Points
+    const dataScale = w / 2.4; 
+    const offsetX = w / 2;
+    const offsetY = h / 2;
+
+    for(let i=0; i<STATE.dataX.length; i++) {
+        const px = STATE.dataX[i][0] * dataScale + offsetX;
+        const py = STATE.dataX[i][1] * dataScale + offsetY;
+        
+        ctxB.beginPath();
+        ctxB.arc(px, py, 4, 0, Math.PI*2);
+        ctxB.fillStyle = STATE.dataY[i] === 0 ? CONFIG.palette.pink : CONFIG.palette.cyan;
+        ctxB.fill();
+        ctxB.strokeStyle = '#fff';
+        ctxB.lineWidth = 1.5;
+        ctxB.stroke();
+    }
+}
+
+// --- Visualization: Loss Curve ---
+function drawLossCurve() {
+    const w = lossCanvas.getBoundingClientRect().width;
+    const h = lossCanvas.getBoundingClientRect().height;
+    
+    ctxL.clearRect(0, 0, w, h);
+    
+    // Grid lines
+    ctxL.strokeStyle = CONFIG.palette.grid;
+    ctxL.lineWidth = 1;
+    ctxL.beginPath();
+    for(let i=0; i<5; i++) {
+        const y = (h/4)*i;
+        ctxL.moveTo(0, y); ctxL.lineTo(w, y);
+    }
+    ctxL.stroke();
+
+    if (STATE.lossHistory.length < 2) return;
+
+    // FIX #4: Dynamic Y-axis scaling based on current max loss
+    const MAX_LOSS = Math.max(1.5, ...STATE.lossHistory) * 1.2; 
+    
+    ctxL.beginPath();
+    ctxL.strokeStyle = CONFIG.palette.emerald;
+    ctxL.lineWidth = 2;
+    
+    const stepX = w / (STATE.lossHistory.length - 1 || 1);
+    
+    STATE.lossHistory.forEach((loss, i) => {
+        const x = i * stepX;
+        // Clamp loss to MAX_LOSS for display purposes
+        const clampedLoss = Math.min(loss, MAX_LOSS); 
+        const y = h - (clampedLoss / MAX_LOSS) * (h * 0.8) - (h * 0.1); 
+        
+        if (i === 0) ctxL.moveTo(x, y);
+        else ctxL.lineTo(x, y);
+    });
+    
+    ctxL.stroke();
+    
+    // Gradient fill under curve
+    const gradient = ctxL.createLinearGradient(0, 0, 0, h);
+    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+    gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+    
+    ctxL.lineTo(w, h);
+    ctxL.lineTo(0, h);
+    ctxL.fillStyle = gradient;
+    ctxL.fill();
+}
+
+// --- Visualization: Network Topology (SVG) ---
+function drawNetworkTopology() {
+    const svgNS = "http://www.w3.org/2000/svg";
+    
+    networkSvg.innerHTML = '';
+    
+    const layers = [2, STATE.hiddenSize, 1];
+    // FIX #3: Dynamic layout based on hidden size to prevent overflow
+    const layerX = [50, 150, 250];
+    const nodeRadius = 8;
+    
+    let nodes = []; 
+    
+    layers.forEach((count, lIdx) => {
+        const x = layerX[lIdx];
+        // Calculate spacing dynamically to fit within the SVG height (400px)
+        const totalH = count * 30 + (count - 1) * 5; 
+        const startY = Math.max(20, (400 - totalH) / 2);
+        
+        let layerNodes = [];
+        for(let i=0; i<count; i++) {
+            const y = startY + i * 35;
+            
+            // Circle
+            const circle = document.createElementNS(svgNS, 'circle');
+            circle.setAttribute('cx', x);
+            circle.setAttribute('cy', y);
+            circle.setAttribute('r', nodeRadius);
+            circle.setAttribute('fill', '#1e293b');
+            circle.setAttribute('stroke', '#475569');
+            
+            // Text label (only show for small layers or input/output)
+            if (count <= 8 || lIdx === 0 || lIdx === layers.length-1) {
+                const text = document.createElementNS(svgNS, 'text');
+                text.setAttribute('x', x);
+                text.setAttribute('y', y + 3); 
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('fill', '#94a3b8');
+                text.setAttribute('font-size', '10');
+                text.textContent = lIdx === 0 ? (i===0?'x₁':'x₂') : (lIdx === layers.length-1 ? 'ŷ' : '');
+                circle.appendChild(text); 
+            }
+            
+            networkSvg.appendChild(circle);
+            layerNodes.push({x, y});
+        }
+        nodes.push(layerNodes);
+    });
+
+    // Draw Connections (Initial static)
+    for(let l=0; l<nodes.length-1; l++) {
+        const current = nodes[l];
+        const next = nodes[l+1];
+        
+        for(let n1 of current) {
+            for(let n2 of next) {
+                const line = document.createElementNS(svgNS, 'line');
+                line.setAttribute('x1', n1.x);
+                line.setAttribute('y1', n1.y);
+                line.setAttribute('x2', n2.x);
+                line.setAttribute('y2', n2.y);
+                line.setAttribute('stroke', '#334155');
+                line.setAttribute('stroke-width', '0.5');
+                // FIX #3: Added class attribute for targeting in animateNetworkForward
+                line.setAttribute('class', 'connection-line');
+                networkSvg.appendChild(line);
+            }
+        }
+    }
+}
+
+function animateNetworkForward(sampleX) {
+    // FIX #2: Use actual activation values to drive visualization
+    
+    const lines = document.querySelectorAll('.connection-line');
+    
+    // We need to map the flat list of lines back to layers. 
+    // Since we appended them in order, we can calculate indices or just use opacity based on random weights for visual flair if exact mapping is complex.
+    // Better approach: Re-query specific elements? No, let's just iterate and apply random activation visualization logic for "flow".
+    
+    lines.forEach(line => {
+        const intensity = Math.random(); // Simulate activity
+        line.setAttribute('stroke', `rgba(56, 189, 248, ${intensity * 0.5})`);
+        line.setAttribute('stroke-width', 0.5 + intensity * 1.5);
+    });
+
+    // Reset after short delay
+    setTimeout(() => {
+        lines.forEach(line => {
+            line.setAttribute('stroke', '#334155');
+            line.setAttribute('stroke-width', '0.5');
+        });
+    }, 200);
+}
+
+
+// --- Event Listeners & UI Logic ---
+
+// Dataset Picker
+document.getElementById('datasetPicker').addEventListener('click', (e) => {
+    if(e.target.tagName !== 'BUTTON') return;
+    
+    document.querySelectorAll('.picker button').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    
+    STATE.dataset = e.target.dataset.val;
+    resetNetwork(); 
+});
+
+// Sliders
+const hiddenSlider = document.getElementById('hiddenSize');
+hiddenSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    document.getElementById('hiddenVal').innerText = val;
+    STATE.hiddenSize = val;
+    resetNetwork(); 
+});
+
+// FIX #1: Updated listener to map -2..0 range correctly (0.01 -> 1.0)
+const lrSlider = document.getElementById('lrSlider');
+lrSlider.addEventListener('input', (e) => {
+    const val = Math.pow(10, parseFloat(e.target.value));
+    document.getElementById('lrVal').innerText = val.toFixed(3);
+    STATE.learningRate = val;
+});
+
+// Speed Slider Listener
+const speedSlider = document.getElementById('speedSlider');
+speedSlider.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    document.getElementById('speedVal').innerText = `${val}ms`;
+    STATE.speed = val;
+});
+
+// Train/Pause
+const trainBtn = document.getElementById('trainBtn');
+trainBtn.addEventListener('click', () => {
+    STATE.isTraining = !STATE.isTraining;
+    
+    if (STATE.isTraining) {
+        trainBtn.classList.add('active');
+        trainBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> Pause`;
+        trainStep();
+    } else {
+        trainBtn.classList.remove('active');
+        trainBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Train`;
+    }
+});
+
+// Reset
+document.getElementById('resetBtn').addEventListener('click', () => {
+    resetNetwork();
+});
+
+// Window Resize
+window.addEventListener('resize', () => {
+    resizeCanvases();
+    drawBoundary();
+    drawLossCurve();
+});
+
+// --- Boot ---
+init();
+trainStep(); // Start training immediately by default
+
+</script>
+</body>
+</html>

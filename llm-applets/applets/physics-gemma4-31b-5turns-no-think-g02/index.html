@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buoyancy: Float or Sink?</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0f172a;
+            --bg-gradient: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            --surface: rgba(30, 41, 59, 0.8);
+            --border: rgba(255, 255, 255, 0.15);
+            --accent-cyan: #38bdf8;
+            --accent-indigo: #818cf8;
+            --accent-amber: #fbbf24;
+            --text-bright: #f8fafc;
+            --text-dim: #94a3b8;
+            --glass: rgba(255, 255, 255, 0.07);
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-deep);
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-bright);
+            font-family: 'Inter', system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        h1 {
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 600;
+            color: var(--text-bright);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: clamp(2rem, 5vw, 3rem);
+            text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        #app-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 40px;
+            align-items: start;
+        }
+
+        @media (max-width: 950px) {
+            #app-container {
+                grid-template-columns: 1fr;
+                justify-items: center;
+            }
+        }
+
+        /* --- Stage Area --- */
+        #stage {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        #tank-container {
+            position: relative;
+            width: 500px;
+            height: 450px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 8px solid rgba(255, 255, 255, 0.1);
+            border-top: none;
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6), inset 0 0 40px rgba(56, 189, 248, 0.1);
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        #water {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 85%;
+            background: linear-gradient(to bottom, rgba(56, 189, 248, 0.3), rgba(30, 58, 138, 0.7));
+            backdrop-filter: blur(4px);
+            border-top: 3px solid rgba(255, 255, 255, 0.4);
+            pointer-events: none;
+        }
+
+        #caustics-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            opacity: 0.6;
+            mix-blend-mode: screen;
+        }
+
+        #fx-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        /* --- Controls Card --- */
+        #prediction-card {
+            position: absolute;
+            top: -110px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            padding: 16px 32px;
+            border-radius: 100px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            z-index: 10;
+        }
+
+        .label-small {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        #prediction-toggle {
+            display: flex;
+            background: #0f172a;
+            padding: 4px;
+            border-radius: 50px;
+            position: relative;
+            width: 220px;
+            height: 44px;
+            user-select: none;
+            cursor: pointer;
+            border: 1px solid var(--border);
+        }
+
+        .toggle-option {
+            flex: 1;
+            text-align: center;
+            line-height: 36px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 2;
+            transition: color 0.3s ease;
+            color: var(--text-dim);
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+        }
+
+        .toggle-option.active { color: white; }
+
+        #toggle-slider {
+            position: absolute;
+            top: 4px; left: 4px;
+            width: calc(50% - 4px);
+            height: calc(100% - 8px);
+            background: var(--accent-indigo);
+            border-radius: 50px;
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55), background 0.3s ease;
+            box-shadow: 0 0 15px rgba(129, 140, 232, 0.5);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #toggle-slider.float { transform: translateX(0); background: var(--accent-cyan); box-shadow: 0 0 15px rgba(56, 189, 248, 0.5); }
+        #toggle-slider.sink { transform: translateX(100%); background: var(--accent-amber); box-shadow: 0 0 15px rgba(251, 191, 36, 0.5); }
+
+        /* --- Object Tray --- */
+        #tray {
+            margin-top: 40px;
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: var(--radius);
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: opacity 0.3s ease, pointer-events 0.3s ease;
+        }
+
+        #tray.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            filter: grayscale(0.8);
+        }
+
+        .object-item {
+            width: 64px;
+            height: 64px;
+            background: var(--glass);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+            user-select: none;
+            position: relative;
+        }
+
+        .object-item:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-5px) scale(1.1);
+            border-color: var(--accent-cyan);
+        }
+
+        .object-item.selected {
+            border-color: var(--accent-cyan);
+            background: rgba(56, 189, 248, 0.2);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+
+        /* --- Classification Panel --- */
+        #classification-panel {
+            background: #1e293b;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
+            height: fit-content;
+        }
+
+        .panel-title {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--accent-cyan);
+        }
+
+        .columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .column {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 200px;
+        }
+
+        .column h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            text-align: center;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+            letter-spacing: 0.05em;
+        }
+
+        .result-item {
+            background: var(--glass);
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            animation: slideIn 0.4s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* --- Feedback & Buttons --- */
+        #feedback-msg {
+            position: absolute;
+            top: -170px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Fredoka', sans-serif;
+            font-size: 2rem;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+            text-align: center;
+            width: 100%;
+            z-index: 20;
+        }
+
+        #feedback-msg.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-10px);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button.action-btn {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            color: var(--text-bright);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+
+        button.action-btn:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: var(--text-dim);
+        }
+
+        /* --- Physics Objects --- */
+        .physics-obj {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            pointer-events: none;
+            z-index: 5;
+            will-change: top, left;
+        }
+
+        #drag-proxy {
+            position: fixed;
+            width: 64px;
+            height: 64px;
+            background: var(--glass);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="main-title">Buoyancy: Float or Sink?</h1>
+
+    <div id="app-container">
+        <div id="stage">
+            <div id="feedback-msg">Correct! 🌟</div>
+            
+            <div id="prediction-card">
+                <span class="label-small">Your Guess</span>
+                <div id="prediction-toggle" role="radiogroup" aria-label="Prediction Toggle" onclick="handleToggleClick(event)">
+                    <div id="toggle-slider"></div>
+                    <button class="toggle-option" id="opt-float" onclick="setPrediction('float', event)" aria-checked="false">FLOAT</button>
+                    <button class="toggle-option" id="opt-sink" onclick="setPrediction('sink', event)" aria-checked="false">SINK</button>
+                </div>
+            </div>
+
+            <div id="tank-container">
+                <canvas id="caustics-canvas"></canvas>
+                <div id="water"></div>
+                <canvas id="fx-canvas"></canvas>
+            </div>
+
+            <div id="tray" role="listbox" aria-label="Object Tray">
+                <!-- Objects will be injected here -->
+            </div>
+        </div>
+
+        <div id="classification-panel">
+            <div class="panel-title">Discovery Log</div>
+            <div class="columns">
+                <div class="column" id="col-float">
+                    <h3>Floats 🎈</h3>
+                    <div class="list-content"></div>
+                </div>
+                <div class="column" id="col-sink">
+                    <h3>Sinks ⚓</h3>
+                    <div class="list-content"></div>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="action-btn" onclick="clearTank()">Clear Tank</button>
+                <button class="action-btn" onclick="resetAll()">Reset All</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="drag-proxy"></div>
+
+    <script>
+        const OBJECTS_DATA = [
+            { id: 'cork', name: 'Cork', icon: '🍾', buoyancy: 'float' },
+            { id: 'wood', name: 'Wood Block', icon: '🪵', buoyancy: 'float' },
+            { id: 'boat', name: 'Plastic Boat', icon: '⛵', buoyancy: 'float' },
+            { id: 'leaf', name: 'Leaf', icon: '🍃', buoyancy: 'float' },
+            { id: 'sponge', name: 'Sponge', icon: '<0xF0><0x9F><0xA7><0xBD>', buoyancy: 'float' },
+            { id: 'coin', name: 'Coin', icon: '🪙', buoyancy: 'sink' },
+            { id: 'nail', name: 'Iron Nail', icon: '📍', buoyancy: 'sink' },
+            { id: 'stone', name: 'Stone', icon: '<0xF0><0x9F><0xAA><0xA8>', buoyancy: 'sink' },
+            { id: 'marble', name: 'Marble', icon: '🔮', buoyancy: 'sink' },
+        ];
+
+        let currentPrediction = null; 
+        let selectedObjectId = null;
+        let activeObjectsInTank = [];
+        
+        // Dragging state
+        let isDragging = false;
+        let dragTargetX = 0, dragTargetY = 0;
+        let proxyX = 0, proxyY = 0;
+
+        const trayEl = document.getElementById('tray');
+        const toggleSlider = document.getElementById('toggle-slider');
+        const optFloat = document.getElementById('opt-float');
+        const optSink = document.getElementById('opt-sink');
+        const feedbackMsg = document.getElementById('feedback-msg');
+        const dragProxy = document.getElementById('drag-proxy');
+
+        // --- Caustics & FX Canvas Setup ---
+        const causticsCanvas = document.getElementById('caustics-canvas');
+        const fxCanvas = document.getElementById('fx-canvas');
+        const cctx = causticsCanvas.getContext('2d');
+        const fctx = fxCanvas.getContext('2d');
+
+        function resizeCanvases() {
+            const tank = document.getElementById('tank-container');
+            [causticsCanvas, fxCanvas].forEach(canvas => {
+                canvas.width = tank.clientWidth * window.devicePixelRatio;
+                canvas.height = tank.clientHeight * window.devicePixelRatio;
+                canvas.style.width = tank.clientWidth + 'px';
+                canvas.style.height = tank.clientHeight + 'px';
+            });
+        }
+
+        function drawCaustics(time) {
+            const w = causticsCanvas.width;
+            const h = causticsCanvas.height;
+            cctx.clearRect(0, 0, w, h);
+            cctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            cctx.lineWidth = 2;
+
+            for (let i = 0; i < 8; i++) {
+                cctx.beginPath();
+                const offset = time * 0.001 + i;
+                cctx.moveTo(0, h * 0.5);
+                for (let x = 0; x <= w; x += 20) {
+                    const y = h * 0.7 + Math.sin(x * 0.01 + offset) * 20 + Math.cos(x * 0.02 - offset) * 15;
+                    cctx.lineTo(x, y);
+                }
+                cctx.stroke();
+            }
+            requestAnimationFrame(drawCaustics);
+        }
+
+        // --- Particle System for Splashes ---
+        let particles = [];
+        function createSplashParticles(x, y) {
+            for (let i = 0; i < 12; i++) {
+                particles.push({
+                    x: x * window.devicePixelRatio,
+                    y: y * window.devicePixelRatio,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 1) * 6,
+                    life: 1.0,
+                    size: Math.random() * 3 + 2
+                });
+            }
+        }
+
+        function updateParticles() {
+            fctx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2; // gravity
+                p.life -= 0.02;
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                fctx.fillStyle = `rgba(255, 255, 255, ${p.life * 0.6})`;
+                fctx.beginPath();
+                fctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                fctx.fill();
+            }
+            requestAnimationFrame(updateParticles);
+        }
+
+        // --- Custom Dragging System with Spring Lag ---
+        function initTray() {
+            trayEl.innerHTML = '';
+            OBJECTS_DATA.forEach(obj => {
+                const div = document.createElement('div');
+                div.className = 'object-item';
+                div.id = `tray-${obj.id}`;
+                div.innerText = obj.icon;
+                div.setAttribute('role', 'option');
+                div.setAttribute('aria-label', obj.name);
+                
+                // Mouse events
+                div.onmousedown = (e) => {
+                    e.preventDefault();
+                    selectObject(obj.id);
+                    startDragging(e, obj);
+                };
+
+                // Touch events for mobile responsiveness
+                div.ontouchstart = (e) => {
+                    e.preventDefault();
+                    selectObject(obj.id);
+                    const touch = e.touches[0];
+                    startDragging({ clientX: touch.clientX, clientY: touch.clientY, currentTarget: div }, obj);
+                };
+
+                trayEl.appendChild(div);
+            });
+        }
+
+        function selectObject(id) {
+            selectedObjectId = id;
+            document.querySelectorAll('.object-item').forEach(el => el.classList.remove('selected'));
+            const selectedEl = document.getElementById(`tray-${id}`);
+            if (selectedEl) selectedEl.classList.add('selected');
+        }
+
+        function startDragging(e, obj) {
+            isDragging = true;
+            dragProxy.innerText = obj.icon;
+            dragProxy.style.opacity = '1';
+            
+            const rect = e.currentTarget.getBoundingClientRect();
+            proxyX = rect.left + rect.width / 2;
+            proxyY = rect.top + rect.height / 2;
+            dragTargetX = proxyX;
+            dragTargetY = proxyY;
+
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+            window.addEventListener('touchmove', onTouchMove, { passive: false });
+            window.addEventListener('touchend', onTouchEnd);
+        }
+
+        function onMouseMove(e) {
+            dragTargetX = e.clientX;
+            dragTargetY = e.clientY;
+        }
+
+        function onTouchMove(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            dragTargetX = touch.clientX;
+            dragTargetY = touch.clientY;
+        }
+
+        function onMouseUp(e) {
+            handleDrop(e.clientX, e.clientY);
+            cleanupDragListeners();
+        }
+
+        function onTouchEnd(e) {
+            const touch = e.changedTouches[0];
+            handleDrop(touch.clientX, touch.clientY);
+            cleanupDragListeners();
+        }
+
+        function cleanupDragListeners() {
+            isDragging = false;
+            dragProxy.style.opacity = '0';
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            window.removeEventListener('touchmove', onTouchMove);
+            window.removeEventListener('touchend', onTouchEnd);
+        }
+
+        function handleDrop(clientX, clientY) {
+            const tank = document.getElementById('tank-container');
+            const tankRect = tank.getBoundingClientRect();
+            
+            if (clientX >= tankRect.left && clientX <= tankRect.right && 
+                clientY >= tankRect.top && clientY <= tankRect.bottom) {
+                
+                // STRICT ENFORCEMENT: Prediction must be set
+                if (!currentPrediction) {
+                    showFeedback("Make a guess first! 🤔", false);
+                    return;
+                }
+
+                if (!selectedObjectId) {
+                    showFeedback("Select an object first! 📦", false);
+                    return;
+                }
+
+                const objData = OBJECTS_DATA.find(o => o.id === selectedObjectId);
+                const x = clientX - tankRect.left;
+                const y = clientY - tankRect.top;
+                dropObjectIntoTank(objData, x, y);
+            }
+        }
+
+        function updateProxyPosition() {
+            const lerpFactor = 0.2;
+            proxyX += (dragTargetX - proxyX) * lerpFactor;
+            proxyY += (dragTargetY - proxyY) * lerpFactor;
+
+            dragProxy.style.left = `${proxyX - 32}px`;
+            dragProxy.style.top = `${proxyY - 32}px`;
+            requestAnimationFrame(updateProxyPosition);
+        }
+
+        // --- Core Logic & Physics ---
+        function handleToggleClick(e) {
+            if (e.target.tagName === 'BUTTON') return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            setPrediction(x < rect.width / 2 ? 'float' : 'sink');
+        }
+
+        function setPrediction(val, event) {
+            if (event) event.stopPropagation();
+            currentPrediction = val;
+            toggleSlider.className = val || "";
+            optFloat.classList.toggle('active', currentPrediction === 'float');
+            optSink.classList.toggle('active', currentPrediction === 'sink');
+            optFloat.setAttribute('aria-checked', currentPrediction === 'float');
+            optSink.setAttribute('aria-checked', currentPrediction === 'sink');
+
+            // Visual feedback for the tray: disable if no prediction is made
+            if (currentPrediction) {
+                trayEl.classList.remove('disabled');
+            } else {
+                trayEl.classList.add('disabled');
+            }
+        }
+
+        function dropObjectIntoTank(obj, startX, startY) {
+            const el = document.createElement('div');
+            el.className = 'physics-obj';
+            el.innerText = obj.icon;
+            el.style.left = `${startX - 25}px`;
+            el.style.top = `${startY - 25}px`;
+            document.getElementById('tank-container').appendChild(el);
+
+            const isCorrect = (currentPrediction === obj.buoyancy);
+            let posY = startY - 25;
+            let velY = 0;
+            const gravity = 0.4;
+            const waterLinePercent = 67; 
+            const tankHeight = 450;
+            const absoluteWaterLine = (waterLinePercent / 100) * tankHeight;
+
+            const state = {
+                el, posY, velY, buoyancy: obj.buoyancy,
+                settled: false, hasSplashed: false, bobOffset: Math.random() * Math.PI * 2
+            };
+
+            activeObjectsInTank.push(state);
+
+            function animate() {
+                if (state.settled) {
+                    if (state.buoyancy === 'float') {
+                        const bob = Math.sin(Date.now() / 500 + state.bobOffset) * 3;
+                        el.style.top = `${absoluteWaterLine - 25 + bob}px`;
+                    }
+                    requestAnimationFrame(animate);
+                    return;
+                }
+
+                velY += gravity;
+                posY += velY;
+
+                if (posY >= absoluteWaterLine && !state.hasSplashed) {
+                    createSplashParticles(startX, absoluteWaterLine);
+                    state.hasSplashed = true;
+                    if (state.buoyancy === 'float') velY = -2; 
+                }
+
+                if (posY >= absoluteWaterLine) {
+                    const drag = 0.85;
+                    velY *= drag;
+                    if (state.buoyancy === 'float') velY += -0.7; 
+                }
+
+                if (posY >= tankHeight - 50) {
+                    posY = tankHeight - 50;
+                    velY = 0;
+                    state.settled = true;
+                    if (state.buoyancy === 'sink') createThud(startX, tankHeight);
+                }
+
+                if (state.buoyancy === 'float' && Math.abs(velY) < 0.2 && posY >= absoluteWaterLine - 10) {
+                    posY = absoluteWaterLine - 25;
+                    state.settled = true;
+                }
+
+                el.style.top = `${posY}px`;
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+            setTimeout(() => {
+                showFeedback(isCorrect ? "Correct! 🌟" : "Not quite! 🧐", isCorrect);
+                addToLog(obj);
+            }, 1000);
+        }
+
+        function showFeedback(text, correct) {
+            feedbackMsg.innerText = text;
+            feedbackMsg.style.color = correct === true ? "var(--accent-cyan)" : (correct === false ? "var(--accent-amber)" : "var(--text-dim)");
+            feedbackMsg.classList.add('show');
+            setTimeout(() => feedbackMsg.classList.remove('show'), 2000);
+        }
+
+        function addToLog(obj) {
+            const colId = obj.buoyancy === 'float' ? 'col-float' : 'col-sink';
+            const container = document.getElementById(colId).querySelector('.list-content');
+            const item = document.createElement('div');
+            item.className = 'result-item';
+            item.innerHTML = `<span style="font-size: 1.2rem">${obj.icon}</span> <span style="flex:1">${obj.name}</span>`;
+            container.appendChild(item);
+        }
+
+        function createThud(x, y) {
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: x * window.devicePixelRatio + (Math.random() - 0.5) * 20,
+                    y: y * window.devicePixelRatio - 10,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: -Math.random() * 3 - 1,
+                    life: 1.0,
+                    size: Math.random() * 4 + 2
+                });
+            }
+        }
+
+        function clearTank() {
+            const tank = document.getElementById('tank-container');
+            const objects = tank.querySelectorAll('.physics-obj');
+            objects.forEach(o => o.remove());
+            activeObjectsInTank = [];
+        }
+
+        function resetAll() {
+            clearTank();
+            document.getElementById('col-float').querySelector('.list-content').innerHTML = '';
+            document.getElementById('col-sink').querySelector('.list-content').innerHTML = '';
+            selectedObjectId = null;
+            currentPrediction = null;
+            setPrediction(null); 
+            toggleSlider.className = "";
+            optFloat.classList.remove('active');
+            optSink.classList.remove('active');
+            document.querySelectorAll('.object-item').forEach(el => el.classList.remove('selected'));
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initTray();
+            resizeCanvases();
+            window.addEventListener('resize', resizeCanvases);
+            drawCaustics(0);
+            updateParticles();
+            updateProxyPosition();
+            // Initial state: tray disabled until prediction is made
+            trayEl.classList.add('disabled');
+        });
+    </script>
+</body>
+</html>

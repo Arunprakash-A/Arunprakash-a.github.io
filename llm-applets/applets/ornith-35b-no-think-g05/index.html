@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decimals, Fractions, and Percentages Connector</title>
+    
+    <!-- KaTeX for math rendering (Pinned) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <!-- GSAP for animations (Pinned) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-darker: #020617;
+            --surface: #1e293b;
+            --border: #334155;
+            
+            --primary: #38bdf8; /* Cyan */
+            --secondary: #f472b6; /* Pink */
+            --tertiary: #a78bfa; /* Violet */
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background: radial-gradient(circle at center, #1e293b 0%, var(--bg-dark) 60%, var(--bg-darker) 100%);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Center vertically */
+            padding: 2rem;
+        }
+
+        /* Layout */
+        .app-container {
+            width: 100%;
+            max-width: 1100px;
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle { color: var(--text-muted); font-size: 0.95rem; letter-spacing: 0.02em; }
+
+        /* Main Grid Area */
+        .grid-section {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top so grid doesn't stretch weirdly */
+            gap: 3rem;
+            flex-wrap: wrap;
+        }
+
+        /* CRITICAL FIX 1 & 2: Grid Container and Cells */
+        .hundredths-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            
+            /* Explicit dimensions to ensure rendering and prevent collapse */
+            width: 280px;
+            height: 280px;
+            min-width: 200px; /* Safety net for smaller screens */
+            min-height: 200px;
+
+            background: var(--bg-darker);
+            border-radius: var(--radius);
+            padding: 4px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 0 15px rgba(56, 189, 248, 0.1);
+            
+            /* Flexbox safety */
+            flex-shrink: 0; 
+        }
+
+        .grid-cell {
+            /* CRITICAL FIX: Explicit dimensions for cells to prevent collapse in headless browsers */
+            width: 100%;
+            height: 100%;
+            
+            background: var(--surface);
+            border-radius: 2px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .grid-cell.active {
+            background-color: var(--primary);
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+        }
+
+        /* Place Value Chart */
+        .place-value-chart {
+            display: flex;
+            gap: 1rem;
+            background: var(--bg-darker);
+            padding: 1rem 2rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .pv-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 60px;
+        }
+
+        .pv-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
+        
+        .pv-digit-box {
+            width: 50px;
+            height: 60px;
+            background: var(--surface);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: var(--font-mono);
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: var(--primary);
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .pv-digit-box.highlight { border-color: var(--secondary); box-shadow: 0 0 10px rgba(244, 114, 182, 0.3); color: var(--secondary); }
+
+        /* Number Line */
+        .number-line-container {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: var(--radius);
+            position: relative;
+            min-height: 80px; /* Ensure space for the line */
+        }
+
+        .number-line {
+            height: 4px;
+            background: var(--border);
+            position: relative;
+            margin-top: 1rem;
+            border-radius: 2px;
+        }
+
+        .nl-tick {
+            position: absolute;
+            top: -6px;
+            width: 2px;
+            height: 16px;
+            background: var(--text-muted);
+        }
+
+        .nl-label {
+            position: absolute;
+            top: 18px;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        /* CRITICAL FIX 2: Number Line Dot */
+        .nl-dot {
+            position: absolute;
+            top: -6px;
+            left: 0%; 
+            width: 16px;
+            height: 16px;
+            background: var(--secondary);
+            border-radius: 50%;
+            transform: translateX(-50%); /* Center the dot on the coordinate */
+            box-shadow: 0 0 12px rgba(244, 114, 182, 0.6);
+            cursor: pointer;
+            transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy */
+            z-index: 10;
+        }
+
+        .nl-dot::after {
+            content: '';
+            position: absolute;
+            top: -20px; left: -20px; right: -20px; bottom: -20px;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(244, 114, 182, 0.3);
+        }
+
+        /* Dynamic Equation */
+        .equation-display {
+            text-align: center;
+            font-size: 1.5rem;
+            padding: 1rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: var(--radius);
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .katex { font-size: 1.4em !important; }
+        
+        /* Controls */
+        .controls-panel {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* Slider */
+        .slider-group { position: relative; width: 100%; }
+        
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus { outline: none; }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        /* Buttons & Inputs */
+        .btn-row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.6rem 1.2rem;
+            border-radius: 99px; /* Pill */
+            font-family: var(--font-ui);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover { background: rgba(56, 189, 248, 0.1); border-color: var(--primary); color: var(--primary); transform: translateY(-1px); }
+        button:active { transform: scale(0.96); }
+        
+        .btn-bench:hover { background: rgba(167, 139, 250, 0.1); border-color: var(--tertiary); color: var(--tertiary); }
+
+        /* Mode Toggle */
+        .mode-toggle {
+            display: flex;
+            background: var(--bg-darker);
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .mode-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.5rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        .mode-btn.active { background: var(--surface); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-weight: 500; }
+
+        /* Input Fields */
+        .input-group { display: flex; gap: 1rem; justify-content: center; align-items: center; }
+
+        input[type=text] {
+            background: var(--bg-darker);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            width: 140px;
+            text-align: center;
+        }
+
+        input[type=text]:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+        
+        .input-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; display: block; text-align: center;}
+
+        /* Error Message */
+        #error-msg {
+            height: 1.5rem;
+            color: #ef4444;
+            font-size: 0.85rem;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid-section { flex-direction: column; align-items: center; gap: 1rem; }
+            .hundredths-grid { width: 90vw; height: 90vw; max-width: 280px; max-height: 280px; }
+            .place-value-chart { padding: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>Fractions, Decimals & Percentages</h1>
+        <div class="subtitle">Explore the connections between rational numbers</div>
+    </header>
+
+    <!-- Visualizations -->
+    <section class="grid-section">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+            <div class="hundredths-grid" id="grid"></div>
+            <div class="place-value-chart">
+                <div class="pv-column">
+                    <span class="pv-label">Ones</span>
+                    <div class="pv-digit-box" id="pv-ones">0</div>
+                </div>
+                <div style="font-size: 2rem; color: var(--text-muted); align-self: center;">.</div>
+                <div class="pv-column">
+                    <span class="pv-label">Tenths</span>
+                    <div class="pv-digit-box" id="pv-tenths">0</div>
+                </div>
+                <div class="pv-column">
+                    <span class="pv-label">Hundredths</span>
+                    <div class="pv-digit-box" id="pv-hundredths">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="flex: 1; min-width: 250px;">
+            <div class="number-line-container">
+                <div class="slider-labels" style="margin-bottom: 1rem; justify-content: center; font-size: 0.8rem; color: var(--text-muted);">Number Line</div>
+                <div class="number-line">
+                    <!-- Ticks -->
+                    <div class="nl-tick" style="left: 0%"></div><span class="nl-label" style="left: 0%">0</span>
+                    <div class="nl-tick" style="left: 25%"></div><span class="nl-label" style="left: 25%">0.25</span>
+                    <div class="nl-tick" style="left: 50%"></div><span class="nl-label" style="left: 50%">0.5</span>
+                    <div class="nl-tick" style="left: 75%"></div><span class="nl-label" style="left: 75%">0.75</span>
+                    <div class="nl-tick" style="left: 100%"></div><span class="nl-label" style="left: 100%">1</span>
+                    
+                    <!-- Dot -->
+                    <div class="nl-dot" id="nl-dot"></div>
+                </div>
+            </div>
+
+            <div class="equation-display" id="katex-container">
+                <!-- KaTeX renders here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Controls -->
+    <section class="controls-panel">
+        
+        <div class="slider-group">
+            <input type="range" id="slider" min="0" max="100" value="25" aria-label="Hundredths Slider">
+            <div class="slider-labels">
+                <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
+            </div>
+        </div>
+
+        <div id="error-msg"></div>
+
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+            <button class="mode-btn active" data-mode="decimal">Enter as Decimal</button>
+            <button class="mode-btn" data-mode="fraction">Enter as Fraction</button>
+            <button class="mode-btn" data-mode="percentage">Enter as Percentage</button>
+        </div>
+
+        <!-- Input Fields -->
+        <div class="input-group">
+            <div style="width: 100%; max-width: 450px; display: flex; gap: 1rem;">
+                <div style="flex: 1;">
+                    <label for="inp-decimal" class="input-label">Decimal</label>
+                    <input type="text" id="inp-decimal" value="0.25" placeholder="e.g. 0.5">
+                </div>
+                <div style="flex: 1;">
+                    <label for="inp-fraction" class="input-label">Fraction</label>
+                    <input type="text" id="inp-fraction" value="1/4" placeholder="e.g. 3/4">
+                </div>
+                <div style="flex: 1;">
+                    <label for="inp-percent" class="input-label">Percentage</label>
+                    <input type="text" id="inp-percent" value="25%" placeholder="e.g. 75%">
+                </div>
+            </div>
+        </div>
+
+        <!-- Benchmarks -->
+        <div class="btn-row">
+            <button class="btn-bench" data-val="10">10%</button>
+            <button class="btn-bench" data-val="25">25%</button>
+            <button class="btn-bench" data-val="50">50%</button>
+            <button class="btn-bench" data-val="75">75%</button>
+            <button id="reset-btn" style="border-color: #ef4444; color: #fca5a5;">Reset</button>
+        </div>
+
+    </section>
+</div>
+
+<script>
+/**
+ * Application State & Logic
+ */
+const state = {
+    hundredths: 25, // The core value (0-100)
+    mode: 'decimal' // Current input focus
+};
+
+// DOM Elements
+const els = {
+    grid: document.getElementById('grid'),
+    slider: document.getElementById('slider'),
+    nlDot: document.getElementById('nl-dot'),
+    pvOnes: document.getElementById('pv-ones'),
+    pvTenths: document.getElementById('pv-tenths'),
+    pvHundredths: document.getElementById('pv-hundredths'),
+    katexContainer: document.getElementById('katex-container'),
+    inpDecimal: document.getElementById('inp-decimal'),
+    inpFraction: document.getElementById('inp-fraction'),
+    inpPercent: document.getElementById('inp-percent'),
+    errorMsg: document.getElementById('error-msg'),
+    modeBtns: document.querySelectorAll('.mode-btn'),
+    benchBtns: document.querySelectorAll('.btn-bench'),
+    resetBtn: document.getElementById('reset-btn')
+};
+
+/**
+ * Initialization
+ */
+function init() {
+    // CRITICAL FIX 1: Build Grid and verify it exists
+    els.grid.innerHTML = ''; // Clear any existing content to prevent duplicates on reload
+    
+    for (let i = 0; i < 100; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('grid-cell');
+        els.grid.appendChild(cell);
+    }
+
+    console.log(`[Init] Grid cells created: ${els.grid.children.length}`);
+    
+    // Initial render without animation to avoid flash on load
+    updateVisuals(25, false); 
+    syncInputsFromValue();
+}
+
+/**
+ * Core Update Function
+ */
+function setHundredths(val, animate = true) {
+    val = Math.max(0, Math.min(100, Math.round(val)));
+    state.hundredths = val;
+
+    // Sync Slider
+    els.slider.value = val;
+
+    updateVisuals(val, animate);
+    syncInputsFromValue();
+}
+
+function updateVisuals(hundredths, animate) {
+    const cells = document.querySelectorAll('.grid-cell');
+    
+    // CRITICAL FIX 4: Convert NodeList to Array before slicing
+    const allCellsArray = Array.from(cells);
+    
+    // Grid Shading with Staggered Animation (FIX 3: GSAP Stagger)
+    if (animate && gsap) {
+        // Reset all first to ensure clean state
+        gsap.set(allCellsArray, { backgroundColor: 'var(--surface)', boxShadow: 'none' });
+        
+        const activeCells = allCellsArray.slice(0, hundredths);
+        const inactiveCells = allCellsArray.slice(hundredths);
+
+        // Animate Active Cells (Fade In / Scale)
+        if (activeCells.length > 0) {
+            gsap.fromTo(activeCells, 
+                { backgroundColor: 'var(--surface)', boxShadow: 'none', scale: 0.8 },
+                { 
+                    backgroundColor: 'var(--primary)', 
+                    boxShadow: '0 0 8px rgba(56, 189, 248, 0.6)',
+                    scale: 1,
+                    duration: 0.3,
+                    stagger: 0.005, // Stagger effect
+                    ease: "power2.out"
+                }
+            );
+        }
+
+        // Animate Inactive Cells (Fade Out)
+        if (inactiveCells.length > 0) {
+            gsap.to(inactiveCells, {
+                backgroundColor: 'var(--surface)',
+                boxShadow: 'none',
+                duration: 0.2
+            });
+        }
+    } else {
+        // Instant update for initialization or non-animated states
+        allCellsArray.forEach((cell, idx) => {
+            if (idx < hundredths) {
+                cell.classList.add('active');
+            } else {
+                cell.classList.remove('active');
+            }
+        });
+    }
+
+    // Number Line Dot - CRITICAL FIX 2: Use inline style directly
+    els.nlDot.style.left = `${hundredths}%`;
+
+    // Place Value Chart
+    const decimalVal = hundredths / 100;
+    const ones = Math.floor(decimalVal);
+    const tenths = Math.floor((decimalVal - ones) * 10);
+    const hundredthsDigit = Math.round((decimalVal - ones - tenths/10) * 100);
+
+    els.pvOnes.textContent = ones;
+    els.pvTenths.textContent = tenths;
+    els.pvHundredths.textContent = hundredthsDigit;
+
+    // Animation for PV chart (Pulse effect)
+    if (animate && gsap) {
+        const tl = gsap.timeline();
+        tl.fromTo(els.pvOnes, { scale: 1.2, color: '#f472b6' }, { scale: 1, color: 'var(--primary)', duration: 0.3 })
+          .fromTo(els.pvTenths, { scale: 1.2, color: '#f472b6' }, { scale: 1, color: 'var(--primary)', duration: 0.3 }, "-=0.2")
+          .fromTo(els.pvHundredths, { scale: 1.2, color: '#f472b6' }, { scale: 1, color: 'var(--primary)', duration: 0.3 }, "-=0.2");
+    }
+
+    updateEquation();
+}
+
+/**
+ * Input Sync Logic
+ */
+function syncInputsFromValue() {
+    const h = state.hundredths;
+    
+    // Decimal (e.g., "0.5" not "0.50")
+    let decStr = (h / 100).toFixed(2);
+    decStr = parseFloat(decStr).toString(); 
+    els.inpDecimal.value = decStr;
+
+    // Percentage
+    els.inpPercent.value = `${h}%`;
+
+    // Fraction
+    const fraction = simplifyFraction(h, 100);
+    els.inpFraction.value = fraction;
+
+    updateEquation();
+}
+
+function parseInput(inputStr) {
+    if (!inputStr || inputStr.trim() === '') return null;
+    
+    try {
+        let val = inputStr.trim().replace(/,/g, '.'); // Handle comma decimals
+        
+        // Case: Percentage (e.g. "50%")
+        if (val.endsWith('%')) {
+            const num = parseFloat(val);
+            if (isNaN(num)) throw new Error("Invalid number");
+            
+            // FIX 2: Validation for range
+            if (num < 0 || num > 100) throw new Error("Percentage must be between 0% and 100%");
+            
+            return Math.round(num); 
+        }
+
+        // Case: Fraction (e.g. "1/4")
+        if (val.includes('/')) {
+            const parts = val.split('/');
+            if (parts.length !== 2) throw new Error("Invalid fraction format");
+            const num = parseFloat(parts[0]);
+            const den = parseFloat(parts[1]);
+            
+            // FIX 2: Validation for division by zero and range
+            if (den === 0) throw new Error("Denominator cannot be zero");
+            let percentVal = (num / den) * 100;
+            if (percentVal < 0 || percentVal > 100) throw new Error("Value must result in a percentage between 0% and 100%");
+            
+            return Math.round(percentVal);
+        }
+
+        // Case: Decimal (e.g. "0.25")
+        const num = parseFloat(val);
+        if (isNaN(num)) throw new Error("Invalid number format");
+        
+        let hundredths = Math.round(num * 100);
+        
+        // FIX 2: Validation for range
+        if (hundredths < 0 || hundredths > 100) throw new Error("Decimal must be between 0 and 1");
+        
+        return hundredths;
+    } catch (e) {
+        showError(e.message);
+        return null;
+    }
+}
+
+function handleInputChange(source) {
+    const inputEl = source === 'decimal' ? els.inpDecimal : 
+                    source === 'fraction' ? els.inpFraction : els.inpPercent;
+    
+    const rawVal = inputEl.value;
+    const hundredths = parseInput(rawVal);
+
+    if (hundredths !== null) {
+        hideError();
+        setHundredths(hundredths, true);
+    } else {
+        // If invalid, we keep the error message visible. 
+        // We do NOT revert the input value immediately to allow user correction.
+    }
+}
+
+/**
+ * Math Helpers
+ */
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+function simplifyFraction(num, den) {
+    if (num === 0) return "0";
+    const divisor = gcd(num, den);
+    const n = num / divisor;
+    const d = den / divisor;
+    
+    // Handle whole numbers
+    if (d === 1) return `${n}`;
+    return `${n}/${d}`;
+}
+
+function updateEquation() {
+    const h = state.hundredths;
+    const decStr = els.inpDecimal.value || "0";
+    const fracStr = simplifyFraction(h, 100);
+    
+    // Build LaTeX string - using inline mode to avoid layout shifts (FIX 3)
+    let latex = `\\text{Decimal} = ${decStr} \\quad = \\quad \\text{Fraction} = \\frac{${h}}{100} = \\frac{${fracStr.split('/')[0]}}{${fracStr.split('/')[1]}} \\quad = \\quad \\text{Percentage} = ${h}\\%`;
+
+    // Render KaTeX
+    try {
+        katex.render(latex, els.katexContainer, {
+            throwOnError: false,
+            displayMode: false, // FIX 3: Use inline mode for better layout stability
+            color: '#f8fafc'
+        });
+    } catch (e) {
+        els.katexContainer.textContent = `${decStr} = ${fracStr} = ${h}%`;
+    }
+}
+
+/**
+ * UI Feedback Helpers
+ */
+function showError(msg) {
+    els.errorMsg.textContent = msg;
+    els.errorMsg.style.opacity = '1';
+    // Shake animation on inputs
+    gsap.fromTo([els.inpDecimal, els.inpFraction, els.inpPercent], 
+        { x: [-5, 5, -5, 5, 0] }, 
+        { duration: 0.4 }
+    );
+}
+
+function hideError() {
+    els.errorMsg.style.opacity = '0';
+}
+
+/**
+ * Event Listeners
+ */
+
+// Slider
+els.slider.addEventListener('input', (e) => {
+    setHundredths(parseInt(e.target.value), true);
+});
+
+// Inputs - Use 'change' to avoid constant updates while typing, 
+// but also add 'blur' for better UX on mobile/desktop
+['inp-decimal', 'inp-fraction', 'inp-percent'].forEach(id => {
+    const el = document.getElementById(id);
+    
+    // Map ID to source name
+    let source = id.replace('inp-', '');
+    
+    el.addEventListener('change', () => handleInputChange(source));
+    
+    // Optional: Allow Enter key to trigger update
+    el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleInputChange(source);
+            el.blur();
+        }
+    });
+});
+
+// Mode Toggle (Focus management)
+els.modeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        els.modeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        state.mode = btn.dataset.mode;
+        
+        // Focus the relevant input
+        if (state.mode === 'decimal') els.inpDecimal.focus();
+        else if (state.mode === 'fraction') els.inpFraction.focus();
+        else els.inpPercent.focus();
+    });
+});
+
+// Benchmarks
+els.benchBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const val = parseInt(btn.dataset.val);
+        
+        // Pulse animation on button
+        gsap.fromTo(btn, 
+            { scale: 0.95 }, 
+            { scale: 1, duration: 0.4, ease: "elastic.out(1, 0.3)" }
+        );
+
+        setHundredths(val, true);
+    });
+});
+
+// Reset
+els.resetBtn.addEventListener('click', () => {
+    gsap.to(els.resetBtn, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
+    setHundredths(0, true);
+});
+
+// Initialize App
+init();
+
+</script>
+</body>
+</html>

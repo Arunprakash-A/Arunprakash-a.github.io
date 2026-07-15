@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fun with Magnets</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Inconsolata:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{
+ --bg-gradient: radial-gradient(circle at center, #0a0c12 0%, #12151f 100%);
+ --accent1:#e63946;
+ --accent2:#4c6ef5;
+ --surface:#1f2937;
+ --heading-text:#ffffff;
+ --secondary-text:#9ca3af;
+}
+html,body{
+ margin:0; padding:0; height:100%; font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; color:var(--secondary-text); background:var(--bg-gradient);
+}
+.app{display:flex; flex-direction:row; height:100vh; overflow:hidden;}
+#sidebar{
+ width:250px; min-width:200px; max-width:300px; padding:20px; background:var(--surface); border-radius:12px; box-shadow:0 4px 8px rgba(0,0,0,.3); backdrop-filter:blur(10px); color:var(--heading-text);
+}
+#sidebar h2{font-size:24px;margin-top:0;margin-bottom:16px;}
+.control-group{margin-bottom:20px;}
+.group-heading{
+ font-weight:bold; margin-bottom:8px; font-size:18px; color:var(--heading-text);
+}
+label{display:block;font-weight:bold;margin-bottom:4px;font-size:14px;}
+select,input[type=range],button{
+ background:var(--surface); border:none; color:var(--secondary-text); padding:8px 12px; border-radius:6px; font-family:inherit; font-size:14px;
+}
+input[type=range]{width:100%;}
+button{cursor:pointer;transition:background .2s;}
+button:hover{background:#2d3748;}
+.toggle-switch{
+ position:relative; display:inline-block; width:60px; height:30px; margin-right:10px;
+}
+.toggle-switch input[type=checkbox]{opacity:0;width:0;height:0;}
+.slider{
+ position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#4a5568; transition:.4s; border-radius:30px;
+}
+.slider:before{position:absolute; content:""; height:26px; width:26px; left:2px; bottom:2px; background:white; transition:.4s; border-radius:50%;}
+input:checked + .slider{background:#e63946;}
+input:checked + .slider:before{transform:translateX(30px);}
+#distanceValue{margin-left:8px;color:var(--secondary-text);font-family:'Inconsolata',monospace;font-size:14px;}
+canvas#stage{flex-grow:1;background:transparent;cursor:none;}
+@media (max-width:600px){
+ .app{flex-direction:column;}
+ #sidebar{width:100%;max-width:none;border-radius:0;box-shadow:none;margin-bottom:10px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+ <aside id="sidebar">
+  <h2>Controls</h2>
+
+  <div class="control-group">
+   <h3 class="group-heading">Mode</h3>
+   <label for="modeToggle" style="display:flex;align-items:center;">
+    <span style="margin-right:8px;">Test Materials</span>
+    <label class="toggle-switch"><input type="checkbox" id="modeToggle"><span class="slider"></span></label>
+   </label>
+  </div>
+
+  <div class="control-group">
+   <h3 class="group-heading">Object Picker</h3>
+   <select id="objectPicker">
+    <option value="iron nail" selected>Iron Nail</option>
+    <option value="steel pin">Steel Pin</option>
+    <option value="paper clip">Paper Clip</option>
+    <option value="plastic scale">Plastic Scale</option>
+    <option value="wooden pencil">Wooden Pencil</option>
+    <option value="eraser">Eraser</option>
+    <option value="coin">Coin</option>
+   </select>
+  </div>
+
+  <div class="control-group">
+   <h3 class="group-heading">Flip Magnet</h3>
+   <button id="flipButton">Flip Magnet</button>
+  </div>
+
+  <div class="control-group">
+   <h3 class="group-heading">Distance (px)</h3>
+   <label for="distanceSlider" style="display:flex;align-items:center;">
+    <input type="range" id="distanceSlider" min="0" max="200" value="100" disabled>
+    <span id="distanceValue">100</span>
+   </label>
+  </div>
+
+  <div class="control-group">
+   <h3 class="group-heading">Field Lines</h3>
+   <label for="fieldLinesToggle" style="display:flex;align-items:center;">
+    <span style="margin-right:8px;">Off</span>
+    <label class="toggle-switch"><input type="checkbox" id="fieldLinesToggle"><span class="slider"></span></label>
+   </label>
+  </div>
+
+ </aside>
+ <canvas id="stage"></canvas>
+</div>
+<script>
+'use strict';
+const canvas=document.getElementById('stage');
+const ctx=canvas.getContext('2d');
+const devicePixelRatio = window.devicePixelRatio||1;
+function resizeCanvas(){
+ const rect=canvas.getBoundingClientRect();
+ canvas.width=rect.width*devicePixelRatio;
+ canvas.height=rect.height*devicePixelRatio;
+ ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+}
+window.addEventListener('resize',()=>{resizeCanvas();});
+const rootStyles=getComputedStyle(document.documentElement);
+const colors={
+ accent1:rootStyles.getPropertyValue('--accent1').trim(),
+ accent2:rootStyles.getPropertyValue('--accent2').trim(),
+ surface:rootStyles.getPropertyValue('--surface').trim()
+};
+const accentRGB=(()=>{
+ const hex=colors.accent1.replace('#','');
+ return {r:parseInt(hex.slice(0,2),16),
+         g:parseInt(hex.slice(2,4),16),
+         b:parseInt(hex.slice(4,6),16)};
+})();
+class Magnet{
+ constructor(x,y,flipped=false){
+  this.x=x;this.y=y;
+  this.targetX=x;this.targetY=y;
+  this.vx=0;this.vy=0;
+  this.width=120;this.height=30;
+  this.flipped=flipped;
+  this.NColor=colors.accent1;
+  this.SColor=colors.accent2;
+ }
+ polePositions(){
+  const halfW=this.width/2;
+  if(!this.flipped){
+   return [{x:this.x-halfW,y:this.y,color:this.NColor},{x:this.x+halfW,y:this.y,color:this.SColor}];
+  }else{
+   return [{x:this.x-halfW,y:this.y,color:this.SColor},{x:this.x+halfW,y:this.y,color:this.NColor}];
+  }
+ }
+ flip(){this.flipped=!this.flipped;}
+ draw(ctx){
+  ctx.save();
+  ctx.translate(this.x,this.y);
+  ctx.fillStyle=colors.surface;
+  ctx.fillRect(-this.width/2,-this.height/2,this.width,this.height);
+  const halfW=this.width/2;const radius=10;
+  let p1=!this.flipped?{x:-halfW,y:0,color:this.NColor}:{x:-halfW,y:0,color:this.SColor};
+  ctx.beginPath();ctx.arc(p1.x,p1.y,radius,0,Math.PI*2);ctx.fillStyle=p1.color;ctx.fill();
+  let p2=!this.flipped?{x:halfW,y:0,color:this.SColor}:{x:halfW,y:0,color:this.NColor};
+  ctx.beginPath();ctx.arc(p2.x,p2.y,radius,0,Math.PI*2);ctx.fillStyle=p2.color;ctx.fill();
+  ctx.restore();
+ }
+}
+class ObjectItem{
+ constructor(type,x,y){
+  this.type=type;
+  this.label=type;
+  this.isMagnetic=['iron nail','steel pin','paper clip'].includes(type);
+  this.x=x;this.y=y;
+  this.targetX=x;this.targetY=y;
+  this.vx=0;this.vy=0;
+  this.color=this.isMagnetic?colors.accent1:colors.accent2;
+ }
+ draw(ctx){
+  ctx.save();
+  ctx.translate(this.x,this.y);
+  const radius=15;
+  ctx.fillStyle=this.color;
+  ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#ffffff';
+  ctx.font='12px Inter';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(this.label[0].toUpperCase(),0,0);
+  ctx.restore();
+ }
+}
+let magnet1=new Magnet(0,0);
+let magnet2=null;
+let objectItems=[];
+let mode='test';
+let showFieldLines=false;
+let targetFieldOpacity=0;
+let fieldLineOpacity=0;
+const distanceSlider=document.getElementById('distanceSlider');
+const distanceValue=document.getElementById('distanceValue');
+const modeToggle=document.getElementById('modeToggle');
+const flipButton=document.getElementById('flipButton');
+const objectPicker=document.getElementById('objectPicker');
+function positionObjectRow(){
+ const count=objectItems.length;
+ if(count===0)return;
+ const spacing=80;
+ const totalWidth=(count-1)*spacing;
+ const startX=(canvas.width/devicePixelRatio - totalWidth)/2;
+ const y = magnet1.y;
+ objectItems.forEach((item,i)=>{
+  item.targetX=startX + i*spacing;
+  item.targetY=y;
+  item.initX=item.targetX;
+  item.initY=item.targetY;
+ });
+}
+function createObjects(){
+ objectItems=[];
+ const selected=objectPicker.value;
+ const item=new ObjectItem(selected,0,0);
+ objectItems.push(item);
+ positionObjectRow();
+}
+modeToggle.addEventListener('change',e=>{
+ mode=e.target.checked?'two':'test';
+ updateMode();
+});
+fieldLinesToggle.addEventListener('change',e=>{
+ showFieldLines=e.target.checked;
+ targetFieldOpacity = showFieldLines?1:0;
+});
+distanceSlider.addEventListener('input',e=>{
+ distanceValue.textContent=e.target.value;
+ if(mode==='two')updateMode();
+});
+flipButton.addEventListener('click',()=>{magnet1.flip();});
+objectPicker.addEventListener('change',e=>{ createObjects(); });
+function updateMode(){
+ if(mode==='two'){
+  if(!magnet2)magnet2=new Magnet(0,0);
+  const centerX=canvas.width/devicePixelRatio/2;
+  const centerY=canvas.height/devicePixelRatio/2;
+  const d=parseInt(distanceSlider.value);
+  magnet1.targetX=centerX-d/2;magnet1.targetY=centerY;
+  magnet2.targetX=centerX+d/2;magnet2.targetY=centerY;
+  magnet1.vx=magnet1.vy=0;
+  magnet2.vx=magnet2.vy=0;
+  distanceSlider.disabled=false;
+ }else{
+  magnet2=null;
+  const centerX=canvas.width/devicePixelRatio/2;
+  const centerY=canvas.height/devicePixelRatio/2;
+  magnet1.targetX=centerX;magnet1.targetY=centerY;
+  magnet1.vx=magnet1.vy=0;
+  distanceSlider.disabled=true;
+ }
+ positionObjectRow();
+}
+let draggingMagnet=null,dragOffsetX=0,dragOffsetY=0;
+canvas.addEventListener('mousedown',e=>{
+ const rect=canvas.getBoundingClientRect();
+ const mx=e.clientX-rect.left;const my=e.clientY-rect.top;
+ if(Math.hypot(mx-magnet1.x,my-magnet1.y)<60){draggingMagnet=magnet1;dragOffsetX=mx-magnet1.x;dragOffsetY=my-magnet1.y;}
+ else if(magnet2 && Math.hypot(mx-magnet2.x,my-magnet2.y)<60){draggingMagnet=magnet2;dragOffsetX=mx-magnet2.x;dragOffsetY=my-magnet2.y;}
+});
+canvas.addEventListener('mousemove',e=>{
+ if(!draggingMagnet)return;
+ const rect=canvas.getBoundingClientRect();
+ const mx=e.clientX-rect.left;const my=e.clientY-rect.top;
+ draggingMagnet.targetX=mx-dragOffsetX;draggingMagnet.targetY=my-dragOffsetY;
+});
+['mouseup','mouseleave'].forEach(ev=>{canvas.addEventListener(ev,()=>{if(draggingMagnet){draggingMagnet.vx=0;draggingMagnet.vy=0;}draggingMagnet=null;});});
+function update(){
+ [magnet1,magnet2].forEach(mag=>{
+  if(!mag)return;
+  if(mode==='two' && magnet2){
+   const dx=magnet2.x-magnet1.x;
+   let dist=Math.abs(dx);
+   const minDist=20; if(dist<minDist)dist=minDist;
+   const k=5000;
+   const force=k/(dist*dist);
+   const rightPole1Color=!magnet1.flipped?magnet1.SColor:magnet1.NColor;
+   const leftPole2Color=!magnet2.flipped?magnet2.NColor:magnet2.SColor;
+   const same=rightPole1Color===leftPole2Color;
+   const dir=Math.sign(dx);
+   if(same){magnet1.vx-=dir*force;magnet2.vx+=dir*force;}
+   else{magnet1.vx+=dir*force;magnet2.vx-=dir*force;}
+  }
+  mag.vx*=0.95;mag.vy*=0.95;
+  const dx=mag.targetX-mag.x,dy=mag.targetY-mag.y;
+  mag.x+=dx*0.1;mag.y+=dy*0.1;
+  mag.x+=mag.vx;mag.y+=mag.vy;
+  const halfW=mag.width/2,halfH=mag.height/2;
+  const maxX=canvas.width/devicePixelRatio-halfW,maxY=canvas.height/devicePixelRatio-halfH;
+  mag.x=Math.max(halfW,Math.min(maxX,mag.x));
+  mag.y=Math.max(halfH,Math.min(maxY,mag.y));
+ });
+ if(mode==='test'){
+  objectItems.forEach(item=>{
+   const distSq=(item.x-magnet1.x)**2+(item.y-magnet1.y)**2;
+   const threshold=200*200;
+   if(distSq<threshold && item.isMagnetic){
+    const dirX=magnet1.x-item.x,dirY=magnet1.y-item.y;
+    const dist=Math.sqrt(distSq);
+    const offset=magnet1.width/2+5;
+    const targetX=magnet1.x-(dirX/dist)*offset;
+    const targetY=magnet1.y-(dirY/dist)*offset;
+    item.targetX=targetX;item.targetY=targetY;
+   }else{
+    item.targetX=item.initX;item.targetY=item.initY;
+   }
+   const dx=item.targetX-item.x,dy=item.targetY-item.y;
+   item.x+=dx*0.15;item.y+=dy*0.15;
+   const maxX=canvas.width/devicePixelRatio-15,maxY=canvas.height/devicePixelRatio-15;
+   item.x=Math.max(15,Math.min(maxX,item.x));
+   item.y=Math.max(15,Math.min(maxY,item.y));
+  });
+ }
+ fieldLineOpacity += (targetFieldOpacity - fieldLineOpacity)*0.05;
+ if(fieldLineOpacity<0)fieldLineOpacity=0;
+ if(fieldLineOpacity>1)fieldLineOpacity=1;
+}
+function draw(){
+ ctx.clearRect(0,0,canvas.width/devicePixelRatio,canvas.height/devicePixelRatio);
+ if(showFieldLines && mode==='two' && magnet1 && magnet2){
+  const t=performance.now()/1000;
+  const pulse = 0.5 + 0.3*Math.sin(t*4);
+  const alpha = fieldLineOpacity * pulse;
+  if(alpha>0.01){
+   ctx.strokeStyle=`rgba(${accentRGB.r},${accentRGB.g},${accentRGB.b},${alpha})`;
+   ctx.lineWidth=2;
+   const p1=!magnet1.flipped?{x:magnet1.x+magnet1.width/2,y:magnet1.y}:{x:magnet1.x-magnet1.width/2,y:magnet1.y};
+   const p2=!magnet2.flipped?{x:magnet2.x+magnet2.width/2,y:magnet2.y}:{x:magnet2.x-magnet2.width/2,y:magnet2.y};
+   const cx=(p1.x+p2.x)/2,cy=p1.y-30;
+   ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.quadraticCurveTo(cx,cy,p2.x,p2.y);ctx.stroke();
+  }
+ }
+ [magnet1,magnet2].forEach(mag=>{if(mag)mag.draw(ctx);});
+ objectItems.forEach(item=>item.draw(ctx));
+}
+function animate(){requestAnimationFrame(animate);update();draw();}
+resizeCanvas();createObjects();updateMode();animate();
+</script>
+</body>
+</html>

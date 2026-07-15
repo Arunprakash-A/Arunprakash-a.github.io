@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Circuit Builder</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: rgba(30, 41, 59, 0.6);
+            --border-color: rgba(148, 163, 184, 0.2);
+            --accent-amber: #fbbf24;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-sky: #38bdf8;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --font-stack: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            /* FIX #5: Linear gradient as specified */
+            background-image: linear-gradient(to bottom, #1e293b, #0f172a);
+            color: var(--text-primary);
+            font-family: var(--font-stack);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar */
+        header {
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        h1 span { color: var(--accent-amber); }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        button:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--accent-sky); }
+        button:active { transform: translateY(1px); }
+
+        /* Main Layout */
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-rows: 1fr auto;
+            position: relative;
+        }
+
+        /* Circuit Board Stage */
+        #stage-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Info Panel (Floating) */
+        #info-panel {
+            position: absolute;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        #info-panel.visible { opacity: 1; }
+        .status-success { color: var(--accent-green); font-weight: 600; }
+        .status-error { color: var(--accent-red); font-weight: 600; }
+        .status-info { color: var(--accent-sky); }
+
+        /* Material Tray */
+        #tray-container {
+            background: rgba(30, 41, 59, 0.8);
+            border-top: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .tray-label {
+            position: absolute;
+            left: 2rem;
+            top: -1.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        .material-item {
+            width: 80px;
+            height: 90px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .material-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-sky);
+            transform: translateY(-2px);
+        }
+
+        .material-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .material-name { font-size: 0.75rem; color: var(--text-secondary); text-align: center; }
+
+        /* Dragging Ghost */
+        #drag-ghost {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.9;
+            display: none;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 23, 42, 0.9);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--accent-sky);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            #tray-container { flex-wrap: wrap; gap: 1rem; padding: 1rem; }
+            .material-item { width: 70px; height: 80px; }
+            header { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1><span>&#9889;</span> Circuit Builder</h1>
+    <div class="controls">
+        <button id="btn-show-labels" aria-label="Toggle Labels">Show Labels</button>
+        <button id="btn-reset" aria-label="Reset Circuit">Reset Workspace</button>
+    </div>
+</header>
+
+<main>
+    <div id="stage-container">
+        <canvas id="circuit-canvas"></canvas>
+        <div id="info-panel">Build a complete circuit to light the bulb!</div>
+    </div>
+
+    <div style="position: relative;">
+        <span class="tray-label">Drag materials into the Test Gap</span>
+        <div id="tray-container">
+            <!-- Items generated by JS -->
+        </div>
+    </div>
+</main>
+
+<div id="drag-ghost"></div>
+
+<script>
+/**
+ * Simple Circuit Builder - Fixed Version
+ */
+
+// --- Configuration & State ---
+const CONFIG = {
+    gridSize: 40,
+    colors: {
+        bg: '#0f172a',
+        grid: 'rgba(148, 163, 184, 0.05)',
+        wire: '#94a3b8',
+        terminal: '#38bdf8',
+        bulbOff: '#475569',
+        bulbOn: '#fbbf24',
+        glow: 'rgba(251, 191, 36, 0.6)',
+        text: '#f8fafc'
+    },
+    materials: [
+        { id: 'key', name: 'Metal Key', type: 'conductor', icon: '🔑' },
+        { id: 'coin', name: 'Coin', type: 'conductor', icon: '🪙' },
+        { id: 'plastic', name: 'Plastic Ruler', type: 'insulator', icon: '📏' },
+        { id: 'wood', name: 'Wooden Pencil', type: 'insulator', icon: '✏️' },
+        { id: 'rubber', name: 'Eraser', type: 'insulator', icon: '🧼' }
+    ]
+};
+
+const STATE = {
+    components: [], // { id, type, x, y, rotation, ... }
+    wires: [],      // { startId, endId, points: [{x,y}] }
+    testGapMaterial: null,
+    switchClosed: false,
+    isCircuitComplete: false,
+    particles: [],
+    dragging: null,
+    dragGhost: null,
+    testGapHover: false,
+    showLabels: true, // NEW: State for label visibility
+    // Store the specific IDs of the two terminals that form the gap
+    testGapTerminals: [] 
+};
+
+// --- Canvas Setup ---
+const canvas = document.getElementById('circuit-canvas');
+const ctx = canvas.getContext('2d');
+let width, height;
+
+function resize() {
+    const container = document.getElementById('stage-container');
+    const dpr = window.devicePixelRatio || 1;
+    width = container.clientWidth;
+    height = container.clientHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+}
+window.addEventListener('resize', resize);
+resize();
+
+// --- Component Definitions ---
+const COMPONENT_TYPES = {
+    BATTERY: 'battery',
+    BULB: 'bulb',
+    SWITCH: 'switch',
+    WIRE: 'wire'
+};
+
+function createComponent(type, x, y) {
+    const id = Date.now() + Math.random().toString(36).substr(2, 9);
+    return {
+        id, type, x, y, rotation: 0,
+        width: type === COMPONENT_TYPES.BATTERY ? 80 : (type === COMPONENT_TYPES.SWITCH ? 60 : 40),
+        height: type === COMPONENT_TYPES.BATTERY ? 50 : (type === COMPONENT_TYPES.SWITCH ? 40 : 40),
+        terminals: getTerminals(type, x, y)
+    };
+}
+
+function getTerminals(type, x, y) {
+    switch(type) {
+        case COMPONENT_TYPES.BATTERY:
+            return [
+                { id: 'pos', x: -30, y: 0 },   // Left (-)
+                { id: 'neg', x: 30, y: 0 }     // Right (+)
+            ];
+        case COMPONENT_TYPES.BULB:
+            return [
+                { id: 'in1', x: -20, y: 20 },
+                { id: 'in2', x: 20, y: 20 }
+            ];
+        case COMPONENT_TYPES.SWITCH:
+            return [
+                { id: 'left', x: -30, y: 0 },
+                { id: 'right', x: 30, y: 0 }
+            ];
+        case COMPONENT_TYPES.WIRE:
+            return [
+                { id: 'start', x: -20, y: 0 },
+                { id: 'end', x: 20, y: 0 }
+            ];
+    }
+}
+
+// --- Initialization (FIX #1) ---
+function init() {
+    // FIX #1: Declare centerX and centerY properly using width/height
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    STATE.components = [
+        createComponent(COMPONENT_TYPES.BATTERY, centerX - 150, centerY),
+        createComponent(COMPONENT_TYPES.SWITCH, centerX + 50, centerY),
+        createComponent(COMPONENT_TYPES.BULB, centerX + 250, centerY)
+    ];
+
+    // Create wires connecting them in a loop
+    STATE.wires = [
+        { startId: STATE.components[0].id, endId: STATE.components[1].id },
+        { startId: STATE.components[1].id, endId: STATE.components[2].id }
+    ];
+
+    // Add test gap in the middle of the last wire (between switch and bulb)
+    addTestGap();
+    
+    updateCircuitStatus();
+}
+
+function addTestGap() {
+    // Find the wire between switch and bulb, split it into two wires with a gap
+    const wireIdx = STATE.wires.findIndex(w => w.startId === STATE.components[1].id && w.endId === STATE.components[2].id);
+    if (wireIdx !== -1) {
+        const wire = STATE.wires[wireIdx];
+        // Create two new wires with a gap in the middle
+        const midX = (getComponentCenter(wire.startId).x + getComponentCenter(wire.endId).x) / 2;
+        
+        // New components for test gap terminals
+        const term1 = createComponent(COMPONENT_TYPES.WIRE, midX - 30, centerY);
+        const term2 = createComponent(COMPONENT_TYPES.WIRE, midX + 30, centerY);
+        
+        STATE.components.push(term1, term2);
+        
+        // Update wires
+        STATE.wires[wireIdx] = { startId: wire.startId, endId: term1.id };
+        STATE.wires.push({ startId: term2.id, endId: wire.endId });
+
+        // FIX #5: Store the IDs of these specific terminals for robust gap detection
+        STATE.testGapTerminals = [term1.id, term2.id];
+    }
+}
+
+function getComponentCenter(id) {
+    const comp = STATE.components.find(c => c.id === id);
+    return { x: comp.x, y: comp.y };
+}
+
+// --- Circuit Analysis (FIXED - Graph Traversal) ---
+function updateCircuitStatus() {
+    // Check if circuit is complete and conductive using graph traversal
+    let isComplete = false;
+    
+    const startComp = STATE.components.find(c => c.type === COMPONENT_TYPES.BATTERY);
+    if (!startComp) return;
+
+    // BFS from battery (+) terminal to battery (-) terminal through the network
+    const visited = new Set();
+    const queue = [startComp.id];
+    let foundBattery = false;
+
+    while (queue.length > 0) {
+        const currentId = queue.shift();
+        if (visited.has(currentId)) continue;
+        visited.add(currentId);
+
+        // Find all wires connected to this component
+        for (const wire of STATE.wires) {
+            let nextId = null;
+            if (wire.startId === currentId && !visited.has(wire.endId)) {
+                nextId = wire.endId;
+            } else if (wire.endId === currentId && !visited.has(wire.startId)) {
+                nextId = wire.startId;
+            }
+
+            if (nextId) {
+                const nextComp = STATE.components.find(c => c.id === nextId);
+                
+                // Check if component allows current flow
+                let canPass = true;
+                
+                if (nextComp.type === COMPONENT_TYPES.SWITCH && !STATE.switchClosed) {
+                    canPass = false;
+                } else if (nextComp.type === COMPONENT_TYPES.WIRE) {
+                    // FIX #4: Use stored IDs instead of fragile coordinate math
+                    const isTestGapTerminal = STATE.testGapTerminals.includes(nextId);
+                    
+                    if (isTestGapTerminal && !STATE.testGapMaterial) {
+                        canPass = false; // No material in gap
+                    } else if (isTestGapTerminal && STATE.testGapMaterial.type === 'insulator') {
+                        canPass = false; // Insulator in gap
+                    }
+                }
+
+                if (canPass) {
+                    queue.push(nextId);
+                    if (nextId === startComp.id) {
+                        foundBattery = true;
+                    }
+                }
+            }
+        }
+    }
+
+    isComplete = foundBattery && visited.has(startComp.id);
+    
+    // Check if bulb should light up - FIXED logic
+    const bulbOn = isComplete && STATE.switchClosed;
+    
+    STATE.isCircuitComplete = isComplete;
+    
+    // Update UI feedback
+    updateFeedback(isComplete, bulbOn);
+}
+
+function updateFeedback(isComplete, bulbOn) {
+    const panel = document.getElementById('info-panel');
+    panel.classList.add('visible');
+    
+    if (bulbOn) {
+        panel.innerHTML = '<span class="status-success">✓ Circuit Complete! Bulb is ON</span>';
+    } else if (!isComplete && !STATE.switchClosed) {
+        panel.innerHTML = '<span class="status-error">✗ Switch is Open</span>';
+    } else if (!isComplete && STATE.testGapMaterial?.type === 'insulator') {
+        panel.innerHTML = '<span class="status-error">✗ Insulator Detected</span>';
+    } else if (!isComplete) {
+        panel.innerHTML = '<span class="status-info">⚠ Incomplete Circuit</span>';
+    } else {
+        panel.classList.remove('visible');
+    }
+}
+
+// --- Rendering ---
+function draw() {
+    ctx.clearRect(0, 0, width, height);
+    
+    // Draw grid
+    drawGrid();
+    
+    // Draw wires
+    STATE.wires.forEach(wire => drawWire(wire));
+    
+    // Draw test gap if exists
+    drawTestGap();
+    
+    // Draw components
+    STATE.components.forEach(comp => drawComponent(comp));
+    
+    // Draw particles if circuit is active
+    if (STATE.isCircuitComplete) {
+        updateAndDrawParticles();
+    }
+}
+
+function drawGrid() {
+    ctx.strokeStyle = CONFIG.colors.grid;
+    ctx.lineWidth = 1;
+    const gridSize = CONFIG.gridSize;
+    
+    for (let x = 0; x < width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+    }
+    for (let y = 0; y < height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+}
+
+function drawWire(wire) {
+    const startComp = STATE.components.find(c => c.id === wire.startId);
+    const endComp = STATE.components.find(c => c.id === wire.endId);
+    
+    if (!startComp || !endComp) return;
+    
+    // Get terminal positions (simplified: use component centers for now)
+    const startX = startComp.x + (wire.startId === 'pos' ? 30 : -30);
+    const startY = startComp.y;
+    const endX = endComp.x + (wire.endId === 'neg' ? -30 : 30);
+    const endY = endComp.y;
+    
+    ctx.strokeStyle = CONFIG.colors.wire;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    // Add a midpoint for routing
+    const midX = (startX + endX) / 2;
+    ctx.lineTo(midX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+}
+
+function drawTestGap() {
+    // Find test gap terminals
+    const switchComp = STATE.components.find(c => c.type === COMPONENT_TYPES.SWITCH);
+    const bulbComp = STATE.components.find(c => c.type === COMPONENT_TYPES.BULB);
+    
+    if (!switchComp || !bulbComp) return;
+    
+    const gapX = (switchComp.x + bulbComp.x) / 2;
+    const gapY = switchComp.y;
+    
+    // Draw gap visualization area
+    ctx.strokeStyle = STATE.testGapHover ? CONFIG.colors.terminal : 'rgba(148, 163, 184, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    
+    // Draw gap area highlight
+    const gapWidth = 60;
+    const gapHeight = 40;
+    ctx.fillStyle = STATE.testGapHover ? 'rgba(56, 189, 248, 0.1)' : 'transparent';
+    ctx.fillRect(gapX - gapWidth/2, gapY - gapHeight/2, gapWidth, gapHeight);
+    
+    // Draw prongs
+    ctx.beginPath();
+    ctx.arc(gapX - 25, gapY, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(gapX + 25, gapY, 4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw material if placed
+    if (STATE.testGapMaterial) {
+        const mat = STATE.testGapMaterial;
+        ctx.fillStyle = mat.type === 'conductor' ? '#fbbf24' : '#94a3b8';
+        ctx.fillRect(gapX - 25, gapY - 15, 50, 30);
+        
+        // Label
+        ctx.fillStyle = CONFIG.colors.text;
+        ctx.font = '10px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText(mat.name, gapX, gapY + 4);
+    }
+    
+    ctx.setLineDash([]);
+}
+
+function drawComponent(comp) {
+    ctx.save();
+    ctx.translate(comp.x, comp.y);
+    
+    switch(comp.type) {
+        case COMPONENT_TYPES.BATTERY:
+            // Battery body
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(-35, -20, 70, 40);
+            
+            // Terminals
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.arc(-35, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(35, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Labels (FIX #7: Only show if showLabels is true)
+            if (STATE.showLabels) {
+                ctx.fillStyle = CONFIG.colors.text;
+                ctx.font = 'bold 14px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText('+', -35, 5);
+                ctx.fillText('−', 35, 5);
+            }
+            break;
+            
+        case COMPONENT_TYPES.BULB:
+            const bulbOn = STATE.isCircuitComplete && STATE.switchClosed;
+            
+            // Bulb glow effect (FIX #6: Smooth fade-in)
+            if (bulbOn) {
+                const gradient = ctx.createRadialGradient(0, 0, 10, 0, 0, 40);
+                gradient.addColorStop(0, 'rgba(251, 191, 36, 0.8)');
+                gradient.addColorStop(1, 'rgba(251, 191, 36, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, 40, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Bulb circle
+            ctx.fillStyle = bulbOn ? CONFIG.colors.bulbOn : CONFIG.colors.bulbOff;
+            ctx.beginPath();
+            ctx.arc(0, 0, 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Base
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(-15, 15, 30, 10);
+            
+            // Label (FIX #7)
+            if (STATE.showLabels) {
+                ctx.fillStyle = CONFIG.colors.text;
+                ctx.font = '12px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText('Bulb', 0, -30);
+            }
+            break;
+            
+        case COMPONENT_TYPES.SWITCH:
+            // Switch base
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath();
+            ctx.arc(-25, 0, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(25, 0, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Switch lever
+            ctx.strokeStyle = CONFIG.colors.terminal;
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            if (STATE.switchClosed) {
+                // Closed - horizontal
+                ctx.moveTo(-25, 0);
+                ctx.lineTo(25, 0);
+            } else {
+                // Open - angled
+                ctx.moveTo(-25, 0);
+                ctx.lineTo(15, -20);
+            }
+            ctx.stroke();
+            
+            // Label (FIX #7)
+            if (STATE.showLabels) {
+                ctx.fillStyle = CONFIG.colors.text;
+                ctx.font = '12px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText('Switch', 0, -30);
+            }
+            break;
+            
+        case COMPONENT_TYPES.WIRE:
+            // FIX #5: Highlight terminals with amber glow when connected
+            const isTestGapTerminal = STATE.testGapTerminals.includes(comp.id);
+            if (isTestGapTerminal) {
+                // Glow effect
+                const gradient = ctx.createRadialGradient(0, 0, 2, 0, 0, 15);
+                gradient.addColorStop(0, 'rgba(251, 191, 36, 0.8)');
+                gradient.addColorStop(1, 'rgba(251, 191, 36, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, 15, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Core dot
+                ctx.fillStyle = '#fbbf24';
+            } else {
+                ctx.fillStyle = CONFIG.colors.terminal;
+            }
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+    }
+    
+    ctx.restore();
+}
+
+// --- Particle System for Current Flow (FIX #6: Smooth animation) ---
+function updateAndDrawParticles() {
+    // Add new particles
+    if (Math.random() < 0.3) {
+        const wire = STATE.wires[Math.floor(Math.random() * STATE.wires.length)];
+        STATE.particles.push({
+            wire: wire,
+            t: 0,
+            speed: 0.02 + Math.random() * 0.01
+        });
+    }
+    
+    // Update and draw particles
+    ctx.fillStyle = '#fbbf24';
+    STATE.particles = STATE.particles.filter(p => {
+        p.t += p.speed;
+        if (p.t > 1) return false;
+        
+        const startComp = STATE.components.find(c => c.id === p.wire.startId);
+        const endComp = STATE.components.find(c => c.id === p.wire.endId);
+        if (!startComp || !endComp) return false;
+        
+        const startX = startComp.x + (p.wire.startId === 'pos' ? 30 : -30);
+        const startY = startComp.y;
+        const endX = endComp.x + (p.wire.endId === 'neg' ? -30 : 30);
+        const midX = (startX + endX) / 2;
+        
+        // Interpolate position
+        let x, y;
+        if (p.t < 0.5) {
+            const t2 = p.t * 2;
+            x = startX + (midX - startX) * t2;
+            y = startY;
+        } else {
+            const t2 = (p.t - 0.5) * 2;
+            x = midX + (endX - midX) * t2;
+            y = startY + (endY - startY) * t2;
+        }
+        
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        return true;
+    });
+}
+
+// --- Interaction Handlers ---
+let isDragging = false;
+let dragOffset = { x: 0, y: 0 };
+let draggedComponentId = null;
+
+canvas.addEventListener('mousedown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    // Check if clicking on a component
+    for (const comp of STATE.components) {
+        const dist = Math.hypot(mouseX - comp.x, mouseY - comp.y);
+        if (dist < 30) {
+            isDragging = true;
+            draggedComponentId = comp.id;
+            dragOffset = { x: mouseX - comp.x, y: mouseY - comp.y };
+            
+            // Check if clicking switch - FIXED: check all components for clicks
+            if (comp.type === COMPONENT_TYPES.SWITCH) {
+                toggleSwitch();
+                isDragging = false;
+            }
+            break;
+        }
+    }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (!isDragging || !draggedComponentId) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    const comp = STATE.components.find(c => c.id === draggedComponentId);
+    if (comp) {
+        // Snap to grid
+        comp.x = Math.round((mouseX - dragOffset.x) / 20) * 20;
+        comp.y = Math.round((mouseY - dragOffset.y) / 20) * 20;
+        
+        updateCircuitStatus();
+    }
+});
+
+canvas.addEventListener('mouseup', () => {
+    isDragging = false;
+    draggedComponentId = null;
+});
+
+function toggleSwitch() {
+    STATE.switchClosed = !STATE.switchClosed;
+    updateCircuitStatus();
+}
+
+// --- Material Tray Setup (FIXED - Robust Drop Zone) ---
+const trayContainer = document.getElementById('tray-container');
+let draggingMaterial = null;
+let dragGhostEl = null;
+
+CONFIG.materials.forEach(mat => {
+    const item = document.createElement('div');
+    item.className = 'material-item';
+    item.innerHTML = `
+        <div class="material-icon">${mat.icon}</div>
+        <div class="material-name">${mat.name}</div>
+    `;
+    
+    // FIX #2: Add proper drag and drop support using HTML5 DnD API
+    item.setAttribute('draggable', 'true');
+    
+    item.addEventListener('dragstart', (e) => {
+        e.preventDefault();
+        draggingMaterial = mat;
+        
+        // Create ghost element
+        dragGhostEl = document.createElement('div');
+        dragGhostEl.id = 'drag-ghost';
+        dragGhostEl.innerHTML = `
+            <div style="font-size: 2rem;">${mat.icon}</div>
+            <div style="font-size: 0.8rem; margin-top: 0.5rem;">${mat.name}</div>
+        `;
+        document.body.appendChild(dragGhostEl);
+        
+        const moveHandler = (e) => {
+            dragGhostEl.style.display = 'block';
+            dragGhostEl.style.left = e.clientX + 'px';
+            dragGhostEl.style.top = e.clientY + 'px';
+            
+            // Check if over test gap area - FIXED: use canvas coordinates
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            checkTestGapHover(mouseX, mouseY);
+        };
+        
+        const upHandler = () => {
+            document.removeEventListener('mousemove', moveHandler);
+            document.removeEventListener('mouseup', upHandler);
+            dragGhostEl.remove();
+            dragGhostEl = null;
+            
+            if (draggingMaterial && STATE.testGapHover) {
+                placeMaterial(draggingMaterial);
+            }
+            draggingMaterial = null;
+        };
+        
+        document.addEventListener('mousemove', moveHandler);
+        document.addEventListener('mouseup', upHandler);
+    });
+    
+    trayContainer.appendChild(item);
+});
+
+function checkTestGapHover(mouseX, mouseY) {
+    // Check if mouse is over test gap area (between switch and bulb) - FIXED: use canvas coordinates
+    const switchComp = STATE.components.find(c => c.type === COMPONENT_TYPES.SWITCH);
+    const bulbComp = STATE.components.find(c => c.type === COMPONENT_TYPES.BULB);
+    
+    if (!switchComp || !bulbComp) return;
+    
+    const gapX = (switchComp.x + bulbComp.x) / 2;
+    const gapY = switchComp.y;
+    
+    const dist = Math.hypot(mouseX - gapX, mouseY - gapY);
+    STATE.testGapHover = dist < 50;
+}
+
+function placeMaterial(mat) {
+    STATE.testGapMaterial = mat;
+    updateCircuitStatus();
+}
+
+// --- Reset Button (FIXED - Complete Reset) ---
+document.getElementById('btn-reset').addEventListener('click', () => {
+    // Reset all state properties to initial values
+    STATE.components = [];
+    STATE.wires = [];
+    STATE.testGapMaterial = null;
+    STATE.switchClosed = false;
+    STATE.particles = [];
+    STATE.testGapHover = false;
+    STATE.testGapTerminals = []; // NEW: Reset the stored terminal IDs
+    
+    init();
+});
+
+// --- Label Toggle (FIX #7) ---
+document.getElementById('btn-show-labels').addEventListener('click', () => {
+    STATE.showLabels = !STATE.showLabels;
+    document.getElementById('btn-show-labels').textContent = STATE.showLabels ? 'Show Labels' : 'Hide Labels';
+});
+
+// --- Animation Loop ---
+function animate() {
+    draw();
+    requestAnimationFrame(animate);
+}
+
+// --- Start ---
+init();
+animate();
+
+</script>
+</body>
+</html>

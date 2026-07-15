@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backpropagation Visualizer</title>
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://unpkg.com/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://unpkg.com/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(148, 163, 184, 0.1);
+            
+            --accent-cyan: #38bdf8; /* Forward */
+            --accent-pink: #f472b6; /* Backward */
+            --accent-violet: #a78bfa; /* Highlight */
+            
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            
+            --font-ui: system-ui, -apple-system, 'Segoe UI', Inter, Roboto, sans-serif;
+            --font-mono: 'SF Mono', 'JetBrains Mono', ui-monospace, monospace;
+
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at center, #1e293b 0%, #0f172a 80%),
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Layout */
+        .app-container {
+            width: 95vw;
+            max-width: 1600px;
+            height: 90vh;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: grid;
+            grid-template-columns: 6fr 4fr;
+            overflow: hidden;
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-right: 1px solid var(--border-color);
+        }
+        
+        svg#graph-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Tooltip */
+        .tooltip-overlay {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--accent-violet);
+            padding: 12px;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        /* Controls */
+        .control-group {
+            display: grid;
+            grid-template-columns: 80px 1fr 50px;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        label { font-size: 14px; color: var(--text-dim); font-family: var(--font-mono); }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        .value-display {
+            font-family: var(--font-mono);
+            color: var(--text-main);
+            text-align: right;
+            font-size: 14px;
+        }
+
+        /* Toggles & Buttons */
+        .toggle-container {
+            display: flex;
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 16px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-btn.active {
+            background: var(--accent-violet);
+            color: white;
+            box-shadow: 0 4px 12px rgba(167, 139, 250, 0.3);
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        button.action-btn {
+            padding: 14px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-out-expo);
+            font-size: 14px;
+        }
+
+        .btn-forward { background: rgba(56, 189, 248, 0.1); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+        .btn-forward:hover { background: var(--accent-cyan); color: #0f172a; box-shadow: 0 0 20px rgba(56, 189, 248, 0.4); }
+
+        .btn-backward { background: rgba(244, 114, 182, 0.1); color: var(--accent-pink); border: 1px solid var(--accent-pink); }
+        .btn-backward:hover { background: var(--accent-pink); color: #0f172a; box-shadow: 0 0 20px rgba(244, 114, 182, 0.4); }
+
+        .btn-auto { grid-column: span 2; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-violet)); color: white; border: none; }
+        .btn-auto:hover { opacity: 0.9; box-shadow: 0 0 25px rgba(167, 139, 250, 0.4); }
+
+        .btn-reset { background: transparent; color: var(--text-dim); border: 1px solid #334155; }
+        .btn-reset:hover { border-color: var(--text-main); color: var(--text-main); }
+
+        /* Math Display */
+        .math-display {
+            font-size: 16px;
+            overflow-x: auto;
+            padding: 8px 0;
+        }
+        
+        /* Verification Panel */
+        .verification-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .verification-row:last-child {
+            border-bottom: none;
+        }
+        
+        .ver-label { color: var(--text-dim); font-size: 13px; }
+        .ver-val { font-family: var(--font-mono); font-size: 14px; }
+        .match { color: #4ade80; } /* Green */
+        .diff { color: #f87171; } /* Red */
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Left: Visualization -->
+    <div class="canvas-area" id="canvas-area">
+        <svg id="graph-canvas"></svg>
+        <div id="tooltip" class="tooltip-overlay"></div>
+    </div>
+
+    <!-- Right: Controls -->
+    <div class="control-panel">
+        <h1>Backpropagation</h1>
+        
+        <!-- Activation Toggle -->
+        <div class="card">
+            <div class="card-title">Hidden Activation Function</div>
+            <div class="toggle-container">
+                <button class="toggle-btn active" id="btn-sigmoid" onclick="setActivation('sigmoid')">Sigmoid</button>
+                <button class="toggle-btn" id="btn-relu" onclick="setActivation('relu')">ReLU</button>
+            </div>
+            
+            <!-- Math Display -->
+            <div id="math-display" class="math-display"></div>
+        </div>
+
+        <!-- Inputs & Weights -->
+        <div class="card">
+            <div class="card-title">Parameters (Inputs & Weights)</div>
+            
+            <div class="control-group">
+                <label>x₁</label>
+                <input type="range" id="slider-x1" min="-5" max="5" step="0.1" value="1">
+                <span class="value-display" id="val-x1">1.0</span>
+            </div>
+            
+            <div class="control-group">
+                <label>x₂</label>
+                <input type="range" id="slider-x2" min="-5" max="5" step="0.1" value="1">
+                <span class="value-display" id="val-x2">1.0</span>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 16px 0;">
+
+            <div class="control-group">
+                <label>w₁</label>
+                <input type="range" id="slider-w1" min="-5" max="5" step="0.1" value="1">
+                <span class="value-display" id="val-w1">1.0</span>
+            </div>
+
+            <div class="control-group">
+                <label>w₂</label>
+                <input type="range" id="slider-w2" min="-5" max="5" step="0.1" value="1">
+                <span class="value-display" id="val-w2">1.0</span>
+            </div>
+
+            <div class="control-group">
+                <label>w₃</label>
+                <input type="range" id="slider-w3" min="-5" max="5" step="0.1" value="1">
+                <span class="value-display" id="val-w3">1.0</span>
+            </div>
+
+            <!-- Bias Sliders -->
+            <div class="control-group">
+                <label>b</label>
+                <input type="range" id="slider-b" min="-5" max="5" step="0.1" value="0">
+                <span class="value-display" id="val-b">0.0</span>
+            </div>
+
+            <div class="control-group">
+                <label>b'</label>
+                <input type="range" id="slider-b2" min="-5" max="5" step="0.1" value="0">
+                <span class="value-display" id="val-b2">0.0</span>
+            </div>
+
+            <!-- Verification Overlay -->
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div class="toggle-container" style="background: transparent;">
+                    <button class="toggle-btn active" id="btn-verify-off" onclick="setVerify('off')">Hide</button>
+                    <button class="toggle-btn" id="btn-verify-on" onclick="setVerify('on')">Show Verification</button>
+                </div>
+                <!-- FIX #3 & #4: Dynamic verification panel for all parameters -->
+                <div id="verification-panel" style="display: none; margin-top: 12px;">
+                    <!-- Rows will be injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card">
+            <div class="card-title">Actions</div>
+            <div class="btn-grid">
+                <button class="action-btn btn-forward" onclick="runForward()">Forward Pass</button>
+                <button class="action-btn btn-backward" onclick="runBackward()">Backward Pass</button>
+                <button class="action-btn btn-auto" onclick="runAuto()">▶ Run Both (Auto)</button>
+                <!-- FIX #5: Reset button now resets activation toggle -->
+                <button class="action-btn btn-reset" id="btn-reset" onclick="resetAll()">↺ Reset Network</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * Neural Network State & Logic
+ */
+const state = {
+    x1: 1.0, x2: 1.0,
+    w1: 1.0, w2: 1.0, w3: 1.0,
+    b: 0.0, b2: 0.0,
+    target: 0.5, // Fixed target for MSE
+    
+    activation: 'sigmoid', // sigmoid | relu
+    verifyMode: 'off',     // off | on
+    
+    // Computed values (Forward)
+    z1: 0, a_h: 0, y_pred: 0, loss: 0, da_dz: 0,
+    
+    // Gradients (Backward) - FIX #1 & #4: Added db to state and logic
+    dz1: 0, da_h: 0, dw3: 0, db2: 0,
+    dw1: 0, dw2: 0, db: 0,
+
+    // Animation State
+    animating: false
+};
+
+// --- Math Functions ---
+
+function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
+function dSigmoid(z) { 
+    const s = sigmoid(z); 
+    return s * (1 - s); 
+}
+
+function relu(x) { return Math.max(0, x); }
+function dRelu(x) { return x > 0 ? 1 : 0; }
+
+// --- Forward Pass Logic ---
+
+function computeForward() {
+    // Hidden Layer
+    const z1 = state.w1 * state.x1 + state.w2 * state.x2 + state.b;
+    
+    let a_h, da_dz;
+    if (state.activation === 'sigmoid') {
+        a_h = sigmoid(z1);
+        da_dz = dSigmoid(z1);
+    } else {
+        a_h = relu(z1);
+        // FIX #1: ReLU derivative is always returned for consistency
+        da_dz = dRelu(z1); 
+    }
+
+    // Output Layer
+    const y_pred = state.w3 * a_h + state.b2;
+    
+    // Loss (MSE / 2)
+    const loss = 0.5 * Math.pow(y_pred - state.target, 2);
+
+    // Store for visualization
+    state.z1 = z1;
+    state.a_h = a_h;
+    state.y_pred = y_pred;
+    state.loss = loss;
+    state.da_dz = da_dz;
+    
+    return { da_dz };
+}
+
+// --- Backward Pass Logic ---
+
+function computeBackward(forwardResult) {
+    // dLoss/dy_pred
+    const dy_loss = (state.y_pred - state.target);
+    
+    // Output Layer Gradients
+    const dw3 = dy_loss * forwardResult.a_h;
+    const db2 = dy_loss * 1.0;
+    
+    // Backprop to Hidden Activation
+    const da_out = dy_loss * state.w3;
+    
+    // Hidden Layer Gradient (Chain Rule)
+    const da_h = da_out * forwardResult.da_dz;
+    
+    // Input Weights Gradients
+    const dw1 = da_h * state.x1;
+    const dw2 = da_h * state.x2;
+    
+    // FIX #1: Calculate gradient for bias b
+    const db = da_h * 1.0;
+
+    // FIX #2: Corrected assignment - dz1 is just the incoming gradient, not squared
+    state.dz1 = da_out; 
+    state.da_h = da_h;
+    
+    // FIX #1: Added missing assignment for dw3
+    state.dw3 = dw3;
+    state.db2 = db2;
+    state.dw1 = dw1;
+    state.dw2 = dw2;
+    
+    // FIX #4: Store bias gradient in state for UI rendering
+    state.db = db;
+}
+
+// --- Numerical Verification ---
+function computeNumericalGradient(paramKey) {
+    const eps = 0.01;
+    const originalVal = state[paramKey];
+    
+    // f(w + eps)
+    state[paramKey] = originalVal + eps;
+    const fwdResultPlus = computeForward();
+    const lossPlus = state.loss;
+    
+    // f(w - eps)
+    state[paramKey] = originalVal - eps;
+    const fwdResultMinus = computeForward();
+    const lossMinus = state.loss;
+    
+    // Restore
+    state[paramKey] = originalVal;
+    
+    return (lossPlus - lossMinus) / (2 * eps);
+}
+
+/**
+ * Visualization & Animation Engine
+ */
+const svgNS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById('graph-canvas');
+const tooltip = document.getElementById('tooltip');
+
+// Node Definitions (Positions relative to SVG size)
+let nodes = {};
+let edges = [];
+
+function initGraph() {
+    const rect = svg.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+    
+    // Layout Coordinates
+    const xInput = w * 0.15;
+    const xHidden = w * 0.45;
+    const xOutput = w * 0.75;
+    const xLoss = w * 0.92;
+    
+    const yCenter = h / 2;
+    const spread = h * 0.3;
+
+    nodes = {
+        x1: { id: 'x1', x: xInput, y: yCenter - spread/2, label: 'x₁', type: 'input' },
+        x2: { id: 'x2', x: xInput, y: yCenter + spread/2, label: 'x₂', type: 'input' },
+        b_node: { id: 'b_node', x: xHidden - 40, y: yCenter + spread * 0.6, label: 'b', type: 'bias' },
+        h1: { id: 'h1', x: xHidden, y: yCenter, label: 'a_h', type: 'hidden' },
+        out:{ id: 'out', x: xOutput, y: yCenter, label: 'y_pred', type: 'output' },
+        loss:{id: 'loss', x: xLoss, y: yCenter, label: 'L', type: 'loss' }
+    };
+
+    edges = [
+        { id: 'e1', from: 'x1', to: 'h1', wKey: 'w1', label: 'w₁' },
+        { id: 'e2', from: 'x2', to: 'h1', wKey: 'w2', label: 'w₂' },
+        // FIX #4: Added bias edge to edges array so it can be annotated
+        { id: 'eb', from: 'b_node', to: 'h1', isBias: true, wKey: 'b', label: 'b' }, 
+        { id: 'e3', from: 'h1', to: 'out', wKey: 'w3', label: 'w₃' },
+    ];
+
+    renderStaticGraph();
+}
+
+function renderStaticGraph() {
+    svg.innerHTML = '';
+    
+    // Defs (Gradients/Filters)
+    const defs = document.createElementNS(svgNS, "defs");
+    
+    // Glow Filter
+    const filter = document.createElementNS(svgNS, "filter");
+    filter.setAttribute("id", "glow");
+    const blur = document.createElementNS(svgNS, "feGaussianBlur");
+    blur.setAttribute("stdDeviation", "3");
+    blur.setAttribute("result", "coloredBlur");
+    const merge = document.createElementNS(svgNS, "feMerge");
+    const mergeNode1 = document.createElementNS(svgNS, "feMergeNode");
+    mergeNode1.setAttribute("in", "coloredBlur");
+    const mergeNode2 = document.createElementNS(svgNS, "feMergeNode");
+    mergeNode2.setAttribute("in", "SourceGraphic");
+    merge.appendChild(mergeNode1);
+    merge.appendChild(mergeNode2);
+    filter.appendChild(blur);
+    filter.appendChild(merge);
+    defs.appendChild(filter);
+
+    // Arrow Marker (Forward)
+    const markerF = document.createElementNS(svgNS, "marker");
+    markerF.setAttribute("id", "arrow-fwd");
+    markerF.setAttribute("viewBox", "0 0 10 10");
+    markerF.setAttribute("refX", "9");
+    markerF.setAttribute("refY", "5");
+    markerF.setAttribute("markerWidth", "6");
+    markerF.setAttribute("markerHeight", "6");
+    markerF.setAttribute("orient", "auto");
+    const pathF = document.createElementNS(svgNS, "path");
+    pathF.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
+    pathF.setAttribute("fill", "#38bdf8");
+    markerF.appendChild(pathF);
+    defs.appendChild(markerF);
+
+    // Arrow Marker (Backward)
+    const markerB = document.createElementNS(svgNS, "marker");
+    markerB.setAttribute("id", "arrow-bwd");
+    markerB.setAttribute("viewBox", "0 0 10 10");
+    markerB.setAttribute("refX", "9"); 
+    markerB.setAttribute("refY", "5");
+    markerB.setAttribute("markerWidth", "6");
+    markerB.setAttribute("markerHeight", "6");
+    markerB.setAttribute("orient", "auto-start-reverse");
+    const pathB = document.createElementNS(svgNS, "path");
+    pathB.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
+    pathB.setAttribute("fill", "#f472b6");
+    markerB.appendChild(pathB);
+    defs.appendChild(markerB);
+
+    svg.appendChild(defs);
+
+    // Draw Edges (Lines)
+    edges.forEach(e => {
+        const n1 = nodes[e.from];
+        const n2 = nodes[e.to];
+        
+        const line = document.createElementNS(svgNS, "line");
+        line.setAttribute("x1", n1.x);
+        line.setAttribute("y1", n1.y);
+        line.setAttribute("x2", n2.x);
+        line.setAttribute("y2", n2.y);
+        line.setAttribute("stroke", "#334155");
+        line.setAttribute("stroke-width", "3");
+        line.setAttribute("id", `line-${e.id}`);
+        svg.appendChild(line);
+
+        // Weight Label (Static)
+        const text = document.createElementNS(svgNS, "text");
+        text.setAttribute("x", (n1.x + n2.x)/2);
+        text.setAttribute("y", (n1.y + n2.y)/2 - 10);
+        text.setAttribute("fill", "#94a3b8");
+        text.setAttribute("font-family", "var(--font-mono)");
+        text.setAttribute("font-size", "12px");
+        text.setAttribute("text-anchor", "middle");
+        const wKey = e.wKey || 'b'; 
+        text.textContent = `${e.label}: ${state[wKey].toFixed(2)}`;
+        text.setAttribute("id", `label-${e.id}`);
+        svg.appendChild(text);
+
+        // Gradient Label (Hidden initially) - FIX #4: Now renders for bias edge too
+        const gradText = document.createElementNS(svgNS, "text");
+        gradText.setAttribute("x", (n1.x + n2.x)/2);
+        gradText.setAttribute("y", (n1.y + n2.y)/2 + 10);
+        gradText.setAttribute("fill", "#f472b6");
+        gradText.setAttribute("font-family", "var(--font-mono)");
+        gradText.setAttribute("font-size", "11px");
+        gradText.setAttribute("text-anchor", "middle");
+        gradText.textContent = ""; // Hidden until backward pass
+        gradText.setAttribute("id", `grad-label-${e.id}`);
+        svg.appendChild(gradText);
+    });
+
+    // Draw Nodes (Circles)
+    Object.values(nodes).forEach(n => {
+        const g = document.createElementNS(svgNS, "g");
+        
+        const circle = document.createElementNS(svgNS, "circle");
+        circle.setAttribute("cx", n.x);
+        circle.setAttribute("cy", n.y);
+        circle.setAttribute("r", 24);
+        circle.setAttribute("fill", "#1e293b");
+        circle.setAttribute("stroke", "#475569");
+        circle.setAttribute("stroke-width", "2");
+        circle.setAttribute("filter", "url(#glow)");
+        g.appendChild(circle);
+
+        // Node Value Text
+        const valText = document.createElementNS(svgNS, "text");
+        valText.setAttribute("x", n.x);
+        valText.setAttribute("y", n.y + 5);
+        valText.setAttribute("fill", "#f8fafc");
+        valText.setAttribute("font-family", "var(--font-mono)");
+        valText.setAttribute("font-size", "14px");
+        valText.setAttribute("text-anchor", "middle");
+        valText.textContent = "0.0"; // Default
+        g.appendChild(valText);
+
+        svg.appendChild(g);
+    });
+}
+
+// --- Animation Helpers ---
+
+function animateValue(obj, start, end, duration, suffix="", cb) {
+    if (!obj) return;
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration);
+        const ease = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+        const current = start + (end - start) * ease;
+        
+        if (cb) cb(current);
+        else obj.textContent = current.toFixed(2) + suffix;
+
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
+function drawParticle(fromNode, toNode, color, duration, delay=0) {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            const path = document.createElementNS(svgNS, "path");
+            // Bezier curve for smoothness
+            const midX = (fromNode.x + toNode.x) / 2;
+            const d = `M ${fromNode.x} ${fromNode.y} Q ${midX} ${fromNode.y} ${toNode.x} ${toNode.y}`;
+            path.setAttribute("d", d);
+            path.setAttribute("fill", "none");
+            path.setAttribute("stroke", color);
+            path.setAttribute("stroke-width", "4");
+            path.setAttribute("filter", "url(#glow)");
+            
+            // Dash animation for flow effect
+            const len = 100; 
+            path.style.strokeDasharray = `${len} ${len}`;
+            path.style.strokeDashoffset = `${len}`;
+            path.style.transition = `stroke-dashoffset ${duration}ms ease-in-out`;
+            
+            svg.appendChild(path);
+
+            // Trigger animation
+            requestAnimationFrame(() => {
+                path.style.strokeDashoffset = '0';
+            });
+
+            setTimeout(() => {
+                path.remove();
+                resolve();
+            }, duration + 100);
+        }, delay);
+    });
+}
+
+function highlightNode(nodeId, color) {
+    const circles = svg.querySelectorAll('circle');
+    let targetCircle;
+    circles.forEach(c => {
+        if (parseFloat(c.getAttribute('cx')) === nodes[nodeId].x && 
+            parseFloat(c.getAttribute('cy')) === nodes[nodeId].y) {
+            targetCircle = c;
+        }
+    });
+
+    if (!targetCircle) return;
+
+    const originalStroke = targetCircle.getAttribute('stroke');
+    const originalFill = targetCircle.getAttribute('fill');
+    
+    targetCircle.setAttribute('stroke', color);
+    targetCircle.setAttribute('fill', '#0f172a'); // Dark center
+    
+    setTimeout(() => {
+        targetCircle.setAttribute('stroke', originalStroke);
+        targetCircle.setAttribute('fill', originalFill);
+    }, 600);
+}
+
+// --- Main Flow Control ---
+
+async function runForward() {
+    if (state.animating) return;
+    state.animating = true;
+
+    // 1. Compute Values
+    const fwdRes = computeForward();
+    
+    // 2. Animate Inputs -> Hidden
+    await Promise.all([
+        drawParticle(nodes.x1, nodes.h1, '#38bdf8', 600),
+        drawParticle(nodes.x2, nodes.h1, '#38bdf8', 600)
+    ]);
+
+    // 3. Highlight Hidden Node & Update Value
+    highlightNode('h1', '#a78bfa');
+    
+    const hText = getTextForNode('h1');
+    animateValue(hText, 0, state.a_h, 400);
+
+    // 4. Animate Hidden -> Output
+    await drawParticle(nodes.h1, nodes.out, '#38bdf8', 600);
+    
+    highlightNode('out', '#a78bfa');
+    const outText = getTextForNode('out');
+    animateValue(outText, 0, state.y_pred, 400);
+
+    // 5. Animate Output -> Loss
+    await drawParticle(nodes.out, nodes.loss, '#38bdf8', 600);
+    
+    highlightNode('loss', '#f472b6');
+    const lossText = getTextForNode('loss');
+    animateValue(lossText, 0, state.loss, 400);
+
+    // Update Math Display
+    updateMathDisplay(fwdRes);
+
+    state.animating = false;
+}
+
+async function runBackward() {
+    if (state.animating) return;
+    
+    // Ensure forward has been computed at least once logically
+    const fwdRes = computeForward();
+    computeBackward(fwdRes);
+
+    state.animating = true;
+
+    // 1. Loss -> Output
+    await drawParticle(nodes.loss, nodes.out, '#f472b6', 600);
+    
+    // Show Gradient on Edge e3 (h1->out) - FIX #2: Corrected tooltip text
+    updateEdgeGradient('e3', state.dw3);
+    showChainRuleTooltip(nodes.h1, nodes.out, `dL/dy (${state.dy_loss.toFixed(3)}) * w₃(${state.w3}) = dL/da`);
+
+    // 2. Output -> Hidden (Split)
+    await Promise.all([
+        drawParticle(nodes.out, nodes.h1, '#f472b6', 600),
+        drawParticle(nodes.out, nodes.loss, '#f472b6', 600).then(() => {}) // Visual feedback on loss node
+    ]);
+
+    highlightNode('h1', '#f472b6');
+    
+    // Show Gradient on Edge e1 (x1->h1) and e2 (x2->h1) - FIX #4: Bias edge gradient also shown
+    updateEdgeGradient('e1', state.dw1);
+    updateEdgeGradient('e2', state.dw2);
+    updateEdgeGradient('eb', state.db);
+
+    // Show Verification if active
+    if (state.verifyMode === 'on') {
+        updateVerificationPanel();
+    }
+
+    state.animating = false;
+}
+
+async function runAuto() {
+    await runForward();
+    await new Promise(r => setTimeout(r, 500));
+    await runBackward();
+}
+
+function resetAll() {
+    // FIX #5: Reset activation toggle to Sigmoid (default)
+    state.activation = 'sigmoid';
+    
+    const btnSigmoid = document.getElementById('btn-sigmoid');
+    const btnRelu = document.getElementById('btn-relu');
+    if (btnSigmoid && btnRelu) {
+        btnSigmoid.classList.add('active');
+        btnRelu.classList.remove('active');
+    }
+
+    // Reset Sliders to defaults
+    const s_x1 = document.getElementById('slider-x1');
+    if (s_x1) s_x1.value = 1; updateSliderDisplay('x1');
+    
+    const s_x2 = document.getElementById('slider-x2');
+    if (s_x2) s_x2.value = 1; updateSliderDisplay('x2');
+
+    const s_w1 = document.getElementById('slider-w1');
+    if (s_w1) s_w1.value = 1; updateSliderDisplay('w1');
+
+    const s_w2 = document.getElementById('slider-w2');
+    if (s_w2) s_w2.value = 1; updateSliderDisplay('w2');
+
+    const s_w3 = document.getElementById('slider-w3');
+    if (s_w3) s_w3.value = 1; updateSliderDisplay('w3');
+
+    const s_b = document.getElementById('slider-b');
+    if (s_b) s_b.value = 0; updateSliderDisplay('b');
+
+    const s_b2 = document.getElementById('slider-b2');
+    if (s_b2) s_b2.value = 0; updateSliderDisplay('b2');
+
+    // Reset Graph Visuals
+    const texts = svg.querySelectorAll('text');
+    texts.forEach(t => {
+        if (parseFloat(t.getAttribute('y')) === nodes.h1.y + 5) t.textContent = "0.0";
+        if (parseFloat(t.getAttribute('y')) === nodes.out.y + 5) t.textContent = "0.0";
+        if (parseFloat(t.getAttribute('y')) === nodes.loss.y + 5) t.textContent = "0.0";
+    });
+
+    // Clear Gradient Labels - FIX #4: Also clear bias gradient label
+    const g1 = document.getElementById('grad-label-e1');
+    if (g1) g1.textContent = "";
+    
+    const g2 = document.getElementById('grad-label-e2');
+    if (g2) g2.textContent = "";
+
+    const gb = document.getElementById('grad-label-eb');
+    if (gb) gb.textContent = "";
+    
+    const g3 = document.getElementById('grad-label-e3');
+    if (g3) g3.textContent = "";
+
+    state.animating = false;
+}
+
+/**
+ * UI Helpers
+ */
+
+function getTextForNode(nodeId) {
+    const n = nodes[nodeId];
+    const texts = svg.querySelectorAll('text');
+    let found = null;
+    texts.forEach(t => {
+        if (parseFloat(t.getAttribute('x')) === n.x && parseFloat(t.getAttribute('y')) === n.y + 5) found = t;
+    });
+    return found;
+}
+
+function updateEdgeGradient(edgeId, val) {
+    const el = document.getElementById(`grad-label-${edgeId}`);
+    if (el) {
+        el.textContent = `∇: ${val.toFixed(3)}`;
+        el.style.opacity = 1;
+    }
+}
+
+// FIX #2: Corrected tooltip text to reflect actual operation
+function showChainRuleTooltip(fromNode, toNode, text) {
+    const midX = (fromNode.x + toNode.x) / 2;
+    const midY = (fromNode.y + toNode.y) / 2 - 20;
+    
+    tooltip.style.left = `${midX}px`;
+    tooltip.style.top = `${midY}px`;
+    tooltip.innerHTML = text;
+    tooltip.style.opacity = 1;
+    
+    setTimeout(() => { tooltip.style.opacity = 0; }, 2500);
+}
+
+function updateMathDisplay(fwdRes) {
+    const container = document.getElementById('math-display');
+    if (!container) return; 
+    
+    let latex = "";
+    
+    if (state.activation === 'sigmoid') {
+        latex = `\\begin{aligned} 
+            a_h &= \\sigma(${state.z1.toFixed(2)}) = ${state.a_h.toFixed(3)} \\\\
+            y_{pred} &= ${state.w3.toFixed(2)} \\cdot ${state.a_h.toFixed(3)} + ${state.b2.toFixed(2)} \\\\
+            L &= \\frac{1}{2}(y - t)^2 = ${state.loss.toFixed(4)}
+        \\end{aligned}`;
+    } else {
+        latex = `\\begin{aligned} 
+            a_h &= \\max(0, ${state.z1.toFixed(2)}) = ${state.a_h.toFixed(3)} \\\\
+            y_{pred} &= ${state.w3.toFixed(2)} \\cdot ${state.a_h.toFixed(3)} + ${state.b2.toFixed(2)} \\\\
+            L &= \\frac{1}{2}(y - t)^2 = ${state.loss.toFixed(4)}
+        \\end{aligned}`;
+    }
+
+    katex.render(latex, container, { throwOnError: false });
+}
+
+function setActivation(type) {
+    state.activation = type;
+    
+    const btnSigmoid = document.getElementById('btn-sigmoid');
+    const btnRelu = document.getElementById('btn-relu');
+    
+    if (btnSigmoid && btnRelu) {
+        if (type === 'sigmoid') {
+            btnSigmoid.classList.add('active');
+            btnRelu.classList.remove('active');
+        } else {
+            btnRelu.classList.add('active');
+            btnSigmoid.classList.remove('active');
+        }
+    }
+
+    // FIX #3: Re-render math immediately if values exist
+    computeForward();
+    updateMathDisplay({ da_dz: 0 }); 
+}
+
+function setVerify(mode) {
+    state.verifyMode = mode;
+    
+    const btnOff = document.getElementById('btn-verify-off');
+    const btnOn = document.getElementById('btn-verify-on');
+    
+    if (btnOff && btnOn) {
+        if (mode === 'off') {
+            btnOff.classList.add('active');
+            btnOn.classList.remove('active');
+        } else {
+            btnOn.classList.add('active');
+            btnOff.classList.remove('active');
+        }
+    }
+
+    const panel = document.getElementById('verification-panel');
+    if (panel) {
+        panel.style.display = mode === 'on' ? 'block' : 'none';
+    }
+
+    if (mode === 'on') {
+        updateVerificationPanel();
+    }
+}
+
+// FIX #3 & #4: Updated to iterate through all parameters for verification
+function updateVerificationPanel() {
+    const paramsToVerify = ['w1', 'w2', 'w3', 'b', 'b2']; // Verify ALL parameters
+    
+    let panel = document.getElementById('verification-panel');
+    if (!panel) return;
+
+    // Clear existing rows to rebuild cleanly
+    panel.innerHTML = ''; 
+
+    let allMatch = true;
+    
+    paramsToVerify.forEach(param => {
+        const anaVal = state[`d${param}`];
+        const numVal = computeNumericalGradient(param);
+        
+        // FIX #3: Add non-differentiable warning for ReLU near zero
+        let statusClass = 'match';
+        let statusText = "✓ Match";
+        if (state.activation === 'relu' && Math.abs(state[param]) < 0.1) {
+            statusClass = 'diff';
+            statusText = "⚠ Near Zero";
+            allMatch = false; // Don't show green match for non-differentiable points
+        } else {
+            const diff = Math.abs(anaVal - numVal);
+            if (diff > 0.05) allMatch = false;
+        }
+
+        // Create row elements dynamically
+        const rowAna = document.createElement('div');
+        rowAna.className = 'verification-row';
+        rowAna.innerHTML = `<span class="ver-label">${param} Analytical</span><span class="ver-val" id="ver-ana-${param}">-</span>`;
+
+        const rowNum = document.createElement('div');
+        rowNum.className = 'verification-row';
+        rowNum.innerHTML = `<span class="ver-label">${param} Numerical</span><span class="ver-val" id="ver-num-${param}">-</span>`;
+
+        panel.appendChild(rowAna);
+        panel.appendChild(rowNum);
+
+        // Update text content after append
+        const elAna = document.getElementById(`ver-ana-${param}`);
+        const elNum = document.getElementById(`ver-num-${param}`);
+        if (elAna) elAna.textContent = anaVal.toFixed(4);
+        if (elNum) elNum.textContent = numVal.toFixed(4);
+    });
+
+    // Add status row at the bottom
+    const rowStatus = document.createElement('div');
+    rowStatus.className = 'verification-row';
+    
+    const elStatus = document.createElement('span');
+    elStatus.id = 'ver-status';
+    elStatus.className = `ver-val ${allMatch ? 'match' : 'diff'}`;
+    elStatus.textContent = allMatch ? "✓ Match" : "✗ Diverge";
+
+    rowStatus.appendChild(elStatus);
+    panel.appendChild(rowStatus);
+}
+
+// --- Event Listeners ---
+
+function updateSliderDisplay(key) {
+    const slider = document.getElementById(`slider-${key}`);
+    const display = document.getElementById(`val-${key}`);
+    
+    if (slider && display) {
+        state[key] = parseFloat(slider.value);
+        display.textContent = state[key].toFixed(1);
+        
+        // Update static weight label on graph if it's a weight or bias
+        if (['w1','w2','w3'].includes(key)) {
+            const edgeId = key === 'w1' ? 'e1' : key === 'w2' ? 'e2' : 'e3';
+            const labelEl = document.getElementById(`label-${edgeId}`);
+            if (labelEl) labelEl.textContent = `${key}: ${state[key].toFixed(2)}`;
+        } else if (key === 'b') {
+             // FIX #4: Update bias edge label when slider changes
+            const labelEl = document.getElementById(`label-eb`);
+            if (labelEl) labelEl.textContent = `b: ${state[key].toFixed(2)}`;
+        }
+
+        // Live update values without animation for responsiveness? 
+        computeForward();
+        
+        const hText = getTextForNode('h1');
+        if (hText) hText.textContent = state.a_h.toFixed(2);
+        const outText = getTextForNode('out');
+        if (outText) outText.textContent = state.y_pred.toFixed(2);
+        const lossText = getTextForNode('loss');
+        if (lossText) lossText.textContent = state.loss.toFixed(3);
+
+        updateMathDisplay({ da_dz: 0 });
+    }
+}
+
+['x1','x2','w1','w2','w3','b','b2'].forEach(key => {
+    const sliderEl = document.getElementById(`slider-${key}`);
+    if (sliderEl) {
+        sliderEl.addEventListener('input', (e) => {
+            updateSliderDisplay(key);
+        });
+    }
+});
+
+// Window Resize
+window.addEventListener('resize', () => {
+    initGraph(); // Re-calc positions
+});
+
+// Init
+document.addEventListener("DOMContentLoaded", () => {
+    initGraph();
+    updateSliderDisplay('x1'); // Trigger initial compute
+    setActivation('sigmoid');
+    
+    // Auto run forward on load to show it's alive
+    setTimeout(() => runForward(), 500);
+});
+
+</script>
+</body>
+</html>

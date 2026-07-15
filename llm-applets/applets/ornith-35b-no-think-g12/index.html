@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Derivative as Slope: Secant-to-Tangent Limit Explorer</title>
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-dark: #020617;
+            --bg-vignette: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            
+            --accent-cyan: #22d3ee;
+            --accent-pink: #f472b6;
+            --accent-lime: #a3e635;
+            --accent-violet: #a78bfa;
+            
+            --surface-slate: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(148, 163, 184, 0.2);
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            
+            /* Typography */
+            --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+            /* Layout */
+            --radius-lg: 16px;
+            --radius-md: 8px;
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: var(--bg-vignette);
+            color: var(--text-primary);
+            font-family: var(--font-ui);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Layout Container */
+        .app-container {
+            display: grid;
+            grid-template-columns: 3fr 1.2fr;
+            gap: 24px;
+            width: 95%;
+            max-width: 1600px;
+            height: 90vh;
+            padding: 20px;
+        }
+
+        /* Left Side: Visualization */
+        .viz-stage {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            flex: 3;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .derivative-strip {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .strip-label {
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-violet);
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        /* Right Side: Controls */
+        .control-panel {
+            background: var(--surface-slate);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            box-shadow: var(--shadow-soft);
+            overflow-y: auto;
+        }
+
+        .panel-header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .panel-header p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Controls */
+        .control-group { display: flex; flex-direction: column; gap: 12px; }
+        
+        label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        /* Segmented Control */
+        .segmented-control {
+            display: flex;
+            background: rgba(0,0,0,0.3);
+            border-radius: var(--radius-md);
+            padding: 4px;
+            position: relative;
+        }
+
+        .seg-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            font-family: var(--font-mono);
+        }
+
+        .seg-btn.active {
+            background: rgba(34, 211, 238, 0.15);
+            color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.1);
+        }
+
+        /* Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        
+        input[type=range]:focus { outline: none; }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 2px;
+        }
+
+        /* Toggles */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .toggle-input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            background: #334155;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-input:checked + .toggle-switch {
+            background: var(--accent-cyan);
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .toggle-input:checked + .toggle-switch .toggle-knob {
+            transform: translateX(20px);
+        }
+
+        /* Readout Card */
+        .readout-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        .readout-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+
+        .readout-label { color: var(--text-secondary); font-size: 0.75rem; }
+        
+        .readout-val { 
+            color: var(--text-primary); 
+            min-width: 60px; 
+            text-align: right;
+            transition: opacity 0.2s;
+        }
+
+        .val-cyan { color: var(--accent-cyan); }
+        .val-pink { color: var(--accent-pink); }
+        .val-lime { color: var(--accent-lime); }
+        .val-violet { color: var(--accent-violet); }
+
+        .math-block {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+            overflow-x: auto;
+        }
+
+        /* Pulse Animation */
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .pulse-anim { animation: pulse 0.3s ease-out; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .app-container { grid-template-columns: 1fr; height: auto; overflow-y: auto; }
+            body { overflow-y: auto; padding-bottom: 20px; }
+            .canvas-wrapper, .derivative-strip { min-height: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- Visualization Stage -->
+    <div class="viz-stage">
+        <div class="canvas-wrapper" id="mainCanvasContainer">
+            <svg id="mainSvg" style="pointer-events: all; cursor: grab;" width="100%" height="100%"></svg>
+        </div>
+        <div class="derivative-strip" id="derivStripContainer">
+            <span class="strip-label">Derivative Trace f'(x)</span>
+            <svg id="derivSvg" style="pointer-events: none;"></svg>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <div class="panel-header">
+            <h1>Slope Explorer</h1>
+            <p>Visualize the limit definition of a derivative.</p>
+        </div>
+
+        <div class="control-group">
+            <label>Function Preset</label>
+            <div class="segmented-control" id="funcSelector">
+                <button class="seg-btn active" data-fn="x2">f(x) = x²</button>
+                <button class="seg-btn" data-fn="sin">f(x) = sin(x)</button>
+                <button class="seg-btn" data-fn="cubic">f(x) = x³-3x</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>x (Active Point): <span id="xValDisplay" style="color:var(--accent-cyan)">1.00</span></label>
+            <input type="range" id="xSlider" min="-4" max="4" step="0.01" value="1">
+        </div>
+
+        <div class="control-group">
+            <label>h (Interval): <span id="hValDisplay" style="color:var(--accent-lime)">1.00</span></label>
+            <input type="range" id="hSlider" min="0.01" max="2.0" step="0.01" value="1">
+        </div>
+
+        <!-- Toggles -->
+        <div class="control-group">
+            <div class="toggle-row">
+                <label for="togTangentInput">Show Tangent Line</label>
+                <input type="checkbox" id="togTangentInput" class="toggle-input" checked aria-label="Toggle Show Tangent Line">
+                <div class="toggle-switch"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="toggle-row">
+                <label for="togSecantInput">Show Secant Line</label>
+                <input type="checkbox" id="togSecantInput" class="toggle-input" checked aria-label="Toggle Show Secant Line">
+                <div class="toggle-switch"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="toggle-row">
+                <label for="togDerivGraphInput">Show Derivative Graph</label>
+                <input type="checkbox" id="togDerivGraphInput" class="toggle-input" checked aria-label="Toggle Show Derivative Graph">
+                <div class="toggle-switch"><div class="toggle-knob"></div></div>
+            </div>
+        </div>
+
+        <div class="readout-card">
+            <div class="readout-row">
+                <span class="readout-label">x</span>
+                <span class="readout-val val-cyan" id="ro_x">1.00</span>
+            </div>
+            <div class="readout-row">
+                <span class="readout-label">h</span>
+                <span class="readout-val val-lime" id="ro_h">1.00</span>
+            </div>
+            <div class="readout-row">
+                <span class="readout-label">f(x)</span>
+                <span class="readout-val val-cyan" id="ro_fx">1.00</span>
+            </div>
+            <div class="readout-row">
+                <span class="readout-label">f(x+h)</span>
+                <span class="readout-val val-lime" id="ro_fxh">2.00</span>
+            </div>
+            <div class="readout-row">
+                <span class="readout-label">Avg Slope</span>
+                <span class="readout-val val-pink" id="ro_avg">1.00</span>
+            </div>
+            <div class="readout-row">
+                <span class="readout-label">True Slope</span>
+                <span class="readout-val val-violet" id="ro_true">2.00</span>
+            </div>
+
+            <div class="math-block" id="katex-render"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * App State & Configuration
+ */
+const state = {
+    x: 1.0,
+    h: 1.0,
+    fnType: 'x2', // x2, sin, cubic
+    showTangent: true,
+    showSecant: true,
+    showDerivGraph: true,
+    
+    animX: 1.0,
+    animH: 1.0,
+};
+
+// Math Definitions
+const math = {
+    fns: {
+        x2: { 
+            fn: (x) => x * x, 
+            dfn: (x) => 2 * x, 
+            label: 'f(x) = x²' 
+        },
+        sin: { 
+            fn: (x) => Math.sin(x), 
+            dfn: (x) => Math.cos(x), 
+            label: 'f(x) = sin(x)' 
+        },
+        cubic: { 
+            fn: (x) => (x * x * x) - (3 * x), 
+            dfn: (x) => 3 * (x * x) - 3, 
+            label: 'f(x) = x³-3x' 
+        }
+    },
+    
+    get fn() { return this.fns[state.fnType]; },
+};
+
+/**
+ * SVG Helpers & Setup
+ */
+const svgNS = "http://www.w3.org/2000/svg";
+
+function createSVGEl(tag, attrs = {}) {
+    const el = document.createElementNS(svgNS, tag);
+    for (const [k, v] of Object.entries(attrs)) {
+        el.setAttribute(k, v);
+    }
+    return el;
+}
+
+// Main Graph Elements
+const mainSvg = document.getElementById('mainSvg');
+let gGrid, gArea, gSecantRect, gSecantLine, gTangentLine, gCurve, gTrace, gDragPoint, gXAxisLabel, gYAxisLabel;
+
+// Derivative Strip Elements
+const derivSvg = document.getElementById('derivSvg');
+let dGrid, dCurve, dMarker;
+
+/**
+ * Coordinate Systems
+ */
+function getMainDims() {
+    const rect = mainSvg.getBoundingClientRect();
+    return { w: rect.width, h: rect.height };
+}
+
+// Viewport mapping: x in [-5, 5], y in [-6, 10] (dynamic based on function)
+const VIEW_X_MIN = -5;
+const VIEW_X_MAX = 5;
+let VIEW_Y_MIN = -6;
+let VIEW_Y_MAX = 10;
+
+function updateViewY() {
+    // Auto-scale Y slightly to keep the curve interesting
+    const maxVal = Math.max(
+        Math.abs(math.fn.fn(VIEW_X_MIN)), 
+        Math.abs(math.fn.fn(VIEW_X_MAX)),
+        5
+    );
+    VIEW_Y_MIN = -maxVal * 1.2;
+    VIEW_Y_MAX = maxVal * 1.2;
+}
+
+function toSvgX(x, w) { return (x - VIEW_X_MIN) / (VIEW_X_MAX - VIEW_X_MIN) * w; }
+function toSvgY(y, h) { return h - ((y - VIEW_Y_MIN) / (VIEW_Y_MAX - VIEW_Y_MIN) * h); }
+function fromSvgX(svgX, w) { return (svgX / w) * (VIEW_X_MAX - VIEW_X_MIN) + VIEW_X_MIN; }
+
+/**
+ * Initialization & Resize
+ */
+function init() {
+    // Setup Main SVG structure
+    mainSvg.innerHTML = '';
+    
+    gGrid = createSVGEl('g', { class: 'grid' });
+    gArea = createSVGEl('path', { fill: 'none', stroke: 'rgba(148, 163, 184, 0.1)', 'stroke-width': 1 }); // Grid path placeholder
+    
+    gSecantRect = createSVGEl('rect', { fill: 'var(--accent-lime)', opacity: 0.1 });
+    
+    gSecantLine = createSVGEl('line', { stroke: 'var(--accent-lime)', 'stroke-width': 2, 'stroke-dasharray': '6,3', style: 'transition: x1 0.3s ease, y1 0.3s ease, x2 0.3s ease, y2 0.3s ease;' });
+    
+    gTangentLine = createSVGEl('line', { stroke: 'var(--accent-pink)', 'stroke-width': 2.5, style: 'transition: x1 0.3s ease, y1 0.3s ease, x2 0.3s ease, y2 0.3s ease;' });
+    
+    gCurve = createSVGEl('path', { fill: 'none', stroke: 'var(--accent-cyan)', 'stroke-width': 3, filter: 'drop-shadow(0 0 4px rgba(34, 211, 238, 0.5))' });
+    
+    gTrace = createSVGEl('path', { fill: 'none', stroke: 'var(--accent-violet)', 'stroke-width': 2, opacity: 0.6 }); // Derivative trace on main graph
+    
+    gDragPoint = createSVGEl('circle', { r: 8, fill: '#fff', stroke: 'var(--accent-cyan)', 'stroke-width': 3, filter: 'drop-shadow(0 0 12px var(--accent-cyan))' });
+    
+    // Labels
+    gXAxisLabel = createSVGEl('text', { x: 10, y: 20, fill: '#94a3b8', 'font-size': '12px', opacity: 0.5 });
+    gYAxisLabel = createSVGEl('text', { x: 10, y: 20, fill: '#94a3b8', 'font-size': '12px', opacity: 0.5 });
+
+    mainSvg.append(gGrid, gArea, gSecantRect, gSecantLine, gTangentLine, gCurve, gTrace, gDragPoint, gXAxisLabel, gYAxisLabel);
+
+    // Setup Derivative Strip
+    derivSvg.innerHTML = '';
+    dGrid = createSVGEl('g', { class: 'grid' });
+    dCurve = createSVGEl('path', { fill: 'none', stroke: 'var(--accent-violet)', 'stroke-width': 2, filter: 'drop-shadow(0 0 4px var(--accent-violet))' });
+    dMarker = createSVGEl('circle', { r: 4, fill: '#fff', opacity: 0 }); // Hidden initially
+    
+    derivSvg.append(dGrid, dCurve, dMarker);
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    
+    // Initial Render
+    updateViewY();
+    render();
+}
+
+function handleResize() {
+    const mainRect = document.getElementById('mainCanvasContainer').getBoundingClientRect();
+    const stripRect = document.getElementById('derivStripContainer').getBoundingClientRect();
+    
+    mainSvg.setAttribute('width', mainRect.width);
+    mainSvg.setAttribute('height', mainRect.height);
+    mainSvg.style.width = '100%';
+    mainSvg.style.height = '100%';
+
+    derivSvg.setAttribute('width', stripRect.width);
+    derivSvg.setAttribute('height', stripRect.height);
+    derivSvg.style.width = '100%';
+    derivSvg.style.height = '100%';
+    
+    render();
+}
+
+/**
+ * Core Logic & Rendering
+ */
+function render() {
+    const w = mainSvg.clientWidth;
+    const h = mainSvg.clientHeight;
+    const dw = derivSvg.clientWidth;
+    const dh = derivSvg.clientHeight;
+
+    // 1. Draw Grid (Main)
+    drawGrid(gGrid, w, h);
+
+    // 2. Generate Curve Path
+    const curvePath = generateCurvePath(math.fn.fn, VIEW_X_MIN, VIEW_X_MAX, w, h, 500);
+    gCurve.setAttribute('d', curvePath);
+
+    // 3. Calculate Points
+    const x = state.x;
+    const y = math.fn.fn(x);
+    
+    // FIX: Use analytical derivative for True Slope readout and trace
+    const slope = math.fn.dfn(x);
+    
+    const hx = x + state.h;
+    const hy = math.fn.fn(hx);
+    
+    // Secant Slope (Average Rate of Change)
+    const secantSlope = state.h !== 0 ? (hy - y) / state.h : slope;
+
+    // 4. Draw Tangent Line
+    if (state.showTangent) {
+        gTangentLine.style.display = 'block';
+        // Extend tangent line across the screen based on slope
+        const dx = 10; // arbitrary width in SVG units? No, use math coords
+        // y - y0 = m(x - x0) => y = m(x - x0) + y0
+        // Find y at left edge (x=-5) and right edge (x=5)
+        const yLeft = slope * (VIEW_X_MIN - x) + y;
+        const yRight = slope * (VIEW_X_MAX - x) + y;
+        
+        gTangentLine.setAttribute('x1', toSvgX(VIEW_X_MIN, w));
+        gTangentLine.setAttribute('y1', toSvgY(yLeft, h));
+        gTangentLine.setAttribute('x2', toSvgX(VIEW_X_MAX, w));
+        gTangentLine.setAttribute('y2', toSvgY(yRight, h));
+    } else {
+        gTangentLine.style.display = 'none';
+    }
+
+    // 5. Draw Secant Line & Interval (FIX: Highlight interval on x-axis)
+    if (state.showSecant) {
+        gSecantLine.style.display = 'block';
+        gSecantRect.style.display = 'block';
+        
+        const sx1 = toSvgX(x, w);
+        const sy1 = toSvgY(y, h);
+        const sx2 = toSvgX(hx, w);
+        const sy2 = toSvgY(hy, h);
+
+        gSecantLine.setAttribute('x1', sx1);
+        gSecantLine.setAttribute('y1', sy1);
+        gSecantLine.setAttribute('x2', sx2);
+        gSecantLine.setAttribute('y2', sy2);
+
+        // FIX: Draw a translucent rectangle on the x-axis from x to x+h spanning full height
+        const rectX = Math.min(sx1, sx2);
+        const rectW = Math.abs(sx2 - sx1);
+        
+        gSecantRect.setAttribute('x', rectX);
+        gSecantRect.setAttribute('y', 0);
+        gSecantRect.setAttribute('width', rectW);
+        gSecantRect.setAttribute('height', h);
+        gSecantRect.removeAttribute('points');
+        gSecantRect.setAttribute('fill', 'var(--accent-lime)');
+    } else {
+        gSecantLine.style.display = 'none';
+        gSecantRect.style.display = 'none';
+    }
+
+    // 6. Draw Draggable Point
+    const px = toSvgX(x, w);
+    const py = toSvgY(y, h);
+    gDragPoint.setAttribute('cx', px);
+    gDragPoint.setAttribute('cy', py);
+
+    // 7. Derivative Trace (on Main Graph) - Use Analytical Dfn
+    if (state.showDerivGraph) {
+        gTrace.style.display = 'block';
+        const tracePath = generateCurvePath(math.fn.dfn, VIEW_X_MIN, VIEW_X_MAX, w, h, 500);
+        gTrace.setAttribute('d', tracePath);
+    } else {
+        gTrace.style.display = 'none';
+    }
+
+    // 8. Derivative Strip (Bottom) - Use Analytical Dfn
+    if (state.showDerivGraph) {
+        dCurve.style.display = 'block';
+        const stripPath = generateStripPath(math.fn.dfn, VIEW_X_MIN, VIEW_X_MAX, dw, dh);
+        dCurve.setAttribute('d', stripPath);
+        
+        // Marker on strip
+        const markerX = toSvgX(x, dw);
+        const markerY = toSvgY(slope, dh);
+        dMarker.setAttribute('cx', markerX);
+        dMarker.setAttribute('cy', markerY);
+        dMarker.style.opacity = 1;
+    } else {
+        dCurve.style.display = 'none';
+        dMarker.style.opacity = 0;
+    }
+
+    // 9. Update Readouts
+    updateReadout(x, y, hx, hy, secantSlope, slope);
+}
+
+function drawGrid(group, w, h) {
+    group.innerHTML = '';
+    
+    const xTicks = 10; // -5 to 5
+    const yRange = VIEW_Y_MAX - VIEW_Y_MIN;
+    const yStep = Math.pow(10, Math.floor(Math.log10(yRange))) / 2; // Dynamic step
+    
+    // Vertical lines (x-axis)
+    for (let i = -5; i <= 5; i++) {
+        const xSvg = toSvgX(i, w);
+        const line = createSVGEl('line', {
+            x1: xSvg, y1: 0, x2: xSvg, y2: h,
+            stroke: '#334155', 'stroke-width': i === 0 ? 2 : 0.5,
+            opacity: i === 0 ? 0.8 : 0.3
+        });
+        group.appendChild(line);
+        
+        // Labels
+        if (i !== 0) {
+            const txt = createSVGEl('text', {
+                x: xSvg + 4, y: h - 10, fill: '#64748b', 'font-size': '10px'
+            });
+            txt.textContent = i;
+            group.appendChild(txt);
+        }
+    }
+
+    // Horizontal lines (y-axis)
+    let currY = Math.ceil(VIEW_Y_MIN / yStep) * yStep;
+    while (currY <= VIEW_Y_MAX) {
+        const ySvg = toSvgY(currY, h);
+        if (ySvg > 0 && ySvg < h) {
+            const line = createSVGEl('line', {
+                x1: 0, y1: ySvg, x2: w, y2: ySvg,
+                stroke: '#334155', 'stroke-width': currY === 0 ? 2 : 0.5,
+                opacity: currY === 0 ? 0.8 : 0.3
+            });
+            group.appendChild(line);
+
+            if (currY !== 0) {
+                const txt = createSVGEl('text', {
+                    x: 10, y: ySvg - 4, fill: '#64748b', 'font-size': '10px'
+                });
+                txt.textContent = Math.round(currY);
+                group.appendChild(txt);
+            }
+        }
+        currY += yStep;
+    }
+}
+
+function generateCurvePath(fn, xMin, xMax, w, h, steps) {
+    let d = '';
+    for (let i = 0; i <= steps; i++) {
+        const x = xMin + (xMax - xMin) * (i / steps);
+        const y = fn(x);
+        const svgX = toSvgX(x, w);
+        const svgY = toSvgY(y, h);
+        
+        // Handle overflow gracefully (don't draw off screen lines)
+        if (svgY < -1000 || svgY > h + 1000) {
+            d += `M ${svgX} ${svgY}`; 
+        } else {
+            if (i === 0) d += `M ${svgX} ${svgY}`;
+            else d += ` L ${svgX} ${svgY}`;
+        }
+    }
+    return d;
+}
+
+function generateStripPath(fn, xMin, xMax, w, h) {
+    // Strip has its own coordinate system. 
+    // X range: same as main [-5, 5]
+    // Y range: auto-fit to derivative values? Or fixed? Let's use a smaller dynamic range for impact.
+    
+    let d = '';
+    const steps = w; // 1px resolution
+    
+    // Find min/max of deriv in this view for scaling
+    let minY = Infinity, maxY = -Infinity;
+    for (let i = 0; i <= steps; i++) {
+        const x = xMin + (xMax - xMin) * (i / steps);
+        const y = fn(x);
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+    }
+    
+    // Add padding to Y range
+    const pad = (maxY - minY) * 0.2 || 1;
+    minY -= pad;
+    maxY += pad;
+
+    for (let i = 0; i <= steps; i++) {
+        const x = xMin + (xMax - xMin) * (i / steps);
+        const y = fn(x);
+        
+        // Normalize Y to strip height
+        const normY = (y - minY) / (maxY - minY);
+        const svgX = i; // 1:1 mapping for width
+        const svgY = h - (normY * h);
+        
+        if (i === 0) d += `M ${svgX} ${svgY}`;
+        else d += ` L ${svgX} ${svgY}`;
+    }
+    return d;
+}
+
+function updateReadout(x, y, hx, hy, avgSlope, trueSlope) {
+    const fmt = (n) => n.toFixed(3);
+    
+    document.getElementById('ro_x').textContent = fmt(x);
+    document.getElementById('ro_h').textContent = fmt(state.h);
+    document.getElementById('ro_fx').textContent = fmt(y);
+    document.getElementById('ro_fxh').textContent = fmt(hy);
+    document.getElementById('ro_avg').textContent = fmt(avgSlope);
+    document.getElementById('ro_true').textContent = fmt(trueSlope);
+
+    // Pulse animation trigger
+    const pulse = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove('pulse-anim');
+        void el.offsetWidth; // trigger reflow
+        el.classList.add('pulse-anim');
+    };
+    
+    if(Math.abs(state.x - state.animX) > 0.01) pulse('ro_x');
+    if(Math.abs(state.h - state.animH) > 0.01) pulse('ro_h');
+
+    // Update KaTeX with safety check
+    const latex = `f'(x) = \\lim_{h \\to 0} \\frac{${fmt(hy)} - ${fmt(y)}}{${fmt(state.h)}} = ${fmt(trueSlope)}`;
+    
+    if (typeof katex !== 'undefined') {
+        const el = document.getElementById('katex-render');
+        if (el) {
+            try {
+                katex.render(latex, el, {
+                    displayMode: false,
+                    throwOnError: false,
+                    output: 'html'
+                });
+            } catch (e) {
+                console.error("KaTeX render error:", e);
+            }
+        }
+    }
+}
+
+/**
+ * Event Listeners & Interaction
+ */
+
+// Function Selector - FIX: Ensure active class toggling works correctly even for the currently active button
+document.querySelectorAll('.seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const wasActive = btn.classList.contains('active');
+        
+        // Remove active from all buttons first
+        document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+        
+        if (wasActive) {
+            // If it was already active, re-add it and trigger a render to ensure state is fresh
+            btn.classList.add('active');
+            updateViewY();
+            render();
+        } else {
+            // Otherwise just set the new one as active
+            btn.classList.add('active');
+            state.fnType = btn.dataset.fn;
+            updateViewY();
+            
+            // Reset X to a safe value if current is out of bounds (e.g. cubic goes wild)
+            if (state.x > 4 || state.x < -4) {
+                state.x = 1;
+                document.getElementById('xSlider').value = 1;
+            }
+            
+            render();
+        }
+    });
+});
+
+// Sliders
+const xSlider = document.getElementById('xSlider');
+const hSlider = document.getElementById('hSlider');
+
+xSlider.addEventListener('input', (e) => {
+    state.x = parseFloat(e.target.value);
+    document.getElementById('xValDisplay').textContent = state.x.toFixed(2);
+    render();
+});
+
+hSlider.addEventListener('input', (e) => {
+    state.h = parseFloat(e.target.value);
+    document.getElementById('hValDisplay').textContent = state.h.toFixed(2);
+    render();
+});
+
+// Toggles - Using native checkbox change event for reliability and accessibility
+document.getElementById('togTangentInput').addEventListener('change', (e) => {
+    state.showTangent = e.target.checked;
+    render();
+});
+
+document.getElementById('togSecantInput').addEventListener('change', (e) => {
+    state.showSecant = e.target.checked;
+    render();
+});
+
+document.getElementById('togDerivGraphInput').addEventListener('change', (e) => {
+    state.showDerivGraph = e.target.checked;
+    render();
+});
+
+// Draggable Point on Canvas - Refactored for robustness
+let isDragging = false;
+
+mainSvg.addEventListener('mousedown', (e) => {
+    e.preventDefault(); // Prevent text selection etc.
+    
+    const rect = mainSvg.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mathX = fromSvgX(mouseX, rect.width);
+    
+    state.x = Math.max(VIEW_X_MIN, Math.min(VIEW_X_MAX, mathX));
+    xSlider.value = state.x;
+    document.getElementById('xValDisplay').textContent = state.x.toFixed(2);
+    
+    isDragging = true;
+    mainSvg.style.cursor = 'grabbing';
+    render();
+});
+
+window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    
+    const rect = mainSvg.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mathX = fromSvgX(mouseX, rect.width);
+    
+    state.x = Math.max(VIEW_X_MIN, Math.min(VIEW_X_MAX, mathX));
+    xSlider.value = state.x;
+    document.getElementById('xValDisplay').textContent = state.x.toFixed(2);
+    render();
+});
+
+window.addEventListener('mouseup', () => {
+    isDragging = false;
+    mainSvg.style.cursor = 'default';
+});
+
+// Touch support for mobile - Added touchmove for dragging
+mainSvg.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // Prevent scrolling while interacting
+    const touch = e.touches[0];
+    const rect = mainSvg.getBoundingClientRect();
+    const mathX = fromSvgX(touch.clientX - rect.left, rect.width);
+    
+    state.x = Math.max(VIEW_X_MIN, Math.min(VIEW_X_MAX, mathX));
+    xSlider.value = state.x;
+    document.getElementById('xValDisplay').textContent = state.x.toFixed(2);
+    render();
+}, {passive: false});
+
+mainSvg.addEventListener('touchmove', (e) => {
+    if (!isDragging && e.touches.length > 0) {
+        // Start dragging on touch move if not already
+        isDragging = true;
+        mainSvg.style.cursor = 'grabbing';
+    }
+    
+    const touch = e.touches[0];
+    const rect = mainSvg.getBoundingClientRect();
+    const mathX = fromSvgX(touch.clientX - rect.left, rect.width);
+    
+    state.x = Math.max(VIEW_X_MIN, Math.min(VIEW_X_MAX, mathX));
+    xSlider.value = state.x;
+    document.getElementById('xValDisplay').textContent = state.x.toFixed(2);
+    render();
+}, {passive: false});
+
+mainSvg.addEventListener('touchend', () => {
+    isDragging = false;
+    mainSvg.style.cursor = 'default';
+});
+
+// Initialize KaTeX placeholder (Safe)
+window.addEventListener('DOMContentLoaded', () => {
+    if (typeof katex !== 'undefined') {
+        const el = document.getElementById('katex-render');
+        if (el) {
+            try {
+                katex.render("f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}", el, {
+                    displayMode: false,
+                    throwOnError: false
+                });
+            } catch (e) {
+                console.error("Initial KaTeX render error:", e);
+            }
+        }
+    }
+});
+
+init();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activation Function Explorer</title>
+    
+    <!-- KaTeX for LaTeX rendering (Pinned version) -->
+    <link rel="stylesheet" href="https://unpkg.com/katex@0.16.9/dist/katex.min.css">
+    <script src="https://unpkg.com/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-deep: #020617;
+            --bg-mid: #0f172a;
+            --surface: #1e293b;
+            
+            /* Distinct colors for Compare Mode - FIXED to use tertiary accent as requested */
+            --color-sigmoid: #a78bfa;  
+            --color-tanh:    #a78bfa;  
+            --color-relu:    #a78bfa;  
+            --color-leaky:   #a78bfa; 
+            --color-step:    #a78bfa; 
+
+            --accent-primary: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+            --radius: 16px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background: radial-gradient(circle at center, var(--bg-mid), var(--bg-deep));
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .app-container {
+            width: 95%;
+            max-width: 1400px;
+            height: 92vh;
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6);
+            display: grid;
+            grid-template-columns: 6fr 4fr;
+            overflow: hidden;
+        }
+
+        @media (max-width: 1024px) {
+            .app-container { grid-template-columns: 1fr; height: auto; min-height: 95vh; overflow-y: auto; border-radius: 0; }
+        }
+
+        /* --- Left Side: Visualization Stage --- */
+        .stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0b1120; /* Slightly darker canvas */
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .grid-line { stroke: rgba(255, 255, 255, 0.04); stroke-width: 1; }
+        .axis-line { stroke: var(--text-muted); stroke-width: 2; opacity: 0.6; }
+        .tick-text { fill: var(--text-muted); font-family: var(--font-mono); font-size: 11px; text-anchor: middle; }
+
+        /* Curves */
+        .curve-active { 
+            fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+            filter: drop-shadow(0 0 8px currentColor);
+            transition: d 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
+        }
+        
+        .curve-deriv { 
+            fill: none; stroke-width: 2.5; stroke-dasharray: 6 4; stroke-linecap: round;
+            filter: drop-shadow(0 0 4px currentColor);
+            transition: d 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
+        }
+
+        /* Comparison Mode Styles - FIXED to use tertiary accent and reduced opacity */
+        .curve-compare { 
+            fill: none; stroke-width: 2.5; opacity: 0.4; stroke-linecap: round;
+            transition: d 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
+        }
+
+        /* Interactive Marker */
+        .marker-group { cursor: pointer; will-change: transform; }
+        .marker-dot { fill: #fff; stroke-width: 3; filter: drop-shadow(0 0 8px rgba(255,255,255,0.8)); transition: cx 0.1s ease-out, cy 0.1s ease-out; }
+        .marker-glow { fill: none; stroke-width: 1; opacity: 0.6; animation: pulse 2s infinite; }
+        
+        @keyframes pulse { 
+            0% { r: 6; opacity: 0.8; stroke-opacity: 0.8; } 
+            100% { r: 14; opacity: 0; stroke-opacity: 0; } 
+        }
+
+        /* Gradient Indicator */
+        .gradient-bar-container { 
+            position: absolute; right: 20px; top: 50%; transform: translateY(-50%); 
+            height: 300px; width: 6px; background: rgba(255,255,255,0.05); 
+            border-radius: 4px; overflow: hidden; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        .gradient-bar { 
+            position: absolute; bottom: 0; left: 0; width: 100%; background: var(--accent-primary); 
+            transition: height 0.3s ease-out, background-color 0.3s; 
+            opacity: 0.9; box-shadow: 0 0 12px currentColor;
+        }
+
+        /* --- Right Side: Sidebar Controls --- */
+        .sidebar {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 0.5rem; background: linear-gradient(135deg, #fff 30%, var(--text-muted)); -webkit-background-clip: text; color: transparent; }
+        .subtitle { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 0.5rem; }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 1.25rem;
+        }
+
+        .card-header { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 1rem; font-weight: 700; }
+
+        /* Segmented Control */
+        .segmented-control { display: flex; background: rgba(0,0,0,0.4); border-radius: 10px; padding: 4px; gap: 2px; }
+        .seg-btn { 
+            flex: 1; text-align: center; padding: 9px 0; font-size: 0.8rem; cursor: pointer; 
+            color: var(--text-muted); border-radius: 7px; transition: all 0.2s ease;
+            font-weight: 500; user-select: none;
+        }
+        .seg-btn:hover { color: #fff; background: rgba(255,255,255,0.03); }
+        .seg-btn.active { 
+            background: var(--accent-primary); color: #0f172a; font-weight: 700; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        /* Info Card */
+        .formula-container { 
+            background: rgba(0,0,0,0.25); border-radius: 10px; padding: 1rem; margin-bottom: 1rem; 
+            display: flex; align-items: center; justify-content: center; min-height: 70px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+        .katex { font-size: 1.3rem !important; color: var(--accent-primary) !important; transition: color 0.3s ease; }
+        
+        .info-grid { display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; font-size: 0.85rem; align-items: center; }
+        .info-label { color: var(--text-muted); font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .info-value { color: #fff; font-weight: 600; text-align: right; font-family: var(--font-mono); }
+
+        /* Controls */
+        .control-group { margin-bottom: 1rem; }
+        .control-label { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; color: #fff; font-weight: 500; }
+        
+        input[type="range"] {
+            -webkit-appearance: none; width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; outline: none; cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 18px; height: 18px; background: var(--accent-primary); border-radius: 50%; cursor: pointer; box-shadow: 0 0 12px rgba(56, 189, 248, 0.6); transition: transform 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; cursor: pointer; }
+        .toggle-label { font-size: 0.9rem; color: #e2e8f0; }
+        
+        .switch-input { display: none; }
+        .switch-label { position: relative; width: 46px; height: 26px; background: rgba(0,0,0,0.4); border-radius: 13px; transition: all 0.3s ease; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+        .switch-input:checked + .switch-label { background: var(--accent-primary); border-color: transparent; box-shadow: 0 0 12px rgba(56, 189, 248, 0.4); }
+        .switch-label::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: #fff; border-radius: 50%; transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); }
+        .switch-input:checked + .switch-label::after { transform: translateX(20px); }
+
+        .btn-reset { 
+            width: 100%; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.15); color: var(--text-muted); 
+            border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s; margin-top: auto;
+        }
+        .btn-reset:hover { background: rgba(255,255,255,0.08); color: #fff; border-color: #fff; transform: translateY(-1px); }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- Left Stage -->
+    <div class="stage" id="stage">
+        <svg id="graphSvg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+            <defs>
+                <clipPath id="plotClip">
+                    <rect x="50" y="20" width="700" height="530" />
+                </clipPath>
+            </defs>
+            
+            <!-- Grid & Axes -->
+            <g id="gridLayer"></g>
+            
+            <!-- Curves Group (Clipped) -->
+            <g clip-path="url(#plotClip)">
+                
+                <!-- Comparison paths rendered first so active curve sits on top -->
+                <g id="compareGroup"></g>
+
+                <!-- Derivative Overlay -->
+                <g id="derivGroup">
+                    <path id="derivPath" class="curve-deriv" d=""></path>
+                </g>
+
+                <!-- Active Curve -->
+                <path id="mainCurve" class="curve-active" d=""></path>
+            </g>
+
+            <!-- Interactive Marker -->
+            <g id="markerGroup">
+                <circle class="marker-glow" cx="0" cy="0" r="6"></circle>
+                <circle class="marker-dot" cx="0" cy="0" r="5"></circle>
+            </g>
+
+            <!-- Axis Labels -->
+            <text x="-40" y="320" fill="#94a3b8" font-family="var(--font-mono)" font-size="13">Output f(z)</text>
+            <text x="400" y="575" fill="#94a3b8" font-family="var(--font-mono)" font-size="13">Input z</text>
+        </svg>
+
+        <!-- Gradient Indicator -->
+        <div class="gradient-bar-container">
+            <div id="gradBar" class="gradient-bar" style="height: 50%"></div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="sidebar">
+        <header>
+            <h1>Activation Explorer</h1>
+            <p class="subtitle">Visualize how neural networks introduce non-linearity. Manipulate the input signal z to see how different functions transform it.</p>
+        </header>
+
+        <!-- Function Selector -->
+        <div class="card">
+            <div class="card-header">Active Function</div>
+            <div class="segmented-control" id="funcSelector">
+                <div class="seg-btn active" data-func="sigmoid">Sigmoid</div>
+                <div class="seg-btn" data-func="tanh">Tanh</div>
+                <div class="seg-btn" data-func="relu">ReLU</div>
+                <div class="seg-btn" data-func="leaky_relu">Leaky ReLU</div>
+                <div class="seg-btn" data-func="step">Step</div>
+            </div>
+        </div>
+
+        <!-- Info Card -->
+        <div class="card">
+            <div class="card-header">Properties & Formula</div>
+            
+            <div class="formula-container" id="latexDisplay"></div>
+            
+            <div class="info-grid">
+                <span class="info-label">Range:</span>
+                <span class="info-value" id="rangeVal">(0, 1)</span>
+                
+                <span class="info-label">Deriv at z=0:</span>
+                <span class="info-value" id="derivZeroVal">0.25</span>
+
+                <span class="info-label">Behavior:</span>
+                <span class="info-value" id="behaviorVal">Saturates at extremes</span>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="card">
+            <div class="card-header">Controls</div>
+            
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Input Signal (z)</span>
+                    <span id="zVal" style="font-family: var(--font-mono); color: var(--accent-primary)">0.00</span>
+                </div>
+                <input type="range" id="zSlider" min="-6" max="6" step="0.1" value="0">
+            </div>
+
+            <div class="toggle-row" id="derivToggle">
+                <span class="toggle-label">Show Derivative f'(z)</span>
+                <input type="checkbox" id="derivCheckbox" class="switch-input">
+                <label for="derivCheckbox" class="switch-label"></label>
+            </div>
+
+            <div class="toggle-row" id="compareToggle">
+                <span class="toggle-label">Compare All Functions</span>
+                <input type="checkbox" id="compareCheckbox" class="switch-input">
+                <label for="compareCheckbox" class="switch-label"></label>
+            </div>
+
+            <button class="btn-reset" id="resetBtn">Reset</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * Activation Function Explorer - Logic (Fixed)
+ */
+
+// --- Configuration & State ---
+const CONFIG = {
+    xMin: -6, xMax: 6,
+    yMin: -1.5, yMax: 2.0,
+    padding: { top: 40, right: 40, bottom: 40, left: 40 },
+    width: 800, height: 600
+};
+
+const state = {
+    activeFunc: 'sigmoid',
+    z: 0,
+    showDeriv: false,
+    compareAll: false
+};
+
+// --- Math Definitions ---
+const functions = {
+    sigmoid: {
+        name: 'Sigmoid',
+        formula: 'f(z) = \\frac{1}{1 + e^{-z}}',
+        range: '(0, 1)',
+        derivZero: '0.25',
+        behavior: 'Saturates at extremes (Vanishing Gradient)',
+        color: '#38bdf8', // Sky Blue
+        f: z => 1 / (1 + Math.exp(-z)),
+        df: z => { const s = 1 / (1 + Math.exp(-z)); return s * (1 - s); }
+    },
+    tanh: {
+        name: 'Tanh',
+        formula: 'f(z) = \\tanh(z)',
+        range: '(-1, 1)',
+        derivZero: '1.0',
+        behavior: 'Zero-centered, saturates at extremes',
+        color: '#f472b6', // Pink
+        f: z => Math.tanh(z),
+        df: z => 1 - Math.pow(Math.tanh(z), 2)
+    },
+    relu: {
+        name: 'ReLU',
+        formula: 'f(z) = \\max(0, z)',
+        range: '[0, ∞)',
+        derivZero: 'Undefined (subgradient 0)',
+        behavior: 'Sparse activation, no saturation for positive inputs',
+        color: '#a78bfa', // Violet
+        f: z => Math.max(0, z),
+        df: z => z > 0 ? 1 : 0
+    },
+    leaky_relu: {
+        name: 'Leaky ReLU',
+        formula: 'f(z) = \\begin{cases} z & z > 0 \\\\ 0.01z & z \\leq 0 \\end{cases}',
+        range: '(-∞, ∞)',
+        derivZero: 'Undefined (subgradient 0.01)',
+        behavior: 'Solves "Dead ReLU" problem',
+        color: '#fbbf24', // Amber
+        f: z => z > 0 ? z : 0.01 * z,
+        df: z => z > 0 ? 1 : 0.01
+    },
+    step: {
+        name: 'Step (Heaviside)',
+        formula: 'f(z) = \\begin{cases} 1 & z \\geq 0 \\\\ 0 & z < 0 \\end{cases}',
+        range: '{0, 1}',
+        derivZero: 'Undefined',
+        behavior: 'Binary decision boundary',
+        color: '#34d399', // Emerald
+        f: z => z >= 0 ? 1 : 0,
+        df: z => 0 // Derivative is zero everywhere except undefined at 0
+    }
+};
+
+// --- DOM Elements ---
+const svg = document.getElementById('graphSvg');
+const gridLayer = document.getElementById('gridLayer');
+const mainCurvePath = document.getElementById('mainCurve');
+const derivPath = document.getElementById('derivPath');
+const compareGroup = document.getElementById('compareGroup');
+
+// --- Coordinate Mapping (FIX #1: Inverted Y-axis) ---
+function mapX(z) {
+    const plotWidth = CONFIG.width - CONFIG.padding.left - CONFIG.padding.right;
+    return CONFIG.padding.left + ((z - CONFIG.xMin) / (CONFIG.xMax - CONFIG.xMin)) * plotWidth;
+}
+
+// FIX #1: Inverted Y-axis mapping. 
+// Standard Cartesian: y increases upwards. SVG: y increases downwards.
+// Formula: Top of graph (y=0 in SVG) corresponds to yMax value. Bottom (y=height) corresponds to yMin value.
+function mapY(val) {
+    const plotHeight = CONFIG.height - CONFIG.padding.top - CONFIG.padding.bottom;
+    return CONFIG.padding.top + ((CONFIG.yMax - val) / (CONFIG.yMax - CONFIG.yMin)) * plotHeight;
+}
+
+// --- Rendering: Grid & Axes ---
+function drawGrid() {
+    let html = '';
+    
+    // Vertical lines (z axis ticks)
+    for (let z = Math.ceil(CONFIG.xMin); z <= CONFIG.xMax; z++) {
+        const x = mapX(z);
+        const isAxis = z === 0;
+        html += `<line x1="${x}" y1="0" x2="${x}" y2="${CONFIG.height}" class="${isAxis ? 'axis-line' : 'grid-line'}" />`;
+        if (!isAxis) {
+            html += `<text x="${x}" y="${CONFIG.height - 15}" class="tick-text">${z}</text>`;
+        } else {
+             html += `<text x="${x + 5}" y="${CONFIG.height - 15}" fill="#fff" font-size="12">0</text>`;
+        }
+    }
+
+    // Horizontal lines (output axis ticks)
+    const step = CONFIG.yMax > 2 ? 1 : 0.5;
+    for (let y = Math.ceil(CONFIG.yMin); y <= CONFIG.yMax; y += step) {
+        const yPos = mapY(y);
+        const isAxis = y === 0;
+        html += `<line x1="0" y1="${yPos}" x2="${CONFIG.width}" y2="${yPos}" class="${isAxis ? 'axis-line' : 'grid-line'}" />`;
+        if (!isAxis) {
+            html += `<text x="${CONFIG.padding.left - 10}" y="${yPos + 4}" class="tick-text" text-anchor="end">${y}</text>`;
+        }
+    }
+
+    gridLayer.innerHTML = html;
+}
+
+// --- Rendering: Curves (FIX #2 & #3) ---
+
+/**
+ * Generates an SVG path string for a function.
+ */
+function generatePath(func, isDeriv) {
+    const steps = 600; 
+    let d = '';
+    
+    for (let i = 0; i <= steps; i++) {
+        const z = CONFIG.xMin + (i / steps) * (CONFIG.xMax - CONFIG.xMin);
+        const val = isDeriv ? func.df(z) : func.f(z);
+        
+        // Clamp values to prevent SVG path from exploding off screen.
+        let yVal = val;
+        if (!isFinite(yVal)) continue; 
+        
+        const x = mapX(z);
+        const y = mapY(Math.max(CONFIG.yMin - 2, Math.min(CONFIG.yMax + 2, val)));
+        
+        // FIX #2: For Step derivative (Dirac delta), we don't draw a path. 
+        if (isDeriv && func.name === 'Step') continue;
+
+        if (i === 0) d += `M ${x} ${y}`;
+        else d += ` L ${x} ${y}`;
+    }
+    return d;
+}
+
+function updateCurves() {
+    const activeFunc = functions[state.activeFunc];
+    
+    // --- Main Curve (Active) ---
+    mainCurvePath.setAttribute('d', generatePath(activeFunc, false));
+    mainCurvePath.style.color = activeFunc.color;
+    mainCurvePath.style.stroke = activeFunc.color;
+
+    // --- Derivative Overlay (FIX #2: Step handling - dashed lines/empty instead of Dirac) ---
+    if (state.showDeriv) {
+        derivPath.style.opacity = '1';
+        
+        if (activeFunc.name === 'Step') {
+            // FIX #2: Render as empty path with text annotation or just leave it empty.
+            // The plan says "shown as dashed lines to indicate undefined points". 
+            // Since derivative is 0 everywhere else, we draw the zero line dashed.
+            const xStart = mapX(CONFIG.xMin);
+            const xEnd = mapX(CONFIG.xMax);
+            const yZero = mapY(0);
+            
+            derivPath.setAttribute('d', `M ${xStart} ${yZero} L ${xEnd} ${yZero}`);
+        } else {
+            // Standard derivative path
+            derivPath.setAttribute('d', generatePath(activeFunc, true));
+        }
+        
+        const derivColor = '#f472b6';
+        derivPath.style.stroke = derivColor;
+
+    } else {
+        derivPath.style.opacity = '0';
+    }
+
+    // --- Comparison Mode (FIX #3: Use tertiary accent color) ---
+    if (state.compareAll) {
+        compareGroup.innerHTML = ''; // Clear previous
+        
+        Object.values(functions).forEach(f => {
+            const pathData = generatePath(f, false);
+            
+            // FIX #3: Set all comparison paths to use the tertiary accent color (#a78bfa) 
+            // with reduced opacity (0.4) as specified in visual design.
+            const tempPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            tempPath.setAttribute('d', pathData);
+            tempPath.setAttribute('class', 'curve-compare');
+            tempPath.style.stroke = '#a78bfa'; // Tertiary accent color
+            
+            compareGroup.appendChild(tempPath);
+        });
+        
+    } else {
+        compareGroup.innerHTML = '';
+    }
+
+    updateMarker();
+}
+
+// --- Interactive Marker ---
+function updateMarker() {
+    const x = mapX(state.z);
+    
+    // Calculate output value for the active function
+    let yVal = functions[state.activeFunc].f(state.z);
+    
+    // Clamp visual Y to keep marker inside SVG bounds if function goes to infinity (e.g. ReLU at 6)
+    const y = mapY(Math.max(CONFIG.yMin - 0.5, Math.min(CONFIG.yMax + 0.5, yVal)));
+
+    markerGroup.setAttribute('transform', `translate(${x}, ${y})`);
+    
+    // Update Gradient Bar (Magnitude)
+    let gradMag = functions[state.activeFunc].df(state.z);
+    if (!isFinite(gradMag)) gradMag = 1; 
+    
+    // Normalize magnitude roughly between 0 and 2 to fit the bar
+    const percent = Math.min(100, Math.max(0, (gradMag / 2) * 100));
+    
+    const gradBar = document.getElementById('gradBar');
+    gradBar.style.height = `${percent}%`;
+    gradBar.style.backgroundColor = functions[state.activeFunc].color;
+
+    // Update Readout
+    document.getElementById('zVal').textContent = state.z.toFixed(2);
+}
+
+// --- UI Interactions ---
+
+// Function Selector
+document.querySelectorAll('.seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelector('.seg-btn.active').classList.remove('active');
+        btn.classList.add('active');
+        
+        const funcKey = btn.dataset.func;
+        state.activeFunc = funcKey;
+        
+        // Update Info Card Content (Text)
+        const f = functions[funcKey];
+        document.getElementById('rangeVal').textContent = f.range;
+        document.getElementById('derivZeroVal').textContent = f.derivZero;
+        document.getElementById('behaviorVal').textContent = f.behavior;
+
+        // Render LaTeX - Safe check for katex availability (FIX #4)
+        if (typeof katex !== 'undefined') {
+            try {
+                katex.render(f.formula, document.getElementById('latexDisplay'), { throwOnError: false });
+            } catch (e) {
+                console.error("KaTeX rendering failed:", e);
+                // Fallback text
+                document.getElementById('latexDisplay').innerHTML = `<span style="font-family: var(--font-mono); font-size: 0.9rem;">${f.formula}</span>`;
+            }
+        } else {
+            console.error("KaTeX failed to load");
+            // Fallback text if library missing entirely
+            document.getElementById('latexDisplay').innerHTML = `<span style="font-family: var(--font-mono); font-size: 0.9rem;">${f.formula}</span>`;
+        }
+
+        updateCurves();
+    });
+});
+
+// Slider
+const slider = document.getElementById('zSlider');
+slider.addEventListener('input', (e) => {
+    state.z = parseFloat(e.target.value);
+    updateMarker();
+});
+
+// Toggles
+document.getElementById('derivCheckbox').addEventListener('change', function() {
+    state.showDeriv = this.checked;
+    updateCurves();
+});
+
+document.getElementById('compareCheckbox').addEventListener('change', function() {
+    state.compareAll = this.checked;
+    updateCurves();
+});
+
+// Reset (Fix #3)
+document.getElementById('resetBtn').addEventListener('click', () => {
+    // 1. Reset State
+    state.activeFunc = 'relu';
+    state.z = 0;
+    state.showDeriv = false;
+    state.compareAll = false;
+
+    // 2. Update UI Controls (Uncheck boxes, reset slider)
+    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+    const reluBtn = document.querySelector('[data-func="relu"]');
+    if(reluBtn) reluBtn.classList.add('active');
+    
+    slider.value = 0;
+    document.getElementById('derivCheckbox').checked = false;
+    document.getElementById('compareCheckbox').checked = false;
+
+    // 3. Update Info Card (Reset to ReLU defaults)
+    const f = functions['relu'];
+    document.getElementById('rangeVal').textContent = f.range;
+    document.getElementById('derivZeroVal').textContent = f.derivZero;
+    document.getElementById('behaviorVal').textContent = f.behavior;
+    
+    if (typeof katex !== 'undefined') {
+        try {
+            katex.render(f.formula, document.getElementById('latexDisplay'), { throwOnError: false });
+        } catch (e) {
+             document.getElementById('latexDisplay').innerHTML = `<span style="font-family: var(--font-mono); font-size: 0.9rem;">${f.formula}</span>`;
+        }
+    } else {
+         document.getElementById('latexDisplay').innerHTML = `<span style="font-family: var(--font-mono); font-size: 0.9rem;">${f.formula}</span>`;
+    }
+
+    // 4. Trigger Visualization Update
+    updateCurves();
+});
+
+// --- Initialization ---
+drawGrid();
+updateCurves();
+
+// Initial LaTeX Render for ReLU (default)
+if (typeof katex !== 'undefined') {
+    try {
+        const initialFunc = functions['relu'];
+        katex.render(initialFunc.formula, document.getElementById('latexDisplay'), { throwOnError: false });
+    } catch (e) {
+         console.error("Initial KaTeX render failed:", e);
+         document.getElementById('latexDisplay').innerHTML = `<span style="font-family: var(--font-mono); font-size: 0.9rem;">${initialFunc.formula}</span>`;
+    }
+} else {
+     const initialFunc = functions['relu'];
+     document.getElementById('latexDisplay').innerHTML = `<span style="font-family: var(--font-mono); font-size: 0.9rem;">${initialFunc.formula}</span>`;
+}
+
+</script>
+</body>
+</html>

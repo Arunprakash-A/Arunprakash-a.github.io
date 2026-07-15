@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Counting Stage: 1 to 20</title>
+    <!-- Google Fonts: Fredoka for rounded, playful typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --panel-bg: rgba(255, 255, 255, 0.08);
+            --panel-border: rgba(255, 255, 255, 0.15);
+            --accent-gold: #FFD700;
+            --accent-red: #FF6B6B;
+            --accent-teal: #4ECDC4;
+            --accent-green: #2ECC71;
+            --accent-orange: #F39C12;
+            --text-color: #FFFFFF;
+            --font-main: 'Fredoka', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            touch-action: manipulation; /* Prevents double-tap zoom */
+            user-select: none; /* Prevents text selection during play */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            /* FIX 3: Subtle starry texture background */
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.4) 1px, transparent 1px),
+                radial-gradient(circle at 85% 85%, rgba(255, 255, 255, 0.4) 1px, transparent 1px),
+                radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.2) 2px, transparent 2px),
+                radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
+            background-size: 100px 100px, 150px 150px, 200px 200px, 120px 120px, 180px 180px;
+            color: var(--text-color);
+            font-family: var(--font-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Layout --- */
+        .app-container {
+            display: flex;
+            flex: 1;
+            flex-direction: row;
+            height: 100%;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* --- Left: Stage --- */
+        .stage-area {
+            flex: 2;
+            position: relative;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 24px;
+            border: 1px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .count-display {
+            position: absolute;
+            top: 20px;
+            font-size: 5rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 10;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .count-display.bump {
+            transform: scale(1.3);
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* --- Right: Ten Frame --- */
+        .sidebar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 300px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .panel-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* FIX 1: Ten-frame grid has 20 cells (2 rows of 10) */
+        .ten-frame {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 6px;
+            width: 100%;
+            aspect-ratio: 10/2;
+        }
+
+        .tf-cell {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tf-cell.filled {
+            background: var(--accent-teal);
+            border-color: var(--accent-teal);
+            box-shadow: 0 0 10px var(--accent-teal);
+            transform: scale(1.05);
+        }
+
+        /* --- Bottom: Controls --- */
+        .controls-area {
+            height: 120px;
+            background: rgba(26, 26, 46, 0.95);
+            border-top: 1px solid var(--panel-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            padding: 0 20px;
+            z-index: 20;
+        }
+
+        /* Slider Styling */
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 200px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 32px;
+            width: 32px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            cursor: pointer;
+            margin-top: -12px;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 1.2rem;
+            margin-top: 5px;
+            pointer-events: none;
+        }
+
+        /* Buttons */
+        .btn {
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-family: var(--font-main);
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-check {
+            background: var(--accent-green);
+            border: 2px solid #27ae60;
+        }
+        
+        .btn-check:hover {
+            box-shadow: 0 0 20px var(--accent-green);
+        }
+
+        .btn-new {
+            background: var(--accent-orange);
+            border: 2px solid #e67e22;
+        }
+
+        .btn-new:hover {
+            box-shadow: 0 0 20px var(--accent-orange);
+        }
+
+        /* Feedback Overlay */
+        .feedback-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(0,0,0,0.85);
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            pointer-events: none;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+            border: 4px solid var(--accent-gold);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feedback-overlay.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .feedback-text {
+            font-size: 3rem;
+            color: var(--accent-gold);
+            margin: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+                padding: 10px;
+            }
+            .sidebar {
+                max-width: 100%;
+                flex-direction: row;
+                gap: 10px;
+            }
+            .panel {
+                flex: 1;
+                padding: 10px;
+            }
+            .ten-frame {
+                gap: 4px;
+            }
+            .controls-area {
+                height: auto;
+                padding: 15px;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+            .btn {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
+            .count-display {
+                font-size: 4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Main Stage -->
+        <div class="stage-area">
+            <div class="count-display" id="countDisplay">0</div>
+            <canvas id="gameCanvas"></canvas>
+            
+            <div class="feedback-overlay" id="feedbackOverlay">
+                <h2 class="feedback-text">Great Job!</h2>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="panel">
+                <div class="panel-title">Ten Frame</div>
+                <div class="ten-frame" id="tenFrameGrid">
+                    <!-- Cells generated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-area">
+        <div class="slider-container">
+            <input type="range" id="countSlider" min="1" max="20" value="10">
+            <div class="slider-labels">
+                <span>1</span>
+                <span>20</span>
+            </div>
+        </div>
+
+        <button class="btn btn-new" id="btnNew">
+            <span>🔄</span> New Set
+        </button>
+        
+        <button class="btn btn-check" id="btnCheck">
+            <span>✅</span> Check Count
+        </button>
+    </div>
+
+    <script>
+        /**
+         * App State & Configuration
+         */
+        const state = {
+            totalObjects: 10,
+            currentCount: 0,
+            objects: [],
+            particles: [], // For confetti
+            isCelebrating: false,
+            isProcessing: false // FIX 4: Global lock to prevent rapid double-taps
+        };
+
+        const colors = ['#FF6B6B', '#FFD700', '#4ECDC4', '#F39C12', '#9B59B6'];
+        
+        // DOM Elements
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const countDisplay = document.getElementById('countDisplay');
+        const tenFrameGrid = document.getElementById('tenFrameGrid');
+        const slider = document.getElementById('countSlider');
+        const btnNew = document.getElementById('btnNew');
+        const btnCheck = document.getElementById('btnCheck');
+        const feedbackOverlay = document.getElementById('feedbackOverlay');
+
+        /**
+         * Initialization
+         */
+        function init() {
+            resizeCanvas();
+            createTenFrame();
+            generateObjects(state.totalObjects);
+            requestAnimationFrame(animate);
+            
+            // Event Listeners
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                state.objects.forEach(obj => {
+                    obj.x = Math.min(Math.max(obj.x, 50), canvas.width - 50);
+                    obj.y = Math.min(Math.max(obj.y, 50), canvas.height - 50);
+                });
+            });
+
+            slider.addEventListener('input', (e) => {
+                state.totalObjects = parseInt(e.target.value);
+                generateObjects(state.totalObjects);
+            });
+
+            btnNew.addEventListener('click', () => {
+                state.currentCount = 0;
+                state.isCelebrating = false;
+                updateUI();
+                generateObjects(state.totalObjects);
+                feedbackOverlay.classList.remove('show');
+            });
+
+            btnCheck.addEventListener('click', checkCount);
+
+            // Canvas Interaction
+            canvas.addEventListener('pointerdown', handleTap);
+        }
+
+        /**
+         * Core Logic
+         */
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+
+        function createTenFrame() {
+            tenFrameGrid.innerHTML = '';
+            // FIX 1: Create 20 cells (2 rows of 10)
+            for(let i=0; i<20; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'tf-cell';
+                cell.id = `tf-cell-${i}`;
+                tenFrameGrid.appendChild(cell);
+            }
+        }
+
+        function generateObjects(count) {
+            state.objects = [];
+            const padding = 60;
+            const size = 50; // Object radius
+            
+            // Randomize theme for this set
+            const themes = ['apple', 'star', 'duck'];
+            const currentTheme = themes[Math.floor(Math.random() * themes.length)];
+
+            for(let i=0; i<count; i++) {
+                let valid = false;
+                let x, y;
+                let attempts = 0;
+
+                // Simple collision avoidance during generation
+                while(!valid && attempts < 100) {
+                    x = padding + Math.random() * (canvas.width - padding * 2);
+                    y = padding + Math.random() * (canvas.height - padding * 2);
+                    
+                    valid = true;
+                    for(let obj of state.objects) {
+                        const dist = Math.hypot(obj.x - x, obj.y - y);
+                        if(dist < size * 2.2) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    attempts++;
+                }
+
+                state.objects.push({
+                    id: i,
+                    x: x,
+                    y: y,
+                    baseX: x,
+                    baseY: y,
+                    radius: size,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tapped: false,
+                    scale: 1,
+                    rotation: 0,
+                    theme: currentTheme // Assign theme to object
+                });
+            }
+        }
+
+        function handleTap(e) {
+            if(state.isCelebrating || state.isProcessing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const tapX = e.clientX - rect.left;
+            const tapY = e.clientY - rect.top;
+
+            // Check collision with objects (reverse order to tap top-most first)
+            for(let i = state.objects.length - 1; i >= 0; i--) {
+                const obj = state.objects[i];
+                const dist = Math.hypot(obj.x - tapX, obj.y - tapY);
+
+                if(dist < obj.radius + 10) { // +10 for generous touch target
+                    // FIX 4: Atomic check and lock
+                    if(!obj.tapped) {
+                        state.isProcessing = true; // Lock input
+                        obj.tapped = true;
+                        state.currentCount++;
+                        playSound('pop');
+                        updateUI();
+                        
+                        // Trigger particle burst at object location
+                        createExplosion(obj.x, obj.y, obj.color);
+                        
+                        // Unlock input after a short delay to prevent rapid-fire
+                        setTimeout(() => {
+                            state.isProcessing = false;
+                        }, 200);
+                    }
+                    break; // Only tap one object at a time
+                }
+            }
+        }
+
+        function updateUI() {
+            // Update Number
+            countDisplay.textContent = state.currentCount;
+            countDisplay.classList.remove('bump');
+            void countDisplay.offsetWidth; // Trigger reflow
+            countDisplay.classList.add('bump');
+
+            // Update Ten Frame
+            for(let i=0; i<20; i++) {
+                const cell = document.getElementById(`tf-cell-${i}`);
+                if(i < state.currentCount) {
+                    cell.classList.add('filled');
+                } else {
+                    cell.classList.remove('filled');
+                }
+            }
+        }
+
+        function checkCount() {
+            if(state.currentCount === state.totalObjects) {
+                state.isCelebrating = true;
+                playSound('win');
+                feedbackOverlay.classList.add('show');
+                
+                // Massive confetti burst
+                for(let i=0; i<100; i++) {
+                    createExplosion(canvas.width/2, canvas.height/2, colors[Math.floor(Math.random()*colors.length)], 2);
+                }
+
+                setTimeout(() => {
+                    feedbackOverlay.classList.remove('show');
+                    state.isCelebrating = false;
+                }, 3000);
+            } else {
+                playSound('error');
+                countDisplay.style.color = '#FF6B6B';
+                setTimeout(() => countDisplay.style.color = '#FFD700', 500);
+            }
+        }
+
+        /**
+         * Rendering & Animation Loop
+         */
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Objects
+            state.objects.forEach(obj => {
+                // Bounce effect if tapped
+                if(obj.tapped) {
+                    obj.scale = 1 + Math.sin(Date.now() / 100) * 0.1;
+                } else {
+                    obj.scale = 1;
+                }
+
+                ctx.save();
+                ctx.translate(obj.x, obj.y);
+                ctx.scale(obj.scale, obj.scale);
+                
+                // FIX 2: Draw specific shapes (Apple, Star, Duck)
+                drawObject(ctx, obj);
+
+                ctx.restore();
+            });
+
+            // Draw Particles (Confetti)
+            for(let i = state.particles.length - 1; i >= 0; i--) {
+                const p = state.particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2; // Gravity
+                p.life -= 0.02;
+
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+                ctx.globalAlpha = 1.0;
+
+                if(p.life <= 0) {
+                    state.particles.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Helper to draw specific shapes
+        function drawObject(ctx, obj) {
+            const r = obj.radius;
+            
+            // Glow if tapped
+            if(obj.tapped) {
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = obj.color;
+            }
+
+            ctx.fillStyle = obj.tapped ? '#FFF' : obj.color;
+            ctx.strokeStyle = '#FFF';
+            ctx.lineWidth = 2;
+
+            if (obj.theme === 'apple') {
+                // Apple Shape
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fill();
+                // Stem
+                ctx.beginPath();
+                ctx.moveTo(0, -r);
+                ctx.quadraticCurveTo(5, -r - 10, 10, -r - 5);
+                ctx.stroke();
+                // Leaf
+                ctx.fillStyle = '#2ECC71';
+                ctx.beginPath();
+                ctx.ellipse(5, -r - 5, 8, 4, Math.PI / 4, 0, Math.PI * 2);
+                ctx.fill();
+            } 
+            else if (obj.theme === 'star') {
+                // Star Shape
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    ctx.lineTo(Math.cos((18 + i * 72) * Math.PI / 180) * r,
+                               -Math.sin((18 + i * 72) * Math.PI / 180) * r);
+                    ctx.lineTo(Math.cos((54 + i * 72) * Math.PI / 180) * (r / 2),
+                               -Math.sin((54 + i * 72) * Math.PI / 180) * (r / 2));
+                }
+                ctx.closePath();
+                ctx.fill();
+            } 
+            else if (obj.theme === 'duck') {
+                // Duck Shape
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2); // Body
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(r * 0.6, -r * 0.4, r * 0.6, 0, Math.PI * 2); // Head
+                ctx.fill();
+                // Beak
+                ctx.fillStyle = '#F39C12';
+                ctx.beginPath();
+                ctx.ellipse(r * 1.1, -r * 0.4, r * 0.3, r * 0.15, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw Face (Universal)
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(-10, -5, 4, 0, Math.PI*2); // Left Eye
+            ctx.arc(10, -5, 4, 0, Math.PI*2);  // Right Eye
+            ctx.fill();
+            
+            // Mouth
+            ctx.beginPath();
+            if(obj.tapped) {
+                ctx.arc(0, 5, 8, 0, Math.PI, false); // Smile
+            } else {
+                ctx.arc(0, 5, 4, 0, Math.PI, false); // Small smile
+            }
+            ctx.stroke();
+        }
+
+        function createExplosion(x, y, color, multiplier = 1) {
+            const count = 10 * multiplier;
+            for(let i=0; i<count; i++) {
+                state.particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 1.0,
+                    color: color,
+                    size: Math.random() * 6 + 2
+                });
+            }
+        }
+
+        /**
+         * Audio Synthesis (No external files needed)
+         */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if(type === 'pop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'win') {
+                // FIX 5: Enhanced 'win' sound - Major Chord Arpeggio
+                const now = audioCtx.currentTime;
+                // C Major Chord (C4, E4, G4, C5, E5)
+                [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.type = 'triangle';
+                    o.frequency.value = freq;
+                    g.gain.setValueAtTime(0.1, now + i*0.1);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + i*0.1 + 0.5);
+                    o.start(now + i*0.1);
+                    o.stop(now + i*0.1 + 0.5);
+                });
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        // Start App
+        init();
+
+    </script>
+</body>
+</html>

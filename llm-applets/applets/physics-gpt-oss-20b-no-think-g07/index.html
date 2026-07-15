@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Motion & Time Explorer – Grade 7</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<style>
+:root{
+  --bg:#12151f;
+  --surface:#0a0c12;
+  --text-primary:#f4f6fb;
+  --text-secondary:#94a3b8;
+  --accent1:#22d3ee; /* cyan */
+  --accent2:#a78bfa; /* violet */
+}
+html,body{
+  margin:0;padding:0;height:100%;
+  background:radial-gradient(circle at center,#12151f 0%,#0a0c12 100%);
+  color:var(--text-primary);
+  font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,sans-serif;
+}
+.app-container{
+  display:flex;flex-direction:row;height:100vh;
+  justify-content:center;align-items:flex-start;
+}
+.controls-panel{
+  flex:0 0 300px;
+  padding:20px;
+  background:rgba(30,41,59,.8);
+  backdrop-filter:blur(10px);
+  border-radius:12px;
+  margin:20px;
+  box-shadow:0 4px 12px rgba(0,0,0,.5);
+}
+.controls-panel h2{
+  color:var(--accent1);
+  margin-top:0;
+}
+.control-group{
+  margin-bottom:15px;
+}
+.control-group label{
+  display:block;font-weight:bold;margin-bottom:4px;
+}
+.control-group input[type=range]{
+  -webkit-appearance:none;width:100%;height:8px;border-radius:4px;background:#1e293b;outline:none;
+}
+.control-group input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--accent1);cursor:pointer;transition:transform .2s ease;
+}
+.control-group input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2);}
+.control-group input[type=range]::-moz-range-track{
+  width:100%;height:8px;border-radius:4px;background:#1e293b;
+}
+.control-group input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;border-radius:50%;
+  background:var(--accent1);cursor:pointer;transition:transform .2s ease;
+}
+.control-group input[type=range]::-moz-range-thumb:hover{transform:scale(1.2);}
+.control-group span.value{
+  font-family:'SF Mono','JetBrains Mono',ui-monospace,monospace;
+  color:var(--accent1);
+  margin-left:8px;
+}
+button{
+  background:var(--accent1);color:#fff;border:none;padding:8px 16px;margin-right:8px;
+  border-radius:6px;cursor:pointer;transition:background .2s ease;font-family:inherit;
+}
+button:hover{background:var(--accent2);}
+button:focus-visible{outline:2px solid var(--accent2);outline-offset:2px;}
+input[type=checkbox]{
+  accent-color:var(--accent1);
+  margin-right:6px;
+}
+.visualization-area{
+  flex:1;display:flex;flex-direction:row;padding:20px;
+}
+#simContainer,#graphContainer{flex:1;margin-right:10px;min-height:200px;min-width:300px;}
+#graphContainer:last-child{margin-right:0;}
+canvas{width:100%;height:100%;display:block;}
+@media(max-width:800px){
+  .app-container{flex-direction:column;align-items:center;}
+  .controls-panel{margin:10px;width:auto;}
+  .visualization-area{flex-direction:column;}
+  #simContainer,#graphContainer{margin-right:0;margin-bottom:10px;}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/p5@1.6.0/lib/p5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+</head>
+<body>
+<div class="app-container">
+  <aside class="controls-panel">
+    <h2>Motion & Time Explorer</h2>
+    <div id="expr1"></div>
+    <div id="expr2" style="margin-top:8px;"></div>
+
+    <div class="control-group">
+      <label for="speed1">Car/Runner Speed (km/h)</label>
+      <input type="range" id="speed1" min="0" max="120" step="1" value="60" aria-label="Car speed slider">
+      <span class="value" id="speed1Val">60</span> km/h
+    </div>
+
+    <div class="control-group">
+      <label><input type="checkbox" id="showMover2" checked aria-label="Show second mover toggle"> Show Second Mover</label>
+    </div>
+
+    <div class="control-group">
+      <label for="speed2">Second Mover Speed (km/h)</label>
+      <input type="range" id="speed2" min="0" max="120" step="1" value="80" aria-label="Second mover speed slider">
+      <span class="value" id="speed2Val">80</span> km/h
+    </div>
+
+    <div class="control-group">
+      <label for="pendLength">Pendulum Length (m)</label>
+      <input type="range" id="pendLength" min="0.5" max="2.0" step="0.01" value="1.0" aria-label="Pendulum length slider">
+      <span class="value" id="pendLengthVal">1.00</span> m
+    </div>
+
+    <div class="control-group">
+      <label><input type="checkbox" id="graphToggle" checked aria-label="Show graph toggle"> Show Graph</label>
+    </div>
+
+    <div class="control-group">
+      <label>Current Distance: <span id="currentDist">0</span> km</label>
+    </div>
+    <div class="control-group">
+      <label>Elapsed Time: <span id="elapsedTime">0</span> s</label>
+    </div>
+
+    <div class="control-group">
+      <button id="startPauseBtn">Start</button>
+      <button id="resetBtn">Reset</button>
+    </div>
+
+    <div class="control-group">
+      <label>Oscillation Counter: <span id="oscCounter">0</span></label>
+    </div>
+  </aside>
+
+  <main class="visualization-area">
+    <div id="simContainer"></div>
+    <div id="graphContainer"></div>
+  </main>
+</div>
+
+<script>
+const state = {
+  running:false,
+  time:0,
+  speed1:60, // km/h
+  speed2:80,
+  showMover2:true,
+  pendLength:1.0,
+  counter:0,
+  data1:[],
+  data2:[]
+};
+
+function initControls(){
+  const speed1Slider=document.getElementById('speed1');
+  const speed1Val=document.getElementById('speed1Val');
+  speed1Slider.addEventListener('input',e=>{
+    state.speed1=+e.target.value;
+    speed1Val.textContent=e.target.value;
+  });
+
+  const showMover2Chk=document.getElementById('showMover2');
+  const speed2Slider=document.getElementById('speed2');
+  const speed2Val=document.getElementById('speed2Val');
+  showMover2Chk.addEventListener('change',e=>{
+    state.showMover2=e.target.checked;
+    speed2Slider.disabled=!state.showMover2;
+  });
+
+  speed2Slider.addEventListener('input',e=>{
+    state.speed2=+e.target.value;
+    speed2Val.textContent=e.target.value;
+  });
+
+  const pendLengthSlider=document.getElementById('pendLength');
+  const pendLengthVal=document.getElementById('pendLengthVal');
+  pendLengthSlider.addEventListener('input',e=>{
+    state.pendLength=+e.target.value;
+    pendLengthVal.textContent=parseFloat(e.target.value).toFixed(2);
+  });
+
+  const graphToggle=document.getElementById('graphToggle');
+  const graphContainer=document.getElementById('graphContainer');
+  graphToggle.addEventListener('change',e=>{
+    graphContainer.style.display=e.target.checked?'block':'none';
+  });
+
+  const startPauseBtn=document.getElementById('startPauseBtn');
+  startPauseBtn.addEventListener('click',()=>{
+    state.running=!state.running;
+    startPauseBtn.textContent=state.running?'Pause':'Start';
+  });
+
+  const resetBtn=document.getElementById('resetBtn');
+  resetBtn.addEventListener('click',()=>{
+    state.time=0;
+    state.data1=[];
+    state.data2=[];
+    state.counter=0;
+    // Reset sliders
+    speed1Slider.value=60; state.speed1=60; speed1Val.textContent='60';
+    speed2Slider.value=80; state.speed2=80; speed2Val.textContent='80';
+    pendLengthSlider.value=1.0; state.pendLength=1.0; pendLengthVal.textContent='1.00';
+    showMover2Chk.checked=true; state.showMover2=true; speed2Slider.disabled=false;
+    graphToggle.checked=true; document.getElementById('graphContainer').style.display='block';
+    startPauseBtn.textContent='Start';
+    state.running=false;
+  });
+
+  // Initial display
+  speed1Val.textContent=speed1Slider.value;
+  speed2Val.textContent=speed2Slider.value;
+  pendLengthVal.textContent=parseFloat(pendLengthSlider.value).toFixed(2);
+}
+
+function initKaTeX(){
+  katex.render('d = v \\times t', document.getElementById('expr1'), {displayMode:true});
+  katex.render('slope = \\frac{\\Delta d}{\\Delta t} = v', document.getElementById('expr2'), {displayMode:true});
+}
+
+const simSketch = (s)=>{
+  let canvas;
+  s.setup=()=>{
+    const el=document.getElementById('simContainer');
+    let w = el.clientWidth || 400;
+    let h = el.clientHeight || 300;
+    if(w===0||h===0){w=400;h=300;}
+    canvas=s.createCanvas(w,h);
+    canvas.parent(el);
+    s.pixelDensity(s.devicePixelRatio);
+    s.angleMode(s.RADIANS);
+    s.textFont('system-ui');
+  };
+  s.windowResized=()=>{
+    const el=document.getElementById('simContainer');
+    s.resizeCanvas(el.clientWidth || 400, el.clientHeight || 300);
+  };
+  s.draw=()=>{
+    s.background(18,21,31);
+    const dt = state.running ? s.deltaTime/1000 : 0;
+    if(state.running) state.time+=dt;
+
+    // Distances in meters
+    const d1_m = state.speed1 / 3.6 * state.time; // km/h -> m/s
+    const d2_m = state.speed2 / 3.6 * state.time;
+    const scale=10; // px per meter
+
+    // Track
+    const trackY = s.height*0.4;
+    s.stroke(148,163,184);
+    s.line(50,trackY,s.width-50,trackY);
+
+    // Finish line
+    const finishX = s.width - 100;
+    s.stroke(255,0,0);
+    s.line(finishX,trackY-20,finishX,trackY+20);
+
+    // Movers
+    const x1=50 + d1_m*scale;
+    const x2=50 + d2_m*scale;
+
+    s.noStroke();
+    s.fill(34,211,238);
+    s.ellipse(x1,trackY,20,20);
+    if(state.showMover2){
+      s.fill(167,139,250);
+      s.ellipse(x2,trackY,20,20);
+    }
+
+    // Pendulum
+    const pivotX = s.width/2;
+    const pivotY = trackY + 120;
+    const Lpx = state.pendLength * 200; // 1m -> 200px
+    const omega = Math.sqrt(9.81 / state.pendLength);
+    const angle = 0.5 * Math.sin(omega*state.time); // amplitude 0.5 rad
+    const bobX = pivotX + Lpx*Math.sin(angle);
+    const bobY = pivotY + Lpx*Math.cos(angle);
+
+    s.stroke(148,163,184);
+    s.line(pivotX,pivotY,bobX,bobY);
+    s.fill(255);
+    s.ellipse(bobX,bobY,30,30);
+
+    // Pendulum counter (full cycles)
+    const period = 2 * Math.PI / omega;
+    state.counter = Math.floor(state.time / period);
+    document.getElementById('oscCounter').textContent=state.counter;
+
+    // Live distance and time readouts
+    const distKm = state.speed1 / 3600 * state.time;
+    document.getElementById('currentDist').textContent=distKm.toFixed(3);
+    document.getElementById('elapsedTime').textContent=state.time.toFixed(2);
+
+    // Record data for graph each frame
+    if(state.running){
+      const d1_km = state.speed1 / 3600 * state.time;
+      state.data1.push({t:state.time,d:d1_km});
+      if(state.showMover2){
+        const d2_km = state.speed2 / 3600 * state.time;
+        state.data2.push({t:state.time,d:d2_km});
+      }
+    }
+  };
+};
+
+const graphSketch = (s)=>{
+  let canvas;
+  s.setup=()=>{
+    const el=document.getElementById('graphContainer');
+    let w = el.clientWidth || 400;
+    let h = el.clientHeight || 300;
+    if(w===0||h===0){w=400;h=300;}
+    canvas=s.createCanvas(w,h);
+    canvas.parent(el);
+    s.pixelDensity(s.devicePixelRatio);
+    s.textFont('system-ui');
+  };
+  s.windowResized=()=>{
+    const el=document.getElementById('graphContainer');
+    s.resizeCanvas(el.clientWidth || 400, el.clientHeight || 300);
+  };
+  s.draw=()=>{
+    s.background(18,21,31);
+    const margin=40;
+    const w=s.width-2*margin;
+    const h=s.height-2*margin;
+
+    // Axes
+    s.stroke(148,163,184);
+    s.line(margin,margin,margin,margin+h); // y-axis
+    s.line(margin,margin+h,margin+w,margin+h); // x-axis
+
+    // Labels
+    const textSecondary = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim();
+    s.fill(textSecondary);
+    s.textSize(12);
+    s.textAlign(s.RIGHT,s.CENTER);
+    s.text('Time (s)', margin-10, margin/2);
+    s.textAlign(s.LEFT,s.BOTTOM);
+    s.text('Distance (km)', margin+5, margin+h+15);
+
+    // Data
+    const maxT = Math.max(...state.data1.map(p=>p.t), ...state.data2.map(p=>p.t), 10);
+    const maxD = Math.max(...state.data1.map(p=>p.d), ...state.data2.map(p=>p.d), 5);
+    const tScale = w / maxT;
+    const dScale = h / maxD;
+
+    // First mover
+    s.stroke(34,211,238);
+    s.beginShape();
+    state.data1.forEach(pt=>{
+      const x=margin+pt.t*tScale;
+      const y=margin+h-pt.d*dScale;
+      s.vertex(x,y);
+    });
+    s.endShape();
+
+    if(state.showMover2){
+      s.stroke(167,139,250);
+      s.beginShape();
+      state.data2.forEach(pt=>{
+        const x=margin+pt.t*tScale;
+        const y=margin+h-pt.d*dScale;
+        s.vertex(x,y);
+      });
+      s.endShape();
+    }
+  };
+};
+
+window.addEventListener('load',()=>{
+  initControls();
+  initKaTeX();
+  new p5(simSketch,'simContainer');
+  new p5(graphSketch,'graphContainer');
+});
+</script>
+</body>
+</html>

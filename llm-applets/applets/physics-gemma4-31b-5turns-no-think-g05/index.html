@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnetic Lab | Interactive Physics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0f111a;
+            --bg-gradient: radial-gradient(circle at center, #1a1d2b 0%, #0f111a 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --accent-north: #ef4444;
+            --accent-south: #3b82f6;
+            --accent-gold: #facc15;
+            --text-bright: #f8fafc;
+            --text-dim: #94a3b8;
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-deep);
+            background-image: var(--bg-gradient);
+            color: var(--text-bright);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #app {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+            width: 95vw;
+            height: 90vh;
+            max-width: 1600px;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+            color: var(--text-bright);
+        }
+
+        .description {
+            font-size: 14px;
+            color: var(--text-dim);
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .toggle-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: rgba(0,0,0,0.3);
+            padding: 4px;
+            border-radius: 12px;
+            gap: 4px;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        .toggle-btn.active {
+            background: var(--text-bright);
+            color: var(--bg-deep);
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--panel-border);
+            background: rgba(255,255,255,0.05);
+            color: var(--text-bright);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .action-btn:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 14px;
+            color: var(--text-bright);
+        }
+
+        .checkbox-wrapper input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-south);
+        }
+
+        #stage-container {
+            position: relative;
+            background: rgba(0,0,0,0.2);
+            border-radius: var(--radius);
+            border: 1px solid var(--panel-border);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .stats-overlay {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-dim);
+            pointer-events: none;
+            background: rgba(0,0,0,0.4);
+            padding: 8px 12px;
+            border-radius: 8px;
+            backdrop-filter: blur(4px);
+        }
+
+        @media (max-width: 900px) {
+            #app { grid-template-columns: 1fr; height: auto; overflow: visible; }
+            .sidebar { order: 2; }
+            #stage-container { height: 60vh; order: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <aside class="sidebar">
+        <div class="glass-panel">
+            <h1>Magnetic Lab</h1>
+            <p class="description">Explore the invisible forces of magnetism. Drag objects to test attraction and repulsion.</p>
+            
+            <div class="control-group">
+                <div>
+                    <label>Experiment Mode</label>
+                    <div class="toggle-container">
+                        <button id="mode-materials" class="toggle-btn active">Materials</button>
+                        <button id="mode-poles" class="toggle-btn">Poles</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label>Visualization</label>
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" id="show-field" checked> Show Field Lines
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 8px;">
+                    <button id="btn-flip" class="action-btn">🔄 Flip Polarity</button>
+                    <button id="btn-reset" class="action-btn">♻️ Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel" style="font-size: 13px; color: var(--text-dim);">
+            <label>Quick Guide</label>
+            <ul style="list-style: none; margin-top: 8px; line-height: 1.6;">
+                <li>🔴 North Pole / 🔵 South Pole</li>
+                <li>Opposites attract (N-S)</li>
+                <li>Likes repel (N-N, S-S)</li>
+                <li>Only ferromagnetic materials stick!</li>
+            </ul>
+        </div>
+    </aside>
+
+    <div id="stage-container">
+        <canvas id="labCanvas"></canvas>
+        <div class="stats-overlay" id="stats">Force: 0.00 N</div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script>
+    const { Engine, Render, Runner, Bodies, Composite, Body, Vector, Events, MouseConstraint, Mouse, Constraint } = Matter;
+
+    const CONFIG = {
+        northColor: '#ef4444',
+        southColor: '#3b82f6',
+        magneticRadius: 300,
+        forceStrength: 0.0015,
+        repelStrength: 0.002,
+        airFriction: 0.1,
+        snapDistance: 25, // Distance at which objects "stick"
+        snapStiffness: 0.4
+    };
+
+    let state = {
+        mode: 'materials',
+        showFieldLines: true,
+        mainMagnetPolarity: 1,
+        isFlipping: false
+    };
+
+    const canvas = document.getElementById('labCanvas');
+    const statsEl = document.getElementById('stats');
+    let engine, runner, render;
+    let mainMagnet, secondMagnet;
+    let objects = [];
+    let activeConstraints = [];
+
+    async function init() {
+        try {
+            engine = Engine.create();
+            engine.gravity.y = 0;
+
+            runner = Runner.create();
+            Runner.run(runner, engine);
+
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.parentElement.getBoundingClientRect();
+            const width = rect.width || 800;
+            const height = rect.height || 600;
+
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+
+            render = Render.create({
+                canvas: canvas,
+                engine: engine,
+                options: {
+                    width: width,
+                    height: height,
+                    wireframes: false,
+                    background: 'transparent',
+                    pixelRatio: dpr
+                }
+            });
+
+            Render.run(render);
+
+            setupScene();
+            setupInteractions();
+            setupUI();
+            
+            Events.on(engine, 'beforeUpdate', updatePhysics);
+            Events.on(render, 'afterRender', drawCustomVisuals);
+
+        } catch (e) {
+            console.error("Critical failure:", e);
+        }
+    }
+
+    function setupScene() {
+        Composite.clear(engine.world);
+        objects = [];
+        activeConstraints = [];
+
+        const w = canvas.clientWidth || 800;
+        const h = canvas.clientHeight || 600;
+
+        mainMagnet = createMagnet(w / 3, h / 2, 140, 40, state.mainMagnetPolarity);
+        Composite.add(engine.world, mainMagnet);
+        
+        if (state.mode === 'poles') {
+            secondMagnet = createMagnet(w * 0.66, h / 2, 140, 40, -1);
+            Composite.add(engine.world, secondMagnet);
+        } else {
+            createMaterialObjects(w, h);
+        }
+    }
+
+    function createMagnet(x, y, w, h, polarity) {
+        const mag = Bodies.rectangle(x, y, w, h, {
+            chamfer: { radius: 8 },
+            render: { fillStyle: 'transparent', strokeStyle: 'transparent' },
+            frictionAir: CONFIG.airFriction,
+            restitution: 0.3
+        });
+        mag.isMagnet = true;
+        mag.width = w;
+        mag.height = h;
+        mag.polarity = polarity;
+        return mag;
+    }
+
+    function createMaterialObjects(w, h) {
+        const materials = [
+            { name: 'Iron Nail', isMagnetic: true, color: '#94a3b8', w: 60, h: 12 },
+            { name: 'Steel Pin', isMagnetic: true, color: '#cbd5e1', w: 40, h: 8 },
+            { name: 'Paper Clip', isMagnetic: true, color: '#f1f5f9', w: 30, h: 20 },
+            { name: 'Plastic Scale', isMagnetic: false, color: '#fbbf24', w: 100, h: 15 },
+            { name: 'Wooden Pencil', isMagnetic: false, color: '#d97706', w: 80, h: 10 },
+            { name: 'Eraser', isMagnetic: false, color: '#f472b6', w: 30, h: 25 },
+            { name: 'Coin', isMagnetic: false, color: '#facc15', w: 25, h: 25, circle: true },
+        ];
+
+        const startX = w / 2;
+        const startY = h * 0.3;
+        const spacing = 80;
+
+        materials.forEach((mat, i) => {
+            let body;
+            const x = startX + (i - 3) * spacing;
+            const y = startY + (Math.floor(i/4)*120);
+            if (mat.circle) {
+                body = Bodies.circle(x, y, mat.w/2, {
+                    render: { fillStyle: mat.color },
+                    frictionAir: CONFIG.airFriction
+                });
+            } else {
+                body = Bodies.rectangle(x, y, mat.w, mat.h, {
+                    chamfer: { radius: 4 },
+                    render: { fillStyle: mat.color },
+                    frictionAir: CONFIG.airFriction
+                });
+            }
+            body.isMagnetic = mat.isMagnetic;
+            body.label = mat.name;
+            objects.push(body);
+            Composite.add(engine.world, body);
+        });
+    }
+
+    function updatePhysics() {
+        const magnets = [mainMagnet];
+        if (secondMagnet) magnets.push(secondMagnet);
+
+        // 1. Magnet to Object Attraction & Snapping
+        objects.forEach(obj => {
+            if (!obj.isMagnetic) return;
+            
+            magnets.forEach(mag => {
+                const poles = getPolePositions(mag);
+                const distN = Vector.magnitude(Vector.sub(obj.position, poles.N));
+                const distS = Vector.magnitude(Vector.sub(obj.position, poles.S));
+                const target = distN < distS ? poles.N : poles.S;
+                const dist = Math.min(distN, distS);
+
+                // SNAP LOGIC: If close enough, create a constraint to "stick"
+                if (dist < CONFIG.snapDistance) {
+                    createSnapConstraint(mag, obj, target === poles.N ? 'N' : 'S');
+                } else {
+                    // Remove constraints if the object is pulled away or magnet moves
+                    removeConstraintsForBody(obj);
+                    
+                    if (dist < CONFIG.magneticRadius) {
+                        const strength = (1 - dist / CONFIG.magneticRadius) * CONFIG.forceStrength;
+                        const dir = Vector.normalise(Vector.sub(target, obj.position));
+                        Body.applyForce(obj, obj.position, Vector.mult(dir, strength));
+                    }
+                }
+            });
+        });
+
+        // 2. Magnet to Magnet Interaction
+        if (secondMagnet) {
+            const force = calculateMagnetToMagnetForce(mainMagnet, secondMagnet);
+            Body.applyForce(secondMagnet, secondMagnet.position, force);
+            Body.applyForce(mainMagnet, mainMagnet.position, Vector.neg(force));
+        }
+    }
+
+    function createSnapConstraint(mag, obj, poleType) {
+        // Check if already constrained to this magnet
+        const existing = activeConstraints.find(c => c.bodyB === obj && c.bodyA === mag);
+        if (existing) return;
+
+        const poles = getPolePositions(mag);
+        const targetPos = poleType === 'N' ? poles.N : poles.S;
+
+        const constraint = Constraint.create({
+            bodyA: mag,
+            bodyB: obj,
+            pointA: Vector.sub(targetPos, mag.position),
+            pointB: { x: 0, y: 0 },
+            stiffness: CONFIG.snapStiffness,
+            damping: 0.1,
+            render: { visible: false }
+        });
+
+        activeConstraints.push(constraint);
+        Composite.add(engine.world, constraint);
+        
+        // Haptic-style bounce: zero out velocity for a clean snap
+        Body.setVelocity(obj, { x: 0, y: 0 });
+    }
+
+    function removeConstraintsForBody(body) {
+        for (let i = activeConstraints.length - 1; i >= 0; i--) {
+            const c = activeConstraints[i];
+            if (c.bodyB === body) {
+                Composite.remove(engine.world, c);
+                activeConstraints.splice(i, 1);
+            }
+        }
+    }
+
+    function getPolePositions(mag) {
+        const halfW = mag.width / 2;
+        const angle = mag.angle;
+        const nx = mag.position.x + Math.cos(angle) * halfW * mag.polarity;
+        const ny = mag.position.y + Math.sin(angle) * halfW * mag.polarity;
+        const sx = mag.position.x - Math.cos(angle) * halfW * mag.polarity;
+        const sy = mag.position.y - Math.sin(angle) * halfW * mag.polarity;
+        return { N: { x: nx, y: ny }, S: { x: sx, y: sy } };
+    }
+
+    function calculateMagnetToMagnetForce(m1, m2) {
+        const p1 = getPolePositions(m1);
+        const p2 = getPolePositions(m2);
+
+        const pairs = [
+            { a: p1.N, b: p2.N, type: 'repel' },
+            { a: p1.S, b: p2.S, type: 'repel' },
+            { a: p1.N, b: p2.S, type: 'attract' },
+            { a: p1.S, b: p2.N, type: 'attract' },
+        ];
+
+        let totalForce = { x: 0, y: 0 };
+        let maxF = 0;
+
+        pairs.forEach(pair => {
+            const dist = Vector.magnitude(Vector.sub(pair.b, pair.a));
+            if (dist < CONFIG.magneticRadius) {
+                const strength = Math.pow((1 - dist / CONFIG.magneticRadius), 2);
+                const dir = Vector.normalise(Vector.sub(pair.b, pair.a));
+                const magnitude = pair.type === 'attract' ? strength * CONFIG.forceStrength : -strength * CONFIG.repelStrength;
+                
+                const f = Vector.mult(dir, magnitude);
+                totalForce.x += f.x;
+                totalForce.y += f.y;
+                maxF = Math.max(maxF, strength);
+            }
+        });
+        statsEl.innerText = `Magnetic Force: ${(maxF * 100).toFixed(2)} N`;
+        return totalForce;
+    }
+
+    function drawCustomVisuals() {
+        const ctx = render.canvas.getContext('2d');
+        const magnets = [mainMagnet];
+        if (secondMagnet) magnets.push(secondMagnet);
+
+        // 1. Field Lines
+        if (state.showFieldLines) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+
+            magnets.forEach(mag => {
+                const poles = getPolePositions(mag);
+                const angle = mag.angle;
+                for (let i = 0; i < 8; i++) {
+                    const offset = (i - 3.5) * 15;
+                    const midX = (poles.N.x + poles.S.x) / 2 + Math.cos(angle + Math.PI/2) * offset;
+                    const midY = (poles.N.y + poles.S.y) / 2 + Math.sin(angle + Math.PI/2) * offset;
+
+                    ctx.beginPath();
+                    ctx.moveTo(poles.N.x, poles.N.y);
+                    ctx.quadraticCurveTo(midX, midY, poles.S.x, poles.S.y);
+                    ctx.stroke();
+                }
+            });
+            ctx.restore();
+        }
+
+        // 2. Magnets (Split Color)
+        magnets.forEach(mag => {
+            const halfW = mag.width / 2;
+            const angle = mag.angle;
+            
+            ctx.save();
+            ctx.translate(mag.position.x, mag.position.y);
+            ctx.rotate(angle);
+
+            const rightColor = mag.polarity === 1 ? CONFIG.northColor : CONFIG.southColor;
+            const leftColor = mag.polarity === 1 ? CONFIG.southColor : CONFIG.northColor;
+            const rightLabel = mag.polarity === 1 ? 'N' : 'S';
+            const leftLabel = mag.polarity === 1 ? 'S' : 'N';
+
+            ctx.fillStyle = rightColor;
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(0, -mag.height/2, halfW, mag.height, [0, 8, 8, 0]); else ctx.rect(0, -mag.height/2, halfW, mag.height);
+            ctx.fill();
+
+            ctx.fillStyle = leftColor;
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(-halfW, -mag.height/2, halfW, mag.height, [8, 0, 0, 8]); else ctx.rect(-halfW, -mag.height/2, halfW, mag.height);
+            ctx.fill();
+
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 14px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText(rightLabel, halfW/2, 5);
+            ctx.fillText(leftLabel, -halfW/2, 5);
+
+            ctx.restore();
+        });
+
+        // 3. Material Labels (Fix for Reviewer Item #3)
+        objects.forEach(obj => {
+            ctx.save();
+            ctx.fillStyle = obj.isMagnetic ? 'rgba(255,255,255,0.8)' : 'rgba(148, 163, 184, 0.5)';
+            ctx.font = '10px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText(obj.label + (obj.isMagnetic ? '' : ' (Non-Mag)'), obj.position.x, obj.position.y - (obj.h || 20) / 2 - 10);
+            ctx.restore();
+        });
+    }
+
+    function setupInteractions() {
+        const mouse = Mouse.create(render.canvas);
+        const mouseConstraint = MouseConstraint.create(engine, {
+            mouse: mouse,
+            constraint: { stiffness: 0.2, render: { visible: false } }
+        });
+        Composite.add(engine.world, mouseConstraint);
+    }
+
+    function setupUI() {
+        document.getElementById('mode-materials').onclick = (e) => {
+            state.mode = 'materials';
+            updateModeButtons(e.target);
+            setupScene();
+        };
+
+        document.getElementById('mode-poles').onclick = (e) => {
+            state.mode = 'poles';
+            updateModeButtons(e.target);
+            setupScene();
+        };
+
+        document.getElementById('show-field').onchange = (e) => {
+            state.showFieldLines = e.target.checked;
+        };
+
+        document.getElementById('btn-flip').onclick = () => {
+            if (state.isFlipping) return;
+            animateFlip(mainMagnet);
+        };
+
+        document.getElementById('btn-reset').onclick = () => {
+            setupScene();
+        };
+    }
+
+    function animateFlip(body) {
+        state.isFlipping = true;
+        const startAngle = body.angle;
+        const targetAngle = startAngle + Math.PI;
+        const duration = 300;
+        const startTime = performance.now();
+
+        function step(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Cubic-bezier approximation (ease-in-out)
+            const ease = progress < 0.5 
+                ? 4 * progress * progress * progress 
+                : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+            Body.setAngle(body, startAngle + (targetAngle - startAngle) * ease);
+
+            if (progress < 1) {
+                requestAnimationFrame(step);
+            } else {
+                body.polarity *= -1;
+                state.mainMagnetPolarity = body.polarity;
+                state.isFlipping = false;
+            }
+        }
+        requestAnimationFrame(step);
+    }
+
+    function updateModeButtons(activeBtn) {
+        document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+        activeBtn.classList.add('active');
+    }
+
+    window.addEventListener('resize', () => {
+        const w = canvas.parentElement.clientWidth;
+        const h = canvas.parentElement.clientHeight;
+        if (render) {
+            render.options.width = w;
+            render.options.height = h;
+            canvas.width = w * (window.devicePixelRatio || 1);
+            canvas.height = h * (window.devicePixelRatio || 1);
+        }
+    });
+
+    window.onload = init;
+</script>
+</body>
+</html>

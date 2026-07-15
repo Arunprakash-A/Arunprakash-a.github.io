@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLP Forward Propagation Visualizer</title>
+    
+    <!-- KaTeX for Math Rendering (Pinned Version) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-dark: #1a1b26;
+            --bg-darker: #0f1014;
+            --surface: rgba(30, 33, 45, 0.7);
+            --border: rgba(86, 95, 137, 0.3);
+            
+            /* Accents */
+            --blue: #7aa2f7;
+            --purple: #bb9af7;
+            --green: #9ece6a;
+            --orange: #e0af68;
+            --muted: #565f89;
+            --text-main: #c0caf5;
+            --text-bright: #ffffff;
+
+            /* Typography */
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Fira Code', ui-monospace, monospace;
+
+            /* Layout */
+            --sidebar-width: 320px;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 0%, #24283e 0%, transparent 60%),
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* --- Sidebar Controls --- */
+        aside {
+            width: var(--sidebar-width);
+            background: rgba(15, 17, 23, 0.95);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+            backdrop-filter: blur(8px);
+            z-index: 10;
+        }
+
+        h1 { font-size: 1.25rem; color: var(--text-bright); font-weight: 600; letter-spacing: -0.02em; }
+        .subtitle { font-size: 0.85rem; color: var(--muted); margin-top: -10px; }
+
+        .control-group { display: flex; flex-direction: column; gap: 12px; }
+        .group-label { 
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.1em; 
+            color: var(--muted); 
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        /* Inputs */
+        .input-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        
+        input[type="range"] {
+            -webkit-appearance: none; width: 100%; height: 4px; background: var(--border); border-radius: 2px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 16px; height: 16px; background: var(--blue); border-radius: 50%; cursor: pointer; transition: transform 0.1s;
+        }
+        input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
+
+        input[type="number"] {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: var(--text-bright);
+            font-family: var(--font-mono); padding: 6px; border-radius: 6px; width: 70px; text-align: right;
+        }
+
+        /* Buttons */
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        
+        button {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text-main);
+            padding: 10px 16px; border-radius: 8px; cursor: pointer; font-family: var(--font-sans);
+            font-size: 0.9rem; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        
+        button:hover { background: rgba(255,255,255,0.08); border-color: var(--text-main); color: var(--text-bright); }
+        button.primary { background: rgba(122, 162, 247, 0.15); border-color: var(--blue); color: var(--blue); }
+        button.primary:hover { background: rgba(122, 162, 247, 0.25); box-shadow: 0 0 12px rgba(122, 162, 247, 0.3); }
+        
+        .btn-full { grid-column: span 2; }
+
+        /* --- Main Visualization Stage --- */
+        main {
+            flex: 1; position: relative; display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+
+        #viz-canvas {
+            width: 100%; height: 100%;
+            /* Grid pattern for canvas background */
+            background-image: 
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* --- Tooltip --- */
+        #tooltip {
+            position: absolute; pointer-events: none; opacity: 0;
+            background: rgba(26, 27, 38, 0.95); border: 1px solid var(--blue);
+            padding: 12px 16px; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px); z-index: 100; transition: opacity 0.2s ease;
+            max-width: 300px; font-size: 0.9rem; color: var(--text-bright);
+        }
+
+        /* --- Math Display (Bottom) --- */
+        .math-display {
+            position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: rgba(15, 17, 23, 0.8); border: 1px solid var(--border);
+            padding: 12px 24px; border-radius: 99px; backdrop-filter: blur(8px);
+            display: flex; gap: 24px; align-items: center; font-family: var(--font-mono); font-size: 0.9rem;
+        }
+        .math-item { display: flex; align-items: center; gap: 8px; color: var(--text-main); }
+        .math-label { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside>
+        <div>
+            <h1>MLP Forward Pass</h1>
+            <p class="subtitle">Interactive Visualization</p>
+        </div>
+
+        <div class="control-group">
+            <div class="group-label">Inputs (x)</div>
+            
+            <div class="input-row">
+                <label for="slider-x1" style="font-family: var(--font-mono); color: var(--blue)">x₁</label>
+                <input type="range" id="slider-x1" min="-2" max="2" step="0.1" value="0.5">
+                <input type="number" id="num-x1" value="0.5" step="0.1">
+            </div>
+
+            <div class="input-row">
+                <label for="slider-x2" style="font-family: var(--font-mono); color: var(--blue)">x₂</label>
+                <input type="range" id="slider-x2" min="-2" max="2" step="0.1" value="0.5">
+                <input type="number" id="num-x2" value="0.5" step="0.1">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="group-label">Weights & Biases (w, b)</div>
+            
+            <!-- Hidden Layer 1 -->
+            <div style="font-size: 0.8rem; color: var(--purple); margin-bottom: 4px;">Hidden Neuron 1</div>
+            <div class="input-row"><span>w₁₁</span><input type="number" id="w-11" value="0.5"></div>
+            <div class="input-row"><span>w₂₁</span><input type="number" id="w-21" value="-0.3"></div>
+            <div class="input-row"><span>b₁</span><input type="number" id="b-1" value="0.1"></div>
+
+            <!-- Hidden Layer 2 -->
+            <div style="font-size: 0.8rem; color: var(--purple); margin-bottom: 4px;">Hidden Neuron 2</div>
+            <div class="input-row"><span>w₁₂</span><input type="number" id="w-12" value="-0.5"></div>
+            <div class="input-row"><span>w₂₂</span><input type="number" id="w-22" value="0.8"></div>
+            <div class="input-row"><span>b₂</span><input type="number" id="b-2" value="-0.2"></div>
+
+            <!-- Output Layer -->
+            <div style="font-size: 0.8rem; color: var(--green); margin-bottom: 4px;">Output Neuron</div>
+            <div class="input-row"><span>w₁₃</span><input type="number" id="w-13" value="0.9"></div>
+            <div class="input-row"><span>w₂₃</span><input type="number" id="w-23" value="-0.4"></div>
+            <div class="input-row"><span>b₃</span><input type="number" id="b-3" value="0.0"></div>
+        </div>
+
+        <div class="control-group">
+            <div class="group-label">Controls</div>
+            <div class="btn-group">
+                <button id="btn-step" class="primary"><span>Step ▶</span></button>
+                <button id="btn-auto"><span>Auto ⏯</span></button>
+                <button id="btn-randomize">Randomize 🎲</button>
+                <button id="btn-reset">Reset ↺</button>
+            </div>
+        </div>
+
+        <!-- Math Legend -->
+        <div style="margin-top: auto; font-size: 0.8rem; color: var(--muted); line-height: 1.5;">
+            <strong style="color:var(--text-main)">Activation:</strong> Sigmoid (σ) = 1 / (1 + e⁻ᶻ)<br>
+            <strong style="color:var(--text-main)">Edge Color:</strong><br>
+            <span style="color: var(--blue)">—</span> Positive Weight<br>
+            <span style="color: #e53935">—</span> Negative Weight
+        </div>
+    </aside>
+
+    <!-- Main Stage -->
+    <main id="stage-container">
+        <canvas id="viz-canvas"></canvas>
+        
+        <!-- Tooltip Element -->
+        <div id="tooltip"></div>
+
+        <!-- Bottom Math Display -->
+        <div class="math-display" id="math-bar">
+            <div class="math-item"><span class="math-label">Formula:</span><span id="katex-formula"></span></div>
+        </div>
+    </main>
+
+<script>
+/**
+ * MLP Forward Propagation Visualizer
+ * Pure Vanilla JS + Canvas implementation.
+ */
+
+// --- Configuration & State ---
+const CONFIG = {
+    colors: {
+        input: '#7aa2f7',   // Blue
+        hidden: '#bb9af7',  // Purple
+        output: '#9ece6a',  // Green
+        edgePos: 'rgba(122, 162, 247, 0.3)',
+        edgeNeg: 'rgba(229, 57, 53, 0.3)',
+        particle: '#e0af68', // Orange
+    },
+    layout: {
+        layerGapX: 300,
+        nodeGapY: 140,
+        nodeRadius: 28,
+        paddingX: 100,
+        paddingY: 100
+    }
+};
+
+// Default values for Reset button (Fix #5)
+const DEFAULTS = {
+    inputs: { x1: 0.5, x2: 0.5 },
+    weights: {
+        'w-11': 0.5, 'w-21': -0.3, 'b-1': 0.1,
+        'w-12': -0.5, 'w-22': 0.8, 'b-2': -0.2,
+        'w-13': 0.9, 'w-23': -0.4, 'b-3': 0.0
+    }
+};
+
+const STATE = {
+    inputs: { x1: 0.5, x2: 0.5 },
+    weights: {}, // Will be populated from DEFAULTS in init
+    nodes: [],      // Computed values
+    edges: [],      // Connections
+    particles: [],  // Animation particles
+    phase: 'INPUT', // INPUT -> HIDDEN -> OUTPUT
+    autoPlaying: false,
+    animTimer: null
+};
+
+// --- DOM Elements ---
+const canvas = document.getElementById('viz-canvas');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+const stageContainer = document.getElementById('stage-container');
+
+// --- Math Helpers ---
+function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
+
+function computeNetwork() {
+    // Inputs
+    STATE.nodes[0].val = STATE.inputs.x1;
+    STATE.nodes[1].val = STATE.inputs.x2;
+
+    // Hidden Layer
+    const h1_z = STATE.weights['w-11'] * STATE.inputs.x1 + STATE.weights['w-21'] * STATE.inputs.x2 + STATE.weights['b-1'];
+    STATE.nodes[2].val = sigmoid(h1_z);
+    STATE.nodes[2].z = h1_z;
+
+    const h2_z = STATE.weights['w-12'] * STATE.inputs.x1 + STATE.weights['w-22'] * STATE.inputs.x2 + STATE.weights['b-2'];
+    STATE.nodes[3].val = sigmoid(h2_z);
+    STATE.nodes[3].z = h2_z;
+
+    // Output Layer
+    const o_z = STATE.weights['w-13'] * STATE.nodes[2].val + STATE.weights['w-23'] * STATE.nodes[3].val + STATE.weights['b-3'];
+    STATE.nodes[4].val = sigmoid(o_z);
+    STATE.nodes[4].z = o_z;
+
+    updateMathDisplay();
+}
+
+function updateMathDisplay() {
+    const el = document.getElementById('katex-formula');
+    // Render KaTeX formula for the output node calculation
+    const w13 = STATE.weights['w-13'];
+    const w23 = STATE.weights['w-23'];
+    const b3 = STATE.weights['b-3'];
+    
+    // Use current computed hidden values for the display to show "live" math
+    const h1Val = STATE.nodes[2].val.toFixed(2);
+    const h2Val = STATE.nodes[3].val.toFixed(2);
+
+    const latex = `\\text{Out} = \\sigma(${w13.toFixed(1)} \\cdot ${h1Val} + ${w23.toFixed(1)} \\cdot ${h2Val} + ${b3.toFixed(1)})`;
+    
+    try {
+        katex.render(latex, el, { throwOnError: false });
+    } catch(e) {}
+}
+
+// --- Initialization ---
+function init() {
+    // Initialize weights from defaults (Fix #5 logic)
+    STATE.weights = { ...DEFAULTS.weights };
+
+    // Define Topology (Nodes & Edges)
+    STATE.nodes = [
+        { id: 0, layer: 'input', label: 'x₁', x: 0, y: 0, val: 0.5 },
+        { id: 1, layer: 'input', label: 'x₂', x: 0, y: 0, val: 0.5 },
+        { id: 2, layer: 'hidden', label: 'h₁', x: 0, y: 0, val: 0 },
+        { id: 3, layer: 'hidden', label: 'h₂', x: 0, y: 0, val: 0 },
+        { id: 4, layer: 'output', label: 'y', x: 0, y: 0, val: 0 }
+    ];
+
+    STATE.edges = [
+        // Input -> Hidden 1
+        { from: 0, to: 2, weight: 'w-11' },
+        { from: 1, to: 2, weight: 'w-21' },
+        // Input -> Hidden 2
+        { from: 0, to: 3, weight: 'w-12' },
+        { from: 1, to: 3, weight: 'w-22' },
+        // Hidden -> Output
+        { from: 2, to: 4, weight: 'w-13' },
+        { from: 3, to: 4, weight: 'w-23' }
+    ];
+
+    resizeCanvas();
+    computeNetwork();
+    requestAnimationFrame(loop);
+}
+
+// --- Layout Engine ---
+function updateLayout() {
+    const w = canvas.width;
+    const h = canvas.height;
+    
+    // Center the graph
+    const totalWidth = CONFIG.layout.layerGapX * 2;
+    const startX = (w - totalWidth) / 2 + CONFIG.layout.layerGapX / 2;
+
+    // Input Layer (Left)
+    STATE.nodes[0].x = startX - CONFIG.layout.layerGapX/2;
+    STATE.nodes[0].y = h/2 - CONFIG.layout.nodeGapY/2;
+    
+    STATE.nodes[1].x = startX - CONFIG.layout.layerGapX/2;
+    STATE.nodes[1].y = h/2 + CONFIG.layout.nodeGapY/2;
+
+    // Hidden Layer (Middle)
+    STATE.nodes[2].x = startX;
+    STATE.nodes[2].y = h/2 - CONFIG.layout.nodeGapY/2;
+
+    STATE.nodes[3].x = startX;
+    STATE.nodes[3].y = h/2 + CONFIG.layout.nodeGapY/2;
+
+    // Output Layer (Right)
+    STATE.nodes[4].x = startX + CONFIG.layout.layerGapX/2;
+    STATE.nodes[4].y = h/2;
+}
+
+function resizeCanvas() {
+    const rect = stageContainer.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    
+    ctx.scale(dpr, dpr);
+    
+    // Logical size for layout calculations
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
+    
+    updateLayout();
+}
+
+// --- Drawing Functions ---
+
+function drawEdge(edge) {
+    const n1 = STATE.nodes[edge.from];
+    const n2 = STATE.nodes[edge.to];
+    const wVal = STATE.weights[edge.weight] || 0;
+    
+    // Visual properties based on weight
+    const absW = Math.abs(wVal);
+    const width = 1 + (absW * 4); // Thickness proportional to magnitude
+    const color = wVal >= 0 ? CONFIG.colors.edgePos : CONFIG.colors.edgeNeg;
+
+    ctx.beginPath();
+    ctx.moveTo(n1.x, n1.y);
+    ctx.lineTo(n2.x, n2.y);
+    ctx.lineWidth = width;
+    ctx.strokeStyle = color;
+    ctx.stroke();
+
+    // Draw weight label in middle of edge
+    const mx = (n1.x + n2.x) / 2;
+    const my = (n1.y + n2.y) / 2;
+    
+    ctx.font = '10px "Fira Code"';
+    ctx.fillStyle = '#565f89';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // Offset label slightly to avoid overlap if edges cross (not applicable here, but good practice)
+    const offset = 10; 
+    ctx.fillText(wVal.toFixed(2), mx + offset, my - offset);
+}
+
+function drawNode(node) {
+    const r = CONFIG.layout.nodeRadius;
+    
+    // Color based on layer and activation value (Blue/Purple/Green base)
+    let baseColor;
+    if (node.layer === 'input') baseColor = CONFIG.colors.input;
+    else if (node.layer === 'hidden') baseColor = CONFIG.colors.hidden;
+    else baseColor = CONFIG.colors.output;
+
+    // Glow effect based on activation value intensity (alpha)
+    const glowIntensity = Math.abs(node.val - 0.5) * 2; // 0 at 0.5, max at 0 or 1
+    
+    ctx.save();
+    
+    // Outer Glow
+    if (node.layer !== 'input') {
+        ctx.shadowBlur = 15 + glowIntensity * 10;
+        ctx.shadowColor = baseColor;
+    }
+
+    // Node Circle
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#1a1b26'; // Inner fill (dark)
+    ctx.fill();
+    
+    // Border
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = baseColor;
+    ctx.stroke();
+
+    // Value Text
+    ctx.shadowBlur = 0;
+    ctx.font = 'bold 14px "Fira Code"';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    const displayVal = node.layer === 'input' 
+        ? STATE.inputs[node.label === 'x₁' ? 'x1' : 'x2'].toFixed(1)
+        : node.val.toFixed(2);
+
+    ctx.fillText(displayVal, node.x, node.y + 2);
+
+    // Label below
+    ctx.font = '10px "Inter"';
+    ctx.fillStyle = '#9aa4b8';
+    ctx.fillText(node.label.toUpperCase(), node.x, node.y + r + 16);
+
+    ctx.restore();
+}
+
+function drawParticles() {
+    for (let i = STATE.particles.length - 1; i >= 0; i--) {
+        const p = STATE.particles[i];
+        
+        // Move particle along edge vector
+        const dx = p.endX - p.startX;
+        const dy = p.endY - p.startY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        // FIX #5: Calculate speed based on distance per second for consistent animation across devices.
+        // Speed is 200% of the edge length per second (traverses in 0.5s).
+        const speedFactor = 2; 
+        const step = (speedFactor * dist) / 1000; 
+        
+        p.progress += step;
+
+        if (p.progress >= 1) {
+            STATE.particles.splice(i, 1);
+            
+            // Trigger arrival effect on target node
+            triggerNodePulse(p.targetNodeId);
+            
+            // FIX #1: Execute the callback when particle arrives. 
+            // This was missing in the original code, preventing state transitions.
+            if (p.arrivalCallback) {
+                p.arrivalCallback();
+            }
+        } else {
+            const cx = p.startX + dx * p.progress;
+            const cy = p.startY + dy * p.progress;
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+            ctx.fillStyle = CONFIG.colors.particle;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = CONFIG.colors.particle;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    }
+}
+
+function triggerNodePulse(nodeId) {
+    const node = STATE.nodes[nodeId];
+    
+    // FIX #5: Implement the pulse effect. 
+    // When called, temporarily increase the node's shadow blur or scale for ~300ms using a CSS transition or canvas animation frame.
+    if (node.layer !== 'input') {
+        const baseColor = CONFIG.colors[node.layer];
+        
+        // Create a temporary visual "ring" effect by drawing an expanding circle
+        let radius = CONFIG.layout.nodeRadius;
+        let alpha = 1;
+        
+        function animatePulse() {
+            if (alpha <= 0) return;
+            
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = baseColor;
+            ctx.lineWidth = 3;
+            ctx.globalAlpha = alpha;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = baseColor;
+            ctx.stroke();
+            ctx.restore();
+            
+            radius += 2;
+            alpha -= 0.08;
+            
+            requestAnimationFrame(animatePulse);
+        }
+        
+        animatePulse();
+    }
+}
+
+// --- Animation Loop ---
+let lastTime = 0;
+function loop(timestamp) {
+    const dt = timestamp - lastTime;
+    lastTime = timestamp;
+
+    ctx.clearRect(0, 0, canvas.width / (window.devicePixelRatio||1), canvas.height / (window.devicePixelRatio||1));
+
+    // Draw Edges
+    STATE.edges.forEach(drawEdge);
+
+    // Draw Particles
+    drawParticles();
+
+    // Draw Nodes
+    STATE.nodes.forEach(drawNode);
+
+    requestAnimationFrame(loop);
+}
+
+// --- Interaction Logic ---
+
+function spawnSignal(fromId, toId, callback) {
+    const n1 = STATE.nodes[fromId];
+    const n2 = STATE.nodes[toId];
+    
+    STATE.particles.push({
+        startX: n1.x, startY: n1.y,
+        endX: n2.x, endY: n2.y,
+        progress: 0,
+        targetNodeId: toId,
+        arrivalCallback: callback
+    });
+}
+
+// Fix #1 & #4: stepForward now computes values upon particle arrival
+function stepForward() {
+    if (STATE.phase === 'INPUT') {
+        STATE.phase = 'HIDDEN';
+        
+        // Spawn signals Input -> Hidden with callbacks to compute hidden layer
+        spawnSignal(0, 2, () => { 
+            const w11 = STATE.weights['w-11'];
+            const w21 = STATE.weights['w-21'];
+            const b1 = STATE.weights['b-1'];
+            const z = w11 * STATE.inputs.x1 + w21 * STATE.inputs.x2 + b1;
+            STATE.nodes[2].val = sigmoid(z);
+            STATE.nodes[2].z = z;
+        });
+        
+        spawnSignal(1, 2, () => { 
+             const w11 = STATE.weights['w-11'];
+            const w21 = STATE.weights['w-21'];
+            const b1 = STATE.weights['b-1'];
+            const z = w11 * STATE.inputs.x1 + w21 * STATE.inputs.x2 + b1;
+            STATE.nodes[2].val = sigmoid(z);
+            STATE.nodes[2].z = z;
+        });
+
+        spawnSignal(0, 3, () => { 
+             const w12 = STATE.weights['w-12'];
+            const w22 = STATE.weights['w-22'];
+            const b2 = STATE.weights['b-2'];
+            const z = w12 * STATE.inputs.x1 + w22 * STATE.inputs.x2 + b2;
+            STATE.nodes[3].val = sigmoid(z);
+            STATE.nodes[3].z = z;
+        });
+
+        spawnSignal(1, 3, () => { 
+             const w12 = STATE.weights['w-12'];
+            const w22 = STATE.weights['w-22'];
+            const b2 = STATE.weights['b-2'];
+            const z = w12 * STATE.inputs.x1 + w22 * STATE.inputs.x2 + b2;
+            STATE.nodes[3].val = sigmoid(z);
+            STATE.nodes[3].z = z;
+        });
+
+    } else if (STATE.phase === 'HIDDEN') {
+        STATE.phase = 'OUTPUT';
+        
+        // Spawn signals Hidden -> Output with callbacks to compute output layer
+        spawnSignal(2, 4, () => { 
+             const w13 = STATE.weights['w-13'];
+            const w23 = STATE.weights['w-23'];
+            const b3 = STATE.weights['b-3'];
+            const z = w13 * STATE.nodes[2].val + w23 * STATE.nodes[3].val + b3;
+            STATE.nodes[4].val = sigmoid(z);
+            STATE.nodes[4].z = z;
+        });
+
+        spawnSignal(3, 4, () => { 
+             const w13 = STATE.weights['w-13'];
+            const w23 = STATE.weights['w-23'];
+            const b3 = STATE.weights['b-3'];
+            const z = w13 * STATE.nodes[2].val + w23 * STATE.nodes[3].val + b3;
+            STATE.nodes[4].val = sigmoid(z);
+            STATE.nodes[4].z = z;
+        });
+    }
+}
+
+// Fix #3: Auto Propagate uses event-driven approach via spawnSignal callbacks
+function autoPropagate() {
+    if (STATE.phase === 'INPUT') {
+        stepForward(); // This will trigger next phase when particles arrive
+    } else if (STATE.phase === 'HIDDEN') {
+        stepForward(); // This will trigger output phase when particles arrive
+    } else {
+        STATE.autoPlaying = false;
+        btnAuto.innerHTML = '<span>Auto ▶</span>';
+    }
+}
+
+// --- Event Listeners ---
+
+window.addEventListener('resize', () => { resizeCanvas(); });
+
+// Inputs Sync
+const syncInputs = (id, key) => {
+    const slider = document.getElementById(`slider-${key}`);
+    const num = document.getElementById(`num-${key}`);
+    
+    slider.addEventListener('input', () => { STATE.inputs[key] = parseFloat(slider.value); num.value = slider.value; computeNetwork(); });
+    num.addEventListener('input', () => { 
+        let v = parseFloat(num.value) || 0; 
+        if(v > 2) v = 2; if(v < -2) v = -2; // Clamp for display
+        STATE.inputs[key] = v; 
+        slider.value = v; 
+        computeNetwork(); 
+    });
+};
+
+syncInputs('slider-x1', 'x1');
+syncInputs('slider-x2', 'x2');
+
+// Weights Sync (Fix #2: Use correct ID mapping)
+document.querySelectorAll('input[type="number"]').forEach(input => {
+    input.addEventListener('change', () => {
+        const id = input.id; // e.g., w-11, b-3 - these match the state keys now
+        STATE.weights[id] = parseFloat(input.value);
+        computeNetwork();
+    });
+});
+
+// Buttons
+document.getElementById('btn-step').addEventListener('click', stepForward);
+
+const btnAuto = document.getElementById('btn-auto');
+btnAuto.addEventListener('click', () => {
+    // FIX #2: Refactor to correctly toggle state. 
+    // The original code set autoPlaying=false before checking, causing logic errors.
+    if (STATE.autoPlaying) {
+        STATE.autoPlaying = false;
+        btnAuto.innerHTML = '<span>Auto ▶</span>';
+    } else {
+        STATE.autoPlaying = true;
+        btnAuto.innerHTML = '<span>Pause ⏸</span>';
+        autoPropagate(); // Start loop
+    }
+});
+
+// Fix #2: Randomize button uses correct ID mapping
+document.getElementById('btn-randomize').addEventListener('click', () => {
+    const rand = (min, max) => Math.random() * (max - min) + min;
+    
+    Object.keys(STATE.weights).forEach(k => {
+        STATE.weights[k] = parseFloat(rand(-1.5, 1.5).toFixed(2));
+        document.getElementById(k).value = STATE.weights[k]; // k is now 'w-11' etc.
+    });
+    
+    computeNetwork();
+});
+
+// Fix #5: Reset button restores specific default values
+document.getElementById('btn-reset').addEventListener('click', () => {
+    STATE.phase = 'INPUT';
+    STATE.autoPlaying = false;
+    btnAuto.innerHTML = '<span>Auto ▶</span>';
+    STATE.particles = [];
+    
+    // Reset inputs to defaults
+    STATE.inputs.x1 = DEFAULTS.inputs.x1; 
+    STATE.inputs.x2 = DEFAULTS.inputs.x2;
+    document.getElementById('slider-x1').value = DEFAULTS.inputs.x1; 
+    document.getElementById('num-x1').value = DEFAULTS.inputs.x1;
+    document.getElementById('slider-x2').value = DEFAULTS.inputs.x2; 
+    document.getElementById('num-x2').value = DEFAULTS.inputs.x2;
+
+    // Reset weights to defaults (from constant)
+    Object.keys(DEFAULTS.weights).forEach(key => {
+        STATE.weights[key] = DEFAULTS.weights[key];
+        document.getElementById(key).value = DEFAULTS.weights[key];
+    });
+
+    computeNetwork();
+});
+
+// Tooltip Logic - FIX #3: Use KaTeX for rendering math expressions in tooltips
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    
+    let hoveredNode = null;
+    
+    // Check collision with nodes
+    for (const node of STATE.nodes) {
+        const dist = Math.sqrt((mx - node.x)**2 + (my - node.y)**2);
+        if (dist < CONFIG.layout.nodeRadius + 5) {
+            hoveredNode = node;
+            break;
+        }
+    }
+
+    if (hoveredNode && hoveredNode.layer !== 'input') {
+        let latexStr = '';
+        
+        if (hoveredNode.id === 2) { // h1
+            const w11 = STATE.weights['w-11']; 
+            const w21 = STATE.weights['w-21']; 
+            const b1 = STATE.weights['b-1'];
+            const x1 = STATE.inputs.x1; 
+            const x2 = STATE.inputs.x2;
+            // KaTeX string for tooltip content
+            latexStr = `z_1 = (${w11} \\cdot ${x1}) + (${w21} \\cdot ${x2}) + ${b1}`;
+        } else if (hoveredNode.id === 3) { // h2
+            const w12 = STATE.weights['w-12']; 
+            const w22 = STATE.weights['w-22']; 
+            const b2 = STATE.weights['b-2'];
+            const x1 = STATE.inputs.x1; 
+            const x2 = STATE.inputs.x2;
+            latexStr = `z_2 = (${w12} \\cdot ${x1}) + (${w22} \\cdot ${x2}) + ${b2}`;
+        } else if (hoveredNode.id === 4) { // Output
+            const w13 = STATE.weights['w-13']; 
+            const w23 = STATE.weights['w-23']; 
+            const b3 = STATE.weights['b-3'];
+            latexStr = `z_{out} = (${w13} \\cdot ${STATE.nodes[2].val.toFixed(2)}) + (${w23} \\cdot ${STATE.nodes[3].val.toFixed(2)}) + ${b3}`;
+        }
+
+        // FIX #3: Clear tooltip.innerHTML before appending new content to prevent DOM stacking artifacts.
+        tooltip.innerHTML = '';
+        
+        try {
+            katex.render(latexStr, tooltip, { 
+                throwOnError: false,
+                displayMode: false,
+                output: 'html'
+            });
+            
+            // Add a small footer with activation result for context
+            const resultDiv = document.createElement('div');
+            resultDiv.style.marginTop = '8px';
+            resultDiv.style.fontSize = '12px';
+            resultDiv.style.color = '#9aa4b8';
+            resultDiv.textContent = `σ(${hoveredNode.z.toFixed(3)}) = ${hoveredNode.val.toFixed(3)}`;
+            tooltip.appendChild(resultDiv);
+
+        } catch(e) {
+            console.error("KaTeX render error", e);
+        }
+
+        tooltip.style.opacity = 1;
+        
+        // Position tooltip near mouse but keep in bounds
+        let tx = e.clientX + 15;
+        let ty = e.clientY + 15;
+        if (tx + 200 > window.innerWidth) tx = e.clientX - 200;
+        if (ty + 100 > window.innerHeight) ty = e.clientY - 100;
+        
+        tooltip.style.left = `${tx}px`;
+        tooltip.style.top = `${ty}px`;
+
+    } else {
+        tooltip.style.opacity = 0;
+    }
+});
+
+canvas.addEventListener('mouseleave', () => { tooltip.style.opacity = 0; });
+
+
+// --- Start ---
+init();
+
+</script>
+</body>
+</html>

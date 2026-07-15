@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Function Machine | Linear Algebra Visualizer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
+    </style>
+    <!-- KaTeX for beautiful math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <!-- GSAP for high-end animations -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg-deep: #0f121d;
+            --bg-gradient: radial-gradient(circle at center, #1a1f2e 0%, #0f121d 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #22d3ee;
+            --accent-violet: #a78bfa;
+            --accent-amber: #fbbf24;
+            --accent-danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-dim: #9aa4b8;
+            --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-deep);
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 1400px;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 320px 1fr 380px;
+            gap: 2rem;
+            /* FIX 3: Changed height from 95vh to auto to prevent content cutoff */
+            height: auto;
+            min-height: 90vh;
+        }
+
+        @media (max-width: 1200px) {
+            #app {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        h2 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: var(--accent-cyan);
+            border-radius: 2px;
+        }
+
+        .control-group { margin-bottom: 1.5rem; }
+        label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            margin-bottom: 0.75rem;
+            font-weight: 500;
+        }
+
+        .input-row { display: flex; gap: 10px; align-items: center; }
+        input[type="range"] { flex: 1; accent-color: var(--accent-cyan); cursor: pointer; }
+        .stepper {
+            width: 60px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--panel-border);
+            color: white;
+            font-family: var(--font-mono);
+            padding: 4px;
+            text-align: center;
+            border-radius: 6px;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: var(--font-ui);
+            transition: var(--transition);
+            margin-bottom: 0.75rem;
+        }
+
+        .btn-primary { background: var(--accent-cyan); color: #000; }
+        .btn-primary:hover:not(:disabled) { background: #fff; transform: translateY(-2px); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--panel-border); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+
+        #stage {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .formula-display {
+            font-size: 1.8rem;
+            margin-bottom: 3rem;
+            padding: 1rem 2rem;
+            background: rgba(0,0,0,0.4);
+            border-radius: 50px;
+            border: 1px solid var(--panel-border);
+            min-width: 300px;
+            text-align: center;
+            font-family: var(--font-mono);
+        }
+
+        .formula-part { transition: color 0.3s, transform 0.3s; display: inline-block; }
+        .highlight-a { color: var(--accent-cyan); }
+        .highlight-x { color: var(--accent-amber); }
+        .highlight-b { color: var(--accent-violet); }
+
+        #machine-canvas {
+            max-width: 100%;
+            filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.2));
+        }
+
+        .data-container { display: flex; flex-direction: column; gap: 1.5rem; }
+        #plot-canvas {
+            background: #0a0d14;
+            border-radius: 12px;
+            border: 1px solid var(--panel-border);
+            width: 100%;
+            aspect-ratio: 1/1;
+        }
+
+        .table-wrapper { 
+            overflow-y: auto; 
+            max-height: 300px; /* Ensure table doesn't push layout off screen */
+            border-radius: 8px;
+            background: rgba(0,0,0,0.2);
+        }
+        table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.9rem; }
+        th { text-align: left; color: var(--text-dim); padding: 8px; border-bottom: 1px solid var(--panel-border); font-weight: normal; text-transform: uppercase; font-size: 0.7rem; position: sticky; top: 0; background: #1e293b; }
+        td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-main); }
+        .highlight-row { background: rgba(34, 211, 238, 0.1); color: var(--accent-cyan) !important; }
+
+        #status-bubble {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -120%);
+            background: var(--accent-violet);
+            color: #000;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <aside class="panel">
+        <h2>Rule Configuration</h2>
+        <div class="control-group">
+            <label for="slider-a">Coefficient (Multiplier) <span id="val-a" style="float:right; color:var(--accent-cyan)">3</span></label>
+            <div class="input-row">
+                <input type="range" id="slider-a" min="-10" max="10" value="3">
+                <input type="number" id="num-a" class="stepper" value="3">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label for="slider-b">Constant (Adder) <span id="val-b" style="float:right; color:var(--accent-violet)">2</span></label>
+            <div class="input-row">
+                <input type="range" id="slider-b" min="-20" max="20" value="2">
+                <input type="number" id="num-b" class="stepper" value="2">
+            </div>
+        </div>
+
+        <div style="margin-top: auto;">
+            <h2>Input Value</h2>
+            <div class="control-group">
+                <label for="slider-x">Current x <span id="val-x" style="float:right; color:var(--accent-amber)">5</span></label>
+                <div class="input-row">
+                    <input type="range" id="slider-x" min="-20" max="20" value="5">
+                    <input type="number" id="num-x" class="stepper" value="5">
+                </div>
+            </div>
+            <button id="btn-run" class="btn-primary">RUN MACHINE</button>
+            <button id="btn-fill" class="btn-secondary">FILL TABLE</button>
+            <button id="btn-reset" class="btn-secondary">RESET ALL</button>
+        </div>
+    </aside>
+
+    <main id="stage">
+        <div id="formula" class="formula-display"></div>
+        <div id="status-bubble">Multiplying...</div>
+        <canvas id="machine-canvas"></canvas>
+    </main>
+
+    <aside class="panel data-container">
+        <h2>Coordinate Plot</h2>
+        <canvas id="plot-canvas"></canvas>
+        <h2>Value Table</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>x</th><th>f(x) = ax + b</th><th>y</th></tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+    </aside>
+</div>
+
+<script>
+    const state = {
+        a: 3,
+        b: 2,
+        x: 5,
+        points: [],
+        isAnimating: false
+    };
+
+    const el = {
+        sliderA: document.getElementById('slider-a'),
+        numA: document.getElementById('num-a'),
+        valA: document.getElementById('val-a'),
+        sliderB: document.getElementById('slider-b'),
+        numB: document.getElementById('num-b'),
+        valB: document.getElementById('val-b'),
+        sliderX: document.getElementById('slider-x'),
+        numX: document.getElementById('num-x'),
+        valX: document.getElementById('val-x'),
+        btnRun: document.getElementById('btn-run'),
+        btnFill: document.getElementById('btn-fill'),
+        btnReset: document.getElementById('btn-reset'),
+        formula: document.getElementById('formula'),
+        tableBody: document.getElementById('table-body'),
+        machineCanvas: document.getElementById('machine-canvas'),
+        plotCanvas: document.getElementById('plot-canvas'),
+        statusBubble: document.getElementById('status-bubble')
+    };
+
+    const ctxM = el.machineCanvas.getContext('2d');
+    const ctxP = el.plotCanvas.getContext('2d');
+
+    function calculateY(x) { return state.a * x + state.b; }
+
+    function updateFormula() {
+        const y = calculateY(state.x);
+        el.formula.innerHTML = `
+            <span id="f-a" class="formula-part highlight-a">${state.a}</span>
+            <span id="f-x" class="formula-part highlight-x">(${state.x})</span>
+            <span class="formula-part"> + </span>
+            <span id="f-b" class="formula-part highlight-b">${state.b}</span>
+            <span class="formula-part"> = </span>
+            <span id="f-y" class="formula-part">${y}</span>
+        `;
+    }
+
+    function resizeCanvases() {
+        const dpr = window.devicePixelRatio || 1;
+        el.machineCanvas.width = 600 * dpr;
+        el.machineCanvas.height = 500 * dpr;
+        el.machineCanvas.style.width = '600px';
+        el.machineCanvas.style.height = '500px';
+        ctxM.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const plotSize = el.plotCanvas.parentElement.clientWidth - 48;
+        el.plotCanvas.width = plotSize * dpr;
+        el.plotCanvas.height = plotSize * dpr;
+        el.plotCanvas.style.width = `${plotSize}px`;
+        el.plotCanvas.style.height = `${plotSize}px`;
+        ctxP.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function drawMachineBase() {
+        ctxM.clearRect(0, 0, 600, 500);
+        
+        ctxM.strokeStyle = '#64748b';
+        ctxM.lineWidth = 4;
+        ctxM.lineJoin = 'round';
+        ctxM.strokeRect(150, 150, 300, 200);
+        
+        ctxM.beginPath();
+        ctxM.moveTo(250, 150); ctxM.lineTo(270, 100); ctxM.lineTo(330, 100); ctxM.lineTo(350, 150);
+        ctxM.stroke();
+        
+        ctxM.beginPath();
+        ctxM.moveTo(350, 300); ctxM.lineTo(420, 300); ctxM.lineTo(420, 330); ctxM.lineTo(350, 330);
+        ctxM.stroke();
+
+        ctxM.fillStyle = '#9aa4b8';
+        ctxM.font = '12px JetBrains Mono';
+        ctxM.textAlign = 'center';
+        ctxM.fillText('MULTIPLIER GEAR', 220, 230);
+        ctxM.fillText('ADDER CHAMBER', 340, 230);
+
+        // Visual feedback: Gear size changes based on coefficient a (FIX 1)
+        const gearRadius = 30 + Math.abs(state.a) * 2;
+        ctxM.strokeStyle = '#475569';
+        ctxM.lineWidth = 2;
+        ctxM.beginPath(); ctxM.arc(220, 250, gearRadius, 0, Math.PI * 2); ctxM.stroke();
+        
+        ctxM.strokeRect(310, 220, 60, 60);
+    }
+
+    function drawPlot() {
+        const w = el.plotCanvas.width / (window.devicePixelRatio || 1);
+        const h = el.plotCanvas.height / (window.devicePixelRatio || 1);
+        ctxP.clearRect(0, 0, w, h);
+        const scale = 15;
+        const centerX = w / 2;
+        const centerY = h / 2;
+
+        ctxP.strokeStyle = '#1e293b';
+        ctxP.lineWidth = 1;
+        for(let i = -20; i <= 20; i++) {
+            ctxP.beginPath(); ctxP.moveTo(centerX + i * scale, 0); ctxP.lineTo(centerX + i * scale, h); ctxP.stroke();
+            ctxP.beginPath(); ctxP.moveTo(0, centerY + i * scale); ctxP.lineTo(w, centerY + i * scale); ctxP.stroke();
+        }
+
+        ctxP.strokeStyle = '#64748b';
+        ctxP.lineWidth = 2;
+        ctxP.beginPath(); ctxP.moveTo(0, centerY); ctxP.lineTo(w, centerY); ctxP.stroke();
+        ctxP.beginPath(); ctxP.moveTo(centerX, 0); ctxP.lineTo(centerX, h); ctxP.stroke();
+
+        ctxP.strokeStyle = 'rgba(34, 211, 238, 0.3)';
+        ctxP.lineWidth = 2;
+        ctxP.beginPath();
+        ctxP.moveTo(centerX - 20 * scale, centerY - calculateY(-20) * scale);
+        ctxP.lineTo(centerX + 20 * scale, centerY - calculateY(20) * scale);
+        ctxP.stroke();
+
+        state.points.forEach(p => {
+            ctxP.fillStyle = '#fbbf24';
+            ctxP.beginPath(); ctxP.arc(centerX + p.x * scale, centerY - p.y * scale, 4, 0, Math.PI * 2); ctxP.fill();
+        });
+    }
+
+    function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+    async function runMachine(customX = null, fastMode = false) {
+        if (state.isAnimating && !fastMode) return;
+        state.isAnimating = true;
+        el.btnRun.disabled = true;
+
+        const xVal = customX !== null ? customX : state.x;
+        const yVal = calculateY(xVal);
+        const startX = 300, startY = 80;
+        const gearX = 220, gearY = 250;
+        const chamberX = 340, chamberY = 250;
+        const endX = 420, endY = 315;
+
+        const bubble = el.statusBubble;
+        const showStatus = (txt) => {
+            bubble.innerText = txt;
+            gsap.to(bubble, { opacity: 1, y: -20, duration: fastMode ? 0.1 : 0.3 });
+        };
+        const hideStatus = () => gsap.to(bubble, { opacity: 0, y: 0, duration: fastMode ? 0.1 : 0.3 });
+
+        const sphere = { x: startX, y: startY, r: 8, color: varColor('--accent-amber') };
+        const particles = [];
+        const numParticles = Math.abs(state.b) > 0 ? Math.min(Math.abs(state.b), 12) : 0;
+
+        // FIX 2: Ensure drawSphere is called frequently and redraws the base to prevent flickering/blanking
+        function drawSphere() {
+            drawMachineBase(); // Redraw background first
+            
+            particles.forEach(p => {
+                ctxM.fillStyle = varColor('--accent-violet');
+                ctxM.beginPath(); ctxM.arc(p.x, p.y, 3, 0, Math.PI * 2); ctxM.fill();
+            });
+
+            ctxM.fillStyle = sphere.color;
+            ctxM.shadowBlur = 15;
+            ctxM.shadowColor = sphere.color;
+            ctxM.beginPath(); ctxM.arc(sphere.x, sphere.y, sphere.r, 0, Math.PI * 2); ctxM.fill();
+            ctxM.shadowBlur = 0;
+        }
+
+        const dur = fastMode ? 0.15 : 0.6;
+
+        showStatus(`Inputting x = ${xVal}...`);
+        gsap.to('#f-x', { scale: 1.3, color: '#fff', duration: 0.3 });
+        await gsap.to(sphere, { y: gearY, duration: dur, ease: "bounce.out", onUpdate: drawSphere });
+        gsap.to('#f-x', { scale: 1, color: varColor('--accent-amber'), duration: 0.3 });
+
+        showStatus(`Multiplying by ${state.a}...`);
+        gsap.to('#f-a', { scale: 1.3, color: '#fff', duration: 0.3 });
+        const targetR = Math.abs(state.a * xVal) * 1 + 8;
+        if (state.a < 0) sphere.color = varColor('--accent-danger');
+        await gsap.to(sphere, { r: targetR, duration: dur, ease: "back.out", onUpdate: drawSphere });
+        gsap.to('#f-a', { scale: 1, color: varColor('--accent-cyan'), duration: 0.3 });
+
+        showStatus(`Adding ${state.b}...`);
+        gsap.to('#f-b', { scale: 1.3, color: '#fff', duration: 0.3 });
+        
+        if (numParticles > 0) {
+            for(let i=0; i<numParticles; i++) {
+                particles.push({ x: chamberX + (Math.random()-0.5)*60, y: chamberY + (Math.random()-0.5)*60 });
+            }
+            await gsap.to(sphere, { x: chamberX, duration: dur * 0.8, ease: "power2.inOut", onUpdate: drawSphere });
+            const particleTls = particles.map((p, idx) => {
+                return gsap.to(p, { x: sphere.x, y: sphere.y, duration: dur * 0.5, delay: idx * 0.03, onUpdate: drawSphere });
+            });
+            await Promise.all(particleTls);
+            particles.length = 0;
+        } else {
+            await gsap.to(sphere, { x: chamberX, duration: dur, ease: "power2.inOut", onUpdate: drawSphere });
+        }
+        gsap.to('#f-b', { scale: 1, color: varColor('--accent-violet'), duration: 0.3 });
+
+        showStatus(`Result: ${yVal}!`);
+        sphere.color = varColor('--accent-cyan');
+        gsap.to('#f-y', { scale: 1.3, color: '#fff', duration: 0.3 });
+        await gsap.to(sphere, { x: endX, y: endY, duration: dur, ease: "power2.out", onUpdate: drawSphere });
+        gsap.to('#f-y', { scale: 1, color: '#fff', duration: 0.3 });
+
+        hideStatus();
+        addPointToTable(xVal, yVal);
+        state.isAnimating = false;
+        el.btnRun.disabled = false;
+    }
+
+    function addPointToTable(x, y) {
+        if (!state.points.find(p => p.x === x)) state.points.push({x, y});
+        const row = document.createElement('tr');
+        row.className = 'highlight-row';
+        row.innerHTML = `<td>${x}</td><td>${state.a}(${x}) + ${state.b}</td><td>${y}</td>`;
+        el.tableBody.prepend(row);
+        setTimeout(() => row.classList.remove('highlight-row'), 2000);
+        drawPlot();
+    }
+
+    function syncInputs(type, val) {
+        const v = parseInt(val);
+        if (isNaN(v)) return;
+        if (type === 'a') { state.a = v; el.sliderA.value = v; el.numA.value = v; el.valA.innerText = v; }
+        else if (type === 'b') { state.b = v; el.sliderB.value = v; el.numB.value = v; el.valB.innerText = v; }
+        else if (type === 'x') { state.x = v; el.sliderX.value = v; el.numX.value = v; el.valX.innerText = v; }
+        
+        updateFormula();
+        drawPlot();
+        // FIX 1: Ensure the machine visualization updates in real-time when sliders move
+        drawMachineBase(); 
+    }
+
+    el.sliderA.oninput = (e) => syncInputs('a', e.target.value);
+    el.numA.oninput = (e) => syncInputs('a', e.target.value);
+    el.sliderB.oninput = (e) => syncInputs('b', e.target.value);
+    el.numB.oninput = (e) => syncInputs('b', e.target.value);
+    el.sliderX.oninput = (e) => syncInputs('x', e.target.value);
+    el.numX.oninput = (e) => syncInputs('x', e.target.value);
+
+    el.btnRun.onclick = () => runMachine();
+
+    el.btnFill.onclick = async () => {
+        if (state.isAnimating) return;
+        const defaults = [-2, -1, 0, 1, 2];
+        for (let x of defaults) {
+            state.x = x;
+            updateFormula();
+            await runMachine(x, true);
+            await new Promise(r => setTimeout(r, 50));
+        }
+    };
+
+    el.btnReset.onclick = () => {
+        state.a = 3; state.b = 2; state.x = 5; state.points = [];
+        syncInputs('a', 3); syncInputs('b', 2); syncInputs('x', 5);
+        el.tableBody.innerHTML = '';
+        drawPlot();
+        drawMachineBase();
+    };
+
+    window.addEventListener('resize', resizeCanvases);
+    resizeCanvases();
+    syncInputs('a', 3); syncInputs('b', 2); syncInputs('x', 5);
+    drawMachineBase();
+    drawPlot();
+</script>
+</body>
+</html>

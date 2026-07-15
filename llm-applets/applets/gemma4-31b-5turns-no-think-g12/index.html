@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Derivative Explorer | Limit of Secant Slopes</title>
+    
+    <!-- Google Fonts for JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- KaTeX for beautiful math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+        :root {
+            --bg-deep: #05070d;
+            --bg-gradient: radial-gradient(circle at center, #1a1f2e 0%, #0f121d 100%);
+            --panel-bg: rgba(30, 41, 59, 0.6);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-bright: #f8fafc;
+            --text-dim: #9aa4b8;
+            --accent-cyan: #22d3ee;
+            --accent-violet: #a78bfa;
+            --accent-red: #f43f5e;
+            --accent-green: #10b981;
+            --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+        }
+
+        * { box-sizing: border-box; }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: var(--bg-deep); 
+            background-image: var(--bg-gradient);
+            color: var(--text-bright);
+            font-family: var(--font-ui);
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            padding: 24px;
+            gap: 24px;
+        }
+
+        /* Sidebar / Control Panel */
+        .sidebar {
+            width: 30%;
+            min-width: 320px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: var(--text-bright);
+        }
+
+        .description {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            font-family: var(--font-ui);
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            padding: 8px 0;
+        }
+
+        .toggle-row input { display: none; }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        .switch::before {
+            content: "";
+            position: absolute;
+            width: 16px; height: 16px;
+            left: 2px; top: 2px;
+            background: #475569;
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+        }
+        input:checked + .switch::before {
+            transform: translateX(20px);
+            background: var(--accent-cyan);
+        }
+        input:checked + .switch { background: rgba(34, 211, 238, 0.2); }
+        .switch { background: #334155; border-radius: 10px; transition: background 0.2s; }
+
+        /* Math Display */
+        .math-card {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: auto;
+            border: 1px solid var(--border-color);
+        }
+        .math-line {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .math-val {
+            color: var(--accent-cyan);
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+
+        /* Stage / Visualization */
+        .stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            position: relative;
+            min-width: 0;
+        }
+
+        .canvas-container {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .label-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            font-family: var(--font-mono);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            z-index: 5;
+        }
+
+        @media (max-width: 900px) {
+            .app-container { flex-direction: column; overflow-y: auto; height: auto; }
+            .sidebar { width: 100%; min-width: unset; position: relative; }
+            .stage { height: 1200px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="header">
+            <h1>The Derivative</h1>
+            <p class="description">Explore the limit of secant slopes as they converge to the tangent line.</p>
+        </div>
+
+        <div class="control-group">
+            <label for="funcSelect">Function f(x)</label>
+            <select id="funcSelect">
+                <option value="quad">Quadratic: x²</option>
+                <option value="sin">Sine: sin(x)</option>
+                <option value="cubic">Cubic: x³ - 3x</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="hSlider">Interval h: <span id="hVal" style="color: var(--accent-cyan); font-family: var(--font-mono);">1.00</span></label>
+            <input type="range" id="hSlider" min="-2" max="2" step="0.01" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label>Visibility</label>
+            <label class="toggle-row">
+                <span>Tangent Line</span>
+                <input type="checkbox" id="showTangent" checked>
+                <div class="switch"></div>
+            </label>
+            <label class="toggle-row">
+                <span>Secant Line</span>
+                <input type="checkbox" id="showSecant" checked>
+                <div class="switch"></div>
+            </label>
+            <label class="toggle-row">
+                <span>Derivative Plot</span>
+                <input type="checkbox" id="showDerivPlot" checked>
+                <div class="switch"></div>
+            </label>
+        </div>
+
+        <div class="math-card">
+            <div id="formula-limit" style="margin-bottom: 15px; font-size: 0.9rem;"></div>
+            <div class="math-line">
+                <span>m<sub>secant</sub></span>
+                <span id="valSecant" class="math-val">0.00</span>
+            </div>
+            <div class="math-line">
+                <span>m<sub>tangent</sub></span>
+                <span id="valTangent" class="math-val">0.00</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="stage">
+        <div class="canvas-container" id="containerF">
+            <div class="label-overlay">f(x)</div>
+            <canvas id="canvasF"></canvas>
+        </div>
+        <div class="canvas-container" id="containerDF">
+            <div class="label-overlay">f'(x)</div>
+            <canvas id="canvasDF"></canvas>
+        </div>
+    </main>
+</div>
+
+<script>
+    /** 
+     * MATH ENGINE 
+     */
+    const Functions = {
+        quad: {
+            f: (x) => x * x,
+            df: (x) => 2 * x,
+            rangeX: [-3, 3],
+            rangeY: [-1, 10],
+            rangeDY: [-7, 7]
+        },
+        sin: {
+            f: (x) => Math.sin(x),
+            df: (x) => Math.cos(x),
+            rangeX: [-6, 6],
+            rangeY: [-1.5, 1.5],
+            rangeDY: [-1.5, 1.5]
+        },
+        cubic: {
+            f: (x) => x * x * x - 3 * x,
+            df: (x) => 3 * x * x - 3,
+            rangeX: [-3, 3],
+            rangeY: [-4, 4],
+            rangeDY: [-10, 10]
+        }
+    };
+
+    /**
+     * STATE MANAGEMENT
+     */
+    const state = {
+        currentFunc: 'quad',
+        x: 0.5,
+        h: 1.0,
+        showTangent: true,
+        showSecant: true,
+        showDerivPlot: true,
+        isDragging: false,
+        smoothX: 0.5,
+        smoothH: 1.0,
+        smoothSlopeSec: 0,
+        smoothSlopeTan: 0
+    };
+
+    let el = {};
+
+    /**
+     * RENDERING ENGINE
+     */
+    class Plotter {
+        constructor(canvas, isDerivative = false) {
+            this.canvas = canvas;
+            this.ctx = canvas.getContext('2d');
+            this.isDerivative = isDerivative;
+            this.resize();
+            window.addEventListener('resize', () => this.resize());
+        }
+
+        resize() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = this.canvas.getBoundingClientRect();
+            this.canvas.width = rect.width * dpr;
+            this.canvas.height = rect.height * dpr;
+            this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            this.w = rect.width;
+            this.h = rect.height;
+        }
+
+        toScreenX(x, rangeX) {
+            const span = rangeX[1] - rangeX[0];
+            return ((x - rangeX[0]) / span) * this.w;
+        }
+
+        toScreenY(y, rangeY) {
+            const span = rangeY[1] - rangeY[0];
+            return this.h - ((y - rangeY[0]) / span) * this.h;
+        }
+
+        drawGrid(rangeX, rangeY) {
+            const ctx = this.ctx;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+
+            for (let x = rangeX[0]; x <= rangeX[1]; x += (rangeX[1]-rangeX[0])/10) {
+                const sx = this.toScreenX(x, rangeX);
+                ctx.moveTo(sx, 0); ctx.lineTo(sx, this.h);
+            }
+            for (let y = rangeY[0]; y <= rangeY[1]; y += (rangeY[1]-rangeY[0])/10) {
+                const sy = this.toScreenY(y, rangeY);
+                ctx.moveTo(0, sy); ctx.lineTo(this.w, sy);
+            }
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.beginPath();
+            const zeroX = this.toScreenX(0, rangeX);
+            const zeroY = this.toScreenY(0, rangeY);
+            ctx.moveTo(zeroX, 0); ctx.lineTo(zeroX, this.h);
+            ctx.moveTo(0, zeroY); ctx.lineTo(this.w, zeroY);
+            ctx.stroke();
+        }
+
+        drawCurve(fn, rangeX, rangeY) {
+            const ctx = this.ctx;
+            ctx.beginPath();
+            ctx.strokeStyle = this.isDerivative ? 'rgba(167, 139, 250, 0.8)' : 'rgba(34, 211, 238, 0.8)';
+            ctx.lineWidth = 3;
+            ctx.lineJoin = 'round';
+
+            for (let i = 0; i <= this.w; i++) {
+                const x = rangeX[0] + (i / this.w) * (rangeX[1] - rangeX[0]);
+                const y = fn(x);
+                const sx = this.toScreenX(x, rangeX);
+                const sy = this.toScreenY(y, rangeY);
+                if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+            }
+            ctx.stroke();
+        }
+
+        drawPoint(x, y, rangeX, rangeY, color, label = "") {
+            const ctx = this.ctx;
+            const sx = this.toScreenX(x, rangeX);
+            const sy = this.toScreenY(y, rangeY);
+            
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (label) {
+                ctx.fillStyle = 'white';
+                ctx.font = '12px "JetBrains Mono"';
+                ctx.fillText(label, sx + 8, sy - 8);
+            }
+        }
+
+        drawLine(p1, p2, color, width = 2) {
+            const ctx = this.ctx;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+    }
+
+    let plotterF, plotterDF;
+
+    function init() {
+        try {
+            el = {
+                funcSelect: document.getElementById('funcSelect'),
+                hSlider: document.getElementById('hSlider'),
+                hVal: document.getElementById('hVal'),
+                showTangent: document.getElementById('showTangent'),
+                showSecant: document.getElementById('showSecant'),
+                showDerivPlot: document.getElementById('showDerivPlot'),
+                valSecant: document.getElementById('valSecant'),
+                valTangent: document.getElementById('valTangent'),
+                formulaLimit: document.getElementById('formula-limit'),
+                canvasF: document.getElementById('canvasF'),
+                canvasDF: document.getElementById('canvasDF'),
+                containerDF: document.getElementById('containerDF')
+            };
+
+            // Ensure all elements exist before proceeding
+            if (!el.canvasF || !el.canvasDF) {
+                console.error("Required DOM elements not found");
+                return;
+            }
+
+            plotterF = new Plotter(el.canvasF);
+            plotterDF = new Plotter(el.canvasDF, true);
+
+            if (window.katex) {
+                katex.render("f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}", el.formulaLimit, { throwOnError: false });
+            }
+
+            el.funcSelect.addEventListener('change', (e) => state.currentFunc = e.target.value);
+            el.hSlider.addEventListener('input', (e) => {
+                state.h = parseFloat(e.target.value);
+                el.hVal.innerText = state.h.toFixed(2);
+            });
+            el.showTangent.addEventListener('change', (e) => state.showTangent = e.target.checked);
+            el.showSecant.addEventListener('change', (e) => state.showSecant = e.target.checked);
+            el.showDerivPlot.addEventListener('change', (e) => {
+                state.showDerivPlot = e.target.checked;
+                el.containerDF.style.display = state.showDerivPlot ? 'block' : 'none';
+            });
+
+            const handleMove = (e) => {
+                if (!state.isDragging) return;
+                const rect = el.canvasF.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const range = Functions[state.currentFunc].rangeX;
+                state.x = range[0] + (mouseX / rect.width) * (range[1] - range[0]);
+                state.x = Math.max(range[0], Math.min(range[1], state.x));
+            };
+
+            el.canvasF.addEventListener('mousedown', () => state.isDragging = true);
+            window.addEventListener('mouseup', () => state.isDragging = false);
+            window.addEventListener('mousemove', handleMove);
+
+            requestAnimationFrame(update);
+        } catch (err) {
+            console.error("Initialization failed:", err);
+        }
+    }
+
+    function update() {
+        state.smoothX += (state.x - state.smoothX) * 0.2;
+        state.smoothH += (state.h - state.smoothH) * 0.2;
+
+        const funcData = Functions[state.currentFunc];
+        const rangeX = funcData.rangeX;
+        const rangeY = funcData.rangeY;
+        const rangeDY = funcData.rangeDY;
+
+        const fx = funcData.f(state.smoothX);
+        const fxh = funcData.f(state.smoothX + state.smoothH);
+        const slopeSec = (Math.abs(state.smoothH) < 0.001) ? funcData.df(state.smoothX) : (fxh - fx) / state.smoothH;
+        const slopeTan = funcData.df(state.smoothX);
+
+        state.smoothSlopeSec += (slopeSec - state.smoothSlopeSec) * 0.1;
+        state.smoothSlopeTan += (slopeTan - state.smoothSlopeTan) * 0.1;
+
+        if (el.valSecant) el.valSecant.innerText = state.smoothSlopeSec.toFixed(3);
+        if (el.valTangent) el.valTangent.innerText = state.smoothSlopeTan.toFixed(3);
+
+        plotterF.ctx.clearRect(0, 0, plotterF.w, plotterF.h);
+        plotterF.drawGrid(rangeX, rangeY);
+        plotterF.drawCurve(funcData.f, rangeX, rangeY);
+
+        const px = plotterF.toScreenX(state.smoothX, rangeX);
+        const py = plotterF.toScreenY(fx, rangeY);
+        const qx = plotterF.toScreenX(state.smoothX + state.smoothH, rangeX);
+        const qy = plotterF.toScreenY(fxh, rangeY);
+
+        if (state.showSecant) {
+            plotterF.drawLine({x: px, y: py}, {x: qx, y: qy}, 'rgba(167, 139, 250, 0.6)', 2);
+            plotterF.drawPoint(state.smoothX + state.smoothH, fxh, rangeX, rangeY, '#a78bfa', 'Q');
+        }
+
+        if (state.showTangent) {
+            const dx = 1; 
+            const tx1 = state.smoothX - dx;
+            const ty1 = fx - slopeTan * dx;
+            const tx2 = state.smoothX + dx;
+            const ty2 = fx + slopeTan * dx;
+
+            let tanColor = 'white';
+            if (slopeTan > 0.05) tanColor = '#10b981';
+            else if (slopeTan < -0.05) tanColor = '#f43f5e';
+
+            plotterF.drawLine(
+                {x: plotterF.toScreenX(tx1, rangeX), y: plotterF.toScreenY(ty1, rangeY)},
+                {x: plotterF.toScreenX(tx2, rangeX), y: plotterF.toScreenY(ty2, rangeY)},
+                tanColor, 3
+            );
+        }
+
+        plotterF.drawPoint(state.smoothX, fx, rangeX, rangeY, '#22d3ee', 'P');
+
+        if (state.showDerivPlot) {
+            plotterDF.ctx.clearRect(0, 0, plotterDF.w, plotterDF.h);
+            plotterDF.drawGrid(rangeX, rangeDY);
+            plotterDF.drawCurve(funcData.df, rangeX, rangeDY);
+            plotterDF.drawPoint(state.smoothX, slopeTan, rangeX, rangeDY, '#a78bfa', "f'(x)");
+        }
+
+        requestAnimationFrame(update);
+    }
+
+    // Use DOMContentLoaded to ensure elements are ready before init()
+    window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

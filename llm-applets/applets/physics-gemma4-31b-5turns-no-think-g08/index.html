@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Lab: Vibration & Pitch</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <style>
+        :root {
+            --bg-deep: #020617;
+            --bg-gradient: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #22d3ee;
+            --accent-indigo: #818cf8;
+            --accent-pink: #f472b6;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --mono-font: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+            --ui-font: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-deep);
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            font-family: var(--ui-font);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .app-container {
+            width: 95vw;
+            max-width: 1200px;
+            height: 85vh;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        /* Left Side: Visualization Stage */
+        .stage {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            height: 100%;
+        }
+
+        .source-viewport {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 24px;
+            border: 1px solid var(--panel-border);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        #sourceCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        .oscilloscope-container {
+            height: 240px;
+            background: #0a0f1d;
+            border-radius: 24px;
+            border: 1px solid var(--panel-border);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        #scopeCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Right Side: Controls */
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, var(--accent-cyan), var(--accent-indigo));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1.25rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 16px;
+            border: 1px solid var(--panel-border);
+        }
+
+        .group-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .value-display {
+            font-family: var(--mono-font);
+            color: var(--accent-cyan);
+            font-weight: bold;
+            background: rgba(34, 211, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .source-toggle {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .toggle-btn {
+            background: #334155;
+            border: 1px solid transparent;
+            color: var(--text-dim);
+            padding: 0.6rem 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-btn.active {
+            background: rgba(129, 140, 238, 0.2);
+            border-color: var(--accent-indigo);
+            color: var(--text-main);
+            box-shadow: 0 0 15px rgba(129, 140, 238, 0.2);
+        }
+
+        .action-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: auto;
+        }
+
+        .btn {
+            padding: 0.8rem;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            font-family: var(--ui-font);
+        }
+
+        .btn-primary {
+            background: var(--accent-cyan);
+            color: #020617;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--panel-border);
+            color: var(--text-dim);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+        }
+
+        .status-indicator {
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--text-dim);
+        }
+
+        #pitchLabel {
+            font-weight: 600;
+            color: var(--accent-indigo);
+        }
+
+        @media (max-width: 900px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                height: auto;
+                overflow-y: auto;
+            }
+            .controls-panel {
+                position: relative;
+                margin-bottom: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="stage">
+        <div class="source-viewport">
+            <canvas id="sourceCanvas"></canvas>
+        </div>
+        <div class="oscilloscope-container">
+            <canvas id="scopeCanvas"></canvas>
+        </div>
+    </div>
+
+    <aside class="controls-panel">
+        <div>
+            <h1>Sound Lab</h1>
+            <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.5rem;">Vibration, Pitch & Loudness</p>
+        </div>
+
+        <div class="control-group">
+            <span class="group-label">Physical Source</span>
+            <div class="source-toggle">
+                <button class="toggle-btn active" data-source="string">String</button>
+                <button class="toggle-btn" data-source="fork">Fork</button>
+                <button class="toggle-btn" data-source="speaker">Speaker</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="group-label">Parameters</span>
+            
+            <div class="slider-container">
+                <div class="slider-header">
+                    <span>Pitch (<span id="pitchLabel">Medium Pitch</span>)</span>
+                    <span id="freqVal" class="value-display">440 Hz</span>
+                </div>
+                <input type="range" id="freqSlider" min="20" max="2000" value="440">
+                <div style="display:flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim);">
+                    <span>Low</span>
+                    <span>High</span>
+                </div>
+            </div>
+
+            <div class="slider-container" style="margin-top: 1.5rem;">
+                <div class="slider-header">
+                    <span>Loudness</span>
+                    <span id="ampVal" class="value-display">50%</span>
+                </div>
+                <input type="range" id="ampSlider" min="0" max="100" value="50">
+                <div style="display:flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim);">
+                    <span>Soft</span>
+                    <span>Loud</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-btns">
+            <button id="playBtn" class="btn btn-primary">Play Sound</button>
+            <button id="resetBtn" class="btn btn-secondary">Reset</button>
+        </div>
+        <div id="statusText" class="status-indicator">Audio: Off</div>
+    </aside>
+</div>
+
+<script>
+    /** 
+     * SOUND LAB ENGINE
+     */
+    const state = {
+        frequency: 440,
+        amplitude: 0.5,
+        sourceType: 'string', // string, fork, speaker
+        isPlaying: false,
+        time: 0
+    };
+
+    // Audio Context Setup
+    let audioCtx = null;
+    let oscillator = null;
+    let gainNode = null;
+
+    const sourceCanvas = document.getElementById('sourceCanvas');
+    const scopeCanvas = document.getElementById('scopeCanvas');
+    const sCtx = sourceCanvas.getContext('2d');
+    const oCtx = scopeCanvas.getContext('2d');
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            gainNode = audioCtx.createGain();
+            gainNode.connect(audioCtx.destination);
+            gainNode.gain.value = 0;
+        }
+    }
+
+    function updateAudioParams() {
+        if (!oscillator) return;
+        oscillator.frequency.setTargetAtTime(state.frequency, audioCtx.currentTime, 0.03);
+        gainNode.gain.setTargetAtTime(state.isPlaying ? state.amplitude * 0.2 : 0, audioCtx.currentTime, 0.03);
+    }
+
+    function toggleAudio() {
+        initAudio();
+        if (!state.isPlaying) {
+            oscillator = audioCtx.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(state.frequency, audioCtx.currentTime);
+            oscillator.connect(gainNode);
+            oscillator.start();
+            updateAudioParams();
+            state.isPlaying = true;
+            document.getElementById('playBtn').textContent = 'Stop Sound';
+            document.getElementById('statusText').textContent = 'Audio: Active';
+        } else {
+            if (oscillator) {
+                oscillator.stop();
+                oscillator.disconnect();
+                oscillator = null;
+            }
+            gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.03);
+            state.isPlaying = false;
+            document.getElementById('playBtn').textContent = 'Play Sound';
+            document.getElementById('statusText').textContent = 'Audio: Off';
+        }
+    }
+
+    function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        const sRect = sourceCanvas.getBoundingClientRect();
+        sourceCanvas.width = sRect.width * dpr;
+        sourceCanvas.height = sRect.height * dpr;
+        sCtx.scale(dpr, dpr);
+
+        const oRect = scopeCanvas.getBoundingClientRect();
+        scopeCanvas.width = oRect.width * dpr;
+        scopeCanvas.height = oRect.height * dpr;
+        oCtx.scale(dpr, dpr);
+    }
+
+    window.addEventListener('resize', resize);
+    setTimeout(resize, 100);
+
+    function drawSource(t) {
+        const w = sourceCanvas.width / (window.devicePixelRatio || 1);
+        const h = sourceCanvas.height / (window.devicePixelRatio || 1);
+        sCtx.clearRect(0, 0, w, h);
+
+        // FIX: Absolute stillness at 0% amplitude
+        if (state.amplitude <= 0) {
+            // Draw static versions of sources
+            drawSourceGeometry(w, h, 0);
+            return;
+        }
+
+        const phase = t * state.frequency * 2 * Math.PI;
+        const displacement = Math.sin(phase) * (state.amplitude * 40);
+        
+        // Energy Glow - only visible if amplitude > 0
+        const glowGrad = sCtx.createRadialGradient(w/2, h/2, 10, w/2, h/2, 100 + state.amplitude * 100);
+        glowGrad.addColorStop(0, `rgba(34, 211, 238, ${state.amplitude * 0.3})`);
+        glowGrad.addColorStop(1, 'transparent');
+        sCtx.fillStyle = glowGrad;
+        sCtx.fillRect(0, 0, w, h);
+
+        drawSourceGeometry(w, h, displacement);
+    }
+
+    function drawSourceGeometry(w, h, displacement) {
+        sCtx.lineWidth = 4;
+        sCtx.lineCap = 'round';
+        sCtx.strokeStyle = '#f8fafc';
+
+        if (state.sourceType === 'string') {
+            sCtx.beginPath();
+            sCtx.moveTo(w * 0.2, h / 2);
+            sCtx.bezierCurveTo(
+                w * 0.4, h / 2 + displacement,
+                w * 0.6, h / 2 - displacement,
+                w * 0.8, h / 2
+            );
+            sCtx.stroke();
+            sCtx.fillStyle = '#64748b';
+            sCtx.beginPath(); sCtx.arc(w*0.2, h/2, 6, 0, Math.PI*2); sCtx.fill();
+            sCtx.beginPath(); sCtx.arc(w*0.8, h/2, 6, 0, Math.PI*2); sCtx.fill();
+
+        } else if (state.sourceType === 'fork') {
+            const forkX = w / 2;
+            const forkY = h * 0.6;
+            const prongW = 30;
+            const prongH = 100;
+
+            sCtx.beginPath();
+            sCtx.moveTo(forkX, forkY);
+            sCtx.lineTo(forkX, forkY + 80);
+            sCtx.moveTo(forkX, forkY);
+            sCtx.lineTo(forkX - prongW + displacement * 0.5, forkY - prongH);
+            sCtx.moveTo(forkX, forkY);
+            sCtx.lineTo(forkX + prongW - displacement * 0.5, forkY - prongH);
+            sCtx.stroke();
+
+        } else if (state.sourceType === 'speaker') {
+            const centerX = w / 2;
+            const centerY = h / 2;
+            const baseRadius = 60;
+            const pulse = displacement * 0.5;
+
+            sCtx.beginPath();
+            sCtx.arc(centerX, centerY, baseRadius + pulse, 0, Math.PI * 2);
+            sCtx.strokeStyle = '#818cf8';
+            sCtx.lineWidth = 6;
+            sCtx.stroke();
+            
+            sCtx.beginPath();
+            sCtx.arc(centerX, centerY, baseRadius * 0.4 + pulse * 0.2, 0, Math.PI * 2);
+            sCtx.fillStyle = '#1e293b';
+            sCtx.fill();
+            sCtx.stroke();
+        }
+    }
+
+    function drawScope(t) {
+        const w = scopeCanvas.width / (window.devicePixelRatio || 1);
+        const h = scopeCanvas.height / (window.devicePixelRatio || 1);
+        oCtx.clearRect(0, 0, w, h);
+
+        // FIX: Neon grid opacity increased to 0.25
+        oCtx.strokeStyle = 'rgba(34, 211, 238, 0.25)';
+        oCtx.lineWidth = 1;
+        for (let x = 0; x < w; x += 40) {
+            oCtx.beginPath(); oCtx.moveTo(x, 0); oCtx.lineTo(x, h); oCtx.stroke();
+        }
+        for (let y = 0; y < h; y += 40) {
+            oCtx.beginPath(); oCtx.moveTo(0, y); oCtx.lineTo(w, y); oCtx.stroke();
+        }
+
+        oCtx.strokeStyle = 'rgba(34, 211, 238, 0.3)';
+        oCtx.beginPath(); oCtx.moveTo(0, h/2); oCtx.lineTo(w, h/2); oCtx.stroke();
+
+        // Waveform
+        oCtx.beginPath();
+        oCtx.strokeStyle = '#22d3ee';
+        oCtx.lineWidth = 3;
+        oCtx.shadowBlur = 10;
+        oCtx.shadowColor = '#22d3ee';
+
+        const freqScale = state.frequency / 500;
+        for (let x = 0; x < w; x++) {
+            // FIX: Ensure perfectly flat line at amplitude === 0
+            const ampFactor = state.amplitude === 0 ? 0 : state.amplitude * 60;
+            const angle = (x * 0.02 * freqScale) - (t * state.frequency * 0.1);
+            const y = h / 2 + Math.sin(angle) * ampFactor;
+            if (x === 0) oCtx.moveTo(x, y); else oCtx.lineTo(x, y);
+        }
+        oCtx.stroke();
+        oCtx.shadowBlur = 0;
+    }
+
+    function loop() {
+        state.time += 0.016;
+        drawSource(state.time);
+        drawScope(state.time);
+        requestAnimationFrame(loop);
+    }
+
+    // UI Event Listeners
+    document.getElementById('freqSlider').addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        state.frequency = val;
+        document.getElementById('freqVal').textContent = `${val} Hz`;
+        
+        // FIX: Dynamic labels based on thresholds
+        const labelEl = document.getElementById('pitchLabel');
+        if (val < 200) {
+            labelEl.textContent = 'Low Pitch';
+        } else if (val <= 800) {
+            labelEl.textContent = 'Medium Pitch';
+        } else {
+            labelEl.textContent = 'High Pitch';
+        }
+        
+        updateAudioParams();
+    });
+
+    document.getElementById('ampSlider').addEventListener('input', (e) => {
+        state.amplitude = parseInt(e.target.value) / 100;
+        document.getElementById('ampVal').textContent = `${e.target.value}%`;
+        updateAudioParams();
+    });
+
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.sourceType = btn.dataset.source;
+        });
+    });
+
+    document.getElementById('playBtn').addEventListener('click', toggleAudio);
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        state.frequency = 440;
+        state.amplitude = 0.5;
+        state.sourceType = 'string';
+        
+        document.getElementById('freqSlider').value = 440;
+        document.getElementById('ampSlider').value = 50;
+        document.getElementById('freqVal').textContent = '440 Hz';
+        document.getElementById('ampVal').textContent = '50%';
+        document.getElementById('pitchLabel').textContent = 'Medium Pitch';
+        
+        document.querySelectorAll('.toggle-btn').forEach(b => {
+            b.classList.remove('active');
+            if (b.dataset.source === 'string') b.classList.add('active');
+        });
+
+        updateAudioParams();
+    });
+
+    loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quadratic Transformations Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/katex@0.16.9/dist/katex.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/katex@0.16.9/dist/katex.min.css">
+<style>
+:root {
+  --bg-deep: #0d0f15;
+  --bg-center: #1a1d29;
+  --surface: rgba(30, 34, 48, 0.7);
+  --border: rgba(51, 65, 85, 0.5);
+  --accent-cyan: #22d3ee;
+  --accent-violet: #a78bfa;
+  --accent-pink: #f472b6;
+  --grid-line: rgba(51, 65, 85, 0.4);
+  --axis-bright: #475569;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-dim: #64748b;
+  --radius: 12px;
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --transition: 200ms ease-out;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: radial-gradient(ellipse at center top, var(--bg-center) 0%, var(--bg-deep) 70%);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.app-container {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 20px;
+  max-width: 1200px;
+  width: 100%;
+  align-items: start;
+}
+
+/* Left Panel */
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel-card {
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+}
+
+/* Sliders */
+.slider-group {
+  margin-bottom: 18px;
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.slider-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.slider-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.slider-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  min-width: 48px;
+  text-align: right;
+}
+
+.slider-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(51, 65, 85, 0.6);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.6);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
+  cursor: pointer;
+  border: none;
+}
+
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 4px;
+}
+
+/* Toggles */
+.toggle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.toggle-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(15, 18, 28, 0.5);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition);
+  user-select: none;
+}
+
+.toggle-item:hover {
+  border-color: var(--border);
+  background: rgba(30, 34, 48, 0.6);
+}
+
+.toggle-item input[type="checkbox"] {
+  display: none;
+}
+
+.toggle-check {
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  border: 2px solid var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.toggle-check::after {
+  content: '';
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  background: transparent;
+  transform: scale(0);
+  transition: all var(--transition);
+}
+
+.toggle-item input:checked + .toggle-check {
+  border-color: var(--accent-cyan);
+  background: rgba(34, 211, 238, 0.2);
+}
+
+.toggle-item input:checked + .toggle-check::after {
+  background: var(--accent-cyan);
+  transform: scale(1);
+}
+
+.toggle-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+/* Form Toggle */
+.form-toggle-group {
+  display: flex;
+  background: rgba(15, 18, 28, 0.6);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.form-btn {
+  flex: 1;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.form-btn.active {
+  background: rgba(34, 211, 238, 0.15);
+  color: var(--accent-cyan);
+}
+
+.form-btn:hover:not(.active) {
+  color: var(--text-secondary);
+  background: rgba(51, 65, 85, 0.3);
+}
+
+/* Algebra Display */
+.algebra-display {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.algebra-row {
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(15, 18, 28, 0.5);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.algebra-row.active-form {
+  border-color: rgba(34, 211, 238, 0.3);
+  box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.05);
+}
+
+.katex { font-size: 1.05em !important; }
+
+/* Coefficient Pulse Animation */
+@keyframes scalePulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); color: var(--accent-cyan); }
+  100% { transform: scale(1); }
+}
+
+.coeff-pulse {
+  display: inline-block;
+  animation: scalePulse 300ms ease-in-out;
+  transition: transform 0.1s ease, color 0.1s ease;
+}
+
+/* Discriminant Badge */
+.disc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.disc-positive { background: rgba(34, 211, 238, 0.15); color: var(--accent-cyan); }
+.disc-zero { background: rgba(250, 204, 21, 0.15); color: #facc15; }
+.disc-negative { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+
+/* Right Panel - Graph */
+.right-panel {
+  position: relative;
+}
+
+.graph-container {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  min-height: 400px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: rgba(12, 15, 22, 0.8);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.graph-container canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Tooltip */
+.tooltip-label {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(20, 24, 38, 0.95);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  z-index: 10;
+}
+
+.tooltip-label.visible { opacity: 1; }
+
+/* Responsive */
+@media (max-width: 860px) {
+  body { padding: 12px; }
+  .app-container {
+    grid-template-columns: 1fr;
+    max-width: 600px;
+  }
+  .graph-container { aspect-ratio: 3/2; min-height: 350px; }
+}
+
+@media (max-width: 480px) {
+  .toggle-grid { grid-template-columns: 1fr; }
+  .panel-card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Left Panel -->
+  <div class="left-panel">
+    <!-- Controls Card -->
+    <div class="panel-card">
+      <div class="panel-title">Parameters</div>
+
+      <div class="slider-group" id="vertex-controls">
+        <div class="slider-label-row">
+          <label for="slider-a" class="slider-label">a (stretch / reflect)</label>
+          <span id="val-a" class="slider-value">1.0</span>
+        </div>
+        <div class="slider-desc">Controls vertical stretch, compression & reflection</div>
+        <input type="range" id="slider-a" min="-5" max="5" step="0.1" value="1" aria-label="Parameter a">
+      </div>
+
+      <div class="slider-group" id="vertex-controls-hk">
+        <div class="slider-label-row">
+          <label for="slider-h" class="slider-label">h (horizontal shift)</label>
+          <span id="val-h" class="slider-value">0.0</span>
+        </div>
+        <div class="slider-desc">Shifts the graph left or right</div>
+        <input type="range" id="slider-h" min="-10" max="10" step="0.1" value="0" aria-label="Parameter h">
+      </div>
+
+      <div class="slider-group" id="vertex-controls-k">
+        <div class="slider-label-row">
+          <label for="slider-k" class="slider-label">k (vertical shift)</label>
+          <span id="val-k" class="slider-value">0.0</span>
+        </div>
+        <div class="slider-desc">Shifts the graph up or down</div>
+        <input type="range" id="slider-k" min="-10" max="10" step="0.1" value="0" aria-label="Parameter k">
+      </div>
+
+      <!-- Standard Form Sliders (Hidden by default) -->
+      <div class="slider-group" id="standard-controls-b" style="display: none;">
+        <div class="slider-label-row">
+          <label for="slider-b" class="slider-label">b (linear coeff)</label>
+          <span id="val-b" class="slider-value">0.0</span>
+        </div>
+        <div class="slider-desc">Linear coefficient in standard form</div>
+        <input type="range" id="slider-b" min="-20" max="20" step="0.1" value="0" aria-label="Parameter b">
+      </div>
+
+      <div class="slider-group" id="standard-controls-c" style="display: none;">
+        <div class="slider-label-row">
+          <label for="slider-c" class="slider-label">c (constant)</label>
+          <span id="val-c" class="slider-value">0.0</span>
+        </div>
+        <div class="slider-desc">Constant term in standard form</div>
+        <input type="range" id="slider-c" min="-20" max="20" step="0.1" value="0" aria-label="Parameter c">
+      </div>
+
+      <!-- Form Toggle -->
+      <div style="margin-top: 4px;">
+        <div class="panel-title" style="margin-bottom: 8px;">Input Mode</div>
+        <div class="form-toggle-group">
+          <button class="form-btn active" data-form="vertex" aria-label="Vertex form input mode">Vertex Form</button>
+          <button class="form-btn" data-form="standard" aria-label="Standard form input mode">Standard Form</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toggles Card -->
+    <div class="panel-card">
+      <div class="panel-title">Display Options</div>
+      <div class="toggle-grid">
+        <label class="toggle-item">
+          <input type="checkbox" id="show-vertex" checked aria-label="Show vertex marker">
+          <span class="toggle-check"></span>
+          <span class="toggle-label">Show Vertex</span>
+        </label>
+        <label class="toggle-item">
+          <input type="checkbox" id="show-axis" checked aria-label="Show axis of symmetry">
+          <span class="toggle-check"></span>
+          <span class="toggle-label">Axis of Symmetry</span>
+        </label>
+        <label class="toggle-item">
+          <input type="checkbox" id="show-roots" checked aria-label="Show roots">
+          <span class="toggle-check"></span>
+          <span class="toggle-label">Show Roots</span>
+        </label>
+        <div style="font-size: 11px; color: var(--text-dim); padding: 8px 0;" id="roots-status" aria-live="polite"></div>
+        <label class="toggle-item">
+          <input type="checkbox" id="show-parent" aria-label="Show parent function">
+          <span class="toggle-check"></span>
+          <span class="toggle-label">Parent y = x²</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Algebra Display Card -->
+    <div class="panel-card">
+      <div class="panel-title">Algebra</div>
+      <div class="algebra-display" id="algebra-display"></div>
+    </div>
+  </div>
+
+  <!-- Right Panel - Graph -->
+  <div class="right-panel">
+    <div class="graph-container" id="graph-container">
+      <canvas id="graph-canvas"></canvas>
+      <div class="tooltip-label" id="vertex-tooltip"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // === State ===
+  const state = {
+    a: 1, h: 0, k: 0,
+    showVertex: true,
+    showAxis: true,
+    showRoots: true,
+    showParent: false,
+    formMode: 'vertex', // 'vertex' or 'standard'
+  };
+
+  // === DOM refs ===
+  const canvas = document.getElementById('graph-canvas');
+  const ctx = canvas.getContext('2d');
+  const container = document.getElementById('graph-container');
+  const tooltip = document.getElementById('vertex-tooltip');
+
+  const sliderA = document.getElementById('slider-a');
+  const sliderH = document.getElementById('slider-h');
+  const sliderK = document.getElementById('slider-k');
+  const valA = document.getElementById('val-a');
+  const valH = document.getElementById('val-h');
+  const valK = document.getElementById('val-k');
+
+  // Standard form sliders
+  const sliderB = document.getElementById('slider-b');
+  const sliderC = document.getElementById('slider-c');
+  const valB = document.getElementById('val-b');
+  const valC = document.getElementById('val-c');
+
+  // === Graph config ===
+  const VIEW = { xMin: -12, xMax: 12, yMin: -10, yMax: 14 };
+
+  function toCanvasX(x, w) { return (x - VIEW.xMin) / (VIEW.xMax - VIEW.xMin) * w; }
+  function toCanvasY(y, h) { return h - (y - VIEW.yMin) / (VIEW.yMax - VIEW.yMin) * h; }
+  function fromCanvasX(cx, w) { return cx / w * (VIEW.xMax - VIEW.xMin) + VIEW.xMin; }
+
+  // === Compute derived values ===
+  function compute() {
+    const b = -2 * state.a * state.h;
+    const c = state.a * state.h * state.h + state.k;
+    const disc = b * b - 4 * state.a * c;
+    return { b, c, disc };
+  }
+
+  function getRoots() {
+    if (Math.abs(state.a) < 1e-9) return []; // degenerate: linear
+    
+    const { b, c, disc } = compute();
+    
+    if (disc < -1e-9) return [];
+    if (Math.abs(disc) < 1e-9) {
+      return [-b / (2 * state.a)];
+    }
+    const sq = Math.sqrt(disc);
+    return [(-b - sq) / (2 * state.a), (-b + sq) / (2 * state.a)];
+  }
+
+  // === Drawing ===
+  let dpr = window.devicePixelRatio || 1;
+  let W, H;
+
+  function resize() {
+    const rect = container.getBoundingClientRect();
+    dpr = window.devicePixelRatio || 1;
+    W = rect.width;
+    H = rect.height;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+
+  function draw() {
+    if (!W) return;
+    const { b, c, disc } = compute();
+    const roots = getRoots();
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Grid
+    drawGrid();
+
+    // Axes
+    drawAxes();
+
+    // Parent function (with fade transition)
+    if (state.showParent) {
+      drawParentParabola();
+    }
+
+    // Axis of symmetry (with fade transition)
+    if (state.showAxis) {
+      drawAxisOfSymmetry();
+    }
+
+    // Main parabola
+    drawParabola();
+
+    // Vertex (with fade transition)
+    if (state.showVertex) {
+      drawVertex();
+    }
+
+    // Roots - CRITICAL FIX: Ensure this actually draws when showRoots is true
+    if (state.showRoots && roots.length > 0) {
+      drawRootMarkers(roots);
+    }
+  }
+
+  function drawGrid() {
+    ctx.strokeStyle = 'rgba(51, 65, 85, 0.35)';
+    ctx.lineWidth = 1;
+
+    for (let x = Math.ceil(VIEW.xMin); x <= VIEW.xMax; x++) {
+      const cx = toCanvasX(x, W);
+      ctx.beginPath();
+      ctx.moveTo(cx, 0);
+      ctx.lineTo(cx, H);
+      ctx.stroke();
+    }
+
+    for (let y = Math.ceil(VIEW.yMin); y <= VIEW.yMax; y++) {
+      const cy = toCanvasY(y, H);
+      ctx.beginPath();
+      ctx.moveTo(0, cy);
+      ctx.lineTo(W, cy);
+      ctx.stroke();
+    }
+
+    // Integer labels (muted)
+    ctx.fillStyle = 'rgba(100, 116, 139, 0.5)';
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+
+    for (let x = Math.ceil(VIEW.xMin); x <= VIEW.xMax; x++) {
+      if (x === 0) continue;
+      const cx = toCanvasX(x, W);
+      const yBase = toCanvasY(0, H) + 4;
+      ctx.fillText(x.toString(), cx, yBase);
+    }
+
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let y = Math.ceil(VIEW.yMin); y <= VIEW.yMax; y++) {
+      if (y === 0) continue;
+      const cy = toCanvasY(y, H);
+      const xBase = toCanvasX(0, W) - 6;
+      ctx.fillText(y.toString(), xBase, cy);
+    }
+  }
+
+  function drawAxes() {
+    const ox = toCanvasX(0, W);
+    const oy = toCanvasY(0, H);
+
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 1.5;
+
+    // X axis
+    ctx.beginPath();
+    ctx.moveTo(0, oy);
+    ctx.lineTo(W, oy);
+    ctx.stroke();
+
+    // Y axis
+    ctx.beginPath();
+    ctx.moveTo(ox, 0);
+    ctx.lineTo(ox, H);
+    ctx.stroke();
+
+    // Arrows
+    ctx.fillStyle = '#475569';
+    // X arrow
+    ctx.beginPath();
+    ctx.moveTo(W - 2, oy);
+    ctx.lineTo(W - 10, oy - 4);
+    ctx.lineTo(W - 10, oy + 4);
+    ctx.fill();
+    // Y arrow
+    ctx.beginPath();
+    ctx.moveTo(ox, 2);
+    ctx.lineTo(ox - 4, 10);
+    ctx.lineTo(ox + 4, 10);
+    ctx.fill();
+
+    // Labels
+    ctx.fillStyle = '#64748b';
+    ctx.font = '13px "Inter", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('x', W - 16, oy - 8);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('y', ox + 8, 4);
+  }
+
+  function drawParabola() {
+    const a = state.a;
+    const h = state.h;
+    const k = state.k;
+
+    if (Math.abs(a) < 1e-9) {
+      // Linear case: y = k (horizontal line from vertex form, but actually it's degenerate)
+      // In standard form with a=0: y = bx + c. But our conversion b=-2ah=0, c=k. So y=k.
+      const cy = toCanvasY(k, H);
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = 'rgba(34, 211, 238, 0.3)';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.moveTo(0, cy);
+      ctx.lineTo(W, cy);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      return;
+    }
+
+    // Sample points across the visible x range with some margin
+    const step = (VIEW.xMax - VIEW.xMin) / W * 1.5; // ~1.5 px spacing
+    ctx.strokeStyle = '#22d3ee';
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = 'rgba(34, 211, 238, 0.35)';
+    ctx.shadowBlur = 10;
+
+    ctx.beginPath();
+    let started = false;
+    for (let px = -10; px <= W + 10; px += step) {
+      const x = fromCanvasX(px, W);
+      const y = a * (x - h) * (x - h) + k;
+      const cy = toCanvasY(y, H);
+
+      if (cy < -200 || cy > H + 200) {
+        started = false;
+        continue;
+      }
+
+      if (!started) {
+        ctx.moveTo(px, cy);
+        started = true;
+      } else {
+        ctx.lineTo(px, cy);
+      }
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  function drawParentParabola() {
+    const step = (VIEW.xMax - VIEW.xMin) / W * 1.5;
+    ctx.strokeStyle = 'rgba(51, 65, 85, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+
+    ctx.beginPath();
+    let started = false;
+    for (let px = -10; px <= W + 10; px += step) {
+      const x = fromCanvasX(px, W);
+      const y = x * x;
+      const cy = toCanvasY(y, H);
+
+      if (cy < -200 || cy > H + 200) {
+        started = false;
+        continue;
+      }
+
+      if (!started) {
+        ctx.moveTo(px, cy);
+        started = true;
+      } else {
+        ctx.lineTo(px, cy);
+      }
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function drawAxisOfSymmetry() {
+    const cx = toCanvasX(state.h, W);
+    ctx.strokeStyle = 'rgba(167, 139, 250, 0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([8, 5]);
+
+    ctx.beginPath();
+    ctx.moveTo(cx, 0);
+    ctx.lineTo(cx, H);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function drawVertex() {
+    const cx = toCanvasX(state.h, W);
+    const cy = toCanvasY(state.k, H);
+
+    // Glow
+    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 18);
+    gradient.addColorStop(0, 'rgba(167, 139, 250, 0.4)');
+    gradient.addColorStop(1, 'rgba(167, 139, 250, 0)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Dot
+    ctx.fillStyle = '#a78bfa';
+    ctx.shadowColor = 'rgba(167, 139, 250, 0.6)';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Border ring
+    ctx.strokeStyle = 'rgba(248, 250, 252, 0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Label
+    const label = `V(${formatNum(state.h)}, ${formatNum(state.k)})`;
+    ctx.font = '12px "JetBrains Mono", monospace';
+    const metrics = ctx.measureText(label);
+    const pad = 6;
+    let lx = cx + 12;
+    let ly = cy - 20;
+
+    // Keep label in bounds
+    if (lx + metrics.width + pad * 2 > W) lx = cx - metrics.width - pad * 2 - 12;
+    if (ly < 4) ly = cy + 12;
+
+    ctx.fillStyle = 'rgba(20, 24, 38, 0.9)';
+    ctx.strokeStyle = 'rgba(167, 139, 250, 0.4)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, lx - pad, ly - pad / 2, metrics.width + pad * 2, 20, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, lx, ly + 1);
+  }
+
+  function drawRootMarkers(roots) {
+    for (const r of roots) {
+      const cx = toCanvasX(r, W);
+      const cy = toCanvasY(0, H);
+
+      // Glow
+      const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 14);
+      gradient.addColorStop(0, 'rgba(244, 114, 182, 0.3)');
+      gradient.addColorStop(1, 'rgba(244, 114, 182, 0)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Hollow circle
+      ctx.strokeStyle = '#f472b6';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = 'rgba(244, 114, 182, 0.5)';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Label
+      const label = `(${formatNum(r)}, 0)`;
+      ctx.font = '11px "JetBrains Mono", monospace';
+      const metrics = ctx.measureText(label);
+      const pad = 5;
+      let lx = cx - metrics.width / 2 - pad;
+      let ly = cy + 10;
+
+      if (lx < 4) lx = 4;
+      if (lx + metrics.width + pad * 2 > W - 4) lx = W - metrics.width - pad * 2 - 4;
+
+      ctx.fillStyle = 'rgba(20, 24, 38, 0.9)';
+      ctx.strokeStyle = 'rgba(244, 114, 182, 0.4)';
+      ctx.lineWidth = 1;
+      roundRect(ctx, lx - pad / 2, ly - pad / 2, metrics.width + pad * 2, 18, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, lx + metrics.width / 2, ly + 1);
+    }
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function formatNum(n) {
+    if (Number.isInteger(n)) return n.toString();
+    // Round to avoid floating point ugliness
+    const rounded = Math.round(n * 1000) / 1000;
+    return rounded.toFixed(2).replace(/\.?0+$/, '') || '0';
+  }
+
+  function formatCoeff(n, showPlus) {
+    if (n === 0) return '0';
+    const abs = Math.abs(n);
+    const str = abs === Math.floor(abs) ? abs.toString() : abs.toFixed(2).replace(/\.?0+$/, '');
+    if (showPlus && n > 0) return '+ ' + str;
+    if (n < 0) return '- ' + str;
+    return str;
+  }
+
+  // === Algebra Display ===
+  function updateAlgebra() {
+    const { b, c, disc } = compute();
+    const display = document.getElementById('algebra-display');
+
+    const aStr = state.a === Math.floor(state.a) ? state.a.toString() : state.a.toFixed(1);
+    const hStr = formatNum(state.h);
+    const kStr = formatNum(state.k);
+    const bStr = formatCoeff(b, true);
+    const cStr = formatCoeff(c, false);
+
+    // Vertex form: y = a(x - h)² + k
+    let vh;
+    if (state.h === 0) {
+      vh = `y = ${aStr}x^2 + ${formatNum(state.k)}`;
+    } else if (state.h > 0) {
+      vh = `y = ${aStr}(x - ${hStr})^2 + ${kStr}`;
+    } else {
+      vh = `y = ${aStr}(x + ${Math.abs(state.h).toFixed(1)})^2 + ${kStr}`;
+    }
+
+    // Standard form: y = ax² + bx + c
+    let sh;
+    if (state.a === 0) {
+      sh = `y = ${bStr}x ${cStr}`;
+    } else if (b === 0) {
+      sh = `y = ${aStr}x^2 ${cStr}`;
+    } else {
+      sh = `y = ${aStr}x^2 + ${bStr}x ${cStr}`;
+    }
+
+    // Discriminant badge
+    let discClass, discText;
+    if (disc > 1e-9) {
+      discClass = 'disc-positive';
+      discText = `Δ = ${formatNum(disc)} (+)`;
+    } else if (Math.abs(disc) <= 1e-9) {
+      discClass = 'disc-zero';
+      discText = `Δ = 0`;
+    } else {
+      discClass = 'disc-negative';
+      discText = `Δ < 0 (no real roots)`;
+    }
+
+    display.innerHTML = `
+      <div class="algebra-row ${state.formMode === 'vertex' ? 'active-form' : ''}">
+        <div class="algebra-label">${state.formMode === 'vertex' ? 'Editable — Vertex Form' : 'Read-only — Vertex Form'}</div>
+        <span id="katex-vertex"></span>
+      </div>
+      <div class="algebra-row ${state.formMode === 'standard' ? 'active-form' : ''}">
+        <div class="algebra-label">${state.formMode === 'standard' ? 'Editable — Standard Form' : 'Read-only — Standard Form'}</div>
+        <span id="katex-standard"></span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span class="disc-badge ${discClass}">${discText}</span>
+        <span style="font-size:12px; color: var(--text-dim);">Roots: ${rootsCount(disc)}</span>
+      </div>
+    `;
+
+    // Render KaTeX with error handling
+    try {
+      const vertexEl = document.getElementById('katex-vertex');
+      const standardEl = document.getElementById('katex-standard');
+      
+      if (vertexEl) {
+        katex.render(vh, vertexEl, { throwOnError: false, displayMode: false });
+      }
+      if (standardEl) {
+        katex.render(sh, standardEl, { throwOnError: false, displayMode: false });
+      }
+    } catch (e) {
+      // Fallback to plain text
+      const vertexEl = document.getElementById('katex-vertex');
+      const standardEl = document.getElementById('katex-standard');
+      if (vertexEl) vertexEl.textContent = vh;
+      if (standardEl) standardEl.textContent = sh;
+    }
+
+    pulseAlgebra();
+  }
+
+  function rootsCount(disc) {
+    if (disc > 1e-9) return '2 real';
+    if (Math.abs(disc) <= 1e-9) return '1 repeated';
+    return '0 real';
+  }
+
+  function pulseAlgebra() {
+    // Subtle animation on the algebra display rows
+    const rows = document.querySelectorAll('.algebra-row');
+    rows.forEach(row => {
+      row.style.transition = 'box-shadow 300ms ease, border-color 300ms ease';
+      row.style.boxShadow = 'inset 0 0 15px rgba(34, 211, 238, 0.06)';
+      setTimeout(() => {
+        row.style.boxShadow = '';
+      }, 400);
+    });
+  }
+
+  // === Form Mode Switching ===
+  function updateFormMode() {
+    const isVertex = state.formMode === 'vertex';
+    
+    // Show/hide vertex form controls (a, h, k) with fade transition
+    const vertexControls = document.getElementById('vertex-controls');
+    const vertexControlsHK = document.getElementById('vertex-controls-hk');
+    const vertexControlsK = document.getElementById('vertex-controls-k');
+    
+    if (isVertex) {
+      vertexControls.style.display = 'block';
+      vertexControlsHK.style.display = 'block';
+      vertexControlsK.style.display = 'block';
+      
+      // Fade in effect
+      setTimeout(() => {
+        vertexControls.style.opacity = '1';
+        vertexControlsHK.style.opacity = '1';
+        vertexControlsK.style.opacity = '1';
+      }, 10);
+    } else {
+      vertexControls.style.opacity = '0';
+      vertexControlsHK.style.opacity = '0';
+      vertexControlsK.style.opacity = '0';
+      
+      setTimeout(() => {
+        vertexControls.style.display = 'none';
+        vertexControlsHK.style.display = 'none';
+        vertexControlsK.style.display = 'none';
+      }, 200);
+    }
+    
+    // Show/hide standard form controls (b, c) with fade transition
+    const standardControlsB = document.getElementById('standard-controls-b');
+    const standardControlsC = document.getElementById('standard-controls-c');
+    
+    if (!isVertex) {
+      standardControlsB.style.display = 'block';
+      standardControlsC.style.display = 'block';
+      
+      // Fade in effect
+      setTimeout(() => {
+        standardControlsB.style.opacity = '1';
+        standardControlsC.style.opacity = '1';
+      }, 10);
+    } else {
+      standardControlsB.style.opacity = '0';
+      standardControlsC.style.opacity = '0';
+      
+      setTimeout(() => {
+        standardControlsB.style.display = 'none';
+        standardControlsC.style.display = 'none';
+      }, 200);
+    }
+    
+    updateAlgebra();
+  }
+
+  // === Event Listeners ===
+  
+  // Vertex form sliders
+  sliderA.addEventListener('input', () => {
+    const v = parseFloat(sliderA.value);
+    state.a = v;
+    valA.textContent = v.toFixed(1);
+    draw();
+    updateAlgebra();
+  });
+
+  sliderH.addEventListener('input', () => {
+    const v = parseFloat(sliderH.value);
+    state.h = v;
+    valH.textContent = v.toFixed(1);
+    draw();
+    updateAlgebra();
+  });
+
+  sliderK.addEventListener('input', () => {
+    const v = parseFloat(sliderK.value);
+    state.k = v;
+    valK.textContent = v.toFixed(1);
+    draw();
+    updateAlgebra();
+  });
+
+  // Standard form sliders - convert to vertex form parameters
+  sliderB.addEventListener('input', () => {
+    const bVal = parseFloat(sliderB.value);
+    if (Math.abs(state.a) < 1e-9) return; // Can't divide by zero
+    
+    // Convert: h = -b / (2a), k = c - b²/(4a)
+    const hNew = -bVal / (2 * state.a);
+    const cFromSlider = parseFloat(sliderC.value);
+    const kNew = cFromSlider - (bVal * bVal) / (4 * state.a);
+    
+    state.h = hNew;
+    state.k = kNew;
+    
+    // Update vertex form displays
+    sliderH.value = hNew.toFixed(1);
+    sliderK.value = kNew.toFixed(1);
+    valH.textContent = hNew.toFixed(1);
+    valK.textContent = kNew.toFixed(1);
+    
+    draw();
+    updateAlgebra();
+  });
+
+  sliderC.addEventListener('input', () => {
+    const cVal = parseFloat(sliderC.value);
+    if (Math.abs(state.a) < 1e-9) return; // Can't divide by zero
+    
+    // Convert: k = c - ah²
+    const hFromSlider = parseFloat(sliderH.value);
+    const kNew = cVal - state.a * hFromSlider * hFromSlider;
+    
+    state.k = kNew;
+    
+    // Update vertex form displays
+    sliderK.value = kNew.toFixed(1);
+    valK.textContent = kNew.toFixed(1);
+    
+    draw();
+    updateAlgebra();
+  });
+
+  // Toggles - CRITICAL FIX: Ensure all toggles work properly with transitions
+  document.getElementById('show-vertex').addEventListener('change', (e) => {
+    state.showVertex = e.target.checked;
+    draw();
+  });
+
+  document.getElementById('show-axis').addEventListener('change', (e) => {
+    state.showAxis = e.target.checked;
+    draw();
+  });
+
+  document.getElementById('show-roots').addEventListener('change', (e) => {
+    state.showRoots = e.target.checked;
+    draw();
+  });
+
+  document.getElementById('show-parent').addEventListener('change', (e) => {
+    state.showParent = e.target.checked;
+    draw();
+  });
+
+  // Form toggle buttons - CRITICAL FIX: Implement full standard form mode with proper event handling
+  const formButtons = document.querySelectorAll('.form-btn');
+  
+  formButtons.forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault(); // Prevent any default behavior
+      
+      const newMode = this.dataset.form;
+      
+      if (newMode !== state.formMode) {
+        console.log('Switching to mode:', newMode); // Debug log
+        
+        state.formMode = newMode;
+        
+        // Update active button states
+        formButtons.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Switch controls and update displays
+        updateFormMode();
+      } else {
+        console.log('Already in mode:', newMode); // Debug log
+        // Idempotent: ensure UI state is correct even if clicking same mode
+        updateFormMode();
+      }
+    });
+  });
+
+  // === Tooltip for vertex on hover ===
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const vx = toCanvasX(state.h, W);
+    const vy = toCanvasY(state.k, H);
+
+    if (state.showVertex) {
+      const dist = Math.sqrt((mx - vx) ** 2 + (my - vy) ** 2);
+      if (dist < 30) {
+        tooltip.textContent = `V(${formatNum(state.h)}, ${formatNum(state.k)})`;
+        let tx = mx + 16;
+        let ty = my - 30;
+        if (tx + 140 > W) tx = mx - 150;
+        if (ty < 0) ty = my + 16;
+        tooltip.style.left = tx + 'px';
+        tooltip.style.top = ty + 'px';
+        tooltip.classList.add('visible');
+      } else {
+        tooltip.classList.remove('visible');
+      }
+    } else {
+      tooltip.classList.remove('visible');
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    tooltip.classList.remove('visible');
+  });
+
+  // === Init ===
+  window.addEventListener('resize', resize);
+  resize();
+  updateAlgebra();
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quadratic Function Transformations Explorer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<style>
+:root {
+  --bg: radial-gradient(circle at center, #12151f 0%, #0a0c12 100%);
+  --surface: #1e293b;
+  --accent-cyan: #22d3ee;
+  --accent-violet: #a78bfa;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+}
+html, body {
+  margin:0;
+  font-family:'Inter',system-ui,'Segoe UI','Roboto',sans-serif;
+  color:var(--text-primary);
+  background:var(--bg);
+  height:100%;
+}
+.container{
+  display:flex;
+  flex-wrap:wrap;
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+  gap:20px;
+}
+.controls{
+  width:300px;
+  min-width:260px;
+  background:var(--surface);
+  border-radius:12px;
+  box-shadow:0 4px 8px rgba(0,0,0,0.5);
+  backdrop-filter:blur(10px);
+  padding:20px;
+  flex-shrink:0;
+}
+.controls h2{margin-top:0;font-size:1.5rem;color:var(--text-primary);}
+.control-group{
+  display:flex;
+  align-items:center;
+  margin-bottom:12px;
+}
+.control-group label{
+  flex:none;
+  font-weight:600;
+  color:var(--text-secondary);
+  margin-right:8px;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+}
+.control-group input[type=range]{
+  flex:1;
+  margin-right:8px;
+}
+.control-group span.slider-value{
+  font-family:'Fira Code',monospace;
+  color:var(--accent-cyan);
+}
+.toggle-switch{
+  position:relative;
+  width:50px;
+  height:24px;
+  margin-left:auto;
+}
+.toggle-switch input{opacity:0;width:0;height:0;}
+.slider{
+  position:absolute;
+  cursor:pointer;
+  top:0;left:0;right:0;bottom:0;
+  background-color:#ccc;
+  border-radius:24px;
+  transition:.4s;
+}
+.slider::before{
+  position:absolute;
+  content:"";
+  height:20px;width:20px;
+  left:2px;bottom:2px;
+  background:white;
+  border-radius:50%;
+  transition:.4s;
+}
+input:checked + .slider{background-color:var(--accent-cyan);}
+input:checked + .slider::before{transform:translateX(26px);}
+.canvas-wrapper{
+  flex:1;
+  min-height:400px;
+  background:var(--surface);
+  border-radius:12px;
+  box-shadow:0 4px 8px rgba(0,0,0,0.5);
+  overflow:hidden;
+}
+canvas{display:block;width:100%;height:100%;}
+.info{
+  margin-top:10px;
+  font-family:'Fira Code',monospace;
+  font-size:1rem;
+}
+.discriminant{
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:6px;
+  background:rgba(255,255,255,0.05);
+  margin-right:8px;
+  transition:opacity 0.3s ease-in-out, color 0.3s ease-in-out, background-color 0.3s ease-in-out;
+}
+.discriminant.pos{color:var(--accent-cyan);}
+.discriminant.zero{color:#fbbf24;}
+.discriminant.neg{color:#ef4444;}
+input:focus-visible{
+  outline:2px solid var(--accent-cyan);
+  outline-offset:2px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="controls">
+    <h2>Controls</h2>
+    <fieldset>
+      <legend>Parameters</legend>
+      <div class="control-group">
+        <label for="a-slider">A</label>
+        <input type="range" id="a-slider" min="-5" max="5" step="0.1" value="1">
+        <span class="slider-value" id="a-value"></span>
+      </div>
+      <div class="control-group">
+        <label for="h-slider">H</label>
+        <input type="range" id="h-slider" min="-10" max="10" step="0.1" value="0">
+        <span class="slider-value" id="h-value"></span>
+      </div>
+      <div class="control-group">
+        <label for="k-slider">K</label>
+        <input type="range" id="k-slider" min="-10" max="10" step="0.1" value="0">
+        <span class="slider-value" id="k-value"></span>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Display Options</legend>
+      <div class="control-group">
+        <label for="form-toggle">Form</label>
+        <div class="toggle-switch"><input type="checkbox" id="form-toggle" checked aria-label="Toggle form view"><span class="slider"></span></div>
+      </div>
+      <label><input type="checkbox" id="show-vertex-marker" checked> Show Vertex Marker</label>
+      <label><input type="checkbox" id="show-axis" checked> Show Axis of Symmetry</label>
+      <label><input type="checkbox" id="show-roots" checked> Show Real Roots</label>
+      <label><input type="checkbox" id="show-reference"> Show Reference Parabola y=x² (faint)</label>
+    </fieldset>
+    <div class="info">
+      <div id="discriminant-value" class="discriminant"></div>
+      <div id="expression"></div>
+    </div>
+  </div>
+  <div class="canvas-wrapper">
+    <canvas id="graph"></canvas>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const aSlider = document.getElementById('a-slider');
+    const hSlider = document.getElementById('h-slider');
+    const kSlider = document.getElementById('k-slider');
+
+    const aValueSpan = document.getElementById('a-value');
+    const hValueSpan = document.getElementById('h-value');
+    const kValueSpan = document.getElementById('k-value');
+
+    const formToggle = document.getElementById('form-toggle');
+
+    const vertexMarkerCB = document.getElementById('show-vertex-marker');
+    const axisCB = document.getElementById('show-axis');
+    const rootsCB = document.getElementById('show-roots');
+    const referenceCB = document.getElementById('show-reference');
+
+    const discriminantDiv = document.getElementById('discriminant-value');
+    const expressionDiv = document.getElementById('expression');
+
+    const canvas = document.getElementById('graph');
+    const ctx = canvas.getContext('2d');
+
+    // State
+    const state = {
+      a: 1, h: 0, k: 0,
+      targetA: 1, targetH: 0, targetK: 0,
+      displayedA: 1, displayedH: 0, displayedK: 0,
+      showVertexForm: true,
+      showVertexMarker: true,
+      showAxis: true,
+      showRoots: true,
+      showReference: false
+    };
+
+    const ACCENT_CYAN = '#22d3ee';
+    const ACCENT_VIOLET = '#a78bfa';
+
+    function formatNum(n) { return n.toFixed(2); }
+
+    function updateValues() {
+      aValueSpan.textContent = formatNum(state.a);
+      hValueSpan.textContent = formatNum(state.h);
+      kValueSpan.textContent = formatNum(state.k);
+    }
+
+    function computeCoefficients(a_, h_, k_) {
+      const a_std = a_;
+      const b_std = -2 * a_ * h_;
+      const c_std = a_ * h_ * h_ + k_;
+      return {a: a_std, b: b_std, c: c_std};
+    }
+
+    function discriminant(a_, b_, c_) {
+      return b_ * b_ - 4 * a_ * c_;
+    }
+
+    function computeRoots(a_, b_, c_) {
+      if (Math.abs(a_) < 1e-12) return [];
+      const d = discriminant(a_, b_, c_);
+      if (d < 0) return [];
+      const sqrtD = Math.sqrt(d);
+      const r1 = (-b_ + sqrtD) / (2 * a_);
+      const r2 = (-b_ - sqrtD) / (2 * a_);
+      return [r1, r2];
+    }
+
+    function renderExpression() {
+      if (state.showVertexForm) {
+        const expr = `y = ${formatNum(state.a)}(x - ${formatNum(state.h)})^{2} + ${formatNum(state.k)}`;
+        expressionDiv.innerHTML = katex.renderToString(expr, {throwOnError: false});
+      } else {
+        const coeffs = computeCoefficients(state.a, state.h, state.k);
+        const expr = `y = ${formatNum(coeffs.a)}x^{2} + ${formatNum(coeffs.b)}x + ${formatNum(coeffs.c)}`;
+        expressionDiv.innerHTML = katex.renderToString(expr, {throwOnError: false});
+      }
+    }
+
+    let prevSign = null;
+    function updateDiscriminant() {
+      const coeffs = computeCoefficients(state.a, state.h, state.k);
+      const d = discriminant(coeffs.a, coeffs.b, coeffs.c);
+      discriminantDiv.textContent = `Δ = ${formatNum(d)}`;
+      discriminantDiv.className = 'discriminant';
+      if (d > 0) discriminantDiv.classList.add('pos');
+      else if (Math.abs(d) < 1e-9) discriminantDiv.classList.add('zero');
+      else discriminantDiv.classList.add('neg');
+
+      const sign = Math.sign(d);
+      if (prevSign !== null && prevSign !== sign) {
+        discriminantDiv.style.opacity = '0';
+        setTimeout(() => { discriminantDiv.style.opacity = '1'; }, 300);
+      }
+      prevSign = sign;
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = rect.width * ratio;
+      canvas.height = rect.height * ratio;
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.scale(ratio, ratio);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    const xRange = 20; // -10 to 10
+    const yRange = 30; // -15 to 15
+
+    function worldToCanvas(x, y) {
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      const h = canvas.height / (window.devicePixelRatio || 1);
+      const px = ((x + xRange / 2) / xRange) * w;
+      const py = h - ((y + yRange / 2) / yRange) * h;
+      return [px, py];
+    }
+
+    function drawAxes() {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = 1;
+      const [x0, y0] = worldToCanvas(-10, 0);
+      const [x1, y1] = worldToCanvas(10, 0);
+      ctx.beginPath();
+      ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
+      const [yX0, yY0] = worldToCanvas(0, -15);
+      const [yX1, yY1] = worldToCanvas(0, 15);
+      ctx.moveTo(yX0, yY0); ctx.lineTo(yX1, yY1);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Animation helpers
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function easeInOut(t) {
+      return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2,3)/2;
+    }
+
+    const duration = 300; // ms
+    let animStartTime = null;
+    let startDisplayed = {a: state.displayedA, h: state.displayedH, k: state.displayedK};
+
+    function raf(fn) {
+      if (window.requestAnimationFrame) window.requestAnimationFrame(fn);
+      else setTimeout(fn, 16);
+    }
+
+    function startAnimation() {
+      animStartTime = performance.now();
+      startDisplayed = {a: state.displayedA, h: state.displayedH, k: state.displayedK};
+      raf(loop);
+    }
+
+    function drawGraph() {
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      const h = canvas.height / (window.devicePixelRatio || 1);
+      ctx.clearRect(0, 0, w, h);
+
+      // Reference parabola
+      if (state.showReference) {
+        ctx.save();
+        const raw = 0.3 + 0.15 * (Math.sin(Date.now() * 0.002) + 1);
+        const refOpacity = Math.min(0.6, Math.max(0.3, raw));
+        ctx.globalAlpha = refOpacity;
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        const stepRef = 0.05;
+        let first = true;
+        for (let x = -10; x <= 10; x += stepRef) {
+          const y = x * x;
+          const [px, py] = worldToCanvas(x, y);
+          if (first) { ctx.moveTo(px, py); first = false; }
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Main parabola
+      ctx.save();
+      ctx.strokeStyle = ACCENT_CYAN;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      const stepMain = 0.02;
+      let first = true;
+      for (let x = -10; x <= 10; x += stepMain) {
+        const y = state.displayedA * (x - state.displayedH) * (x - state.displayedH) + state.displayedK;
+        const [px, py] = worldToCanvas(x, y);
+        if (first) { ctx.moveTo(px, py); first = false; }
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      // Axes
+      drawAxes();
+
+      // Axis of symmetry
+      if (state.showAxis && Math.abs(state.displayedA) > 1e-12) {
+        const [x0, y0] = worldToCanvas(state.displayedH, -15);
+        const [x1, y1] = worldToCanvas(state.displayedH, 15);
+        ctx.save();
+        ctx.strokeStyle = ACCENT_VIOLET;
+        ctx.setLineDash([5,5]);
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+        ctx.restore();
+      }
+
+      // Vertex marker
+      if (state.showVertexMarker) {
+        const [vx, vy] = worldToCanvas(state.displayedH, state.displayedK);
+        ctx.save();
+        ctx.fillStyle = ACCENT_CYAN;
+        ctx.beginPath(); ctx.arc(vx, vy, 6, 0, 2 * Math.PI); ctx.fill();
+        ctx.restore();
+      }
+
+      // Root markers
+      if (state.showRoots && Math.abs(state.displayedA) > 1e-12) {
+        const coeffs = computeCoefficients(state.displayedA, state.displayedH, state.displayedK);
+        const roots = computeRoots(coeffs.a, coeffs.b, coeffs.c);
+        if (roots.length > 0) {
+          ctx.save();
+          ctx.fillStyle = ACCENT_VIOLET;
+          for (const r of roots) {
+            const [rx, ry] = worldToCanvas(r, 0);
+            ctx.beginPath(); ctx.arc(rx, ry, 5, 0, 2 * Math.PI); ctx.fill();
+          }
+          ctx.restore();
+        }
+      }
+    }
+
+    function loop() {
+      if (animStartTime !== null) {
+        const now = performance.now();
+        const elapsed = now - animStartTime;
+        let t = Math.min(elapsed / duration, 1);
+        const p = easeInOut(t);
+        state.displayedA = lerp(startDisplayed.a, state.targetA, p);
+        state.displayedH = lerp(startDisplayed.h, state.targetH, p);
+        state.displayedK = lerp(startDisplayed.k, state.targetK, p);
+        if (t >= 1) {
+          state.displayedA = state.targetA;
+          state.displayedH = state.targetH;
+          state.displayedK = state.targetK;
+          animStartTime = null;
+        }
+      }
+      drawGraph();
+      if (animStartTime !== null) raf(loop);
+    }
+
+    // Event listeners
+    aSlider.addEventListener('input', () => {
+      state.a = parseFloat(aSlider.value);
+      state.targetA = state.a;
+      updateValues();
+      renderExpression();
+      updateDiscriminant();
+      startAnimation();
+    });
+    hSlider.addEventListener('input', () => {
+      state.h = parseFloat(hSlider.value);
+      state.targetH = state.h;
+      updateValues();
+      renderExpression();
+      updateDiscriminant();
+      startAnimation();
+    });
+    kSlider.addEventListener('input', () => {
+      state.k = parseFloat(kSlider.value);
+      state.targetK = state.k;
+      updateValues();
+      renderExpression();
+      updateDiscriminant();
+      startAnimation();
+    });
+
+    formToggle.addEventListener('change', () => {
+      state.showVertexForm = formToggle.checked;
+      renderExpression();
+      drawGraph();
+    });
+
+    vertexMarkerCB.addEventListener('change', () => { state.showVertexMarker = vertexMarkerCB.checked; drawGraph(); });
+    axisCB.addEventListener('change', () => { state.showAxis = axisCB.checked; drawGraph(); });
+    rootsCB.addEventListener('change', () => { state.showRoots = rootsCB.checked; drawGraph(); });
+    referenceCB.addEventListener('change', () => { state.showReference = referenceCB.checked; drawGraph(); });
+
+    // Initial render
+    updateValues();
+    renderExpression();
+    updateDiscriminant();
+    startAnimation();
+
+  } catch (e) {
+    console.error(e);
+    const expressionDiv = document.getElementById('expression');
+    if (expressionDiv) expressionDiv.textContent = 'Error initializing applet';
+  }
+});
+</script>
+</body>
+</html>

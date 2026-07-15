@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gradient Descent Visualizer</title>
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0f1118;
+            --bg-panel: rgba(26, 29, 41, 0.7);
+            --border-color: rgba(148, 163, 184, 0.15);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            
+            --accent-cyan: #22d3ee;
+            --accent-violet: #a78bfa;
+            --accent-pink: #f472b6;
+            --accent-slate: #334155;
+            
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            
+            --radius-lg: 16px;
+            --radius-md: 8px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(ellipse at center, #1a1d29 0%, #0f1118 100%);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Layout */
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            width: 95vw;
+            height: 90vh;
+            max-width: 1400px;
+            gap: 24px;
+        }
+
+        /* Visualization Stage */
+        .stage {
+            position: relative;
+            background: rgba(15, 17, 24, 0.6);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stage-header {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+            text-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Readouts Overlay */
+        .readouts {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            right: 24px;
+            display: flex;
+            gap: 16px;
+            pointer-events: none;
+        }
+
+        .readout-card {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .readout-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .readout-value {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        /* Control Panel */
+        .controls {
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .control-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus { outline: none; }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: var(--accent-slate);
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+            transition: transform 0.1s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Custom Select */
+        select {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--accent-slate);
+            color: var(--text-primary);
+            padding: 10px 16px;
+            border-radius: var(--radius-md);
+            font-family: var(--font-sans);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        select:hover { border-color: var(--accent-violet); }
+        select:focus { border-color: var(--accent-cyan); box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.2); }
+
+        /* Buttons */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        button {
+            background: rgba(51, 65, 85, 0.3);
+            border: 1px solid var(--accent-slate);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-family: var(--font-sans);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover { background: rgba(51, 65, 85, 0.6); border-color: var(--text-secondary); }
+        
+        button.primary {
+            background: var(--accent-cyan);
+            color: #0f172a;
+            border: none;
+        }
+
+        button.primary:hover { background: #06b6d4; box-shadow: 0 0 15px rgba(34, 211, 238, 0.4); }
+
+        /* Math Display */
+        .math-display {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 16px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .app-container { grid-template-columns: 1fr; height: auto; overflow-y: auto; }
+            body { overflow-y: auto; padding: 24px 0; }
+            .stage { height: 50vh; min-height: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Visualization Stage -->
+    <div class="stage">
+        <div class="stage-header">
+            <h1>Gradient Descent</h1>
+            <p class="subtitle">Interactive Loss Landscape Explorer</p>
+        </div>
+        
+        <canvas id="vizCanvas"></canvas>
+
+        <div class="readouts">
+            <div class="readout-card">
+                <span class="readout-label">Iteration (t)</span>
+                <span class="readout-value" id="readIter">0</span>
+            </div>
+            <div class="readout-card">
+                <span class="readout-label">Loss L(x)</span>
+                <span class="readout-value" id="readLoss">0.000</span>
+            </div>
+            <div class="readout-card">
+                <span class="readout-label">Gradient |∇L|</span>
+                <span class="readout-value" id="readGrad">0.000</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="controls">
+        
+        <div class="control-group">
+            <label class="control-label">Landscape Function</label>
+            <select id="landscapeSelect">
+                <option value="parabola">Parabola (x²/2)</option>
+                <option value="bumpy">Bumpy Terrain (x⁴/4 - x²/2)</option>
+                <option value="rosenbrock">Rosenbrock-ish (2D)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Learning Rate (η) <span id="lrVal" style="color: var(--accent-cyan)">0.1</span></label>
+            <input type="range" id="lrSlider" min="0.01" max="1.5" step="0.01" value="0.1">
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Start Position (x₀)</label>
+            <input type="range" id="startSlider" min="-3" max="3" step="0.1" value="2.5">
+        </div>
+
+        <!-- FIX #4: Added Speed Slider with dynamic label -->
+        <div class="control-group">
+            <label class="control-label">Animation Speed <span id="speedVal" style="color: var(--accent-cyan)">Fast</span></label>
+            <input type="range" id="speedSlider" min="10" max="500" step="10" value="50">
+        </div>
+
+        <div class="btn-group">
+            <button id="stepBtn">Step</button>
+            <button id="resetBtn">Reset</button>
+        </div>
+        
+        <button id="runPauseBtn" class="primary">▶ Run Animation</button>
+
+        <div class="math-display" id="formulaDisplay">
+            <!-- KaTeX renders here -->
+        </div>
+
+        <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
+            <strong style="color: var(--accent-violet)">Tip:</strong> Try a high learning rate on the Bumpy terrain to see oscillation!
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * Gradient Descent Visualizer
+ * Core Logic & Rendering Engine
+ */
+
+// --- Configuration & State ---
+const state = {
+    landscape: 'parabola', // parabola, bumpy, rosenbrock
+    learningRate: 0.1,
+    startX: 2.5,
+    x: 2.5,
+    y: 0, // For 2D Rosenbrock (y parameter)
+    iter: 0,
+    isRunning: false,
+    animId: null,
+    trail: [], // Array of {x, y} for path trace
+    ballPos: { x: 2.5, y: 0 }, // Visual position for tweening
+    rotation: 0, // Rotation angle for the ball (Fix #5)
+    gradientArrow: { x1: 0, y1: 0, x2: 0, y2: 0 } // For arrow animation
+};
+
+// --- Math Functions ---
+
+const functions = {
+    parabola: {
+        loss: (x) => 0.5 * x * x,
+        grad: (x) => x,
+        formula: "L(x) = \\frac{1}{2}x^2"
+    },
+    bumpy: {
+        // L(x) = x^4/4 - x^2/2
+        loss: (x) => (Math.pow(x, 4) / 4) - (Math.pow(x, 2) / 2),
+        grad: (x) => Math.pow(x, 3) - x,
+        formula: "L(x) = \\frac{x^4}{4} - \\frac{x^2}{2}"
+    },
+    rosenbrock: {
+        // L(x,y) = (a-x)^2 + b(y-x^2)^2 with a=1, b=100
+        loss: (x, y) => Math.pow(1 - x, 2) + 100 * Math.pow(y - x*x, 2),
+        gradX: (x, y) => -2*(1-x) - 400*x*(y - x*x),
+        gradY: (x, y) => 200*(y - x*x),
+        formula: "L(x,y) = (1-x)^2 + 100(y-x^2)^2"
+    }
+};
+
+// --- Canvas Setup ---
+const canvas = document.getElementById('vizCanvas');
+const ctx = canvas.getContext('2d');
+let width, height;
+
+function resize() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    width = rect.width;
+    height = rect.height;
+}
+
+window.addEventListener('resize', () => { resize(); draw(); });
+resize();
+
+// --- Coordinate Mapping ---
+
+function mapCoord(x, y) {
+    // Map mathematical coordinates to canvas pixels
+    const padding = 40;
+    
+    if (state.landscape === 'rosenbrock') {
+        // 2D Top-down view: x in [-2, 3], y in [-1, 3]
+        const minX = -2.5, maxX = 3.5;
+        const minY = -1.5, maxY = 3.5;
+        
+        const px = padding + ((x - minX) / (maxX - minX)) * (width - 2*padding);
+        const py = height - padding - ((y - minY) / (maxY - minY)) * (height - 2*padding);
+        return { x: px, y: py };
+    } else {
+        // 1D Side view: x in [-4, 4], Loss in [minL, maxL]
+        const minX = -4.5, maxX = 4.5;
+        
+        // Calculate dynamic Y range based on current state to keep ball visible
+        let minL = -0.5;
+        let maxL = 10;
+        
+        // Check bounds of function in view
+        for(let i=0; i<=100; i++) {
+            const valX = minX + (maxX - minX) * (i/100);
+            const val = functions[state.landscape].loss(valX);
+            if (val < minL) minL = val;
+            if (val > maxL) maxL = val;
+        }
+        
+        // Add padding to loss range
+        const lossRange = maxL - minL;
+        minL -= lossRange * 0.1;
+        maxL += lossRange * 0.1;
+
+        const px = padding + ((x - minX) / (maxX - minX)) * (width - 2*padding);
+        const py = height - padding - ((y - minL) / (maxL - minL)) * (height - 2*padding);
+        
+        return { x: px, y: py };
+    }
+}
+
+// --- Drawing Functions ---
+
+function drawGrid() {
+    ctx.strokeStyle = 'rgba(51, 65, 85, 0.3)';
+    ctx.lineWidth = 1;
+    
+    // Draw axes for 1D mode
+    if (state.landscape !== 'rosenbrock') {
+        const origin = mapCoord(0, 0);
+        
+        // X-axis
+        ctx.beginPath();
+        ctx.moveTo(0, origin.y);
+        ctx.lineTo(width, origin.y);
+        ctx.stroke();
+        
+        // Y-axis (Loss axis)
+        ctx.beginPath();
+        ctx.moveTo(origin.x, 0);
+        ctx.lineTo(origin.x, height);
+        ctx.stroke();
+    } else {
+        // Grid for Rosenbrock
+        const step = 1;
+        for(let i=-2; i<=3; i+=step) {
+            const p1 = mapCoord(i, -1.5);
+            const p2 = mapCoord(i, 3.5);
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+            
+            const p3 = mapCoord(-2.5, i);
+            const p4 = mapCoord(3.5, i);
+            ctx.beginPath(); ctx.moveTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y); ctx.stroke();
+        }
+    }
+}
+
+function drawContourMap() {
+    if (state.landscape !== 'rosenbrock') return; // Only for 2D
+    
+    const resolution = 100;
+    const padding = 40;
+    
+    // Define range
+    const minX = -2.5, maxX = 3.5;
+    const minY = -1.5, maxY = 3.5;
+    
+    // Sample function values
+    const stepX = (maxX - minX) / resolution;
+    const stepY = (maxY - minY) / resolution;
+    
+    let minVal = Infinity, maxVal = -Infinity;
+    const grid = [];
+    
+    for(let i=0; i<=resolution; i++) {
+        grid[i] = [];
+        for(let j=0; j<=resolution; j++) {
+            const x = minX + i * stepX;
+            const y = minY + j * stepY;
+            const val = functions.rosenbrock.loss(x, y);
+            if (val < minVal) minVal = val;
+            if (val > maxVal) maxVal = val;
+            grid[i][j] = val;
+        }
+    }
+    
+    // Normalize to 0-1 range for color mapping
+    const range = maxVal - minVal || 1;
+    
+    ctx.beginPath();
+    // Marching squares or simple contour lines via thresholding could be used.
+    // For simplicity and performance, we'll draw small line segments where gradient is perpendicular to view direction? 
+    // No, simpler: Draw filled contours using a threshold approach.
+    
+    const thresholds = 20;
+    for(let t=1; t<thresholds; t++) {
+        const val = minVal + (range * t / thresholds);
+        
+        ctx.strokeStyle = 'rgba(167, 139, 250, 0.4)'; // Violet
+        ctx.lineWidth = 1;
+        
+        for(let i=0; i<resolution; i++) {
+            for(let j=0; j<resolution; j++) {
+                const v1 = grid[i][j];
+                const v2 = grid[i+1][j];
+                const v3 = grid[i+1][j+1];
+                const v4 = grid[i][j+1];
+                
+                // Simple edge detection between threshold levels
+                const isAbove = (v => v >= val);
+                
+                if ((isAbove(v1) !== isAbove(v2)) || (isAbove(v3) !== isAbove(v4))) {
+                    // Draw small segment
+                    const p1 = mapCoord(minX + i*stepX, minY + j*stepY);
+                    const p2 = mapCoord(minX + (i+1)*stepX, minY + j*stepY);
+                    const p3 = mapCoord(minX + (i+1)*stepX, minY + (j+1)*stepY);
+                    
+                    if (isAbove(v1) !== isAbove(v2)) {
+                        ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                    }
+                    if (isAbove(v3) !== isAbove(v4)) {
+                        ctx.moveTo(p3.x, p3.y); // Approximate connection
+                    }
+                }
+            }
+        }
+    }
+    ctx.stroke();
+}
+
+function drawCurve() {
+    if (state.landscape === 'rosenbrock') return; // Handled by contour map
+    
+    const minX = -4.5, maxX = 4.5;
+    const steps = 200;
+    
+    ctx.beginPath();
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2;
+    
+    for(let i=0; i<=steps; i++) {
+        const x = minX + (maxX - minX) * (i/steps);
+        const y = functions[state.landscape].loss(x);
+        const pos = mapCoord(x, y);
+        
+        if (i === 0) ctx.moveTo(pos.x, pos.y);
+        else ctx.lineTo(pos.x, pos.y);
+    }
+    ctx.stroke();
+}
+
+function drawTrail() {
+    if (state.trail.length < 2) return;
+    
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(34, 211, 238, 0.5)'; // Cyan trail
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    
+    for(let i=0; i<state.trail.length; i++) {
+        const pos = mapCoord(state.trail[i].x, state.trail[i].y);
+        if (i === 0) ctx.moveTo(pos.x, pos.y);
+        else ctx.lineTo(pos.x, pos.y);
+    }
+    
+    // Connect last trail point to current ball position
+    const currentPos = mapCoord(state.ballPos.x, state.ballPos.y);
+    ctx.lineTo(currentPos.x, currentPos.y);
+    
+    ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+function drawBall() {
+    const pos = mapCoord(state.ballPos.x, state.ballPos.y);
+    const radius = 8;
+    
+    // Glow effect - pulse when idle (Fix #5)
+    let glowIntensity = 0.8;
+    if (!state.isRunning && state.iter > 0) {
+        glowIntensity = 0.6 + Math.sin(Date.now() / 300) * 0.2;
+    }
+
+    const gradient = ctx.createRadialGradient(pos.x, pos.y, radius * 0.2, pos.x, pos.y, radius * 3);
+    gradient.addColorStop(0, `rgba(34, 211, 238, ${glowIntensity})`);
+    gradient.addColorStop(1, 'rgba(34, 211, 238, 0)');
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, radius * 3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // FIX #5: Draw ball with rotation
+    ctx.save();
+    ctx.translate(pos.x, pos.y);
+    ctx.rotate(state.rotation);
+    
+    // Solid ball
+    ctx.fillStyle = '#22d3ee';
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Marker line to show rotation
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(radius, 0);
+    ctx.stroke();
+    
+    ctx.restore();
+}
+
+function drawGradientArrow() {
+    let gradX, gradY;
+    
+    if (state.landscape === 'rosenbrock') {
+        // FIX #2: Correct gradient vector for 2D Rosenbrock
+        gradX = functions.rosenbrock.gradX(state.x, state.y);
+        gradY = functions.rosenbrock.gradY(state.x, state.y);
+        
+        const startPos = mapCoord(state.x, state.y);
+        
+        // Calculate screen-space tangent vector
+        // Tangent in data space is (1, f'(x))
+        // We need to convert this to screen coordinates
+        
+        const dxData = 0.01; // Small step in x
+        const dyData = gradY * dxData; // Corresponding change in y based on gradient
+        
+        const pStart = mapCoord(state.x, state.y);
+        const pEnd = mapCoord(state.x + dxData, state.y + dyData);
+        
+        let tangentX = pEnd.x - pStart.x;
+        let tangentY = pEnd.y - pStart.y;
+        
+        // Normalize and scale for visibility
+        const len = Math.sqrt(tangentX*tangentX + tangentY*tangentY);
+        if (len > 0) {
+            tangentX /= len;
+            tangentY /= len;
+        }
+        
+        const arrowLen = 40; // Fixed pixel length for visual clarity
+        
+        ctx.beginPath();
+        ctx.moveTo(startPos.x, startPos.y);
+        ctx.lineTo(startPos.x + tangentX * arrowLen, startPos.y + tangentY * arrowLen);
+    } else {
+        // FIX #2: Calculate tangent vector for 1D mode - ensure uphill direction
+        const g = functions[state.landscape].grad(state.x);
+        
+        const startPos = mapCoord(state.x, state.y);
+        
+        // Calculate screen-space tangent vector
+        // Tangent in data space is (1, f'(x))
+        // We need to convert this to screen coordinates
+        
+        const dxData = 0.01; // Small step in x
+        const dyData = g * dxData; // Corresponding change in y based on gradient
+        
+        const pStart = mapCoord(state.x, state.y);
+        const pEnd = mapCoord(state.x + dxData, state.y + dyData);
+        
+        let tangentX = pEnd.x - pStart.x;
+        let tangentY = pEnd.y - pStart.y;
+        
+        // Normalize and scale for visibility
+        const len = Math.sqrt(tangentX*tangentX + tangentY*tangentY);
+        if (len > 0) {
+            tangentX /= len;
+            tangentY /= len;
+        }
+        
+        const arrowLen = 40; // Fixed pixel length for visual clarity
+        
+        ctx.beginPath();
+        ctx.moveTo(startPos.x, startPos.y);
+        ctx.lineTo(startPos.x + tangentX * arrowLen, startPos.y + tangentY * arrowLen);
+    }
+    
+    // Arrow styling
+    ctx.strokeStyle = '#f472b6'; // Pink for gradient (warning/active)
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    
+    // Arrowhead
+    const endPos = { x: startPos.x + (state.landscape === 'rosenbrock' ? gradX*0.5 : tangentX * arrowLen), y: startPos.y + (state.landscape === 'rosenbrock' ? -gradY*0.5 : tangentY * arrowLen) };
+    
+    if (state.landscape !== 'rosenbrock') {
+        const angle = Math.atan2(tangentY, tangentX);
+        
+        ctx.beginPath();
+        ctx.moveTo(endPos.x, endPos.y);
+        ctx.lineTo(endPos.x - 8*Math.cos(angle - Math.PI/6), endPos.y - 8*Math.sin(angle - Math.PI/6));
+        ctx.lineTo(endPos.x - 8*Math.cos(angle + Math.PI/6), endPos.y - 8*Math.sin(angle + Math.PI/6));
+        ctx.closePath();
+        ctx.fillStyle = '#f472b6';
+        ctx.fill();
+    } else {
+        const angle = Math.atan2(-gradY, gradX);
+        
+        // Arrowhead for 2D
+        ctx.beginPath();
+        ctx.moveTo(endPos.x, endPos.y);
+        ctx.lineTo(endPos.x - 8*Math.cos(angle - Math.PI/6), endPos.y - 8*Math.sin(angle - Math.PI/6));
+        ctx.lineTo(endPos.x - 8*Math.cos(angle + Math.PI/6), endPos.y - 8*Math.sin(angle + Math.PI/6));
+        ctx.closePath();
+        ctx.fillStyle = '#f472b6';
+        ctx.fill();
+    }
+}
+
+function draw() {
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    drawGrid();
+    if (state.landscape === 'rosenbrock') {
+        drawContourMap();
+    } else {
+        drawCurve();
+    }
+    
+    drawTrail();
+    drawGradientArrow();
+    drawBall();
+}
+
+// --- Animation Loop ---
+
+function animate() {
+    if (!state.isRunning) return;
+    
+    step();
+    draw();
+    
+    // Get speed from slider (Fix #4)
+    const delay = parseInt(document.getElementById('speedSlider').value);
+    
+    state.animId = setTimeout(() => requestAnimationFrame(animate), delay);
+}
+
+function step() {
+    let gradX, gradY;
+    
+    if (state.landscape === 'rosenbrock') {
+        gradX = functions.rosenbrock.gradX(state.x, state.y);
+        gradY = functions.rosenbrock.gradY(state.x, state.y);
+        
+        const newX = state.x - state.learningRate * gradX;
+        const newY = state.y - state.learningRate * gradY;
+        
+        // Save trail before update
+        state.trail.push({ x: state.x, y: state.y });
+        if (state.trail.length > 50) state.trail.shift();
+        
+        state.x = newX;
+        state.y = newY;
+    } else {
+        const grad = functions[state.landscape].grad(state.x);
+        const newX = state.x - state.learningRate * grad;
+        
+        // FIX #3: Store actual loss value in trail for 1D mode using NEW x
+        const newY = functions[state.landscape].loss(newX);
+        state.trail.push({ x: newX, y: newY });
+        if (state.trail.length > 50) state.trail.shift();
+        
+        state.x = newX;
+    }
+    
+    // Update rotation based on movement (Fix #5)
+    const prevPos = mapCoord(state.x - (state.landscape === 'rosenbrock' ? 0 : 0), state.y);
+    const currentPos = mapCoord(state.x, state.y);
+    const dx = currentPos.x - prevPos.x;
+    state.rotation += dx / 8; // Rotate based on horizontal movement
+    
+    state.iter++;
+    updateReadouts();
+}
+
+function reset() {
+    state.isRunning = false;
+    clearTimeout(state.animId);
+    document.getElementById('runPauseBtn').textContent = '▶ Run Animation';
+    document.getElementById('runPauseBtn').classList.add('primary');
+    
+    // FIX #1: Use state.startX instead of undefined startPos variable
+    state.x = state.startX;
+    state.y = 0; // Reset y for Rosenbrock
+    state.iter = 0;
+    state.trail = [];
+    state.rotation = 0;
+    updateReadouts();
+    draw();
+}
+
+function updateReadouts() {
+    document.getElementById('readIter').textContent = state.iter;
+    
+    let loss, gradMag;
+    if (state.landscape === 'rosenbrock') {
+        loss = functions.rosenbrock.loss(state.x, state.y);
+        const gx = functions.rosenbrock.gradX(state.x, state.y);
+        const gy = functions.rosenbrock.gradY(state.x, state.y);
+        gradMag = Math.sqrt(gx*gx + gy*gy);
+    } else {
+        loss = functions[state.landscape].loss(state.x);
+        gradMag = Math.abs(functions[state.landscape].grad(state.x));
+    }
+    
+    document.getElementById('readLoss').textContent = loss.toFixed(4);
+    document.getElementById('readGrad').textContent = gradMag.toFixed(4);
+}
+
+// --- UI Event Listeners ---
+
+document.getElementById('landscapeSelect').addEventListener('change', (e) => {
+    state.landscape = e.target.value;
+    
+    // Adjust start position based on landscape
+    if (state.landscape === 'rosenbrock') {
+        state.startX = -1.5;
+        state.y = -1;
+    } else {
+        state.startX = 2.5;
+    }
+    
+    document.getElementById('startSlider').value = state.startX;
+    reset();
+    updateFormula();
+});
+
+document.getElementById('lrSlider').addEventListener('input', (e) => {
+    state.learningRate = parseFloat(e.target.value);
+    document.getElementById('lrVal').textContent = state.learningRate.toFixed(2);
+});
+
+document.getElementById('startSlider').addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    if (state.landscape !== 'rosenbrock') {
+        // FIX #1: Use state.startX instead of undefined startPos variable
+        state.startX = val;
+    } else {
+        // For Rosenbrock, we only change x start for simplicity in this UI
+        state.startX = val; 
+    }
+    reset();
+});
+
+document.getElementById('stepBtn').addEventListener('click', () => {
+    if (state.isRunning) return;
+    step();
+    draw();
+});
+
+document.getElementById('resetBtn').addEventListener('click', reset);
+
+document.getElementById('runPauseBtn').addEventListener('click', () => {
+    state.isRunning = !state.isRunning;
+    const btn = document.getElementById('runPauseBtn');
+    
+    if (state.isRunning) {
+        btn.textContent = '⏸ Pause';
+        btn.classList.remove('primary');
+        animate();
+    } else {
+        btn.textContent = '▶ Run Animation';
+        btn.classList.add('primary');
+        clearTimeout(state.animId);
+    }
+});
+
+// --- KaTeX Rendering (Fix #1) ---
+
+function updateFormula() {
+    const container = document.getElementById('formulaDisplay');
+    
+    // Clear existing content
+    container.innerHTML = '';
+    
+    if (!window.katex) {
+        // Fallback if KaTeX is not loaded
+        container.textContent = 'Math rendering unavailable';
+        return;
+    }
+    
+    try {
+        const func = functions[state.landscape];
+        
+        // Render the loss function formula
+        katex.render(func.formula, container, {
+            throwOnError: false,
+            displayMode: true,
+            color: '#94a3b8'
+        });
+        
+        // Add the update rule below it
+        const rule = document.createElement('div');
+        rule.style.marginTop = '12px';
+        katex.render("x_{new} = x_{old} - \\eta \\cdot \\nabla L(x)", rule, {
+            throwOnError: false,
+            displayMode: true,
+            color: '#f8fafc'
+        });
+        
+        container.appendChild(rule);
+    } catch (e) {
+        console.error('KaTeX rendering error:', e);
+        container.textContent = 'Math rendering error';
+    }
+}
+
+// --- Initialization ---
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Ensure KaTeX is loaded before rendering
+    if (window.katex) {
+        updateFormula();
+    } else {
+        // Retry loading or show fallback
+        const checkKatex = setInterval(() => {
+            if (window.katex) {
+                clearInterval(checkKatex);
+                updateFormula();
+            }
+        }, 100);
+        
+        // Timeout after 5 seconds
+        setTimeout(() => clearInterval(checkKatex), 5000);
+    }
+    
+    reset();
+    draw();
+});
+
+</script>
+</body>
+</html>

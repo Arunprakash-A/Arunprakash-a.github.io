@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Neural Network: Single Neuron</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-dark: #020617;
+            --bg-panel: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(100, 116, 139, 0.3);
+            
+            --accent-cyan: #22d3ee;
+            --accent-crimson: #f43f5e;
+            --accent-violet: #a78bfa;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            
+            /* Spacing & Radius */
+            --radius-lg: 16px;
+            --radius-md: 8px;
+            --spacing-container: 2rem;
+
+            /* Transitions */
+            --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            /* Subtle grid pattern overlay at 5% opacity as requested */
+            background-image: 
+                radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 70%),
+                linear-gradient(rgba(100, 116, 139, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(100, 116, 139, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            color: var(--text-primary);
+            font-family: 'Inter', system-ui, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Layout */
+        .app-container {
+            width: 95%;
+            max-width: 1400px;
+            height: 90vh;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: var(--spacing-container);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, var(--accent-cyan), var(--accent-violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-header p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Controls */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .control-item {
+            display: grid;
+            grid-template-columns: 80px 1fr 60px;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            text-align: right;
+            color: var(--accent-cyan);
+            font-variant-numeric: tabular-nums;
+            transition: color 0.3s ease, opacity 0.3s ease;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Webkit Slider Track */
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #334155;
+            border-radius: 2px;
+        }
+
+        /* Webkit Slider Thumb */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--text-primary);
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(248, 250, 252, 0.3);
+            transition: transform 0.1s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Firefox Slider */
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 4px;
+            background: #334155;
+            border-radius: 2px;
+            border: none;
+        }
+
+        input[type=range]::-moz-range-thumb {
+            height: 16px;
+            width: 16px;
+            border: none;
+            border-radius: 50%;
+            background: var(--text-primary);
+            box-shadow: 0 0 10px rgba(248, 250, 252, 0.3);
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            background: #334155;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent-violet);
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        .toggle-switch.active .toggle-knob {
+            transform: translateX(22px);
+        }
+
+        /* Main Stage */
+        .main-stage {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            height: 100%;
+        }
+
+        .canvas-container {
+            flex: 1;
+            background: var(--bg-panel);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.3);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Readout Panel */
+        .readout-panel {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 80px;
+        }
+
+        .readout-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .equation-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .equation-display span {
+            transition: color 0.3s ease, opacity 0.3s ease;
+        }
+
+        .val-z { color: var(--accent-violet); font-weight: 700; }
+        .val-a { color: var(--accent-cyan); font-weight: 700; }
+
+        @media (max-width: 900px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                height: auto;
+                overflow-y: auto;
+            }
+            body {
+                overflow-y: auto;
+                height: auto;
+                padding: 2rem 0;
+            }
+            .sidebar, .main-stage {
+                min-height: auto;
+            }
+        }
+
+        /* Animations */
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 15px rgba(34, 211, 238, 0.1); }
+            50% { box-shadow: 0 0 25px rgba(34, 211, 238, 0.3); }
+            100% { box-shadow: 0 0 15px rgba(34, 211, 238, 0.1); }
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+        }
+        
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-violet);
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- Sidebar Controls -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Neuron Explorer</h1>
+            <p>Visualize how inputs, weights, and bias combine to produce an output.</p>
+        </div>
+
+        <div class="control-group">
+            <!-- Inputs -->
+            <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: -0.5rem;">Inputs</div>
+            
+            <div class="control-item">
+                <label for="x1">x₁</label>
+                <input type="range" id="x1" min="-5" max="5" step="0.1" value="1.0">
+                <span class="value-display" id="val-x1">1.0</span>
+            </div>
+
+            <div class="control-item">
+                <label for="x2">x₂</label>
+                <input type="range" id="x2" min="-5" max="5" step="0.1" value="1.0">
+                <span class="value-display" id="val-x2">1.0</span>
+            </div>
+
+            <!-- FIX: Added x3 slider -->
+            <div class="control-item">
+                <label for="x3">x₃</label>
+                <input type="range" id="x3" min="-5" max="5" step="0.1" value="0.0">
+                <span class="value-display" id="val-x3">0.0</span>
+            </div>
+
+            <!-- Weights -->
+            <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-top: 0.5rem; margin-bottom: -0.5rem;">Weights</div>
+
+            <div class="control-item">
+                <label for="w1">w₁</label>
+                <input type="range" id="w1" min="-5" max="5" step="0.1" value="1.0">
+                <span class="value-display" id="val-w1">1.0</span>
+            </div>
+
+            <div class="control-item">
+                <label for="w2">w₂</label>
+                <input type="range" id="w2" min="-5" max="5" step="0.1" value="1.0">
+                <span class="value-display" id="val-w2">1.0</span>
+            </div>
+
+            <!-- FIX: Added w3 slider -->
+            <div class="control-item">
+                <label for="w3">w₃</label>
+                <input type="range" id="w3" min="-5" max="5" step="0.1" value="1.0">
+                <span class="value-display" id="val-w3">1.0</span>
+            </div>
+
+            <!-- Bias -->
+            <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-top: 0.5rem; margin-bottom: -0.5rem;">Bias</div>
+
+            <div class="control-item">
+                <label for="b">b</label>
+                <input type="range" id="b" min="-5" max="5" step="0.1" value="0.0">
+                <span class="value-display" id="val-b">0.0</span>
+            </div>
+
+            <!-- Activation Toggle -->
+            <div style="margin-top: 1rem;">
+                <div class="toggle-container">
+                    <label for="activation-toggle" style="cursor: pointer; margin:0;">Activation Function</label>
+                    <div id="activation-toggle" class="toggle-switch active" role="switch" aria-checked="true" tabindex="0">
+                        <div class="toggle-knob"></div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 0.5rem;">
+                    <span id="activation-label" style="font-family: 'JetBrains Mono'; font-size: 0.9rem; color: var(--accent-violet);">Sigmoid</span>
+                </div>
+            </div>
+
+             <!-- Show Details Checkbox -->
+             <label class="checkbox-container">
+                <input type="checkbox" id="show-details" checked>
+                <span style="font-size: 0.875rem; color: var(--text-secondary);">Show Computation Details</span>
+            </label>
+        </div>
+    </aside>
+
+    <!-- Main Visualization -->
+    <main class="main-stage">
+        
+        <div class="canvas-container" id="canvas-wrapper">
+            <canvas id="neuron-canvas"></canvas>
+        </div>
+
+        <div class="readout-panel">
+            <div class="readout-content">
+                <!-- Linear Combination -->
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em;">Linear Sum (z)</span>
+                    <div class="equation-display" id="eq-z">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Activation Output -->
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em;">Output (a)</span>
+                    <div class="equation-display" id="eq-a">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script>
+/**
+ * Neural Network Visualization Logic
+ */
+
+// --- State Management ---
+const state = {
+    x1: 1.0,
+    x2: 1.0,
+    x3: 0.0, // FIX: Added x3 to state
+    w1: 1.0,
+    w2: 1.0,
+    w3: 1.0, // FIX: Added w3 to state
+    b: 0.0,
+    activation: 'sigmoid', // 'step' or 'sigmoid'
+    showDetails: true,
+    
+    // Visual interpolation targets (for smooth transitions)
+    visual: {
+        x1: 1.0, w1: 1.0, 
+        x2: 1.0, w2: 1.0, 
+        x3: 0.0, w3: 1.0, // FIX: Added x3 and w3 to visual targets
+        b: 0.0,
+        z: 0, a: 0
+    },
+
+    // Canvas dimensions (updated on resize)
+    canvasWidth: 800,
+    canvasHeight: 600
+};
+
+// --- DOM Elements ---
+const canvas = document.getElementById('neuron-canvas');
+const ctx = canvas.getContext('2d');
+const wrapper = document.getElementById('canvas-wrapper');
+
+const inputs = {
+    x1: document.getElementById('x1'),
+    x2: document.getElementById('x2'),
+    // FIX: Added x3 input element reference
+    x3: document.getElementById('x3'),
+    w1: document.getElementById('w1'),
+    w2: document.getElementById('w2'),
+    // FIX: Added w3 input element reference
+    w3: document.getElementById('w3'),
+    b: document.getElementById('b')
+};
+
+const displays = {
+    x1: document.getElementById('val-x1'),
+    x2: document.getElementById('val-x2'),
+    // FIX: Added x3 display element reference
+    x3: document.getElementById('val-x3'),
+    w1: document.getElementById('val-w1'),
+    w2: document.getElementById('val-w2'),
+    // FIX: Added w3 display element reference
+    w3: document.getElementById('val-w3'),
+    b: document.getElementById('val-b')
+};
+
+const activationToggle = document.getElementById('activation-toggle');
+const activationLabel = document.getElementById('activation-label');
+const showDetailsCheckbox = document.getElementById('show-details');
+
+// --- Math Helpers ---
+function sigmoid(z) {
+    // Clamp to prevent overflow
+    if (z > 500) return 1;
+    if (z < -500) return 0;
+    return 1 / (1 + Math.exp(-z));
+}
+
+function step(z) {
+    return z >= 0 ? 1 : 0;
+}
+
+function lerp(start, end, t) {
+    return start * (1 - t) + end * t;
+}
+
+// --- Core Logic ---
+function updateState() {
+    state.x1 = parseFloat(inputs.x1.value);
+    state.x2 = parseFloat(inputs.x2.value);
+    // FIX: Added x3 parsing
+    state.x3 = parseFloat(inputs.x3.value);
+    state.w1 = parseFloat(inputs.w1.value);
+    state.w2 = parseFloat(inputs.w2.value);
+    // FIX: Added w3 parsing
+    state.w3 = parseFloat(inputs.w3.value);
+    state.b = parseFloat(inputs.b.value);
+
+    // Update displays
+    Object.keys(displays).forEach(key => {
+        displays[key].textContent = state[key].toFixed(1);
+    });
+
+    calculateOutputs();
+}
+
+function calculateOutputs() {
+    // FIX: Updated formula to include x3 term with w3
+    const z = (state.w1 * state.x1) + (state.w2 * state.x2) + (state.w3 * state.x3) + state.b;
+    
+    let a;
+    if (state.activation === 'sigmoid') {
+        a = sigmoid(z);
+    } else {
+        a = step(z);
+    }
+
+    // Update Readout Panel
+    updateReadout(z, a);
+}
+
+function updateReadout(z, a) {
+    const eqZContainer = document.getElementById('eq-z');
+    const eqAContainer = document.getElementById('eq-a');
+
+    if (state.showDetails) {
+        // z = (w1*x1) + (w2*x2) + (w3*x3) + b
+        const term1 = `${state.w1.toFixed(1)} × ${state.x1.toFixed(1)}`;
+        const term2 = `${state.w2.toFixed(1)} × ${state.x2.toFixed(1)}`;
+        const term3 = `${state.w3.toFixed(1)} × ${state.x3.toFixed(1)}`;
+        
+        let htmlZ = `z = (${term1}) + (${term2}) + (${term3}) + <span class="val-z">${state.b.toFixed(1)}</span> = <span class="val-z">${z.toFixed(3)}</span>`;
+        eqZContainer.innerHTML = htmlZ;
+
+        // a = σ(z)
+        const funcName = state.activation === 'sigmoid' ? 'σ' : 'Step';
+        let htmlA = `${funcName}(<span class="val-z">${z.toFixed(2)}</span>) = <span class="val-a">${a.toFixed(3)}</span>`;
+        eqAContainer.innerHTML = htmlA;
+
+    } else {
+        // Simplified view
+        const funcName = state.activation === 'sigmoid' ? 'σ' : 'Step';
+        let htmlZ = `z = <span class="val-z">${z.toFixed(3)}</span>`;
+        eqZContainer.innerHTML = htmlZ;
+
+        let htmlA = `${funcName}(z) = <span class="val-a">${a.toFixed(3)}</span>`;
+        eqAContainer.innerHTML = htmlA;
+    }
+}
+
+// --- Canvas Rendering ---
+let animationFrameId;
+let time = 0;
+
+function resizeCanvas() {
+    const rect = wrapper.getBoundingClientRect();
+    
+    // FIX: Robustness check for zero dimensions (e.g. hidden tabs)
+    if (rect.width === 0 || rect.height === 0) return;
+
+    // Handle HiDPI
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Set actual canvas size in memory (scaled by device pixel ratio)
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    
+    // Normalize coordinate system to use css pixels
+    ctx.scale(dpr, dpr);
+    
+    // Store logical size for coordinate math
+    state.canvasWidth = rect.width;
+    state.canvasHeight = rect.height;
+}
+
+function drawNeuron() {
+    const w = state.canvasWidth;
+    const h = state.canvasHeight;
+    
+    // Clear
+    ctx.clearRect(0, 0, w, h);
+
+    // Smooth interpolation for visual values (Lerp)
+    const smoothing = 0.15;
+    state.visual.x1 = lerp(state.visual.x1, state.x1, smoothing);
+    state.visual.x2 = lerp(state.visual.x2, state.x2, smoothing);
+    state.visual.w1 = lerp(state.visual.w1, state.w1, smoothing);
+    state.visual.w2 = lerp(state.visual.w2, state.w2, smoothing);
+    // FIX: Added x3 and w3 visual interpolation
+    state.visual.x3 = lerp(state.visual.x3, state.x3, smoothing);
+    state.visual.w3 = lerp(state.visual.w3, state.w3, smoothing);
+    state.visual.b = lerp(state.visual.b, state.b, smoothing);
+
+    // Calculate current z and a for visual feedback (glow intensity)
+    const z = (state.w1 * state.x1) + (state.w2 * state.x2) + (state.w3 * state.x3) + state.b;
+    let a = state.activation === 'sigmoid' ? sigmoid(z) : step(z);
+    
+    // Pulse effect
+    time += 0.02;
+    const pulse = Math.sin(time) * 0.1 + 1;
+
+    // --- Layout Coordinates ---
+    const inputX = w * 0.15;
+    const neuronX = w * 0.65;
+    const outputX = w * 0.85;
+    
+    // Input Node Y positions (spread vertically)
+    const nodeSpacing = h / 5;
+    const yStart = h * 0.2;
+    
+    const x1Y = yStart - nodeSpacing;
+    const x2Y = yStart;
+    // FIX: Added x3 position (below x2)
+    const x3Y = yStart + nodeSpacing;
+    const bY = h * 0.85; // Bias at bottom
+    
+    const neuronY = h / 2;
+
+    // --- Draw Wires (Connections) ---
+    
+    function drawWire(x1, y1, x2, y2, weightVal, isActive) {
+        ctx.beginPath();
+        
+        // Bezier curve for organic feel
+        const cp1x = x1 + (x2 - x1) * 0.5;
+        const cp2x = x1 + (x2 - x1) * 0.8;
+        
+        // FIX: Defined control points for Y to fix the infinite loop logic error
+        const cp1y = y1;
+        const cp2y = y2;
+
+        ctx.moveTo(x1, y1);
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x2, y2);
+
+        // Color interpolation: Cyan (+) -> Red (-)
+        const absW = Math.abs(weightVal);
+        
+        if (weightVal > 0) {
+            // Interpolate from transparent to cyan based on magnitude
+            const alpha = Math.min(absW / 5, 1); 
+            ctx.strokeStyle = `rgba(34, 211, 238, ${0.2 + alpha * 0.6})`;
+        } else if (weightVal < 0) {
+            const alpha = Math.min(absW / 5, 1);
+            ctx.strokeStyle = `rgba(244, 63, 94, ${0.2 + alpha * 0.6})`;
+        } else {
+            ctx.strokeStyle = 'rgba(100, 116, 139, 0.2)'; // Neutral gray
+        }
+
+        // Thickness based on magnitude (min 2px, max 8px)
+        const thickness = Math.max(2, Math.min(8, absW * 1.5));
+        ctx.lineWidth = thickness;
+        
+        if (weightVal === 0 && !isActive) {
+            ctx.setLineDash([4, 4]);
+        } else {
+            ctx.setLineDash([]);
+        }
+
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset
+        
+        // Draw signal flow animation (dots moving along wire)
+        if (weightVal !== 0 && isActive) {
+            const speed = 0.02;
+            const offset = (time * speed + Math.random()) % 1;
+            
+            // Get point on bezier using the defined control points
+            const t = offset;
+            const bx = Math.pow(1-t,3)*x1 + 3*Math.pow(1-t,2)*t*cp1x + 3*(1-t)*Math.pow(t,2)*cp2x + Math.pow(t,3)*x2;
+            // FIX: Corrected Y coordinate calculation using cp1y and cp2y
+            const by = Math.pow(1-t,3)*y1 + 3*Math.pow(1-t,2)*t*cp1y + 3*(1-t)*Math.pow(t,2)*cp2y + Math.pow(t,3)*y2;
+
+            ctx.beginPath();
+            ctx.arc(bx, by, thickness/2, 0, Math.PI*2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+        }
+    }
+
+    // Draw Bias Wire (FIX: Pass state.b as weight value)
+    drawWire(inputX, bY, neuronX - 40, neuronY + 30, state.b, true);
+
+    // Draw Input Wires (FIX: Use raw weights for thickness/color)
+    drawWire(inputX, x1Y, neuronX - 40, neuronY - 20, state.w1, state.x1 !== 0 || state.w1 !== 0);
+    drawWire(inputX, x2Y, neuronX - 40, neuronY + 10, state.w2, state.x2 !== 0 || state.w2 !== 0);
+    // FIX: Added third wire drawing with w3 and x3
+    drawWire(inputX, x3Y, neuronX - 40, neuronY + 40, state.w3, state.x3 !== 0 || state.w3 !== 0);
+
+    // --- Draw Input Nodes (x1, x2, x3) ---
+    function drawNode(x, y, label, value, color) {
+        const radius = 25;
+        
+        // Glow based on absolute value
+        const glowIntensity = Math.min(Math.abs(value), 5) / 5;
+        if (glowIntensity > 0.1) {
+            ctx.shadowBlur = 20 * glowIntensity * pulse;
+            ctx.shadowColor = color;
+        } else {
+            ctx.shadowBlur = 0;
+        }
+
+        // Node Circle
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#1e293b';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+
+        // Text
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 14px "JetBrains Mono"';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, x, y - 5);
+        
+        // Value below label
+        ctx.fillStyle = color;
+        ctx.font = '12px "JetBrains Mono"';
+        ctx.fillText(value.toFixed(1), x, y + 12);
+
+        // Label outside
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '12px Inter';
+        ctx.textAlign = 'right';
+        ctx.fillText(label.toUpperCase(), x - radius - 10, y + 5);
+    }
+
+    drawNode(inputX, x1Y, 'x₁', state.visual.x1, '#22d3ee');
+    drawNode(inputX, x2Y, 'x₂', state.visual.x2, '#a78bfa');
+    // FIX: Added third input node drawing
+    drawNode(inputX, x3Y, 'x₃', state.visual.x3, '#f43f5e');
+
+    // --- Draw Bias Node (b) ---
+    ctx.beginPath();
+    ctx.arc(inputX, bY, 20, 0, Math.PI * 2);
+    ctx.fillStyle = '#1e293b';
+    ctx.fill();
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = 'bold 14px "JetBrains Mono"';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('b', inputX, bY);
+
+    // --- Draw Neuron Body (Central) ---
+    const neuronRadius = 50;
+    
+    // Glow based on |z|
+    const zIntensity = Math.min(Math.abs(z), 10) / 10;
+    ctx.shadowBlur = 30 * zIntensity * pulse;
+    ctx.shadowColor = '#a78bfa';
+
+    ctx.beginPath();
+    ctx.arc(neuronX, neuronY, neuronRadius, 0, Math.PI * 2);
+    
+    // Gradient fill for depth
+    const grad = ctx.createRadialGradient(neuronX - 15, neuronY - 15, 10, neuronX, neuronY, neuronRadius);
+    grad.addColorStop(0, '#3b82f6');
+    grad.addColorStop(1, '#1e40af');
+    
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Sigma Symbol inside
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 32px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Σ', neuronX, neuronY + 2);
+
+    // --- Draw Activation Gate (Output) ---
+    const gateX = outputX;
+    
+    // Visual representation of activation function curve next to the node
+    const funcW = 60;
+    const funcH = 80;
+    const funcX = gateX + 40;
+    const funcY = neuronY - funcH/2;
+
+    ctx.save();
+    ctx.translate(funcX, funcY);
+    
+    // Draw axes for mini graph
+    ctx.strokeStyle = 'rgba(100, 116, 139, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-2, -funcH/2);
+    ctx.lineTo(-2, funcH/2); // Y axis
+    ctx.moveTo(-2, 0);
+    ctx.lineTo(funcW, 0);     // X axis (z=0)
+    ctx.stroke();
+
+    // Draw Function Curve
+    ctx.beginPath();
+    ctx.strokeStyle = '#f43f5e'; // Output color
+    ctx.lineWidth = 2;
+    
+    const stepSize = 1;
+    for(let i = -funcW/2; i <= funcW/2; i+=stepSize) {
+        let zVal = (i / funcW) * 10; // Map x-pixels to z range [-5, 5]
+        let aVal;
+        
+        if (state.activation === 'sigmoid') {
+            aVal = sigmoid(zVal);
+        } else {
+            aVal = step(zVal);
+        }
+        
+        const px = i + funcW/2;
+        const py = -aVal * funcH + funcH/2; // Invert Y
+        
+        if (i === -funcW/2) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    // Mark current point on curve
+    let currentA = state.activation === 'sigmoid' ? sigmoid(z) : step(z);
+    const markX = (z / 10) * (funcW/2) + funcW/2;
+    const markY = -currentA * funcH + funcH/2;
+
+    ctx.beginPath();
+    ctx.arc(markX, markY, 4, 0, Math.PI*2);
+    ctx.fillStyle = 'white';
+    ctx.fill();
+    
+    // Label "σ(z)" or "Step"
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '10px Inter';
+    ctx.textAlign = 'center';
+    const labelY = funcH/2 + 15;
+    ctx.fillText(state.activation === 'sigmoid' ? 'σ(z)' : 'Step', funcW/2, labelY);
+
+    ctx.restore();
+
+    // Output Node (a)
+    ctx.beginPath();
+    ctx.arc(gateX, neuronY, 30, 0, Math.PI * 2);
+    ctx.fillStyle = '#1e293b';
+    ctx.fill();
+    
+    // Border color based on activation type
+    const borderColor = state.activation === 'sigmoid' ? '#f43f5e' : '#a78bfa';
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Output Value Text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 16px "JetBrains Mono"';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Format: if sigmoid, show decimals. If step, just integer.
+    const displayA = state.activation === 'sigmoid' ? a.toFixed(2) : (a === 1 ? '1' : '0');
+    ctx.fillText(displayA, gateX, neuronY);
+
+    // Label "Output"
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '12px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText('OUTPUT', gateX, neuronY + 45);
+
+    animationFrameId = requestAnimationFrame(drawNeuron);
+}
+
+// --- Event Listeners ---
+Object.keys(inputs).forEach(key => {
+    inputs[key].addEventListener('input', updateState);
+});
+
+activationToggle.addEventListener('click', () => {
+    const isSigmoid = activationToggle.classList.toggle('active');
+    state.activation = isSigmoid ? 'sigmoid' : 'step';
+    activationLabel.textContent = isSigmoid ? 'Sigmoid' : 'Step';
+    activationLabel.style.color = isSigmoid ? 'var(--accent-violet)' : 'var(--accent-crimson)';
+    
+    // Update aria-checked
+    activationToggle.setAttribute('aria-checked', isSigmoid);
+    
+    calculateOutputs();
+});
+
+activationToggle.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const isSigmoid = activationToggle.classList.toggle('active');
+        state.activation = isSigmoid ? 'sigmoid' : 'step';
+        activationLabel.textContent = isSigmoid ? 'Sigmoid' : 'Step';
+        activationLabel.style.color = isSigmoid ? 'var(--accent-violet)' : 'var(--accent-crimson)';
+        activationToggle.setAttribute('aria-checked', isSigmoid);
+        calculateOutputs();
+    }
+});
+
+showDetailsCheckbox.addEventListener('change', (e) => {
+    state.showDetails = e.target.checked;
+    calculateOutputs();
+});
+
+// Debounced resize handler to prevent visual glitches during window resize
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        resizeCanvas();
+    }, 100);
+});
+
+// --- Initialization ---
+function init() {
+    // Initial calculation before drawing to ensure state is correct
+    updateState(); 
+    resizeCanvas();
+    
+    // Start animation loop
+    drawNeuron();
+}
+
+init();
+
+</script>
+</body>
+</html>

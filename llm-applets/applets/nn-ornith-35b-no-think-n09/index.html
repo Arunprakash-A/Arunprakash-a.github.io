@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyFit: Interactive Bias-Variance Explorer</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Libraries: D3.js and KaTeX -->
+    <script src="https://unpkg.com/d3@7.8.5/dist/d3.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/katex@0.16.9/dist/katex.min.css">
+    <script src="https://unpkg.com/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-deep: #020617;
+            --bg-surface: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.6);
+            
+            --accent-cyan: #38bdf8;
+            --accent-pink: #f472b6;
+            --accent-violet: #a78bfa;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            
+            /* UI */
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --shadow-soft: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+            --border-subtle: 1px solid rgba(148, 163, 184, 0.12);
+            
+            /* Typography */
+            --font-sans: 'Inter', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, var(--bg-deep) 70%);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Layout --- */
+        header {
+            padding: 1rem 2rem;
+            border-bottom: var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(8px);
+            z-index: 10;
+        }
+
+        h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 0.75rem; }
+        .badge { 
+            background: rgba(56, 189, 248, 0.1); color: var(--accent-cyan); 
+            font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 99px;
+            border: 1px solid rgba(56, 189, 248, 0.3); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+        }
+
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-rows: 6fr 4fr; /* Top 60%, Bottom 40% */
+            gap: 1rem;
+            padding: 1.5rem;
+            overflow: hidden;
+        }
+
+        .panel {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            border: var(--border-subtle);
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            padding: 0.75rem 1.25rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-bottom: var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* --- Top Panel (Regression) --- */
+        #regression-panel { position: relative; }
+        
+        .katex-display { margin: 0 !important; }
+        .formula-container { 
+            font-size: 0.9rem; color: var(--text-secondary); 
+            display: flex; align-items: center; gap: 1rem;
+        }
+
+        /* --- Bottom Layout (Controls + Chart) --- */
+        #bottom-row {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 1rem;
+            height: 100%;
+        }
+
+        /* --- Controls (Glass-morphism) --- */
+        .controls-container { 
+            padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 2rem; 
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        .control-group { display: flex; flex-direction: column; gap: 0.75rem; }
+        .control-label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; display: flex; justify-content: space-between; }
+        .value-display { color: var(--accent-cyan); font-family: var(--font-mono); }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
+            background: var(--accent-cyan); cursor: pointer; margin-top: -6px;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; cursor: pointer; background: #334155; border-radius: 2px;
+        }
+
+        /* Buttons & Toggles */
+        .btn-group { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        
+        button, .toggle-btn {
+            padding: 0.6rem 1rem; border-radius: var(--radius-md);
+            font-size: 0.85rem; font-weight: 500; cursor: pointer;
+            transition: all 200ms ease; border: none;
+        }
+
+        .btn-primary { background: var(--accent-cyan); color: #0f172a; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3); }
+        .btn-primary:hover { transform: translateY(-1px); background: #7dd3fc; }
+        
+        .btn-secondary { background: transparent; border: var(--border-subtle); color: var(--text-secondary); }
+        .btn-secondary:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+
+        /* Toggle Switch */
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .3s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-cyan); }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        /* --- Loss Chart --- */
+        #loss-chart-container { width: 100%; height: 100%; padding: 1rem; position: relative; }
+        
+        /* SVG Styles */
+        svg text { fill: var(--text-secondary); font-family: var(--font-mono); font-size: 10px; }
+        .grid line { stroke: #334155; stroke-opacity: 0.5; shape-rendering: crispEdges; }
+        .grid path { stroke: none; }
+        
+        /* Interactive Cursor */
+        .cursor-line { stroke: var(--text-secondary); stroke-width: 1; stroke-dasharray: 3,3; opacity: 0.7; pointer-events: none; }
+        .hover-dot { fill: white; stroke: var(--accent-cyan); stroke-width: 2px; r: 4px; pointer-events: none; transition: cy 150ms ease-out; }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .panel { animation: fadeIn 400ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            #bottom-row { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+            main { overflow-y: auto; height: auto; }
+            body { overflow: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>PolyFit <span class="badge">ML Explorer</span></h1>
+    <div class="formula-container" id="equation-display"></div>
+</header>
+
+<main>
+    <!-- Top: Regression Visualization -->
+    <section class="panel" id="regression-panel">
+        <div class="panel-header">
+            <span>Model Fit & Data Distribution</span>
+            <div style="display:flex; gap: 1rem; font-size: 0.75rem;">
+                <span style="color: var(--accent-cyan)">● Fitted Curve</span>
+                <span style="color: #475569">- - True Function</span>
+            </div>
+        </div>
+        <svg id="regression-svg" width="100%" height="100%"></svg>
+    </section>
+
+    <!-- Bottom Row -->
+    <div id="bottom-row">
+        <!-- Left: Controls -->
+        <aside class="panel controls-container">
+            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Configuration</h3>
+            
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Model Complexity (Degree)</span>
+                    <span id="degree-val" class="value-display">3</span>
+                </div>
+                <input type="range" id="slider-degree" min="1" max="15" value="3" step="1">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Regularization (λ)</span>
+                    <span id="lambda-val" class="value-display">0</span>
+                </div>
+                <input type="range" id="slider-lambda" min="0" max="10" value="0" step="0.1">
+            </div>
+
+            <hr style="border: 0; border-top: var(--border-subtle); margin: 0.5rem 0;">
+
+            <div class="control-group">
+                <div class="toggle-row">
+                    <span style="font-size: 0.85rem;">Show True Function</span>
+                    <label class="switch"><input type="checkbox" id="toggle-true-fn" checked><span class="slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                    <span style="font-size: 0.85rem;">Show Validation Points</span>
+                    <label class="switch"><input type="checkbox" id="toggle-val-pts" checked><span class="slider"></span></label>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: var(--border-subtle); margin: 0.5rem 0;">
+
+            <div class="btn-group">
+                <button id="btn-resample" class="btn-primary">Resample Data</button>
+                <button id="btn-reset" class="btn-secondary">Reset</button>
+            </div>
+            
+            <!-- Math Context -->
+            <div style="margin-top: auto; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                <p id="bias-variance-text" style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;"></p>
+            </div>
+        </aside>
+
+        <!-- Right: Loss Chart -->
+        <section class="panel">
+            <div class="panel-header">Generalization Error (Loss)</div>
+            <div id="loss-chart-container"></div>
+        </section>
+    </div>
+</main>
+
+<script>
+/**
+ * PolyFit - Interactive Bias-Variance Explorer
+ * 
+ * Core Logic:
+ * 1. Data Generation: Sine wave + Gaussian noise. Split into Train/Val sets.
+ * 2. Linear Algebra: Solve (X^T X + λI)β = X^T y for Ridge Regression.
+ * 3. Rendering: D3.js scales and SVG paths.
+ */
+
+// --- State Management ---
+const state = {
+    degree: 3,
+    lambda: 0,
+    showTrueFn: true,
+    showValPts: true,
+    data: null // { train: [], val: [] }
+};
+
+// --- Math Helpers ---
+
+function getVandermonde(x, degree) {
+    return x.map(xi => Array.from({length: degree + 1}, (_, j) => Math.pow(xi, j)));
+}
+
+function matMul(A, B) {
+    const result = new Array(A.length).fill(0).map(() => new Array(B[0].length).fill(0));
+    for (let i = 0; i < A.length; i++) {
+        for (let j = 0; j < B[0].length; j++) {
+            let sum = 0;
+            for (let k = 0; k < A[0].length; k++) {
+                sum += A[i][k] * B[k][j];
+            }
+            result[i][j] = sum;
+        }
+    }
+    return result;
+}
+
+function matTranspose(A) {
+    return A[0].map((_, colIndex) => A.map(row => row[colIndex]));
+}
+
+function solveLinearSystem(A, b) {
+    const n = A.length;
+    let M = A.map((row, i) => [...row, b[i]]);
+
+    for (let i = 0; i < n; i++) {
+        let maxRow = i;
+        for (let k = i + 1; k < n; k++) {
+            if (Math.abs(M[k][i]) > Math.abs(M[maxRow][i])) maxRow = k;
+        }
+        [M[i], M[maxRow]] = [M[maxRow], M[i]];
+
+        for (let k = i + 1; k < n; k++) {
+            const factor = M[k][i] / M[i][i];
+            for (let j = i; j <= n; j++) {
+                M[k][j] -= factor * M[i][j];
+            }
+        }
+    }
+
+    let x = new Array(n).fill(0);
+    for (let i = n - 1; i >= 0; i--) {
+        let sum = 0;
+        for (let j = i + 1; j < n; j++) sum += M[i][j] * x[j];
+        x[i] = (M[i][n] - sum) / M[i][i];
+    }
+    return x;
+}
+
+function solveRidge(X, y, lambda) {
+    const Xt = matTranspose(X);
+    const XtX = matMul(Xt, X);
+    
+    for (let i = 1; i < XtX.length; i++) {
+        XtX[i][i] += lambda;
+    }
+
+    const Xty = matMul(Xt, y.map(v => [v]));
+    return solveLinearSystem(XtX, Xty.map(row => row[0]));
+}
+
+// --- Data Generation ---
+function generateData() {
+    const nTrain = 40;
+    const nVal = 20;
+    
+    const trueFn = (x) => Math.sin(x * Math.PI); 
+    
+    const randn = () => {
+        let u = 0, v = 0;
+        while(u === 0) u = Math.random();
+        while(v === 0) v = Math.random();
+        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    };
+
+    const createSet = (n, noiseScale) => {
+        return Array.from({length: n}, () => {
+            const x = (Math.random() * 2 - 1); 
+            const y = trueFn(x) + randn() * noiseScale;
+            return {x, y};
+        });
+    };
+
+    state.data = {
+        train: createSet(nTrain, 0.3),
+        val: createSet(nVal, 0.3)
+    };
+}
+
+// --- Rendering & Interaction ---
+
+const regressionSvg = d3.select("#regression-svg");
+const lossContainer = d3.select("#loss-chart-container");
+
+const xScale = d3.scaleLinear().domain([-1.2, 1.2]);
+const yScale = d3.scaleLinear().domain([-1.8, 1.8]);
+
+function updateScales() {
+    const w = regressionSvg.node().getBoundingClientRect().width;
+    const h = regressionSvg.node().getBoundingClientRect().height;
+    
+    if (w === 0 || h === 0) return; // Guard against zero-size container
+
+    const padX = Math.max(30, w * 0.05);
+    const padY = Math.max(20, h * 0.05);
+
+    xScale.range([padX, w - padX]);
+    yScale.range([h - padY, padY]);
+    
+    regressionSvg.selectAll(".grid").remove();
+    const gridG = regressionSvg.append("g").attr("class", "grid");
+    
+    gridG.call(d3.axisBottom(xScale).tickSize(-h + padY*2).tickFormat("").ticks(10));
+    gridG.call(d3.axisLeft(yScale).tickSize(-w + padX*2).tickFormat("").ticks(8));
+}
+
+const trueFnPath = regressionSvg.append("path")
+    .attr("fill", "none")
+    .attr("stroke", "#475569")
+    .attr("stroke-width", 2)
+    .attr("stroke-dasharray", "6,4");
+
+// FIX #2: updateTrueFn now correctly toggles opacity based on state.showTrueFn
+function updateTrueFn() {
+    if (!state.data) return;
+    
+    const lineGen = d3.line()
+        .x(d => xScale(d.x))
+        .y(d => yScale(Math.sin(d.x * Math.PI)))
+        .curve(d3.curveBasis);
+
+    const xs = Array.from({length: 100}, (_, i) => -1 + (2 * i / 99));
+    
+    trueFnPath
+        .datum(xs.map(x => ({x})))
+        .attr("d", lineGen)
+        .style("opacity", state.showTrueFn ? 1 : 0); // Apply opacity based on state
+}
+
+const fittedPath = regressionSvg.append("path")
+    .attr("fill", "none")
+    .attr("stroke-width", 3)
+    .attr("filter", "drop-shadow(0 0 4px rgba(56, 189, 248, 0.5))");
+
+const trainDots = regressionSvg.selectAll(".dot-train")
+    .data(state.data ? state.data.train : [])
+    .enter().append("circle").attr("class", "dot-train")
+    .attr("r", 5).attr("fill", "#38bdf8");
+
+const valDots = regressionSvg.selectAll(".dot-val")
+    .data(state.data ? state.data.val : [])
+    .enter().append("circle").attr("class", "dot-val")
+    .attr("r", 6).attr("stroke", "#f472b6").attr("fill", "none").attr("stroke-width", 2);
+
+function fitAndRender(degree, lambda) {
+    if (!state.data) return;
+
+    const X_train = getVandermonde(state.data.train.map(d => d.x), degree);
+    const y_train = state.data.train.map(d => d.y);
+    
+    let beta;
+    try {
+        beta = solveRidge(X_train, y_train, lambda);
+    } catch (e) {
+        console.error("Singular matrix", e);
+        return;
+    }
+
+    const lineGen = d3.line()
+        .x(d => xScale(d))
+        .y(d => yScale(predict(beta, d)))
+        .curve(d3.curveBasis);
+
+    const xs = Array.from({length: 200}, (_, i) => -1 + (2 * i / 199));
+    
+    const t = (degree - 1) / 14; 
+    const color = d3.interpolateRgb("#38bdf8", "#f472b6")(t);
+    
+    fittedPath.datum(xs).attr("d", lineGen).attr("stroke", color);
+
+    updateEquation(beta, degree);
+    renderLossChart(degree, lambda);
+}
+
+function predict(beta, x) {
+    return beta.reduce((acc, b, i) => acc + b * Math.pow(x, i), 0);
+}
+
+const lossSvg = lossContainer.append("svg").attr("width", "100%").attr("height", "100%");
+let lossG = lossSvg.append("g").attr("transform", "translate(40, 20)");
+
+const lXScale = d3.scaleLinear().domain([1, 15]);
+const lYScale = d3.scaleLinear().domain([0, 1.5]);
+
+// FIX #1: renderLossChart now correctly binds Violet to Train Loss and Pink to Val Loss
+function renderLossChart(activeDegree, activeLambda) {
+    if (!state.data) return;
+    
+    const nDegrees = 15;
+    
+    const lossData = Array.from({length: nDegrees}, (_, d) => {
+        const deg = d + 1;
+        
+        const X_train = getVandermonde(state.data.train.map(p => p.x), deg);
+        const y_train = state.data.train.map(p => p.y);
+        let betaTrain = solveRidge(X_train, y_train, activeLambda);
+        
+        // Train Loss (MSE)
+        let trainErr = 0;
+        state.data.train.forEach(pt => {
+            const pred = predict(betaTrain, pt.x);
+            trainErr += Math.pow(pt.y - pred, 2);
+        });
+        trainErr /= state.data.train.length;
+
+        // Val Loss (MSE) - Uses same regularized weights from training
+        let valErr = 0;
+        state.data.val.forEach(pt => {
+            const pred = predict(betaTrain, pt.x);
+            valErr += Math.pow(pt.y - pred, 2);
+        });
+        valErr /= state.data.val.length;
+
+        return { degree: deg, train: trainErr, val: valErr };
+    });
+
+    // FIX #3: Calculate width dynamically BEFORE setting range
+    const w = lossContainer.node().getBoundingClientRect().width - 60;
+    
+    lXScale.range([0, w]);
+    
+    const maxY = d3.max(lossData, d => Math.max(d.train, d.val)) * 1.2 || 1;
+    lYScale.domain([0, maxY]).range([300, 0]);
+
+    lossG.selectAll("*").remove();
+
+    // Grid
+    lossG.append("g")
+        .attr("class", "grid")
+        .call(d3.axisLeft(lYScale).tickSize(-w).tickFormat("").ticks(5));
+
+    // Axes
+    lossG.append("g").attr("transform", "translate(0, 320)").call(d3.axisBottom(lXScale).ticks(15))
+         .selectAll("text").style("fill", "#94a3b8");
+    lossG.append("g").call(d3.axisLeft(lYScale).ticks(5))
+         .selectAll("text").style("fill", "#94a3b8");
+
+    // Labels
+    lossG.append("text").attr("x", w/2).attr("y", 360).text("Polynomial Degree (d)").style("fill","#64748b").style("font-size","12px");
+    lossG.append("text").attr("transform", "rotate(-90)").attr("x", -150).attr("y", -30).text("MSE Loss").style("fill","#64748b").style("font-size","12px");
+
+    // Lines
+    const lineGen = d3.line().x(d => lXScale(d.degree)).y(d => lYScale(d.val)).curve(d3.curveBasis);
+    
+    lossG.append("path")
+        .datum(lossData)
+        .attr("fill", "none")
+        .attr("stroke", "#a78bfa") // Violet for Train Loss (Monotonically decreasing)
+        .attr("stroke-width", 2)
+        .attr("d", d3.line().x(d => lXScale(d.degree)).y(d => lYScale(d.train)).curve(d3.curveBasis)) // FIXED: Uses d.train
+        .style("opacity", 0.8);
+
+    lossG.append("path")
+        .datum(lossData)
+        .attr("fill", "none")
+        .attr("stroke", "#f472b6") // Pink for Val Loss (U-shape)
+        .attr("stroke-width", 2)
+        .attr("d", d3.line().x(d => lXScale(d.degree)).y(d => lYScale(d.val)).curve(d3.curveBasis)) // FIXED: Uses d.val
+        .style("opacity", 0.8);
+
+    // Interactive Cursor / Hover Area
+    const focusG = lossG.append("g").attr("class", "focus");
+    
+    const bisect = d3.bisector(d => d.degree).left;
+
+    const hoverArea = lossG.append("rect")
+        .attr("width", w).attr("height", 320)
+        .attr("fill", "transparent")
+        .on("mousemove", function(event) {
+            const [mx] = d3.pointer(event);
+            const xVal = lXScale.invert(mx);
+            const idx = bisect(lossData, xVal, 1);
+            const d0 = lossData[idx - 1];
+            const d1 = lossData[idx];
+            if (!d0 || !d1) return;
+            
+            const d = (xVal - d0.degree > d1.degree - xVal) ? d1 : d0;
+
+            focusG.select(".cursor-line").attr("transform", `translate(${lXScale(d.degree)}, 0)`).style("opacity", 1);
+            
+            focusG.selectAll(".hover-dot.val")
+                .data([d])
+                .join("circle")
+                .attr("class", "hover-dot val")
+                .attr("cx", lXScale(d.degree))
+                .attr("cy", d => lYScale(d.val))
+                .style("fill", "#f472b6");
+
+            focusG.selectAll(".hover-dot.train")
+                .data([d])
+                .join("circle")
+                .attr("class", "hover-dot train")
+                .attr("cx", lXScale(d.degree))
+                .attr("cy", d => lYScale(d.train))
+                .style("fill", "#a78bfa");
+
+            fitAndRender(d.degree, activeLambda);
+        })
+        .on("mouseleave", () => {
+            focusG.selectAll(".cursor-line").style("opacity", 0);
+            focusG.selectAll(".hover-dot").remove();
+            fitAndRender(activeDegree, activeLambda);
+        });
+
+    focusG.append("line").attr("class", "cursor-line").attr("y1", 0).attr("y2", 320).style("opacity", 0);
+}
+
+// --- UI Controls & Events ---
+
+function updateEquation(beta, degree) {
+    const container = document.getElementById('equation-display');
+    if (!container || !beta) return;
+    
+    let latex = "y = ";
+    
+    beta.forEach((b, i) => {
+        if (Math.abs(b) < 0.01 && i > 0) return; 
+        
+        let term = "";
+        if (i === 0) term += b.toFixed(2);
+        else if (i === 1) term += `${b.toFixed(2)}x`;
+        else term += `${b.toFixed(2)}x^${i}`;
+        
+        latex += (i===0 && Math.abs(b)<0.01 ? "" : (term.startsWith("-") ? ` - ${term.substring(1)}` : (i>0 ? " + " : "") + term));
+    });
+
+    if (latex === "y = ") latex += "0";
+
+    katex.render(latex, container, { throwOnError: false, displayMode: true });
+}
+
+function updateBiasVarianceText(degree) {
+    const el = document.getElementById('bias-variance-text');
+    if (!el) return;
+    
+    let text = "";
+    if (degree <= 3) text = "High Bias / Low Variance. The model is too simple to capture the sine wave.";
+    else if (degree >= 12) text = "Low Bias / High Variance. The model memorizes noise and oscillates wildly.";
+    else text = "Balanced. The model captures the underlying trend effectively.";
+    
+    el.textContent = text;
+}
+
+// FIX #1: Event Listeners attached at top level (no DOMContentLoaded wrapper)
+document.getElementById('slider-degree').addEventListener('input', (e) => {
+    state.degree = parseInt(e.target.value);
+    document.getElementById('degree-val').textContent = state.degree;
+    updateBiasVarianceText(state.degree);
+    fitAndRender(state.degree, state.lambda);
+});
+
+document.getElementById('slider-lambda').addEventListener('input', (e) => {
+    state.lambda = parseFloat(e.target.value);
+    document.getElementById('lambda-val').textContent = state.lambda.toFixed(1);
+    fitAndRender(state.degree, state.lambda);
+});
+
+// FIX #2: Event listener for 'Show True Function' toggle now correctly updates opacity
+document.getElementById('toggle-true-fn').addEventListener('change', (e) => {
+    state.showTrueFn = e.target.checked;
+    updateTrueFn(); // This function now checks state.showTrueFn and applies .style('opacity')
+});
+
+// FIX #3: Event listener for 'Show Validation Points' toggle now correctly updates opacity
+document.getElementById('toggle-val-pts').addEventListener('change', (e) => {
+    state.showValPts = e.target.checked;
+    valDots.style("opacity", state.showValPts ? 1 : 0); // Explicitly sets opacity based on state
+});
+
+document.getElementById('btn-resample').addEventListener('click', () => {
+    generateData();
+    
+    // Re-render dots with fade in
+    trainDots.data(state.data.train)
+        .join("circle")
+        .attr("class", "dot-train")
+        .attr("r", 0).attr("fill", "#38bdf8")
+        .transition().duration(500).attr("r", 5);
+
+    valDots.data(state.data.val)
+        .join("circle")
+        .attr("class", "dot-val")
+        .attr("r", 0).attr("stroke", "#f472b6").attr("fill", "none").attr("stroke-width", 2)
+        .transition().duration(500).attr("r", 6);
+
+    fitAndRender(state.degree, state.lambda);
+});
+
+// FIX #4: Reset button now also resets the toggles to their default states (checked/true)
+document.getElementById('btn-reset').addEventListener('click', () => {
+    document.getElementById('slider-degree').value = 3;
+    document.getElementById('slider-lambda').value = 0;
+    state.degree = 3; 
+    state.lambda = 0;
+    
+    // Reset toggles to default (checked/true)
+    state.showTrueFn = true;
+    state.showValPts = true;
+    document.getElementById('toggle-true-fn').checked = true;
+    document.getElementById('toggle-val-pts').checked = true;
+
+    document.getElementById('degree-val').textContent = "3";
+    document.getElementById('lambda-val').textContent = "0";
+    
+    updateBiasVarianceText(3);
+    
+    // Re-render visualization with reset state (toggles will be applied via their event listeners or direct calls)
+    updateTrueFn(); 
+    valDots.style("opacity", 1);
+    fitAndRender(3, 0);
+});
+
+// Initialization at top level
+generateData();
+
+requestAnimationFrame(() => {
+    updateScales();
+    updateTrueFn(); // Initial call to set opacity based on default state (true)
+    fitAndRender(3, 0);
+    updateEquation([], 0); 
+});
+
+window.addEventListener('resize', () => {
+    updateScales();
+    updateTrueFn();
+    renderLossChart(state.degree, state.lambda);
+});
+
+</script>
+</body>
+</html>

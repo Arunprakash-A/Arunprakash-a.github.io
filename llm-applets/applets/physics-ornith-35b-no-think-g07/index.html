@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motion & Time: Interactive Physics Lab</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX for Formulas (Pinned Version) -->
+    <link rel="stylesheet" href="https://unpkg.com/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://unpkg.com/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-deep: #020617;
+            --bg-center: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            
+            --accent-primary: #22d3ee; /* Cyan - Car */
+            --accent-secondary: #f472b6; /* Pink - Bike */
+            --accent-tertiary: #a78bfa; /* Violet - Pendulum */
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Typography */
+            --font-body: 'Inter', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+
+            /* Layout */
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: radial-gradient(circle at center, var(--bg-center) 0%, var(--bg-deep) 100%);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        /* Main Layout */
+        .app-container {
+            width: 100%;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 968px) {
+            .app-container { grid-template-columns: 1fr; }
+        }
+
+        /* Panels */
+        .panel {
+            background-color: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        h1, h2 { font-weight: 700; letter-spacing: -0.02em; }
+        h1 { font-size: 1.8rem; color: var(--text-main); }
+        h2 { font-size: 1.4rem; color: var(--accent-tertiary); display: flex; align-items: center; gap: 0.5rem; }
+
+        /* Controls */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            background: rgba(0,0,0,0.2);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--text-main);
+            cursor: pointer;
+            margin-top: -7px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--surface-hover);
+            border-radius: 2px;
+        }
+
+        /* Buttons */
+        .btn-group { display: flex; gap: 1rem; margin-top: 0.5rem; }
+        
+        button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: var(--font-body);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary { background: var(--accent-tertiary); color: #fff; box-shadow: 0 4px 15px rgba(167, 139, 250, 0.3); }
+        .btn-primary:hover { transform: translateY(-2px) scale(1.02); background: #b89dfc; }
+        
+        .btn-secondary { background: var(--surface-hover); color: var(--text-main); }
+        .btn-secondary:hover { background: #475569; }
+
+        /* Toggle Switch */
+        .toggle-wrapper { display: flex; align-items: center; gap: 0.8rem; cursor: pointer; margin-top: 0.5rem;}
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--surface-hover); transition: .3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-secondary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Visualization Areas */
+        .viz-container { position: relative; flex-grow: 1; min-height: 350px; border-radius: var(--radius-md); overflow: hidden; background: #0b101c; border: 1px solid rgba(255,255,255,0.05); }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* Readouts */
+        .readout-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            text-align: center;
+        }
+        .readout-box {
+            background: rgba(0,0,0,0.3);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .readout-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.3rem; }
+        .readout-value { 
+            font-family: var(--font-mono); 
+            font-size: 1.4rem; 
+            font-weight: 700; 
+            color: var(--accent-primary);
+        }
+
+        /* Formulas */
+        .formula-container { margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); min-height: 60px; display: flex; align-items: center; justify-content: center;}
+        .katex { font-size: 1.1em !important; color: var(--text-main) !important; }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- LEFT PANEL: Motion & Graph -->
+    <div class="panel" id="motion-panel">
+        <div class="panel-header">
+            <h1>Motion & Time</h1>
+            <span style="font-size: 0.9rem; color: var(--text-muted);">Distance-Time Analysis</span>
+        </div>
+
+        <!-- Readouts -->
+        <div class="readout-grid">
+            <div class="readout-box">
+                <div class="readout-label">Time Elapsed</div>
+                <div class="readout-value" id="time-display">0.00 s</div>
+            </div>
+            <div class="readout-box">
+                <div class="readout-label">Car Distance</div>
+                <div class="readout-value" style="color: var(--accent-primary);" id="car-dist-display">0 m</div>
+            </div>
+            <div class="readout-box" id="bike-readout-box" style="opacity: 0.3;">
+                <div class="readout-label">Bike Distance</div>
+                <div class="readout-value" style="color: var(--accent-secondary);" id="bike-dist-display">0 m</div>
+            </div>
+        </div>
+
+        <!-- Visualization -->
+        <div class="viz-container">
+            <canvas id="sim-canvas"></canvas>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-grid">
+            <div class="control-group">
+                <label for="car-speed">Car Speed (m/s)</label>
+                <!-- FIX 3: Allow speed to be set to 0 -->
+                <input type="range" id="car-speed" min="0" max="20" value="5" step="1">
+                <span style="font-family: var(--font-mono); color: var(--accent-primary);" id="car-speed-val">5 m/s</span>
+            </div>
+
+            <!-- FIX 4: Added transition class for smoother hide/show -->
+            <div class="control-group" id="bike-controls" style="transition: opacity 0.3s ease, max-height 0.3s ease;">
+                <label for="bike-speed">Bike Speed (m/s)</label>
+                <input type="range" id="bike-speed" min="1" max="15" value="3" step="1">
+                <span style="font-family: var(--font-mono); color: var(--accent-secondary);" id="bike-speed-val">3 m/s</span>
+            </div>
+
+            <div class="control-group" style="justify-content: center;">
+                <label class="toggle-wrapper">
+                    <input type="checkbox" id="show-bike-toggle">
+                    <span class="slider"></span>
+                    <!-- FIX 4: Visual feedback for toggle -->
+                    <span id="bike-label-text">Enable Bicycle</span>
+                </label>
+            </div>
+
+            <div class="btn-group" style="margin-top: auto;">
+                <button id="play-btn" class="btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Start
+                </button>
+                <button id="reset-btn" class="btn-secondary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                    Reset
+                </button>
+            </div>
+        </div>
+
+        <div class="formula-container" id="formulas-left">
+            <!-- Rendered by KaTeX -->
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: Pendulum -->
+    <div class="panel" style="min-height: 600px;">
+        <h2>Pendulum Timekeeper</h2>
+        
+        <div class="readout-grid">
+            <div class="readout-box">
+                <div class="readout-label">Period (T)</div>
+                <!-- FIX 1: Readout for period -->
+                <div class="readout-value" style="color: var(--accent-tertiary);" id="period-display">0.00 s</div>
+            </div>
+            <div class="readout-box">
+                <div class="readout-label">Oscillations</div>
+                <!-- FIX 1: Readout for actual count -->
+                <div class="readout-value" style="color: var(--text-main);" id="osc-count-display">0</div>
+            </div>
+        </div>
+
+        <div class="viz-container" style="flex-grow: 2;">
+            <canvas id="pend-canvas"></canvas>
+        </div>
+
+        <div class="controls-grid">
+            <div class="control-group">
+                <label for="pend-length">Length (cm)</label>
+                <input type="range" id="pend-length" min="50" max="300" value="200" step="10">
+                <span style="font-family: var(--font-mono); color: var(--accent-tertiary);" id="pend-length-val">200 cm</span>
+            </div>
+        </div>
+
+        <div class="formula-container" id="formulas-right">
+            <!-- Rendered by KaTeX -->
+        </div>
+    </div>
+
+</div>
+
+<script>
+/**
+ * APP STATE & CONFIGURATION
+ */
+const state = {
+    running: false,
+    time: 0, // seconds
+    
+    car: { speed: 5, distance: 0 },
+    bike: { speed: 3, distance: 0, visible: false },
+    
+    pendulum: { 
+        lengthCm: 200, 
+        angle: Math.PI / 4, 
+        velocity: 0, 
+        oscillations: 0, // FIX 1: Real count variable
+        lastSide: 1 // 1 = right (positive), -1 = left (negative)
+    },
+
+    trackWidthMeters: 50,
+};
+
+const config = {
+    g: 9.81, // FIX 2: Gravity in m/s^2 to match length unit
+    colors: {
+        primary: '#22d3ee',
+        secondary: '#f472b6',
+        tertiary: '#a78bfa',
+        grid: 'rgba(255,255,255,0.05)',
+        text: '#94a3b8'
+    }
+};
+
+/**
+ * DOM ELEMENTS
+ */
+const els = {
+    carSpeed: document.getElementById('car-speed'),
+    bikeSpeed: document.getElementById('bike-speed'),
+    showBikeToggle: document.getElementById('show-bike-toggle'),
+    playBtn: document.getElementById('play-btn'),
+    resetBtn: document.getElementById('reset-btn'),
+    
+    timeDisplay: document.getElementById('time-display'),
+    carDistDisplay: document.getElementById('car-dist-display'),
+    bikeDistDisplay: document.getElementById('bike-dist-display'),
+    bikeReadoutBox: document.getElementById('bike-readout-box'),
+
+    pendLength: document.getElementById('pend-length'),
+    periodDisplay: document.getElementById('period-display'),
+    oscCountDisplay: document.getElementById('osc-count-display'),
+
+    formulasLeft: document.getElementById('formulas-left'),
+    formulasRight: document.getElementById('formulas-right')
+};
+
+const canvasSim = document.getElementById('sim-canvas');
+const ctxSim = canvasSim.getContext('2d');
+const canvasPend = document.getElementById('pend-canvas');
+const ctxPend = canvasPend.getContext('2d');
+
+/**
+ * INITIALIZATION & EVENTS
+ */
+function init() {
+    resizeCanvases();
+    window.addEventListener('resize', resizeCanvases);
+    
+    // Controls
+    els.carSpeed.addEventListener('input', (e) => {
+        state.car.speed = parseInt(e.target.value);
+        document.getElementById('car-speed-val').textContent = `${state.car.speed} m/s`;
+    });
+
+    els.bikeSpeed.addEventListener('input', (e) => {
+        state.bike.speed = parseInt(e.target.value);
+        document.getElementById('bike-speed-val').textContent = `${state.bike.speed} m/s`;
+    });
+
+    els.showBikeToggle.addEventListener('change', (e) => {
+        state.bike.visible = e.target.checked;
+        els.bikeReadoutBox.style.opacity = e.target.checked ? '1' : '0.3';
+        // FIX 4: Visual toggle logic with transition support
+        document.getElementById('bike-controls').style.opacity = e.target.checked ? '1' : '0.2';
+    });
+
+    els.pendLength.addEventListener('input', (e) => {
+        state.pendulum.lengthCm = parseInt(e.target.value);
+        document.getElementById('pend-length-val').textContent = `${state.pendulum.lengthCm} cm`;
+        updatePeriodDisplay();
+    });
+
+    els.playBtn.addEventListener('click', togglePlay);
+    els.resetBtn.addEventListener('click', resetSim);
+
+    // KaTeX Formulas - Rendered after DOM is ready and script loaded
+    renderFormulas();
+
+    // Start Loop with Delta Time tracking (FIX 4)
+    lastFrameTime = performance.now();
+    requestAnimationFrame(loop);
+}
+
+let lastFrameTime = performance.now();
+
+function resizeCanvases() {
+    const dpr = window.devicePixelRatio || 1;
+    
+    [canvasSim, canvasPend].forEach(c => {
+        const rect = c.parentElement.getBoundingClientRect();
+        c.width = rect.width * dpr;
+        c.height = rect.height * dpr;
+        c.style.width = `${rect.width}px`;
+        c.style.height = `${rect.height}px`;
+        const ctx = c.getContext('2d');
+        ctx.scale(dpr, dpr);
+    });
+}
+
+function renderFormulas() {
+    if (typeof katex !== 'undefined') {
+        try {
+            katex.render("d = v \\times t", els.formulasLeft, { throwOnError: false, displayMode: true });
+            katex.render("T \\approx 2\\pi\\sqrt{\\frac{L}{g}}", els.formulasRight, { throwOnError: false, displayMode: true });
+        } catch (e) {
+            console.error("KaTeX rendering error:", e);
+        }
+    } else {
+        console.warn("KaTeX library not loaded yet.");
+    }
+}
+
+/**
+ * SIMULATION LOGIC
+ */
+function togglePlay() {
+    state.running = !state.running;
+    if (state.running) {
+        els.playBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Pause`;
+        els.playBtn.classList.remove('btn-primary');
+        els.playBtn.classList.add('btn-secondary');
+    } else {
+        els.playBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Resume`;
+        els.playBtn.classList.add('btn-primary');
+        els.playBtn.classList.remove('btn-secondary');
+    }
+}
+
+function resetSim() {
+    state.running = false;
+    state.time = 0;
+    state.car.distance = 0;
+    state.bike.distance = 0;
+    
+    // Reset Pendulum to initial angle, zero velocity
+    state.pendulum.angle = Math.PI / 4;
+    state.pendulum.velocity = 0;
+    state.pendulum.oscillations = 0;
+
+    els.playBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Start`;
+    els.playBtn.classList.add('btn-primary');
+    
+    updateUI();
+}
+
+function updatePhysics(dt) {
+    if (!state.running) return;
+
+    // FIX 4: Use actual delta time instead of fixed config.dt
+    state.time += dt;
+
+    // Update Car (Linear Motion)
+    state.car.distance += state.car.speed * dt;
+    
+    // Update Bike (if visible)
+    if (state.bike.visible) {
+        state.bike.distance += state.bike.speed * dt;
+    }
+
+    // FIX 2: Pendulum Physics using consistent units (meters and m/s^2)
+    const L_m = state.pendulum.lengthCm / 100; // Convert to meters for standard formula
+    const g_m = config.g; // Gravity in m/s^2
+    
+    // Angular acceleration: alpha = -(g/L) * sin(theta)
+    const alpha = -(g_m / L_m) * Math.sin(state.pendulum.angle);
+    
+    state.pendulum.velocity += alpha * dt;
+    state.pendulum.angle += state.pendulum.velocity * dt;
+
+    // FIX 1: Count oscillations by detecting zero-crossings (Right to Left)
+    if (state.lastSide > 0 && state.pendulum.angle < 0) {
+        state.pendulum.oscillations++;
+    } else if (state.lastSide < 0 && state.pendulum.angle > 0) {
+        // Optional: Count full cycle here? 
+        // Standard convention for "oscillation" is usually one full period.
+        // However, counting zero crossings gives a robust real-time count of half-cycles.
+        // Let's stick to the prompt requirement: "increments by exactly 1 for each complete back-and-forth cycle".
+        // To do this strictly, we need to detect return to start side. 
+        // Simplified approach: Count every time it crosses center going Right (positive velocity).
+    }
+
+    state.lastSide = Math.sign(state.pendulum.angle);
+
+    updateUI();
+}
+
+function updatePeriodDisplay() {
+    const L_meters = state.pendulum.lengthCm / 100; // Convert to meters for standard formula
+    const T = 2 * Math.PI * Math.sqrt(L_meters / config.g);
+    els.periodDisplay.textContent = `${T.toFixed(3)} s`;
+}
+
+function updateUI() {
+    // Format Time MM:SS.ms
+    const mins = Math.floor(state.time / 60).toString().padStart(2, '0');
+    const secs = (state.time % 60).toFixed(2).padStart(5, '0');
+    els.timeDisplay.textContent = `${mins}:${secs}`;
+
+    // Distances
+    els.carDistDisplay.textContent = `${Math.floor(state.car.distance)} m`;
+    
+    if (state.bike.visible) {
+        els.bikeDistDisplay.textContent = `${Math.floor(state.bike.distance)} m`;
+    }
+
+    // Pendulum Readouts
+    const L_meters = state.pendulum.lengthCm / 100;
+    const T = 2 * Math.PI * Math.sqrt(L_meters / config.g);
+    
+    // FIX 1: Use actual count instead of time/period approximation
+    els.oscCountDisplay.textContent = state.pendulum.oscillations; 
+}
+
+/**
+ * RENDERING
+ */
+function drawGrid(ctx, w, h) {
+    ctx.strokeStyle = config.colors.grid;
+    ctx.lineWidth = 1;
+    const step = 40;
+    
+    ctx.beginPath();
+    for(let x=0; x<=w; x+=step) { ctx.moveTo(x,0); ctx.lineTo(x,h); }
+    for(let y=0; y<=h; y+=step) { ctx.moveTo(0,y); ctx.lineTo(w,y); }
+    ctx.stroke();
+}
+
+function drawSim() {
+    const w = canvasSim.width / (window.devicePixelRatio || 1);
+    const h = canvasSim.height / (window.devicePixelRatio || 1);
+    
+    // Clear
+    ctxSim.clearRect(0, 0, w, h);
+    
+    // Layout split: Top 60% Graph, Bottom 40% Track
+    const graphH = h * 0.6;
+    const trackY = h * 0.75;
+
+    // --- DRAW GRAPH (Top) ---
+    drawGrid(ctxSim, w, graphH);
+    
+    // Axes
+    ctxSim.strokeStyle = config.colors.text;
+    ctxSim.lineWidth = 2;
+    ctxSim.beginPath();
+    const originX = 40, originY = graphH - 30;
+    ctxSim.moveTo(originX, 10); ctxSim.lineTo(originX, originY); // Y axis
+    ctxSim.lineTo(w - 20, originY); // X axis
+    ctxSim.stroke();
+
+    // Labels
+    ctxSim.fillStyle = config.colors.text;
+    ctxSim.font = '12px Inter';
+    ctxSim.fillText("Distance (m)", 5, 20);
+    ctxSim.fillText("Time (s)", w - 60, originY + 20);
+
+    // Scale: Max Time on X axis ~ 30 seconds. Max Dist ~ 100m
+    const maxTimeScale = 30; 
+    const maxDistScale = state.car.speed * maxTimeScale > 50 ? state.car.speed * maxTimeScale : 50;
+
+    // Helper to map data to pixels
+    const mapX = (t) => originX + (t / maxTimeScale) * (w - 60);
+    const mapY = (d) => originY - (d / maxDistScale) * (graphH - 50);
+
+    // Draw Car Line
+    drawGraphLine(ctxSim, state.car.distance, state.time, mapX, mapY, config.colors.primary, w, h);
+
+    // Draw Bike Line if visible
+    if (state.bike.visible) {
+        drawGraphLine(ctxSim, state.bike.distance, state.time, mapX, mapY, config.colors.secondary, w, h);
+    }
+
+    // --- DRAW TRACK (Bottom) ---
+    
+    // Road
+    ctxSim.fillStyle = '#0f172a';
+    ctxSim.fillRect(0, trackY - 30, w, 60);
+    ctxSim.strokeStyle = '#334155';
+    ctxSim.lineWidth = 2;
+    ctxSim.strokeRect(0, trackY - 30, w, 60);
+
+    // Dashed Center Line
+    ctxSim.setLineDash([20, 20]);
+    ctxSim.strokeStyle = '#475569';
+    ctxSim.beginPath();
+    ctxSim.moveTo(0, trackY);
+    ctxSim.lineTo(w, trackY);
+    ctxSim.stroke();
+    ctxSim.setLineDash([]);
+
+    // Draw Cars (Stylized Icons)
+    drawCarIcon(ctxSim, mapX(state.car.distance), trackY, config.colors.primary, 1.2);
+    
+    if (state.bike.visible) {
+        drawBikeIcon(ctxSim, mapX(state.bike.distance), trackY + 5, config.colors.secondary, 0.8);
+    }
+
+    // Finish Line Marker (Visual reference for max distance)
+    const finishX = mapX(maxDistScale * 0.9); // Visual limit
+    if (finishX < w - 30) {
+        ctxSim.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctxSim.setLineDash([5, 5]);
+        ctxSim.beginPath();
+        ctxSim.moveTo(finishX, trackY - 30);
+        ctxSim.lineTo(finishX, trackY + 30);
+        ctxSim.stroke();
+        ctxSim.setLineDash([]);
+    }
+}
+
+// FIX 3: Progressive Graph Drawing
+function drawGraphLine(ctx, dist, time, mapX, mapY, color, w, h) {
+    // Generate history points based on constant speed from t=0 to current time
+    const history = [];
+    const stepTime = 0.1; // Resolution of the line drawing (seconds)
+    
+    for(let t = 0; t <= time; t += stepTime) {
+        let d;
+        if (color === config.colors.primary) {
+            d = state.car.speed * t;
+        } else {
+            d = state.bike.speed * t;
+        }
+        history.push({ x: mapX(t), y: mapY(d) });
+    }
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = color;
+
+    ctx.beginPath();
+    
+    if (history.length > 0) {
+        ctx.moveTo(history[0].x, history[0].y);
+        for(let i = 1; i < history.length; i++) {
+            ctx.lineTo(history[i].x, history[i].y);
+        }
+    }
+    
+    ctx.stroke();
+
+    // Draw Dot at end (current position)
+    const currentX = mapX(time);
+    const currentY = mapY(dist);
+    
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(currentX, currentY, 5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.shadowBlur = 0;
+}
+
+function drawCarIcon(ctx, x, y, color, scale) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    
+    // Body
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 15;
+    
+    // Simple car shape
+    ctx.beginPath();
+    ctx.moveTo(-20, -10);
+    ctx.lineTo(20, -10);
+    ctx.lineTo(25, -5);
+    ctx.lineTo(25, 5);
+    ctx.lineTo(-20, 5);
+    ctx.closePath();
+    ctx.fill();
+
+    // Roof
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.moveTo(-10, -10);
+    ctx.lineTo(-5, -20);
+    ctx.lineTo(15, -20);
+    ctx.lineTo(20, -10);
+    ctx.closePath();
+    ctx.fill();
+
+    // Wheels
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.arc(-12, 8, 6, 0, Math.PI*2);
+    ctx.arc(15, 8, 6, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function drawBikeIcon(ctx, x, y, color, scale) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    
+    // Wheels
+    ctx.beginPath();
+    ctx.arc(-15, 0, 8, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(15, 0, 8, 0, Math.PI*2);
+    ctx.stroke();
+
+    // Frame (Triangle)
+    ctx.beginPath();
+    ctx.moveTo(-15, 0);
+    ctx.lineTo(0, -15);
+    ctx.lineTo(15, 0);
+    ctx.moveTo(0, -15);
+    ctx.lineTo(5, -20); // Handlebar post
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+function drawPendulum() {
+    const w = canvasPend.width / (window.devicePixelRatio || 1);
+    const h = canvasPend.height / (window.devicePixelRatio || 1);
+    
+    ctxPend.clearRect(0, 0, w, h);
+
+    // Pivot point (top center)
+    const pivotX = w / 2;
+    const pivotY = 40;
+
+    // FIX 2: Length scaling consistent with physics units
+    // Map cm to pixels. Max 300cm -> ~70% of height
+    const maxLenPx = h * 0.65;
+    const lenPx = (state.pendulum.lengthCm / 300) * maxLenPx;
+
+    // Bob position
+    const bobX = pivotX + Math.sin(state.pendulum.angle) * lenPx;
+    const bobY = pivotY + Math.cos(state.pendulum.angle) * lenPx;
+
+    // Draw Stand
+    ctxPend.strokeStyle = '#475569';
+    ctxPend.lineWidth = 4;
+    ctxPend.beginPath();
+    ctxPend.moveTo(pivotX - 30, pivotY);
+    ctxPend.lineTo(pivotX + 30, pivotY);
+    ctxPend.stroke();
+
+    // Draw String
+    ctxPend.strokeStyle = '#94a3b8';
+    ctxPend.lineWidth = 2;
+    ctxPend.beginPath();
+    ctxPend.moveTo(pivotX, pivotY);
+    ctxPend.lineTo(bobX, bobY);
+    ctxPend.stroke();
+
+    // Draw Bob
+    ctxPend.fillStyle = config.colors.tertiary;
+    ctxPend.shadowColor = config.colors.tertiary;
+    ctxPend.shadowBlur = 20;
+    
+    ctxPend.beginPath();
+    ctxPend.arc(bobX, bobY, 15, 0, Math.PI * 2);
+    ctxPend.fill();
+
+    // Angle Arc
+    ctxPend.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctxPend.shadowBlur = 0;
+    ctxPend.lineWidth = 1;
+    const arcRadius = 30;
+    ctxPend.beginPath();
+    
+    // Canvas: 0 is right. PI/2 is down.
+    // Our angle: 0 is down. Positive is Right.
+    const startAngle = Math.PI / 2; // Down
+    const endAngle = Math.PI / 2 - state.pendulum.angle; // Adjusted
+    
+    ctxPend.arc(pivotX, pivotY, arcRadius, 
+        Math.min(startAngle, endAngle), 
+        Math.max(startAngle, endAngle)
+    );
+    ctxPend.stroke();
+
+    // Length Label
+    if (state.running || state.pendulum.lengthCm !== 200) {
+        ctxPend.fillStyle = config.colors.tertiary;
+        ctxPend.font = '12px JetBrains Mono';
+        ctxPend.fillText(`${state.pendulum.lengthCm} cm`, pivotX + 10, pivotY + lenPx/2);
+    }
+}
+
+// FIX 4: Loop uses Delta Time
+function loop(currentTime) {
+    const dt = (currentTime - lastFrameTime) / 1000; // Convert ms to seconds
+    lastFrameTime = currentTime;
+
+    updatePhysics(dt);
+    drawSim();
+    drawPendulum();
+    
+    requestAnimationFrame(loop);
+}
+
+// Boot
+init();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sound Explorer – Vibrations, Frequency, and Amplitude</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<style>
+:root{
+  --accent1:#22d3ee;
+  --accent2:#a78bfa;
+  --surface:#1e1f24;
+  --text-primary:#ffffff;
+  --text-secondary:#c0c4cc;
+}
+html,body{margin:0;padding:0;height:100%;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--text-primary);background:radial-gradient(circle at center,#12151f 0%,#0a0c12 100%);}
+.app{display:flex;flex-direction:row;height:100vh;}
+.sidebar{width:320px;flex-shrink:0;}
+.card{
+  background:rgba(30,31,36,0.8);
+  backdrop-filter:saturate(180%) blur(20px);
+  border-radius:16px;
+  padding:24px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.5);
+  margin:24px;
+}
+.card h2{font-weight:600;margin-top:0;margin-bottom:16px;font-size:1.5rem;}
+label{
+  display:block;font-size:.75rem;letter-spacing:1px;color:var(--text-secondary);text-transform:uppercase;margin-bottom:4px;
+}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:8px;background:#2c2f36;border-radius:4px;outline:none;transition:background-color .3s;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent1);cursor:pointer;transition:transform .2s;
+}
+input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.15);}
+input[type=range]::-moz-range-thumb{
+  width:20px;height:20px;border-radius:50%;background:var(--accent1);cursor:pointer;transition:transform .2s;
+}
+select,button{
+  font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-weight:600;font-size:.9rem;color:var(--text-primary);
+  background:var(--accent1);border:none;padding:12px 20px;border-radius:8px;cursor:pointer;transition:.3s;
+}
+select:hover,button:hover{filter:saturate(120%);}
+button:focus-visible,select:focus-visible{
+  outline:2px solid var(--accent2);
+  outline-offset:2px;
+}
+.value-display{
+  font-family:'Fira Code',ui-monospace,monospace;font-size:1.25rem;margin-top:8px;display:flex;justify-content:space-between;
+}
+.label{font-size:.9rem;color:var(--text-secondary);margin-left:8px;}
+.canvas-container{flex:1;position:relative;overflow:hidden;}
+canvas{display:block;width:100%;height:100%;}
+@media (max-width:768px){
+  .app{flex-direction:column;}
+  .sidebar{width:100%;}
+}
+input[type=range]:focus-visible{outline:2px solid var(--accent2);}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="card">
+      <h2>Controls</h2>
+      <label for="freqSlider">Low → High Pitch</label>
+      <input type="range" id="freqSlider" min="20" max="20000" step="1" value="440" aria-label="Frequency slider">
+      <div class="value-display"><span id="freqValue">440 Hz</span><span id="pitchLabel" class="label">Same</span></div>
+
+      <label for="ampSlider">Soft → Loud</label>
+      <input type="range" id="ampSlider" min="0" max="100" step="1" value="50" aria-label="Amplitude slider">
+      <div class="value-display"><span id="ampValue">50%</span><span id="loudnessLabel" class="label">Soft</span></div>
+
+      <label for="sourcePicker">Source</label>
+      <select id="sourcePicker" aria-label="Source picker">
+        <option value="String">String</option>
+        <option value="Tuning Fork">Tuning Fork</option>
+        <option value="Speaker">Speaker</option>
+      </select>
+
+      <div style="margin-top:16px;display:flex;gap:12px;">
+        <button id="playButton" aria-label="Play button">Play</button>
+        <button id="resetButton" aria-label="Reset button">Reset</button>
+      </div>
+    </div>
+  </div>
+  <div class="canvas-container">
+    <div id="canvasContainer"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
+<script>
+const state = { freq:440, amp:50, source:'String', playing:false };
+const freqSlider=document.getElementById('freqSlider');
+const ampSlider=document.getElementById('ampSlider');
+const sourcePicker=document.getElementById('sourcePicker');
+const playButton=document.getElementById('playButton');
+const resetButton=document.getElementById('resetButton');
+const freqValueSpan=document.getElementById('freqValue');
+const ampValueSpan=document.getElementById('ampValue');
+const pitchLabel=document.getElementById('pitchLabel');
+const loudnessLabel=document.getElementById('loudnessLabel');
+
+let synth;
+function initAudio(){
+  synth = new Tone.Oscillator(state.freq, 'sine').toDestination();
+  synth.volume.value=state.amp/100;
+}
+initAudio();
+
+function updateUI(){
+  freqValueSpan.textContent=`${state.freq} Hz`;
+  ampValueSpan.textContent=`${state.amp}%`;
+  pitchLabel.textContent = state.freq > 440 ? 'Higher' : (state.freq < 440 ? 'Lower' : 'Same');
+  loudnessLabel.textContent = state.amp > 50 ? 'Louder' : 'Soft';
+}
+
+freqSlider.addEventListener('input', e=>{
+  state.freq=+e.target.value;
+  if(state.playing){
+    synth.frequency.setValueAtTime(state.freq,Tone.now());
+  }
+  updateUI();
+});
+
+ampSlider.addEventListener('input', e=>{
+  state.amp=+e.target.value;
+  if(state.playing){
+    if(state.amp===0){
+      synth.stop();
+      state.playing=false;
+      playButton.textContent='Play';
+    } else {
+      synth.volume.value=state.amp/100;
+    }
+  }
+  updateUI();
+});
+
+sourcePicker.addEventListener('change', e=>{
+  state.source=e.target.value;
+});
+
+playButton.addEventListener('click',()=>{
+  if(!state.playing){
+    if(state.amp>0){
+      Tone.start().then(()=>{
+        synth.frequency.setValueAtTime(state.freq,Tone.now());
+        synth.volume.value=state.amp/100;
+        synth.start();
+        state.playing=true;
+        playButton.textContent='Stop';
+      });
+    }
+  } else {
+    synth.stop();
+    state.playing=false;
+    playButton.textContent='Play';
+  }
+});
+
+resetButton.addEventListener('click',()=>{
+  state.freq=440;
+  state.amp=50;
+  state.source='String';
+  freqSlider.value=440;
+  ampSlider.value=50;
+  sourcePicker.value='String';
+  if(state.playing){
+    synth.stop();
+    state.playing=false;
+    playButton.textContent='Play';
+  }
+  updateUI();
+});
+
+updateUI();
+
+let sketchCanvas;
+function setup(){
+  const container=document.getElementById('canvasContainer');
+  // Ensure layout is ready
+  setTimeout(()=>{
+    const w=container.clientWidth || window.innerWidth;
+    const h=container.clientHeight || window.innerHeight;
+    sketchCanvas = createCanvas(w,h);
+    sketchCanvas.parent(container);
+    pixelDensity(1);
+    loop();
+  },0);
+}
+function windowResized(){
+  const container=document.getElementById('canvasContainer');
+  if(sketchCanvas){
+    resizeCanvas(container.clientWidth,container.clientHeight);
+  }
+}
+
+function draw(){
+  background('#12151f');
+
+  const w=width;
+  const h=height;
+  const centerX=w/2;
+  const centerY=h/2;
+
+  let animFreq = state.playing ? state.freq : 0.2;
+  let animAmp = state.playing ? state.amp : (state.amp>0?state.amp*0.1:0);
+
+  const maxDisplacement = h/4;
+  const displacement = (animAmp/100)*maxDisplacement*sin(TWO_PI*animFreq*millis()/1000);
+
+  strokeWeight(8);
+  stroke('#22d3ee');
+  noFill();
+  if(state.source==='String'){
+    line(centerX - w/4, centerY + displacement, centerX + w/4, centerY + displacement);
+  } else if(state.source==='Tuning Fork'){
+    const forkSize=60;
+    line(centerX - forkSize/2, centerY + displacement, centerX, centerY - forkSize + displacement);
+    line(centerX + forkSize/2, centerY + displacement, centerX, centerY - forkSize + displacement);
+  } else if(state.source==='Speaker'){
+    const radius=40;
+    ellipse(centerX, centerY + displacement, radius*2, radius*2);
+    beginShape();
+    vertex(centerX - radius, centerY + displacement);
+    vertex(centerX + radius, centerY + displacement);
+    vertex(centerX + radius*1.5, centerY + displacement + radius);
+    endShape(CLOSE);
+  }
+
+  const waveHeight = h/3;
+  const waveAmp = (state.playing ? state.amp : 0)/100 * waveHeight;
+
+  strokeWeight(2);
+  stroke('#a78bfa');
+  noFill();
+  beginShape();
+  for(let x=0;x<=w;x+=4){
+    let phase;
+    if(state.playing){
+      const cyclesPerWidth = state.freq/110;
+      phase = map(x,0,w,0,TWO_PI*cyclesPerWidth);
+    } else {
+      phase = map(x,0,w,0,TWO_PI);
+    }
+    const y=centerY + waveAmp*sin(phase);
+    vertex(x,y);
+  }
+  endShape();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Balance‑Scale Equation Solver</title>
+<style>
+:root{
+  --bg: radial-gradient(circle at center, #12151f 0%, #0a0c12 100%);
+  --surface:#1e293b;
+  --accent1:#22d3ee;
+  --accent2:#a78bfa;
+  --text-bright:#f8fafc;
+  --text-dim:#94a3b8;
+}
+html,body{
+  margin:0; padding:0; height:100%; font-family:"Inter",system-ui,"Fira Code","SF Mono",ui-monospace,monospace;
+  background:var(--bg); color:var(--text-bright);
+}
+#app{
+  display:flex; flex-direction:row; gap:32px; padding:32px; max-width:1200px; margin:auto;
+}
+.card{
+  background:var(--surface); border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,.3);
+  backdrop-filter:saturate(180%) blur(20px); padding:24px; flex-shrink:0;
+}
+#sidebar{ width:280px;}
+#main{ flex-grow:1; display:flex; flex-direction:column; gap:16px;}
+canvas{ background:transparent; border-radius:8px; }
+label{ font-size:14px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; display:block;}
+input[type=range]{ width:100%; appearance:none; height:6px; border-radius:3px; background:#2d3748; outline:none; }
+input[type=range]::-webkit-slider-thumb{ appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent1); cursor:pointer;}
+input[type=number]{ width:100%; padding:6px 8px; border-radius:4px; border:1px solid #2d3748; background:#0f172a; color:var(--text-bright);}
+button{ padding:8px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; transition:.2s ease;}
+button:hover{ opacity:.9;}
+.btn-accent{ background:var(--accent1); color:#0f172a;}
+.btn-secondary{ background:var(--accent2); color:#0f172a;}
+#equation{ min-height:40px; }
+@media(max-width:800px){
+  #app{ flex-direction:column; padding:16px;}
+  #sidebar{ width:auto;}
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar" class="card">
+    <h2 style="font-size:20px;margin-top:0;">Controls</h2>
+    <label for="coeffSlider">Coefficient (x)</label>
+    <input type="range" id="coeffSlider" min="1" max="10" step="1" value="2">
+    <div style="display:flex;gap:8px;">
+      <div style="flex:1;">
+        <label for="leftConst">Left Constant</label>
+        <input type="number" id="leftConst" min="-20" max="20" step="1" value="3">
+      </div>
+      <div style="flex:1;">
+        <label for="rightConst">Right Constant</label>
+        <input type="number" id="rightConst" min="-20" max="20" step="1" value="11">
+      </div>
+    </div>
+    <h3 style="font-size:18px;margin-top:16px;">Operations</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <button class="btn-accent op-btn" data-op="subtract" data-val="3">Subtract 3</button>
+      <button class="btn-accent op-btn" data-op="add" data-val="3">Add 3</button>
+      <button class="btn-secondary op-btn" data-op="multiply" data-val="2">Multiply by 2</button>
+      <button class="btn-secondary op-btn" data-op="divide" data-val="2">Divide by 2</button>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px;">
+      <button id="undoBtn" class="btn-accent">Undo</button>
+      <button id="checkBtn" class="btn-secondary">Check Solution</button>
+    </div>
+  </div>
+  <div id="main" class="card">
+    <canvas id="scaleCanvas" style="width:100%;height:250px;"></canvas>
+    <div id="equation"></div>
+    <div id="message" style="color:var(--accent1);font-weight:bold;"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('scaleCanvas');
+  const ctx = canvas.getContext('2d', {alpha:true});
+  let dpr = window.devicePixelRatio || 1;
+
+  // arrays for blocks
+  let leftBlocks = [], rightBlocks = [];
+
+  // state variable before resize
+  let state={coeff:2,leftConst:3,rightConst:11};
+  const undoStack=[];
+  let draggingCoeff = false;
+  let dragOffsetX = 0;
+
+  function updateUI(){
+    coeffSlider.value=state.coeff;
+    leftInput.value=state.leftConst;
+    rightInput.value=state.rightConst;
+  }
+
+  // UI elements
+  const coeffSlider=document.getElementById('coeffSlider');
+  const leftInput=document.getElementById('leftConst');
+  const rightInput=document.getElementById('rightConst');
+  const opButtons=document.querySelectorAll('.op-btn');
+  const undoBtn=document.getElementById('undoBtn');
+  const checkBtn=document.getElementById('checkBtn');
+  const equationDiv=document.getElementById('equation');
+  const messageDiv=document.getElementById('message');
+
+  // Beam state
+  const beamState={angleDeg:0};
+  let beamColor='#22d3ee';
+
+  function updateBeamAngle(){
+    const leftWeight = state.coeff + state.leftConst;
+    const rightWeight = state.rightConst;
+    const diff = leftWeight - rightWeight;
+    const maxDiff=10;
+    let baseDeg=(diff/maxDiff)*5;
+    if(baseDeg>5)baseDeg=5; if(baseDeg<-5)baseDeg=-5;
+    gsap.to(beamState,{angleDeg:baseDeg, duration:.3, ease:'power2.inOut', onUpdate:function(){draw();}});
+  }
+
+  function getPanPositions(){
+    const w=canvas.width/dpr;
+    const h=canvas.height/dpr;
+    const centerX=w/2;
+    const beamLength=w*0.8;
+    return {
+      leftPanX:centerX - beamLength/2,
+      rightPanX:centerX + beamLength/2
+    };
+  }
+
+  function initBlocks(){
+    const {leftPanX,rightPanX}=getPanPositions();
+    const w=canvas.width/dpr;
+    const h=canvas.height/dpr;
+    const centerY=h*0.6;
+    const panHeight=30;
+    const blockSize=20, spacing=4;
+
+    function createBlocks(count, side){
+      if(count<=0) return;
+      const arr = side==='left'? leftBlocks : rightBlocks;
+      const centerXSide = side==='left' ? leftPanX : rightPanX;
+      const blockY = centerY + 10 + panHeight/2 - blockSize/2;
+      const totalWidth=count*blockSize+(count-1)*spacing;
+      const startX=centerXSide - totalWidth/2;
+      for(let i=0;i<count;i++){
+        arr.push({id:Date.now()+i, x:startX + i*(blockSize+spacing), y:blockY, opacity:1});
+      }
+    }
+
+    createBlocks(Math.max(0, Math.round(state.leftConst)),'left');
+    createBlocks(Math.max(0, Math.round(state.rightConst)),'right');
+  }
+
+  function transitionBlocks(side, oldCount, newCount){
+    const arr = side==='left'? leftBlocks : rightBlocks;
+    const {leftPanX,rightPanX}=getPanPositions();
+    const w=canvas.width/dpr;
+    const h=canvas.height/dpr;
+    const centerY=h*0.6;
+    const panHeight=30;
+    const blockSize=20, spacing=4;
+    const centerXSide = side==='left'? leftPanX : rightPanX;
+    const blockY = centerY + 10 + panHeight/2 - blockSize/2;
+
+    // target positions
+    let targetPos=[];
+    if(newCount>0){
+      const totalWidth=newCount*blockSize+(newCount-1)*spacing;
+      const startX=centerXSide - totalWidth/2;
+      for(let i=0;i<newCount;i++){
+        targetPos.push(startX + i*(blockSize+spacing));
+      }
+    }
+
+    // addition
+    if(newCount>oldCount){
+      const addCount=newCount-oldCount;
+      for(let i=0;i<addCount;i++){
+        const startOutside = side==='left'? centerXSide - 100 : centerXSide + 100;
+        arr.push({id:Date.now()+i, x:startOutside, y:blockY, opacity:1});
+      }
+    }
+
+    const tl = gsap.timeline({onUpdate:draw});
+
+    // removal
+    if(newCount<oldCount){
+      const removeCount=oldCount-newCount;
+      const removedBlocks=arr.slice(-removeCount);
+      removedBlocks.forEach((block,i)=>{
+        const targetX = side==='left'? centerXSide - 100 : centerXSide + 100;
+        tl.to(block,{x:targetX, opacity:0, duration:.4, ease:'power2.inOut', delay:i*0.05}, i===0?0:">");
+      });
+      tl.add(()=>{
+        arr.splice(-removeCount, removeCount);
+      }, "-=0.1");
+    }
+
+    // animate all blocks to target positions
+    arr.forEach((block,i)=>{
+      const targetX = targetPos[i] !== undefined ? targetPos[i] : centerXSide;
+      tl.to(block,{x:targetX, duration:.4, ease:'power2.inOut', delay:i*0.05}, i===0?0:">");
+    });
+  }
+
+  function applyOperation(op,val){
+    const oldLeft=Math.max(0, Math.round(state.leftConst));
+    const oldRight=Math.max(0, Math.round(state.rightConst));
+    pushUndo();
+    switch(op){
+      case 'subtract':
+        state.leftConst -= val; state.rightConst -= val; break;
+      case 'add':
+        state.leftConst += val; state.rightConst += val; break;
+      case 'multiply':
+        state.coeff *= val; state.leftConst *= val; state.rightConst *= val; break;
+      case 'divide':
+        if(val!==0){
+          state.coeff /= val; state.leftConst /= val; state.rightConst /= val;
+        }
+        break;
+    }
+    // round
+    state.coeff=Math.round(state.coeff*100)/100;
+    state.leftConst=Math.round(state.leftConst*100)/100;
+    state.rightConst=Math.round(state.rightConst*100)/100;
+
+    const newLeft=Math.max(0, Math.round(state.leftConst));
+    const newRight=Math.max(0, Math.round(state.rightConst));
+
+    transitionBlocks('left',oldLeft,newLeft);
+    transitionBlocks('right',oldRight,newRight);
+
+    updateUI();
+    // Ensure slider reflects coefficient after multiply/divide
+    coeffSlider.value = Math.round(state.coeff);
+    updateBeamAngle();
+  }
+
+  function pushUndo(){
+    undoStack.push({...state});
+  }
+
+  function undo(){
+    if(undoStack.length){
+      const prevState=undoStack.pop();
+      const oldLeft=Math.max(0, Math.round(state.leftConst));
+      const oldRight=Math.max(0, Math.round(state.rightConst));
+
+      state={...prevState};
+      updateUI();
+
+      const newLeft=Math.max(0, Math.round(state.leftConst));
+      const newRight=Math.max(0, Math.round(state.rightConst));
+
+      transitionBlocks('left',oldLeft,newLeft);
+      transitionBlocks('right',oldRight,newRight);
+
+      updateBeamAngle();
+    }
+  }
+
+  coeffSlider.addEventListener('input', e=>{
+    pushUndo();
+    state.coeff=parseInt(e.target.value,10);
+    updateUI(); // ensure slider sync
+    updateBeamAngle();
+  });
+
+  leftInput.addEventListener('change', e=>{
+    const oldLeft=Math.max(0, Math.round(state.leftConst));
+    pushUndo();
+    state.leftConst=parseFloat(e.target.value);
+    const newLeft=Math.max(0, Math.round(state.leftConst));
+    transitionBlocks('left',oldLeft,newLeft);
+    updateBeamAngle();
+  });
+
+  rightInput.addEventListener('change', e=>{
+    const oldRight=Math.max(0, Math.round(state.rightConst));
+    pushUndo();
+    state.rightConst=parseFloat(e.target.value);
+    const newRight=Math.max(0, Math.round(state.rightConst));
+    transitionBlocks('right',oldRight,newRight);
+    updateBeamAngle();
+  });
+
+  opButtons.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const op=btn.dataset.op;
+      const val=parseFloat(btn.dataset.val);
+      applyOperation(op,val);
+    });
+  });
+
+  undoBtn.addEventListener('click',undo);
+
+  checkBtn.addEventListener('click',()=>{
+    const leftWeight = state.coeff + state.leftConst;
+    const rightWeight = state.rightConst;
+    const balanced=Math.abs(leftWeight-rightWeight)<0.01;
+    if(balanced && state.coeff!==0){
+      const xVal=(state.rightConst - state.leftConst)/state.coeff;
+      messageDiv.textContent=`Success! x = ${xVal}`;
+      beamColor='#22c55e';
+    }else{
+      messageDiv.textContent=balanced?"Balanced but variable not isolated.":"Not balanced.";
+      beamColor=balanced?'#22c55e':'#ff4b5c';
+    }
+    draw();
+  });
+
+  function draw(){
+    const w=canvas.width/dpr;
+    const h=canvas.height/dpr;
+    ctx.clearRect(0,0,w,h);
+    const centerX=w/2;
+    const centerY=h*0.6;
+    const beamLength=w*0.8;
+    const leftPanX=centerX - beamLength/2;
+    const rightPanX=centerX + beamLength/2;
+    const panWidth=60, panHeight=30;
+    const blockSize=20;
+
+    // idle oscillation
+    const idleOsc=Math.sin(Date.now()*0.001)*0.5; // degrees
+
+    const finalAngleRad=(beamState.angleDeg + idleOsc) * Math.PI/180;
+
+    // beam
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(finalAngleRad);
+    ctx.strokeStyle=beamColor;
+    ctx.lineWidth=8;
+    ctx.beginPath();
+    ctx.moveTo(-beamLength/2,0);
+    ctx.lineTo(beamLength/2,0);
+    ctx.stroke();
+
+    // pans
+    ctx.fillStyle='#1e293b';
+    ctx.fillRect(-beamLength/2 - panWidth/2, 10, panWidth, panHeight);
+    ctx.fillRect(beamLength/2 - panWidth/2, 10, panWidth, panHeight);
+    ctx.restore();
+
+    // blocks
+    leftBlocks.forEach(block=>{
+      if(block.opacity===0) return;
+      ctx.globalAlpha=block.opacity;
+      ctx.fillStyle='#22d3ee';
+      ctx.fillRect(block.x, block.y, blockSize, blockSize);
+      ctx.globalAlpha=1;
+    });
+    rightBlocks.forEach(block=>{
+      if(block.opacity===0) return;
+      ctx.globalAlpha=block.opacity;
+      ctx.fillStyle='#22d3ee';
+      ctx.fillRect(block.x, block.y, blockSize, blockSize);
+      ctx.globalAlpha=1;
+    });
+
+    // coefficient block
+    const coeffBlockSize=40;
+    const coeffX=leftPanX - coeffBlockSize/2;
+    const coeffY=centerY + 10 + panHeight/2 - coeffBlockSize/2;
+    ctx.fillStyle='#a78bfa';
+    ctx.fillRect(coeffX,coeffY,coeffBlockSize,coeffBlockSize);
+    ctx.fillStyle='#f8fafc';
+    ctx.font='bold 18px "Fira Code", monospace';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(`${state.coeff}x`, coeffX+coeffBlockSize/2, coeffY+coeffBlockSize/2);
+
+    // negative constant labels
+    ctx.fillStyle='#f8fafc';
+    if(state.leftConst<0){
+      ctx.font='14px "Inter", system-ui';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('-', leftPanX, centerY + 10 + panHeight/2);
+    }
+    if(state.rightConst<0){
+      ctx.font='14px "Inter", system-ui';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('-', rightPanX, centerY + 10 + panHeight/2);
+    }
+
+    // equation
+    const leftTerm=(state.coeff===0?'':`${state.coeff}x`) +
+        (state.leftConst>0?` + ${state.leftConst}`: state.leftConst<0?` - ${-state.leftConst}`:'');
+    const rightTerm=`${state.rightConst}`;
+    const eqStr=`${leftTerm} = ${rightTerm}`;
+    katex.render(eqStr, equationDiv,{throwOnError:false});
+  }
+
+  // coefficient block drag
+  canvas.addEventListener('pointerdown', e=>{
+    if(draggingCoeff) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * dpr;
+    const y = (e.clientY - rect.top) * dpr;
+
+    const {leftPanX}=getPanPositions();
+    const coeffBlockSize=40;
+    const panWidth=60, panHeight=30;
+    const w=canvas.width/dpr;
+    const h=canvas.height/dpr;
+    const centerY=h*0.6;
+    const coeffX=leftPanX - coeffBlockSize/2;
+    const coeffY=centerY + 10 + panHeight/2 - coeffBlockSize/2;
+
+    if(x >= coeffX && x <= coeffX + coeffBlockSize &&
+       y >= coeffY && y <= coeffY + coeffBlockSize){
+      pushUndo();
+      draggingCoeff = true;
+      dragOffsetX = x - coeffX;
+      canvas.setPointerCapture(e.pointerId);
+    }
+  });
+
+  canvas.addEventListener('pointermove', e=>{
+    if(!draggingCoeff) return;
+    const rect = canvas.getBoundingClientRect();
+    let x = (e.clientX - rect.left) * dpr;
+
+    const {leftPanX}=getPanPositions();
+    const coeffBlockSize=40;
+    const panWidth=60, panHeight=30;
+    const w=canvas.width/dpr;
+    const h=canvas.height/dpr;
+    const centerY=h*0.6;
+    const coeffX=leftPanX - coeffBlockSize/2;
+    const coeffY=centerY + 10 + panHeight/2 - coeffBlockSize/2;
+
+    const minTopLeft = leftPanX - panWidth/2;
+    const maxTopLeft = leftPanX + panWidth/2 - coeffBlockSize;
+
+    let newTopLeftX = x - dragOffsetX;
+    if(newTopLeftX < minTopLeft) newTopLeftX = minTopLeft;
+    if(newTopLeftX > maxTopLeft) newTopLeftX = maxTopLeft;
+
+    const relativePos = (newTopLeftX - minTopLeft)/(maxTopLeft - minTopLeft);
+    let newCoeff = Math.round(1 + relativePos * 9); // 1-10
+    if(newCoeff < 1) newCoeff = 1;
+    if(newCoeff > 10) newCoeff = 10;
+
+    state.coeff = newCoeff;
+    coeffSlider.value = newCoeff;
+    updateBeamAngle();
+    draw();
+  });
+
+  canvas.addEventListener('pointerup', e=>{
+    if(draggingCoeff){
+      draggingCoeff = false;
+      canvas.releasePointerCapture(e.pointerId);
+    }
+  });
+  canvas.addEventListener('pointercancel', e=>{
+    if(draggingCoeff){
+      draggingCoeff = false;
+      canvas.releasePointerCapture(e.pointerId);
+    }
+  });
+
+  // resize logic
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    leftBlocks=[];
+    rightBlocks=[];
+    initBlocks();
+    draw();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // initial UI sync
+  updateUI();
+  updateBeamAngle();
+})();
+</script>
+</body>
+</html>

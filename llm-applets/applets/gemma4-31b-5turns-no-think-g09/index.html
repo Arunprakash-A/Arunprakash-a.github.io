@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pythagorean Explorer | Coordinate Geometry</title>
+    <!-- KaTeX for beautiful math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <!-- Lucide for icons -->
+    <script src="https://unpkg.com/lucide@0.321.0"></script>
+    <!-- GSAP for high-end animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg-deep: #0f121d;
+            --bg-radial: radial-gradient(circle at center, #1a1f2e 0%, #0f121d 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #22d3ee;
+            --accent-violet: #a78bfa;
+            --accent-amber: #fbbf24;
+            --text-main: #f8fafc;
+            --text-dim: #9aa4b8;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-deep);
+            background: var(--bg-radial);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #app {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        #stage-container {
+            position: relative;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 24px;
+            border: 1px solid var(--panel-border);
+            overflow: hidden;
+            cursor: crosshair;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #controls {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.2);
+            padding: 12px 16px;
+            border-radius: 12px;
+            transition: var(--transition-smooth);
+            border: 1px solid transparent;
+            user-select: none;
+        }
+
+        .toggle-container:hover {
+            background: rgba(0,0,0,0.3);
+            border-color: var(--accent-cyan);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px; width: 14px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--accent-cyan); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        button {
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-weight: 600;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: var(--accent-violet); color: white; }
+        .btn-primary:hover { filter: brightness(1.2); transform: translateY(-2px); }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: var(--text-main); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+
+        #equation-card {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 18, 29, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--accent-cyan);
+            padding: 20px 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(34, 211, 238, 0.2);
+            text-align: center;
+            min-width: 400px;
+            pointer-events: none;
+        }
+
+        #math-display {
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            color: var(--text-main);
+        }
+
+        @media (max-width: 900px) {
+            #app { grid-template-columns: 1fr; height: auto; overflow: auto; }
+            #controls { position: relative; }
+            #stage-container { height: 600px; }
+            #equation-card { position: static; transform: none; margin: 20px auto; width: fit-content; left: 0; }
+        }
+
+        .triple-pulse { animation: pulse 1s ease-out; }
+        @keyframes pulse {
+            0% { filter: drop-shadow(0 0 0px var(--accent-amber)); }
+            50% { filter: drop-shadow(0 0 20px var(--accent-amber)); }
+            100% { filter: drop-shadow(0 0 0px var(--accent-amber)); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="stage-container">
+        <canvas id="mainCanvas"></canvas>
+        <div id="equation-card">
+            <div id="math-display"></div>
+        </div>
+    </div>
+
+    <aside id="controls">
+        <div>
+            <h1><i data-lucide="triangle"></i> Pythagorean Explorer</h1>
+            <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 20px;">Explore the relationship between side lengths and areas.</p>
+        </div>
+
+        <div class="control-group">
+            <span class="section-label">Interaction Mode</span>
+            <div class="toggle-container">
+                <span style="font-size: 0.9rem;">Leg Dragging (Fixed 90°)</span>
+                <label class="switch">
+                    <input type="checkbox" id="modeToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="section-label">Settings</span>
+            <div class="toggle-container">
+                <span style="font-size: 0.9rem;">Snap to Triples</span>
+                <label class="switch">
+                    <input type="checkbox" id="snapToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="toggle-container">
+                <span style="font-size: 0.9rem;">Show Grid</span>
+                <label class="switch">
+                    <input type="checkbox" id="gridToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="control-group" style="margin-top: auto; gap: 10px;">
+            <button class="btn-primary" id="proofBtn"><i data-lucide="play"></i> Run Area Proof</button>
+            <button class="btn-secondary" id="resetBtn"><i data-lucide="rotate-ccw"></i> Reset View</button>
+        </div>
+    </aside>
+</div>
+
+<script>
+    const state = {
+        points: {
+            A: { x: 300, y: 400 }, // Right angle vertex
+            B: { x: 600, y: 400 },
+            C: { x: 300, y: 100 }
+        },
+        draggingPoint: null,
+        mode: 'leg',
+        snapToTriples: false,
+        showGrid: true,
+        isAnimatingProof: false,
+        proofProgress: 0,
+        lastTriple: false
+    };
+
+    const COLORS = {
+        cyan: '#22d3ee',
+        violet: '#a78bfa',
+        amber: '#fbbf24',
+        grid: 'rgba(100, 116, 139, 0.2)',
+        squareFillA: 'rgba(34, 211, 238, 0.25)',
+        squareFillB: 'rgba(167, 139, 250, 0.25)',
+        squareFillC: 'rgba(251, 191, 36, 0.25)'
+    };
+
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const mathDisplay = document.getElementById('math-display');
+
+    const dist = (p1, p2) => Math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2);
+
+    // --- FIXED: Active Snap to Triples Logic ---
+    function snapToTriple(pA, pB, pC) {
+        const aLen = dist(pA, pC);
+        const bLen = dist(pA, pB);
+        
+        // We look for the nearest integer triple (scaled by 50px units)
+        const uA = Math.round(aLen / 50);
+        const uB = Math.round(bLen / 50);
+        
+        if (uA === 0 || uB === 0) return { A: pA, B: pB, C: pC };
+
+        // Check if this integer pair forms a triple or is very close to one
+        const cSq = uA*uA + uB*uB;
+        const uC = Math.sqrt(cSq);
+        
+        if (Math.abs(uC - Math.round(uC)) < 0.1) {
+            const dirAC = { x: (pC.x - pA.x) / aLen, y: (pC.y - pA.y) / aLen };
+            const dirAB = { x: (pB.x - pA.x) / bLen, y: (pB.y - pA.y) / bLen };
+
+            return {
+                A: pA,
+                C: { x: pA.x + dirAC.x * uA * 50, y: pA.y + dirAC.y * uA * 50 },
+                B: { x: pA.x + dirAB.x * uB * 50, y: pA.y + dirAB.y * uB * 50 }
+            };
+        }
+        return { A: pA, B: pB, C: pC };
+    }
+
+    function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+        ctx.scale(dpr, dpr);
+    }
+
+    function drawGrid() {
+        if (!state.showGrid) return;
+        ctx.strokeStyle = COLORS.grid;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        const w = canvas.width / (window.devicePixelRatio || 1);
+        const h = canvas.height / (window.devicePixelRatio || 1);
+        for (let x = 0; x <= w; x += 50) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+        for (let y = 0; y <= h; y += 50) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
+        ctx.stroke();
+    }
+
+    function drawSquare(p1, p2, color, label, isHypotenuse = false) {
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        const side = dist(p1, p2);
+        const angle = Math.atan2(dy, dx);
+
+        ctx.save();
+        ctx.translate(p1.x, p1.y);
+        ctx.rotate(angle);
+        
+        // Leg squares are drawn "outwards" from the triangle center
+        const offset = isHypotenuse ? 0 : -side;
+        
+        ctx.fillStyle = color;
+        ctx.fillRect(0, offset, side, side);
+
+        // --- FIXED: Subtle Hatch Pattern ---
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for(let i=0; i <= side; i += 12) {
+            ctx.moveTo(i, offset);
+            ctx.lineTo(i - side, offset + side); 
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = isHypotenuse ? COLORS.amber : (label === 'a²' ? COLORS.cyan : COLORS.violet);
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, offset, side, side);
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '14px JetBrains Mono';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${label}: ${Math.round(side**2)}`, side/2, offset + side/2);
+        
+        ctx.restore();
+    }
+
+    function updateEquation() {
+        const a = dist(state.points.A, state.points.C);
+        const b = dist(state.points.A, state.points.B);
+        const c = dist(state.points.B, state.points.C);
+        
+        const tex = `${Math.round(a)}^2 + ${Math.round(b)}^2 = ${Math.round(c)}^2`;
+        katex.render(tex, mathDisplay, { throwOnError: false });
+
+        const isTriple = Math.abs(Math.round(a)**2 + Math.round(b)**2 - Math.round(c)**2) < 1 && 
+                         Math.abs(a - Math.round(a)) < 5 && Math.abs(b - Math.round(b)) < 5;
+        if (isTriple && !state.lastTriple) {
+            document.getElementById('equation-card').classList.add('triple-pulse');
+            setTimeout(() => document.getElementById('equation-card').classList.remove('triple-pulse'), 1000);
+        }
+        state.lastTriple = isTriple;
+    }
+
+    function render() {
+        const dpr = window.devicePixelRatio || 1;
+        ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+        drawGrid();
+
+        const { A, B, C } = state.points;
+
+        if (state.isAnimatingProof) {
+            renderProofAnimation();
+        } else {
+            drawSquare(A, C, COLORS.squareFillA, 'a²');
+            drawSquare(A, B, COLORS.squareFillB, 'b²');
+            drawSquare(B, C, COLORS.squareFillC, 'c²', true);
+
+            ctx.beginPath();
+            ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y); ctx.closePath();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+            ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fill();
+
+            const pts = [{p: A, l: 'A'}, {p: B, l: 'B'}, {p: C, l: 'C'}];
+            pts.forEach(pt => {
+                ctx.fillStyle = '#fff';
+                ctx.beginPath(); ctx.arc(pt.p.x, pt.p.y, 6, 0, Math.PI*2); ctx.fill();
+                ctx.font = 'bold 14px Inter'; ctx.fillText(pt.l, pt.p.x + 10, pt.p.y - 10);
+            });
+        }
+
+        updateEquation();
+        requestAnimationFrame(render);
+    }
+
+    function handleMouseMove(e) {
+        if (!state.draggingPoint) return;
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        const p = state.points[state.draggingPoint];
+        
+        // --- FIXED: Mode Toggle Logic explicitly handled here ---
+        if (state.mode === 'leg') {
+            if (state.draggingPoint === 'B') {
+                const dirAC = { x: state.points.C.x - state.points.A.x, y: state.points.C.y - state.points.A.y };
+                const perpDir = { x: -dirAC.y, y: dirAC.x }; 
+                const mag = Math.sqrt(perpDir.x**2 + perpDir.y**2);
+                const unitPerp = { x: perpDir.x/mag, y: perpDir.y/mag };
+                const vecAMouse = { x: mx - state.points.A.x, y: my - state.points.A.y };
+                const projection = vecAMouse.x * unitPerp.x + vecAMouse.y * unitPerp.y;
+                p.x = state.points.A.x + unitPerp.x * projection;
+                p.y = state.points.A.y + unitPerp.y * projection;
+            } else if (state.draggingPoint === 'C') {
+                const dirAB = { x: state.points.B.x - state.points.A.x, y: state.points.B.y - state.points.A.y };
+                const perpDir = { x: -dirAB.y, y: dirAB.x }; 
+                const mag = Math.sqrt(perpDir.x**2 + perpDir.y**2);
+                const unitPerp = { x: perpDir.x/mag, y: perpDir.y/mag };
+                const vecAMouse = { x: mx - state.points.A.x, y: my - state.points.A.y };
+                const projection = vecAMouse.x * unitPerp.x + vecAMouse.y * unitPerp.y;
+                p.x = state.points.A.x + unitPerp.x * projection;
+                p.y = state.points.A.y + unitPerp.y * projection;
+            } else if (state.draggingPoint === 'A') {
+                const dx = mx - p.x, dy = my - p.y;
+                p.x = mx; p.y = my;
+                state.points.B.x += dx; state.points.B.y += dy;
+                state.points.C.x += dx; state.points.C.y += dy;
+            }
+        } else {
+            p.x = mx; p.y = my;
+        }
+
+        if (state.snapToTriples) {
+            const snapped = snapToTriple(state.points.A, state.points.B, state.points.C);
+            state.points = snapped;
+        }
+    }
+
+    // --- FIXED: Perigal-inspired Dissection Proof Animation ---
+    function renderProofAnimation() {
+        const t = state.proofProgress;
+        const { A, B, C } = state.points;
+        const aLen = dist(A, C);
+        const bLen = dist(A, B);
+        const cLen = dist(B, C);
+
+        // Target: Hypotenuse Square (The "Container")
+        drawSquare(B, C, 'rgba(251, 191, 36, 0.1)', 'c²', true);
+
+        // We simulate a dissection by breaking the leg squares into fragments
+        // and interpolating their positions to fill the hypotenuse square.
+        const fragCount = 4;
+        
+        // Leg A Fragments (Cyan) - Moving from Square A to Hypotenuse
+        for(let i=0; i<fragCount; i++) {
+            ctx.save();
+            const startX = A.x + (i < 2 ? 0 : aLen/2);
+            const startY = A.y - (i % 2 === 0 ? 0 : aLen/2);
+            
+            // Target positions inside the hypotenuse square based on t
+            const targetX = B.x + (i * cLen / fragCount);
+            const targetY = C.y;
+
+            const curX = gsap.utils.interpolate(startX, targetX, t);
+            const curY = gsap.utils.interpolate(startY, targetY, t);
+            
+            ctx.translate(curX, curY);
+            ctx.rotate(Math.atan2(C.y-B.y, C.x-B.x) * t);
+            ctx.fillStyle = COLORS.squareFillA;
+            ctx.fillRect(0, 0, aLen/2, aLen/2);
+            ctx.restore();
+        }
+
+        // Leg B Fragments (Violet) - Moving from Square B to Hypotenuse
+        for(let i=0; i<fragCount; i++) {
+            ctx.save();
+            const startX = A.x + (i < 2 ? 0 : bLen/2);
+            const startY = A.y + (i % 2 === 0 ? 0 : bLen/2);
+            
+            const targetX = B.x;
+            const targetY = C.y + (i * cLen / fragCount);
+
+            const curX = gsap.utils.interpolate(startX, targetX, t);
+            const curY = gsap.utils.interpolate(startY, targetY, t);
+            
+            ctx.translate(curX, curY);
+            ctx.rotate(Math.atan2(C.y-B.y, C.x-B.x) * t);
+            ctx.fillStyle = COLORS.squareFillB;
+            ctx.fillRect(0, 0, bLen/2, bLen/2);
+            ctx.restore();
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y); ctx.closePath();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+    }
+
+    function runProof() {
+        if (state.isAnimatingProof) return;
+        state.isAnimatingProof = true;
+        gsap.to(state, {
+            proofProgress: 1,
+            duration: 2.5,
+            ease: "expo.inOut",
+            onComplete: () => {
+                gsap.to(state, {
+                    proofProgress: 0,
+                    duration: 1.5,
+                    ease: "power2.in",
+                    onComplete: () => { state.isAnimatingProof = false; }
+                });
+            }
+        });
+    }
+
+    // --- FIXED: Event Listeners ensuring visual updates and state changes ---
+    document.getElementById('modeToggle').addEventListener('change', (e) => {
+        state.mode = e.target.checked ? 'leg' : 'coord';
+        console.log(`Mode changed to: ${state.mode}`);
+    });
+    document.getElementById('snapToggle').addEventListener('change', (e) => {
+        state.snapToTriples = e.target.checked;
+        console.log(`Snap enabled: ${state.snapToTriples}`);
+    });
+    document.getElementById('gridToggle').addEventListener('change', (e) => {
+        state.showGrid = e.target.checked;
+    });
+    
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        state.points = { A: { x: 300, y: 400 }, B: { x: 600, y: 400 }, C: { x: 300, y: 100 } };
+    });
+
+    document.getElementById('proofBtn').addEventListener('click', runProof);
+
+    function handleMouseDown(e) {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        for (let key in state.points) {
+            if (dist({x: mx, y: my}, state.points[key]) < 20) {
+                state.draggingPoint = key; return;
+            }
+        }
+    }
+
+    window.addEventListener('resize', resize);
+    canvas.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', () => state.draggingPoint = null);
+
+    lucide.createIcons();
+    resize();
+    render();
+</script>
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Linear Function Machine</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{
+  --bg:#12151f;
+  --surface:#0a0c12;
+  --accent1:#22d3ee;
+  --accent2:#a78bfa;
+  --text-primary:#f8fafc;
+  --text-secondary:#94a3b8;
+}
+html,body{margin:0;padding:0;background:radial-gradient(circle at center, #12151f 0%, #0a0c12 100%);color:var(--text-primary);font-family:"Inter",system-ui,-apple-system,"Segoe UI","Roboto",sans-serif;font-size:14px;}
+.app{
+  display:flex;flex-direction:row;gap:20px;max-width:1200px;margin:auto;padding:20px;
+}
+.sidebar{width:260px;background:var(--surface);border-radius:12px;padding:20px;box-shadow:0 4px 8px rgba(0,0,0,.3);backdrop-filter:blur(10px);}
+.main{flex:1;display:flex;flex-direction:column;gap:20px;}
+@media(max-width:600px){
+  .app{flex-direction:column;}
+  .sidebar{width:auto;}
+}
+h2{font-size:18px;font-weight:bold;margin-top:0;}
+label{display:block;margin-bottom:4px;color:var(--text-secondary);font-variant-caps:all-small-caps;letter-spacing:.05em;}
+input[type=range]{width:100%;margin:8px 0;}
+input[type=number]{width:100%;padding:6px;border:none;background:var(--surface);color:var(--text-primary);border-radius:4px;}
+button{background:var(--accent1);color:var(--text-primary);border:none;padding:8px 16px;margin-top:10px;cursor:pointer;border-radius:6px;font-weight:bold;}
+button:hover{filter:saturate(120%);}
+.slider-value{font-size:.9em;color:var(--text-secondary);display:block;text-align:right;}
+.canvas-container{position:relative;width:100%;max-width:400px;height:auto;background:var(--surface);border-radius:12px;overflow:hidden;}
+canvas{width:100%;height:auto;border-radius:12px;}
+#expressionDisplay{
+  font-family:"JetBrains Mono","SF Mono",ui-monospace,monospace;
+  background:var(--surface);
+  padding:10px;
+  border-radius:8px;
+  color:var(--accent1);
+}
+table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:8px;overflow:hidden;}
+th,td{text-align:center;padding:6px;color:var(--text-primary);}
+th{background:var(--surface);color:var(--text-secondary);font-variant-caps:all-small-caps;letter-spacing:.05em;}
+tbody tr:nth-child(even){background:rgba(255,255,255,.05);}
+::-webkit-slider-thumb{
+  appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent1);cursor:pointer;
+}
+::-moz-range-thumb{
+  width:14px;height:14px;border-radius:50%;background:var(--accent1);cursor:pointer;
+}
+::-webkit-slider-runnable-track{height:4px;background:#1e293b;}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <h2>Controls</h2>
+    <label for="aSlider">Coefficient a
+      <span id="aValue" class="slider-value"></span>
+    </label>
+    <input type="range" id="aSlider" min="0" max="10" step="0.5" value="1">
+    <label for="bSlider">Constant b
+      <span id="bValue" class="slider-value"></span>
+    </label>
+    <input type="range" id="bSlider" min="-5" max="5" step="0.5" value="0">
+    <label for="xStepper">Input x
+      <span id="xValue" class="slider-value"></span>
+    </label>
+    <input type="number" id="xStepper" min="-10" max="10" step="1" value="0">
+    <button id="runBtn">Run</button>
+    <button id="fillTableBtn">Fill Table (-5 to 5)</button>
+    <button id="resetBtn">Reset</button>
+  </aside>
+
+  <main class="main">
+    <div class="canvas-container" style="height:300px;">
+      <canvas id="machineCanvas" width="400" height="300"></canvas>
+    </div>
+    <div id="expressionDisplay"></div>
+    <div class="canvas-container" style="height:300px;">
+      <canvas id="plotCanvas" width="400" height="300"></canvas>
+    </div>
+    <table id="resultsTable">
+      <thead><tr><th>x</th><th>y</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </main>
+</div>
+
+<script type="module">
+// Import Chart.js ESM build
+import { Chart, registerables } from "https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.esm.min.js";
+Chart.register(...registerables);
+
+// Grab UI elements
+const aSlider = document.getElementById('aSlider');
+const bSlider = document.getElementById('bSlider');
+const xStepper = document.getElementById('xStepper');
+const runBtn = document.getElementById('runBtn');
+const fillTableBtn = document.getElementById('fillTableBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+const aValueSpan = document.getElementById('aValue');
+const bValueSpan = document.getElementById('bValue');
+const xValueSpan = document.getElementById('xValue');
+
+const expressionDisplay = document.getElementById('expressionDisplay');
+const resultsTableBody = document.querySelector('#resultsTable tbody');
+
+const machineCanvas = document.getElementById('machineCanvas');
+const plotCanvas = document.getElementById('plotCanvas');
+const dpr = window.devicePixelRatio || 1;
+machineCanvas.width = machineCanvas.clientWidth * dpr;
+machineCanvas.height = machineCanvas.clientHeight * dpr;
+const machineCtx = machineCanvas.getContext('2d');
+machineCtx.scale(dpr, dpr);
+
+// Chart.js setup
+const chart = new Chart(plotCanvas.getContext('2d'), {
+  type: 'scatter',
+  data: { datasets: [{ label: 'Points', data: [], backgroundColor: '#a78bfa' }] },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { type: 'linear', position: 'bottom', grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+      y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }
+    },
+    plugins: { legend: { display: false } }
+  }
+});
+
+function formatNumber(n) {
+  return Number.isInteger(n) ? n.toString() : n.toFixed(2);
+}
+
+function updateState() {
+  aValueSpan.textContent = formatNumber(parseFloat(aSlider.value));
+  bValueSpan.textContent = formatNumber(parseFloat(bSlider.value));
+  xValueSpan.textContent = formatNumber(parseInt(xStepper.value,10));
+}
+updateState();
+
+function addTableRow(x, y) {
+  const tr = document.createElement('tr');
+  const tdX = document.createElement('td'); tdX.textContent = formatNumber(x);
+  const tdY = document.createElement('td'); tdY.textContent = formatNumber(y);
+  tr.appendChild(tdX); tr.appendChild(tdY);
+  resultsTableBody.appendChild(tr);
+}
+
+function addChartPoint(x, y) {
+  chart.data.datasets[0].data.push({ x: x, y: y });
+  chart.update();
+}
+
+function clearAll() {
+  machineCtx.clearRect(0,0,machineCanvas.width,machineCanvas.height);
+  resultsTableBody.innerHTML = '';
+  chart.data.datasets[0].data = [];
+  chart.update();
+  expressionDisplay.textContent = '';
+  aSlider.value = 1; bSlider.value = 0; xStepper.value = 0;
+  updateState();
+}
+
+function delay(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+async function runAnimation(a,b,x) {
+  const startX = 50;
+  const centerY = machineCanvas.clientHeight / 2;
+  const radiusBase = 20;
+  const unitPx = 30; // pixels per unit for shift
+  const dropDur = 400, scaleDur = 400, shiftDur = 400;
+  const totalDuration = dropDur + scaleDur + shiftDur;
+
+  return new Promise(resolve => {
+    let startTime = null;
+    function animate(time) {
+      if (!startTime) startTime = time;
+      const elapsed = time - startTime;
+      machineCtx.clearRect(0,0,machineCanvas.width,machineCanvas.height);
+      let radius = radiusBase;
+      let shiftX = 0;
+      let currentY = centerY;
+
+      if (elapsed < dropDur) {
+        const t = elapsed / dropDur;
+        const startY = -radiusBase * 2; // start above canvas
+        currentY = startY + t * (centerY - startY);
+        radius = radiusBase;
+        shiftX = 0;
+      } else if (elapsed < dropDur + scaleDur) {
+        const t = (elapsed - dropDur) / scaleDur;
+        radius = radiusBase + t * (radiusBase * a - radiusBase);
+        currentY = centerY;
+        shiftX = 0;
+      } else if (elapsed < totalDuration) {
+        const t = (elapsed - dropDur - scaleDur) / shiftDur;
+        radius = radiusBase * a;
+        shiftX = b * unitPx * t;
+        currentY = centerY;
+      } else {
+        machineCtx.clearRect(0,0,machineCanvas.width,machineCanvas.height);
+        resolve();
+        return;
+      }
+
+      // Draw ball
+      machineCtx.beginPath();
+      machineCtx.arc(startX + shiftX, currentY, radius, 0, Math.PI * 2);
+      machineCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent1');
+      machineCtx.fill();
+
+      // Label
+      machineCtx.font = '16px Inter';
+      machineCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-primary');
+      machineCtx.textAlign = 'center';
+      if (elapsed < dropDur) {
+        machineCtx.fillText('↓', startX + shiftX, currentY - radius - 10);
+      } else if (elapsed < dropDur + scaleDur) {
+        machineCtx.fillText(`×${formatNumber(a)}`, startX + shiftX, currentY - radius - 10);
+      } else {
+        machineCtx.fillText(`+${formatNumber(b)}`, startX + shiftX, currentY - radius - 10);
+      }
+
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+  });
+}
+
+async function performRun() {
+  const a = parseFloat(aSlider.value);
+  const b = parseFloat(bSlider.value);
+  const x = parseInt(xStepper.value,10);
+  await runAnimation(a,b,x);
+  const y = a * x + b;
+  expressionDisplay.textContent = `${formatNumber(a)}×${formatNumber(x)} + ${formatNumber(b)} = ${formatNumber(y)}`;
+  addTableRow(x,y);
+  addChartPoint(x,y);
+}
+
+// Immediate updates on control changes
+aSlider.addEventListener('input', () => { updateState(); performRun(); });
+bSlider.addEventListener('input', () => { updateState(); performRun(); });
+xStepper.addEventListener('change', () => { updateState(); performRun(); });
+
+runBtn.addEventListener('click', performRun);
+
+fillTableBtn.addEventListener('click', async () => {
+  const a = parseFloat(aSlider.value);
+  const b = parseFloat(bSlider.value);
+  for (let val=-5; val<=5; val++) {
+    xStepper.value = val;
+    updateState();
+    await performRun();
+    await delay(300);
+  }
+});
+
+resetBtn.addEventListener('click', clearAll);
+
+</script>
+</body>
+</html>

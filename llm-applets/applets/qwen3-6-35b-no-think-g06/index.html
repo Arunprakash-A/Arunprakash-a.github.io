@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebra Function Machine: Linear Relationships</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Framer Motion -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #F0F4F8;
+            color: #2D3748;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #E2E8F0; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E0; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A0AEC0; 
+        }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #3182CE;
+            cursor: pointer;
+            margin-top: -8px; 
+            box-shadow: 0 0 10px rgba(49, 130, 206, 0.4);
+            border: 2px solid white;
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #CBD5E0;
+            border-radius: 3px;
+        }
+        
+        /* Glass Panel */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .katex { font-size: 1.1em; }
+        
+        /* Gear Animation Styles */
+        .gear {
+            transform-origin: center;
+        }
+
+        /* FIX 4: Robust Toggle Switch Styles */
+        .toggle-checkbox {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-label {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            background-color: #CBD5E0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .toggle-label::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3182CE;
+        }
+        .toggle-checkbox:checked + .toggle-label::after {
+            transform: translateX(20px);
+        }
+        .toggle-checkbox:focus + .toggle-label {
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.3);
+            outline: none;
+        }
+
+        /* FIX 4: Idle Animation for Gears */
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-idle {
+            animation: spin-slow 10s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+        const { motion, AnimatePresence } = window.Motion;
+
+        // --- Icons ---
+        const PlayIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        );
+        const RefreshIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        );
+        const TableIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+        );
+        const ChartIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        );
+
+        // --- Components ---
+
+        const SliderControl = ({ label, value, min, max, step, onChange, colorClass }) => (
+            <div className="flex flex-col gap-2 w-full">
+                <div className="flex justify-between items-center text-sm font-bold text-slate-600">
+                    <span>{label}</span>
+                    <span className={`text-lg ${colorClass}`}>{value}</span>
+                </div>
+                <input 
+                    type="range" 
+                    min={min} 
+                    max={max} 
+                    step={step} 
+                    value={value} 
+                    onChange={(e) => onChange(parseFloat(e.target.value))}
+                    aria-label={label}
+                    className="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer"
+                />
+            </div>
+        );
+
+        // FIX 2: Stepper Component for Input x
+        const StepperControl = ({ label, value, min, max, step, onChange, colorClass }) => {
+            const handleChange = (delta) => {
+                const newValue = value + delta;
+                if (newValue >= min && newValue <= max) {
+                    onChange(newValue);
+                }
+            };
+
+            return (
+                <div className="flex flex-col gap-2 w-full">
+                    <div className="flex justify-between items-center text-sm font-bold text-slate-600">
+                        <span>{label}</span>
+                        <span className={`text-lg ${colorClass}`}>{value}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => handleChange(-step)}
+                            className="w-10 h-10 flex items-center justify-center bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-700 font-bold transition-colors"
+                            aria-label="Decrease x"
+                        >
+                            -
+                        </button>
+                        <input 
+                            type="number" 
+                            value={value} 
+                            min={min} 
+                            max={max} 
+                            step={step}
+                            onChange={(e) => {
+                                const val = parseFloat(e.target.value);
+                                if (!isNaN(val) && val >= min && val <= max) onChange(val);
+                            }}
+                            className="w-full h-10 text-center border-2 border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none font-bold text-slate-700"
+                        />
+                        <button 
+                            onClick={() => handleChange(step)}
+                            className="w-10 h-10 flex items-center justify-center bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-700 font-bold transition-colors"
+                            aria-label="Increase x"
+                        >
+                            +
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const MathDisplay = ({ latex, className }) => {
+            const containerRef = useRef(null);
+            useEffect(() => {
+                if (containerRef.current) {
+                    renderMathInElement(containerRef.current, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ]
+                    }, false);
+                }
+            }, [latex]);
+            return <div ref={containerRef} className={className} />;
+        };
+
+        // FIX 1: FunctionMachine with correct animation sequencing
+        const FunctionMachine = ({ a, b, x, isRunning, onStepComplete }) => {
+            const product = a * x;
+            
+            // Animation States: 0: Idle, 1: Input, 2: Multiply, 3: Add, 4: Output
+            const [step, setStep] = useState(0); 
+
+            // FIX 1: Ensure Run button triggers animation sequence with correct timing
+            useEffect(() => {
+                if (!isRunning) {
+                    setStep(0);
+                    return;
+                }
+                
+                // Sequence of animations
+                const t1 = setTimeout(() => setStep(1), 100);
+                // FIX 1: Increased duration for Multiply step (1.5s)
+                const t2 = setTimeout(() => setStep(2), 1000);
+                // FIX 1: Increased duration for Add step (1.5s)
+                const t3 = setTimeout(() => setStep(3), 2500);
+                const t4 = setTimeout(() => {
+                    setStep(4);
+                    if (onStepComplete) onStepComplete();
+                }, 4000);
+                
+                return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+            }, [isRunning, onStepComplete]);
+
+            // FIX 3: Gear rotation proportional to 'a'
+            const gearRotation = step >= 2 ? (a * 360) : 0;
+
+            return (
+                <div className="relative w-full h-64 flex items-center justify-center overflow-hidden">
+                    {/* Background Grid */}
+                    <div className="absolute inset-0 opacity-10" 
+                         style={{backgroundImage: 'radial-gradient(#A0AEC0 1px, transparent 1px)', backgroundSize: '20px 20px'}}>
+                    </div>
+
+                    {/* Machine Container */}
+                    <div className="relative flex items-center gap-4">
+                        
+                        {/* Input Pipe */}
+                        <div className="w-24 h-16 border-t-4 border-b-4 border-slate-400 bg-slate-200/50 relative flex items-center justify-center">
+                            <motion.div 
+                                initial={{ x: -50, opacity: 0 }}
+                                animate={{ 
+                                    x: step === 1 ? 0 : -50, 
+                                    opacity: step === 1 ? 1 : 0 
+                                }}
+                                className="absolute bg-blue-600 text-white font-bold px-3 py-1 rounded shadow-lg shadow-blue-600/50"
+                            >
+                                {x}
+                            </motion.div>
+                        </div>
+
+                        {/* The Machine Box */}
+                        <div className="relative w-64 h-40 bg-slate-800 rounded-xl border-4 border-slate-600 shadow-2xl flex flex-col items-center justify-center overflow-hidden">
+                            
+                            {/* Gears (Visual Decoration) */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+                                {/* FIX 4: Idle animation added */}
+                                <motion.div 
+                                    animate={{ rotate: gearRotation }}
+                                    transition={{ duration: 0.5 }}
+                                    className="w-32 h-32 border-8 border-dashed border-slate-400 rounded-full animate-idle"
+                                />
+                                <div className="absolute w-20 h-20 border-8 border-dashed border-slate-400 rounded-full animate-idle" />
+                            </div>
+
+                            {/* Display Screen inside Machine */}
+                            <div className="z-10 bg-black/80 w-48 h-20 rounded border border-slate-600 flex items-center justify-center font-mono text-xl text-green-400 shadow-inner">
+                                <AnimatePresence mode="wait">
+                                    {step === 0 && <motion.span key="idle" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>READY</motion.span>}
+                                    {step === 1 && <motion.span key="in" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>INPUT: {x}</motion.span>}
+                                    {/* FIX 1: Visual cue for multiplication */}
+                                    {step === 2 && <motion.span key="mul" initial={{scale:0.8}} animate={{scale:1}} exit={{opacity:0}} className="text-yellow-400 font-bold">{a} × {x}</motion.span>}
+                                    {/* FIX 1: Visual cue for addition */}
+                                    {step === 3 && <motion.span key="add" initial={{scale:0.8}} animate={{scale:1}} exit={{opacity:0}} className="text-purple-400 font-bold">{product} + {b}</motion.span>}
+                                    {step === 4 && <motion.span key="out" initial={{scale:0.5, opacity:0}} animate={{scale:1, opacity:1}} className="text-white font-bold text-2xl">{product + b}</motion.span>}
+                                </AnimatePresence>
+                            </div>
+
+                            {/* Status Light */}
+                            <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-slate-700">
+                                <div className={`w-full h-full rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : 'bg-slate-600'}`}></div>
+                            </div>
+                        </div>
+
+                        {/* Output Pipe */}
+                        <div className="w-24 h-16 border-t-4 border-b-4 border-slate-400 bg-slate-200/50 relative flex items-center justify-center">
+                            <motion.div 
+                                initial={{ x: 50, opacity: 0 }}
+                                animate={{ 
+                                    x: step === 4 ? 0 : 50, 
+                                    opacity: step === 4 ? 1 : 0 
+                                }}
+                                className="absolute bg-green-600 text-white font-bold px-3 py-1 rounded shadow-lg shadow-green-600/50"
+                            >
+                                {a * x + b}
+                            </motion.div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const CoordinateGrid = ({ a, b, showPlot, tableData }) => {
+            const width = 400;
+            const height = 300;
+            const padding = 30;
+            const xMin = -10, xMax = 10;
+            const yMin = -10, yMax = 10;
+
+            const toSvgX = (x) => padding + ((x - xMin) / (xMax - xMin)) * (width - 2 * padding);
+            const toSvgY = (y) => height - padding - ((y - yMin) / (yMax - yMin)) * (height - 2 * padding);
+
+            const lineX1 = xMin;
+            const lineY1 = a * lineX1 + b;
+            const lineX2 = xMax;
+            const lineY2 = a * lineX2 + b;
+
+            return (
+                <div className="relative w-full h-full flex items-center justify-center bg-white rounded-lg border border-slate-200 overflow-hidden shadow-inner">
+                    <svg width={width} height={height} className="overflow-visible">
+                        {/* Grid Lines */}
+                        {Array.from({ length: 21 }).map((_, i) => {
+                            const val = xMin + i;
+                            const xPos = toSvgX(val);
+                            const yPos = toSvgY(val);
+                            return (
+                                <g key={i}>
+                                    <line x1={xPos} y1={padding} x2={xPos} y2={height - padding} stroke="#E2E8F0" strokeWidth="1" />
+                                    <line x1={padding} y1={yPos} x2={width - padding} y2={yPos} stroke="#E2E8F0" strokeWidth="1" />
+                                </g>
+                            );
+                        })}
+                        
+                        {/* Axes */}
+                        <line x1={padding} y1={toSvgY(0)} x2={width - padding} y2={toSvgY(0)} stroke="#4A5568" strokeWidth="2" />
+                        <line x1={toSvgX(0)} y1={padding} x2={toSvgX(0)} y2={height - padding} stroke="#4A5568" strokeWidth="2" />
+                        
+                        {/* Axis Labels */}
+                        <text x={width - padding} y={toSvgY(0) - 5} fill="#4A5568" fontSize="10" textAnchor="end">x</text>
+                        <text x={toSvgX(0) + 5} y={padding + 10} fill="#4A5568" fontSize="10">y</text>
+
+                        {/* The Line */}
+                        <motion.line 
+                            x1={toSvgX(lineX1)} y1={toSvgY(lineY1)} 
+                            x2={toSvgX(lineX2)} y2={toSvgY(lineY2)} 
+                            stroke="#3182CE" 
+                            strokeWidth="3"
+                            initial={{ pathLength: 0, opacity: 0 }}
+                            animate={{ pathLength: showPlot ? 1 : 0, opacity: showPlot ? 1 : 0 }}
+                            transition={{ duration: 1 }}
+                        />
+
+                        {/* Points from Table */}
+                        <AnimatePresence>
+                            {showPlot && tableData.map((row, i) => (
+                                <motion.g 
+                                    key={row.x}
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: i * 0.05 }}
+                                >
+                                    <circle 
+                                        cx={toSvgX(row.x)} 
+                                        cy={toSvgY(row.y)} 
+                                        r="5" 
+                                        fill="#E53E3E" 
+                                        stroke="#fff" 
+                                        strokeWidth="2"
+                                    />
+                                    <text 
+                                        x={toSvgX(row.x)} 
+                                        y={toSvgY(row.y) - 10} 
+                                        fill="#2D3748" 
+                                        fontSize="10" 
+                                        textAnchor="middle"
+                                        className="pointer-events-none"
+                                    >
+                                        ({row.x}, {row.y})
+                                    </text>
+                                </motion.g>
+                            ))}
+                        </AnimatePresence>
+                    </svg>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [a, setA] = useState(2);
+            const [b, setB] = useState(1);
+            const [x, setX] = useState(3);
+            const [isRunning, setIsRunning] = useState(false);
+            const [showPlot, setShowPlot] = useState(true);
+            const [tableData, setTableData] = useState([]);
+
+            const output = a * x + b;
+            const product = a * x;
+
+            const handleRun = () => {
+                if (isRunning) return;
+                setIsRunning(true);
+            };
+
+            const handleFillTable = () => {
+                const newData = [];
+                for (let i = -5; i <= 5; i++) {
+                    newData.push({ x: i, y: a * i + b });
+                }
+                setTableData(newData);
+            };
+
+            const handleReset = () => {
+                setA(1);
+                setB(0);
+                setX(0);
+                setTableData([]);
+                setIsRunning(false);
+            };
+
+            // FIX 2: Updated symbolic expression display to match 'a*x + b = output' format
+            const ruleLatex = `f(x) = ${a}x + ${b}`;
+            const stepLatex = `${a} \\cdot ${x} + ${b} = ${output}`;
+
+            return (
+                <div className="min-h-screen p-4 md:p-8 flex flex-col items-center gap-8">
+                    
+                    <header className="text-center space-y-2">
+                        <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                            Function Machine
+                        </h1>
+                        <p className="text-slate-600 text-lg">Explore linear relationships: <span className="font-mono text-blue-600">f(x) = ax + b</span></p>
+                    </header>
+
+                    <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        
+                        <div className="lg:col-span-5 flex flex-col gap-6">
+                            
+                            <div className="glass-panel p-6 rounded-2xl shadow-xl space-y-6">
+                                <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-2">
+                                    <h2 className="text-xl font-bold text-slate-800">Controls</h2>
+                                    {/* FIX 4: Robust Toggle Switch for Show Plot */}
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-bold text-slate-600">Show Plot</span>
+                                        <div className="relative inline-block w-10 mr-2 align-middle select-none">
+                                            <input 
+                                                type="checkbox" 
+                                                id="toggle" 
+                                                className="toggle-checkbox"
+                                                checked={showPlot}
+                                                onChange={() => setShowPlot(!showPlot)}
+                                                aria-label="Toggle Show Plot"
+                                            />
+                                            <label 
+                                                htmlFor="toggle" 
+                                                className="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"
+                                            ></label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <SliderControl 
+                                    label="Coefficient (a)" 
+                                    value={a} 
+                                    min={-5} max={5} step={0.5} 
+                                    onChange={setA} 
+                                    colorClass="text-blue-600"
+                                />
+                                
+                                <SliderControl 
+                                    label="Constant (b)" 
+                                    value={b} 
+                                    min={-10} max={10} step={1} 
+                                    onChange={setB} 
+                                    colorClass="text-purple-600"
+                                />
+
+                                {/* FIX 2: Changed to StepperControl */}
+                                <StepperControl 
+                                    label="Input (x)" 
+                                    value={x} 
+                                    min={-10} max={10} step={1} 
+                                    onChange={setX} 
+                                    colorClass="text-yellow-600"
+                                />
+
+                                <div className="grid grid-cols-3 gap-3 pt-4">
+                                    <button 
+                                        onClick={handleRun}
+                                        disabled={isRunning}
+                                        className="col-span-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-green-900/20"
+                                    >
+                                        <PlayIcon /> Run
+                                    </button>
+                                    {/* FIX 3: Updated button label to 'Fill Table' */}
+                                    <button 
+                                        onClick={handleFillTable}
+                                        className="col-span-1 flex items-center justify-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-800 py-3 rounded-xl font-bold transition-all"
+                                    >
+                                        <TableIcon /> Fill Table
+                                    </button>
+                                    <button 
+                                        onClick={handleReset}
+                                        className="col-span-1 flex items-center justify-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-800 py-3 rounded-xl font-bold transition-all"
+                                    >
+                                        <RefreshIcon /> Reset
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="glass-panel p-6 rounded-2xl shadow-xl space-y-4">
+                                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Symbolic Expression</h3>
+                                <div className="bg-white p-4 rounded-xl border border-slate-200 overflow-x-auto shadow-sm">
+                                    <MathDisplay latex={ruleLatex} className="text-2xl text-center text-slate-800" />
+                                </div>
+                                <div className="bg-white p-4 rounded-xl border border-slate-200 overflow-x-auto shadow-sm">
+                                    <MathDisplay latex={stepLatex} className="text-xl text-center text-blue-600" />
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div className="lg:col-span-7 flex flex-col gap-6">
+                            
+                            <div className="glass-panel p-1 rounded-2xl shadow-xl bg-slate-100">
+                                <FunctionMachine a={a} b={b} x={x} isRunning={isRunning} />
+                            </div>
+
+                            <div className="glass-panel p-6 rounded-2xl shadow-xl flex-1 min-h-[300px] flex flex-col">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-bold text-slate-800">Data Table</h3>
+                                    {showPlot && <span className="text-xs text-slate-500">Points plotted on grid</span>}
+                                </div>
+                                
+                                <div className="flex-1 overflow-auto rounded-lg border border-slate-200 bg-white shadow-inner">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead className="bg-slate-100 sticky top-0 z-10">
+                                            <tr>
+                                                <th className="p-3 text-slate-600 font-semibold border-b border-slate-200">Input (x)</th>
+                                                <th className="p-3 text-slate-600 font-semibold border-b border-slate-200">Operation</th>
+                                                <th className="p-3 text-slate-600 font-semibold border-b border-slate-200 text-right">Output (y)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="font-mono text-sm">
+                                            {tableData.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="3" className="p-8 text-center text-slate-400 italic">
+                                                        Click "Fill Table" to generate data points
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                tableData.map((row) => (
+                                                    <motion.tr 
+                                                        key={row.x}
+                                                        initial={{ opacity: 0, x: -20 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${row.x === x ? 'bg-blue-100' : ''}`}
+                                                    >
+                                                        <td className="p-3 text-blue-600">{row.x}</td>
+                                                        <td className="p-3 text-slate-500 text-xs">
+                                                            {a} × {row.x} + {b}
+                                                        </td>
+                                                        <td className="p-3 text-right text-green-600 font-bold">{row.y}</td>
+                                                    </motion.tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {showPlot && (
+                                <div className="glass-panel p-4 rounded-2xl shadow-xl h-64">
+                                    <CoordinateGrid a={a} b={b} showPlot={showPlot} tableData={tableData} />
+                                </div>
+                            )}
+
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

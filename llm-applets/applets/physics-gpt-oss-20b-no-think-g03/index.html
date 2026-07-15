@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sun & Shadows Explorer – Grade 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#12151f;
+  --bg2:#0a0c12;
+  --surface:#1e1f24;
+  --accent1:#22d3ee;
+  --accent2:#a78bfa;
+  --accent3:#ff9f43;
+  --text-primary:#f4f6fb;
+  --text-secondary:#c0c4cc;
+  --border:rgba(255,255,255,.1);
+  --shadow:rgba(0,0,0,.5);
+}
+html,body{
+  margin:0;padding:0;height:100vh;display:flex;justify-content:center;align-items:center;background:radial-gradient(circle at center,var(--bg1) 0%,var(--bg2) 100%);color:var(--text-primary);font-family:'Inter',system-ui,sans-serif;font-weight:400;line-height:1.5;
+}
+.app{
+  display:flex;width:100%;max-width:1200px;height:calc(100vh - 40px);
+}
+.sidebar{
+  width:200px;padding:20px;background:var(--surface);border-radius:12px;box-shadow:0 4px 8px var(--shadow);backdrop-filter:blur(10px);
+}
+.control-group{margin-bottom:20px;}
+label.control-label{display:block;font-weight:600;margin-bottom:4px;color:var(--text-primary);}
+.slider-wrapper{position:relative;display:flex;align-items:center;}
+input[type=range]{width:100%;-webkit-appearance:none;background:transparent;height:8px;border-radius:4px;}
+input[type=range]:focus{outline:none;}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent1);cursor:pointer;transition:transform .2s ease-in-out;
+}
+input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;border-radius:50%;background:var(--accent1);cursor:pointer;transition:transform .2s ease-in-out;
+}
+input[type=range]::-ms-thumb{
+  width:16px;height:16px;border-radius:50%;background:var(--accent1);cursor:pointer;transition:transform .2s ease-in-out;
+}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:rgba(255,255,255,.2);border-radius:2px;}
+input[type=range]::-moz-range-track{height:4px;background:rgba(255,255,255,.2);border-radius:2px;}
+#angle-value{margin-left:8px;font-family:'Roboto Mono',ui-monospace,monospace;color:var(--text-secondary);font-size:.9rem;min-width:40px;text-align:right;}
+.switch{position:relative;display:inline-block;width:50px;height:24px;}
+.switch input{opacity:0;width:0;height:0;}
+.slider-switch{
+  position:absolute;cursor:pointer;background-color:#ccc;border-radius:34px;top:0;left:0;right:0;bottom:0;transition:.4s;
+}
+.slider-switch::before{
+  position:absolute;content:"";height:18px;width:18px;background:white;border-radius:50%;bottom:3px;left:3px;transition:.4s;
+}
+input:checked + .slider-switch{background-color:var(--accent1);}
+input:checked + .slider-switch::before{transform:translateX(26px);}
+.object-buttons{display:flex;gap:8px;}
+.obj-btn{
+  background:transparent;color:var(--text-primary);border:none;padding:6px 10px;border-radius:6px;font-size:.9rem;cursor:pointer;transition:background-color .3s ease-in-out;
+}
+.obj-btn.active,.obj-btn:hover{background:rgba(255,255,255,.1);}
+.obj-btn:focus-visible{outline:2px solid var(--accent1);outline-offset:2px;}
+.reset-btn{
+  background:var(--accent3);color:white;border:none;padding:10px 16px;border-radius:6px;font-size:1rem;cursor:pointer;transition:background-color .3s ease-in-out;
+}
+.reset-btn:hover{background:#e68a2b;}
+.reset-btn:focus-visible{outline:2px solid var(--accent1);outline-offset:2px;}
+.stage{
+  flex-grow:1;position:relative;overflow:hidden;
+}
+canvas{
+  width:100%;height:100%;display:block;background:transparent;
+}
+@media (max-width:600px){
+  .app{flex-direction:column;align-items:center;height:auto;}
+  .sidebar{width:auto;margin-top:20px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <h2>Sun & Shadows Explorer</h2>
+    <div class="control-group">
+      <label for="time-slider" class="control-label">Time of Day</label>
+      <div class="slider-wrapper">
+        <input type="range" id="time-slider" min="0" max="180" step="1" value="90" aria-label="Time of Day">
+        <span id="angle-value"></span>
+      </div>
+    </div>
+    <div class="control-group">
+      <label for="mode-toggle" class="control-label">Sun / Torch</label>
+      <label class="switch">
+        <input type="checkbox" id="mode-toggle" aria-label="Sun or Torch mode">
+        <span class="slider-switch"></span>
+      </label>
+    </div>
+    <div class="control-group">
+      <label class="control-label">Object Picker</label>
+      <div class="object-buttons">
+        <button data-object="stick" class="obj-btn active" aria-label="Stick">Stick</button>
+        <button data-object="tree" class="obj-btn" aria-label="Tree">Tree</button>
+        <button data-object="child" class="obj-btn" aria-label="Child">Child</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <button id="reset-btn" class="reset-btn" aria-label="Reset to default">Reset</button>
+    </div>
+  </div>
+  <div class="stage"><canvas id="scene-canvas"></canvas></div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('scene-canvas');
+  const ctx = canvas.getContext('2d');
+
+  let width, height;
+  let lightRadius = 8, targetLightRadius = 8;
+
+  const state = {
+    targetAngle: 90,
+    currentAngle: 90,
+    isTorch: false,
+    objectType: 'stick',
+    lightPos: {x:0,y:0}
+  };
+
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.clientWidth * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    width = canvas.clientWidth;
+    height = canvas.clientHeight;
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,width,height);
+
+    const groundY = height*0.8;
+
+    // Ground
+    ctx.strokeStyle='rgba(255,255,255,.1)';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(0,groundY);
+    ctx.lineTo(width,groundY);
+    ctx.stroke();
+
+    // Light position
+    let lightX, lightY;
+    if (state.isTorch) {
+      lightX = state.lightPos.x;
+      lightY = state.lightPos.y;
+    } else {
+      const angleRad = Math.PI - (state.currentAngle * Math.PI / 180);
+      const R = width*0.3;
+      lightX = width/2 + R*Math.cos(angleRad);
+      lightY = groundY - R*Math.sin(angleRad);
+    }
+
+    // Sun or Torch
+    if (state.isTorch) {
+      ctx.fillStyle='#fff';
+      ctx.shadowColor='#fff';
+      ctx.shadowBlur=20;
+      ctx.beginPath();
+      ctx.arc(lightX,lightY,lightRadius,0,Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur=0;
+    } else {
+      const gradient = ctx.createRadialGradient(lightX, lightY, 4, lightX, lightY, 12);
+      gradient.addColorStop(0,'#ff9f43');
+      gradient.addColorStop(1,'rgba(255,159,67,0)');
+      ctx.fillStyle=gradient;
+      ctx.beginPath();
+      ctx.arc(lightX,lightY,8,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    // Shadow
+    const objTopX = width/2;
+    const objHeight = height*0.25;
+    const objTopY = groundY - objHeight;
+
+    if (lightY < groundY) {
+      const t = (groundY - lightY)/(objTopY - lightY);
+      const shadowX = lightX + t*(objTopX - lightX);
+      ctx.strokeStyle='rgba(0,0,0,.6)';
+      ctx.lineWidth=12;
+      ctx.beginPath();
+      ctx.moveTo(objTopX,groundY);
+      ctx.lineTo(shadowX,groundY);
+      ctx.stroke();
+    }
+
+    // Object
+    switch(state.objectType){
+      case 'stick':
+        ctx.fillStyle='#22d3ee';
+        const stickW=10;
+        ctx.fillRect(objTopX - stickW/2, groundY - objHeight, stickW, objHeight);
+        break;
+      case 'tree':
+        ctx.fillStyle='#a78bfa';
+        const trunkW=12, trunkH=height*0.15;
+        ctx.fillRect(objTopX - trunkW/2, groundY - trunkH, trunkW, trunkH);
+        ctx.fillStyle='#22d3ee';
+        ctx.beginPath();
+        ctx.arc(objTopX, groundY - trunkH - height*0.1, height*0.15, 0, Math.PI*2);
+        ctx.fill();
+        break;
+      case 'child':
+        ctx.strokeStyle='#ff9f43';
+        ctx.lineWidth=4;
+        ctx.beginPath();
+        ctx.moveTo(objTopX, groundY - objHeight/2);
+        ctx.lineTo(objTopX, groundY - objHeight);
+        ctx.stroke();
+        ctx.fillStyle='#ff9f43';
+        ctx.beginPath();
+        ctx.arc(objTopX, groundY - objHeight - 20, 15,0,Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(objTopX-10, groundY - objHeight/2);
+        ctx.lineTo(objTopX+10, groundY - objHeight/2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(objTopX, groundY - objHeight);
+        ctx.lineTo(objTopX-8, groundY - objHeight + 15);
+        ctx.moveTo(objTopX, groundY - objHeight);
+        ctx.lineTo(objTopX+8, groundY - objHeight + 15);
+        ctx.stroke();
+        break;
+    }
+
+    document.getElementById('angle-value').textContent = Math.round(state.currentAngle)+'°';
+  }
+
+  function animate() {
+    const diff = state.targetAngle - state.currentAngle;
+    if (Math.abs(diff) > 0.1) {
+      state.currentAngle += diff * 0.15;
+    } else {
+      state.currentAngle = state.targetAngle;
+    }
+    lightRadius += (targetLightRadius - lightRadius)*0.2;
+    draw();
+    requestAnimationFrame(animate);
+  }
+
+  // Event listeners
+  document.addEventListener('DOMContentLoaded', () => {
+    const slider = document.getElementById('time-slider');
+    const toggle = document.getElementById('mode-toggle');
+    const resetBtn = document.getElementById('reset-btn');
+    const objButtons = document.querySelectorAll('.obj-btn');
+
+    slider.addEventListener('input', e=>{
+      state.targetAngle = parseInt(e.target.value,10);
+    });
+
+    toggle.addEventListener('change', e=>{
+      state.isTorch = e.target.checked;
+      if (state.isTorch) {
+        const groundY = height*0.8;
+        state.lightPos.x = width/2;
+        state.lightPos.y = Math.max(groundY - 200, 50);
+        targetLightRadius=8;
+      }
+    });
+
+    objButtons.forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        state.objectType = btn.dataset.object;
+        objButtons.forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    resetBtn.addEventListener('click', ()=>{
+      slider.value=90;
+      state.targetAngle=90;
+      state.currentAngle=90;
+      toggle.checked=false;
+      state.isTorch=false;
+      state.objectType='stick';
+      objButtons.forEach(b=>b.classList.remove('active'));
+      document.querySelector('.obj-btn[data-object="stick"]').classList.add('active');
+    });
+
+    // Dragging torch
+    let dragging = false, dragOffsetX=0, dragOffsetY=0;
+    canvas.addEventListener('mousedown', e=>{
+      if (!state.isTorch) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const dx = x - state.lightPos.x;
+      const dy = y - state.lightPos.y;
+      if (Math.sqrt(dx*dx+dy*dy) < 12){
+        dragging=true;
+        dragOffsetX=dx;
+        dragOffsetY=dy;
+      }
+    });
+    window.addEventListener('mousemove', e=>{
+      if (!dragging) return;
+      const rect = canvas.getBoundingClientRect();
+      let x = e.clientX - rect.left - dragOffsetX;
+      let y = e.clientY - rect.top - dragOffsetY;
+      state.lightPos.x=x;
+      state.lightPos.y=y;
+    });
+    window.addEventListener('mouseup', ()=>{
+      if (!dragging) return;
+      dragging=false;
+      targetLightRadius=12;
+      setTimeout(()=>{targetLightRadius=8;},200);
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    animate();
+  });
+})();
+</script>
+</body>
+</html>

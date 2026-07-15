@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Circle Trigonometry Explorer</title>
+    <!-- KaTeX for beautiful math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <style>
+        :root {
+            --bg-deep: #05070d;
+            --bg-gradient: radial-gradient(circle at center, #1a1f2e 0%, #05070d 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #22d3ee;
+            --accent-violet: #a78bfa;
+            --accent-amber: #fbbf24;
+            --text-main: #f8fafc;
+            --text-dim: #9aa4b8;
+            --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+            --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: var(--bg-deep);
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            width: 100vw;
+            height: 100vh;
+            padding: 2rem;
+            gap: 2rem;
+        }
+
+        header {
+            text-align: center;
+            z-index: 10;
+        }
+        h1 {
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            font-size: 2rem;
+            color: var(--text-main);
+        }
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+        }
+
+        .main-stage {
+            display: flex;
+            flex: 1;
+            gap: 2rem;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: rgba(0,0,0,0.2);
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid var(--panel-border);
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        /* Control Panel */
+        .controls-panel {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            padding: 1.5rem 2rem;
+            border-radius: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            z-index: 100;
+            max-width: 95vw;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .label-small {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        /* Custom Inputs */
+        input[type="range"] {
+            appearance: none;
+            width: 200px;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px; height: 18px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent-cyan);
+            transition: transform 0.2s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        .toggle-group {
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(0,0,0,0.3);
+            padding: 4px;
+            border-radius: 8px;
+        }
+        .toggle-btn {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            font-family: var(--font-ui);
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        .toggle-btn.active {
+            background: #475569;
+            color: white;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .preset-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .preset-btn {
+            padding: 6px 10px;
+            border: 1px solid var(--panel-border);
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        .preset-btn:hover { background: rgba(255,255,255,0.15); border-color: var(--accent-cyan); }
+
+        .action-btn {
+            padding: 10px 20px;
+            border: none;
+            background: linear-gradient(135deg, #06b6d4, #3b82f6);
+            color: white;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+        .action-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .action-btn:active { transform: translateY(0); }
+
+        .checkbox-group {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        .checkbox-item input { cursor: pointer; accent-color: var(--accent-cyan); }
+
+        #coord-readout {
+            position: absolute;
+            pointer-events: none;
+            font-family: var(--font-mono);
+            background: rgba(15, 23, 40, 0.9);
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--panel-border);
+            font-size: 0.9rem;
+            white-space: nowrap;
+            z-index: 50;
+            transform: translate(-50%, -130%);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+        }
+
+        #toast {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: var(--accent-cyan);
+            color: #05070d;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            transform: translateY(-20px);
+            z-index: 1000;
+            pointer-events: none;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 900px) {
+            .app-container { padding: 1rem; }
+            .main-stage { flex-direction: column; overflow-y: auto; }
+            .controls-panel { position: relative; bottom: 0; left: 0; transform: none; width: 100%; margin-top: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="toast">Unit changed to Degrees</div>
+
+<div class="app-container">
+    <header>
+        <h1>Unit Circle Trigonometry Explorer</h1>
+        <div class="subtitle">Bridging circular geometry and periodic wave functions</div>
+    </header>
+
+    <div class="main-stage">
+        <div class="canvas-container" id="canvas-wrapper">
+            <canvas id="mainCanvas"></canvas>
+            <div id="coord-readout"></div>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <div class="control-group">
+            <span class="label-small">Angle Control</span>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <input type="range" id="angleSlider" min="0" max="360" value="45">
+                <span id="angleValue" style="font-family: var(--font-mono); width: 80px; text-align: left;">45°</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="label-small">Unit System</span>
+            <div class="toggle-group">
+                <button class="toggle-btn active" id="unitDeg">Degrees</button>
+                <button class="toggle-btn" id="unitRad">Radians</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="label-small">Presets</span>
+            <div class="preset-group">
+                <button class="preset-btn" data-val="0">0°</button>
+                <button class="preset-btn" data-val="30">30°</button>
+                <button class="preset-btn" data-val="45">45°</button>
+                <button class="preset-btn" data-val="60">60°</button>
+                <button class="preset-btn" data-val="90">90°</button>
+                <button class="preset-btn" data-val="180">180°</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="label-small">Visibility</span>
+            <div class="checkbox-group">
+                <label class="checkbox-item"><input type="checkbox" id="showSine" checked> <span style="color: var(--accent-cyan)">Sin</span></label>
+                <label class="checkbox-item"><input type="checkbox" id="showCosine" checked> <span style="color: var(--accent-violet)">Cos</span></label>
+                <label class="checkbox-item"><input type="checkbox" id="showTangent" checked> <span style="color: var(--accent-amber)">Tan</span></label>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="label-small">Animation</span>
+            <button class="action-btn" id="sweepBtn">▶ Sweep 360°</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const wrapper = document.getElementById('canvas-wrapper');
+    const readout = document.getElementById('coord-readout');
+    const toast = document.getElementById('toast');
+    
+    let state = {
+        angle: 45, 
+        unit: 'deg',
+        isSweeping: false,
+        showSine: true,
+        showCosine: true,
+        showTangent: true,
+        isDragging: false
+    };
+
+    const LAYOUT = {
+        circleRadius: 160,
+        graphWidth: 450,
+        graphHeight: 320,
+        padding: 80,
+        colors: {
+            sin: '#22d3ee',
+            cos: '#a78bfa',
+            tan: '#fbbf24',
+            grid: 'rgba(156, 164, 184, 0.15)',
+            axis: 'rgba(156, 164, 184, 0.4)'
+        }
+    };
+
+    function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = (LAYOUT.circleRadius * 2 + LAYOUT.graphWidth + LAYOUT.padding * 3) * dpr;
+        canvas.height = 550 * dpr;
+        canvas.style.width = `${canvas.width / dpr}px`;
+        canvas.style.height = `${canvas.height / dpr}px`;
+        ctx.scale(dpr, dpr);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    const degToRad = (deg) => (deg * Math.PI) / 180;
+    const radToDeg = (rad) => (rad * 180) / Math.PI;
+
+    function getExactValue(val, type) {
+        const deg = Math.round(state.angle % 360);
+        const normalized = (deg < 0) ? deg + 360 : deg;
+        
+        const specials = {
+            0:   { sin: '0', cos: '1' },
+            30:  { sin: '1/2', cos: '\\frac{\\sqrt{3}}{2}' },
+            45:  { sin: '\\frac{\\sqrt{2}}{2}', cos: '\\frac{\\sqrt{2}}{2}' },
+            60:  { sin: '\\frac{\\sqrt{3}}{2}', cos: '1/2' },
+            90:  { sin: '1', cos: '0' },
+            120: { sin: '\\frac{\\sqrt{3}}{2}', cos: '-1/2' },
+            135: { sin: '\\frac{\\sqrt{2}}{2}', cos: '\\frac{-\\sqrt{2}}{2}' },
+            150: { sin: '1/2', cos: '\\frac{-\\sqrt{3}}{2}' },
+            180: { sin: '0', cos: '-1' },
+            210: { sin: '-1/2', cos: '\\frac{-\\sqrt{3}}{2}' },
+            225: { sin: '\\frac{-\\sqrt{2}}{2}', cos: '\\frac{-\\sqrt{2}}{2}' },
+            240: { sin: '\\frac{-\\sqrt{3}}{2}', cos: '-1/2' },
+            270: { sin: '-1', cos: '0' },
+            300: { sin: '\\frac{-\\sqrt{3}}{2}', cos: '1/2' },
+            315: { sin: '\\frac{-\\sqrt{2}}{2}', cos: '\\frac{\\sqrt{2}}{2}' },
+            330: { sin: '-1/2', cos: '\\frac{\\sqrt{3}}{2}' },
+        };
+
+        if (specials[normalized]) return specials[normalized][type];
+        const valNum = type === 'sin' ? Math.sin(degToRad(state.angle)) : Math.cos(degToRad(state.angle));
+        return valNum.toFixed(3);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const dpr = window.devicePixelRatio || 1;
+        
+        const centerX = LAYOUT.circleRadius + LAYOUT.padding;
+        const centerY = (canvas.height / dpr) / 2;
+        const rad = degToRad(state.angle);
+        const px = Math.cos(rad) * LAYOUT.circleRadius;
+        const py = -Math.sin(rad) * LAYOUT.circleRadius;
+
+        // --- UNIT CIRCLE SECTION ---
+        ctx.strokeStyle = LAYOUT.colors.axis;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(centerX - LAYOUT.circleRadius - 20, centerY);
+        ctx.lineTo(centerX + LAYOUT.circleRadius + 20, centerY);
+        ctx.moveTo(centerX, centerY - LAYOUT.circleRadius - 20);
+        ctx.lineTo(centerX, centerY + LAYOUT.circleRadius + 20);
+        ctx.stroke();
+
+        ctx.strokeStyle = LAYOUT.colors.grid;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, LAYOUT.circleRadius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.lineWidth = 3;
+        if (state.showCosine) {
+            ctx.strokeStyle = LAYOUT.colors.cos;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + px, centerY);
+            ctx.stroke();
+        }
+        if (state.showSine) {
+            ctx.strokeStyle = LAYOUT.colors.sin;
+            ctx.beginPath();
+            ctx.moveTo(centerX + px, centerY);
+            ctx.lineTo(centerX + px, centerY + py);
+            ctx.stroke();
+        }
+
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(centerX + px, centerY + py);
+        ctx.stroke();
+
+        if (state.showTangent) {
+            const tanVal = Math.tan(rad);
+            // FIX 2: Draw from point of tangency on x-axis to intersection with terminal arm
+            if (Math.abs(tanVal) < 10) {
+                ctx.strokeStyle = LAYOUT.colors.tan;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                // Point of tangency is always at (centerX + radius, centerY)
+                ctx.moveTo(centerX + LAYOUT.circleRadius, centerY);
+                // Intersection point on the terminal arm extended: x=1, y=tan(theta)
+                ctx.lineTo(centerX + LAYOUT.circleRadius, centerY - tanVal * LAYOUT.circleRadius);
+                ctx.stroke();
+
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = 'rgba(251, 191, 36, 0.4)';
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(centerX + LAYOUT.circleRadius, centerY - tanVal * LAYOUT.circleRadius);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+
+        // Handle point
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = 'rgba(34, 211, 238, 0.6)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX + px, centerY + py, 12, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#fff';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#22d3ee';
+        ctx.beginPath();
+        ctx.arc(centerX + px, centerY + py, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // --- WAVE GRAPH SECTION ---
+        const graphStartX = centerX + LAYOUT.circleRadius + LAYOUT.padding;
+        const graphCenterY = centerY;
+        const waveScaleX = LAYOUT.graphWidth / 360;
+        const waveScaleY = LAYOUT.circleRadius * 0.7;
+
+        ctx.strokeStyle = LAYOUT.colors.axis;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(graphStartX, graphCenterY);
+        ctx.lineTo(graphStartX + LAYOUT.graphWidth, graphCenterY);
+        ctx.stroke();
+
+        const drawWave = (type, color) => {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let x = 0; x <= LAYOUT.graphWidth; x++) {
+                const angleDeg = x / waveScaleX;
+                const val = type === 'sin' ? Math.sin(degToRad(angleDeg)) : Math.cos(degToRad(angleDeg));
+                if (x === 0) ctx.moveTo(graphStartX + x, graphCenterY - val * waveScaleY);
+                else ctx.lineTo(graphStartX + x, graphCenterY - val * waveScaleY);
+            }
+            ctx.stroke();
+        };
+
+        if (state.showSine) drawWave('sin', LAYOUT.colors.sin);
+        if (state.showCosine) drawWave('cos', LAYOUT.colors.cos);
+
+        const currentXOnGraph = state.angle * waveScaleX;
+        const currentYOnGraph = -Math.sin(rad) * waveScaleY;
+        
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = state.isSweeping ? 3 : 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        const cpX = (centerX + px + graphStartX + currentXOnGraph) / 2;
+        const cpY = (centerY + py + graphCenterY + currentYOnGraph) / 2 - (state.isSweeping ? 20 : 0);
+        ctx.moveTo(centerX + px, centerY + py);
+        ctx.quadraticCurveTo(cpX, cpY, graphStartX + currentXOnGraph, graphCenterY + currentYOnGraph);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = LAYOUT.colors.sin;
+        ctx.beginPath();
+        ctx.arc(graphStartX + currentXOnGraph, graphCenterY + currentYOnGraph, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        updateReadout(centerX + px, centerY + py);
+    }
+
+    function updateReadout(x, y) {
+        const sinVal = getExactValue(state.angle, 'sin');
+        const cosVal = getExactValue(state.angle, 'cos');
+        
+        // FIX 1: Ensure KaTeX renders all special values correctly without falling back to decimals for specials
+        readout.innerHTML = `
+            <div id="readout-cos" style="color: var(--accent-violet)"></div>
+            <div id="readout-sin" style="color: var(--accent-cyan)"></div>
+        `;
+        
+        const cosEl = document.getElementById('readout-cos');
+        const sinEl = document.getElementById('readout-sin');
+        
+        katex.render(`\\cos \\theta = ${cosVal}`, cosEl, { throwOnError: false });
+        katex.render(`\\sin \\theta = ${sinVal}`, sinEl, { throwOnError: false });
+
+        const scaleX = canvas.clientWidth / canvas.width;
+        const scaleY = canvas.clientHeight / canvas.height;
+        readout.style.left = `${x * scaleX}px`;
+        readout.style.top = `${y * scaleY}px`;
+    }
+
+    function showToast(text) {
+        toast.innerText = text;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    const slider = document.getElementById('angleSlider');
+    const angleValDisp = document.getElementById('angleValue');
+    const sweepBtn = document.getElementById('sweepBtn');
+
+    function updateAngle(val) {
+        state.angle = parseFloat(val);
+        if (state.unit === 'deg') {
+            angleValDisp.innerText = `${Math.round(state.angle)}°`;
+        } else {
+            angleValDisp.innerText = `${(state.angle * Math.PI / 180).toFixed(2)} rad`;
+        }
+        draw();
+    }
+
+    slider.addEventListener('input', (e) => updateAngle(e.target.value));
+
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const val = btn.dataset.val;
+            slider.value = val;
+            updateAngle(val);
+        });
+    });
+
+    document.getElementById('unitDeg').addEventListener('click', (e) => {
+        if (state.unit === 'deg') return;
+        state.unit = 'deg';
+        e.target.classList.add('active');
+        document.getElementById('unitRad').classList.remove('active');
+        showToast("Unit changed to Degrees");
+        updateAngle(slider.value); 
+    });
+
+    document.getElementById('unitRad').addEventListener('click', (e) => {
+        if (state.unit === 'rad') return;
+        state.unit = 'rad';
+        e.target.classList.add('active');
+        document.getElementById('unitDeg').classList.remove('active');
+        showToast("Unit changed to Radians");
+        updateAngle(slider.value);
+    });
+
+    ['showSine', 'showCosine', 'showTangent'].forEach(id => {
+        document.getElementById(id).addEventListener('change', (e) => {
+            state[id] = e.target.checked;
+            draw();
+        });
+    });
+
+    sweepBtn.addEventListener('click', () => {
+        if (state.isSweeping) return;
+        state.isSweeping = true;
+        let startAngle = state.angle;
+        let startTime = null;
+        const duration = 4000;
+
+        function animate(time) {
+            if (!startTime) startTime = time;
+            const linearProgress = (time - startTime) / duration;
+            
+            if (linearProgress >= 1) {
+                state.isSweeping = false;
+                const finalAngle = (startAngle + 360) % 360;
+                slider.value = finalAngle;
+                updateAngle(finalAngle);
+                return;
+            }
+
+            // FIX 3: Use linear progress instead of cubic-bezier for the Sweep animation
+            const currentAngle = startAngle + linearProgress * 360;
+            updateAngle(currentAngle);
+            requestAnimationFrame(animate);
+        }
+        requestAnimationFrame(animate);
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        const dpr = window.devicePixelRatio || 1;
+        const scaleX = canvas.clientWidth / canvas.width;
+        const scaleY = canvas.clientHeight / canvas.height;
+        const centerX = (LAYOUT.circleRadius + LAYOUT.padding) * scaleX;
+        const centerY = ((canvas.height / dpr) / 2) * scaleY;
+        const rad = degToRad(state.angle);
+        const px = Math.cos(rad) * LAYOUT.circleRadius * scaleX;
+        const py = -Math.sin(rad) * LAYOUT.circleRadius * scaleY;
+
+        const dist = Math.sqrt(Math.pow(mouseX - (centerX + px), 2) + Math.pow(mouseY - (centerY + py), 2));
+        if (dist < 30) {
+            state.isDragging = true;
+        }
+    });
+
+    window.addEventListener('mouseup', () => { state.isDragging = false; });
+    window.addEventListener('mousemove', (e) => {
+        if (!state.isDragging) return;
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        const dpr = window.devicePixelRatio || 1;
+        const scaleX = canvas.clientWidth / canvas.width;
+        const scaleY = canvas.clientHeight / canvas.height;
+        const centerX = (LAYOUT.circleRadius + LAYOUT.padding) * scaleX;
+        const centerY = ((canvas.height / dpr) / 2) * scaleY;
+        
+        const dx = mouseX - centerX;
+        const dy = mouseY - centerY;
+        let angle = radToDeg(Math.atan2(-dy, dx));
+        if (angle < 0) angle += 360;
+        
+        const specials = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330];
+        const closest = specials.reduce((prev, curr) => Math.abs(curr - angle) < Math.abs(prev - angle) ? curr : prev);
+
+        if (Math.abs(closest - angle) < 4) angle = closest;
+
+        slider.value = angle;
+        updateAngle(angle);
+    });
+
+    updateAngle(45);
+</script>
+</body>
+</html>

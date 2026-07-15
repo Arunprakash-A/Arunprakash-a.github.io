@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sun & Shadows Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #05060d;
+            --bg-gradient: radial-gradient(circle at center, #1a1c2c 0%, #05060d 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --accent-yellow: #fde047;
+            --accent-orange: #fb923c;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-deep);
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+        }
+
+        #app {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            cursor: grab;
+        }
+        canvas:active { cursor: grabbing; }
+
+        .ui-panel {
+            position: absolute;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            min-width: 480px;
+            max-width: 95vw;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            z-index: 10;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 24px;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-yellow);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(253, 224, 71, 0.5);
+        }
+
+        select, button {
+            background: #0f172a;
+            color: var(--text-primary);
+            border: 1px solid var(--panel-border);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: var(--font-main);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        select:hover, button:hover {
+            background: #1e293b;
+            border-color: var(--accent-yellow);
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 8px;
+            background: #0f172a;
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid var(--panel-border);
+        }
+        .toggle-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 6px;
+            font-size: 13px;
+            border-radius: 6px;
+        }
+        .toggle-btn.active {
+            background: var(--accent-yellow);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .time-display {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            text-align: center;
+            color: var(--accent-yellow);
+            margin-bottom: 4px;
+        }
+
+        .header {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            pointer-events: none;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+        p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            max-width: 400px;
+        }
+
+        #torch-hint {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            border: 1px solid var(--panel-border);
+            display: none;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div class="header">
+        <h1>Sun & Shadows Explorer</h1>
+        <p>Discover how the position of light changes the length and direction of shadows.</p>
+    </div>
+
+    <div id="torch-hint">Drag Torch to move. Use <b style="color: var(--accent-yellow)">Shift + Drag</b> for height!</div>
+
+    <div class="ui-panel">
+        <!-- Time Control -->
+        <div class="control-group" id="time-ctrl-container">
+            <label>Time of Day</label>
+            <div class="time-display" id="time-val">12:00 PM</div>
+            <input type="range" id="time-slider" min="6" max="18" step="0.1" value="12">
+        </div>
+
+        <!-- Light Source Toggle -->
+        <div class="control-group">
+            <label>Light Source</label>
+            <div class="toggle-group">
+                <button class="toggle-btn active" id="mode-sun">Sun</button>
+                <button class="toggle-btn" id="mode-torch">Torch</button>
+            </div>
+        </div>
+
+        <!-- Torch Height Control -->
+        <div class="control-group hidden" id="torch-height-container">
+            <label>Torch Height</label>
+            <div class="time-display" id="height-val">3.0m</div>
+            <input type="range" id="height-slider" min="1" max="10" step="0.1" value="3">
+        </div>
+
+        <!-- Object Picker -->
+        <div class="control-group">
+            <label>Object Model</label>
+            <select id="object-picker">
+                <option value="stick">Simple Stick</option>
+                <option value="tree">Pine Tree</option>
+                <option value="child">Human Figure</option>
+            </select>
+        </div>
+
+        <!-- Reset -->
+        <div class="control-group" style="justify-content: flex-end;">
+            <button id="reset-btn" style="width: 100%; font-weight: 600; background: #ef444422; border-color: #ef444444;">Reset Scene</button>
+        </div>
+    </div>
+</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // --- Configuration & State ---
+    const state = {
+        mode: 'sun', 
+        time: 12,
+        objectType: 'stick',
+        isDraggingTorch: false,
+        torchHeight: 3
+    };
+
+    const COLORS = {
+        sunYellow: 0xfde047,
+        sunOrange: 0xfb923c,
+        ground: 0x1e293b,
+        shadow: 0x000000,
+        torchLight: 0xffffff
+    };
+
+    // --- Scene Setup ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05060d);
+    scene.fog = new THREE.FogExp2(0x05060d, 0.02);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // FIX 3: Lowered camera height from 6 to 3 for more dramatic shadow perspective
+    camera.position.set(8, 3, 12);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.getElementById('app').appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.maxPolarAngle = Math.PI / 2.1;
+    controls.target.set(0, 1, 0);
+
+    // --- Lighting & Environment ---
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+    scene.add(ambientLight);
+
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
+    mainLight.shadow.camera.near = 0.1;
+    mainLight.shadow.camera.far = 50;
+    mainLight.shadow.camera.left = -15;
+    mainLight.shadow.camera.right = 15;
+    mainLight.shadow.camera.top = 15;
+    mainLight.shadow.camera.bottom = -15;
+    scene.add(mainLight);
+
+    const torchLight = new THREE.SpotLight(COLORS.torchLight, 80);
+    torchLight.castShadow = true;
+    torchLight.shadow.mapSize.width = 1024;
+    torchLight.shadow.mapSize.height = 1024;
+    torchLight.angle = Math.PI / 6;
+    torchLight.penumbra = 0.3;
+    torchLight.decay = 2;
+    torchLight.distance = 30;
+    scene.add(torchLight);
+
+    const sunSphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.6, 32, 32),
+        new THREE.MeshBasicMaterial({ color: COLORS.sunYellow })
+    );
+    scene.add(sunSphere);
+
+    const torchMesh = new THREE.Group();
+    const torchBody = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 0.1, 0.5),
+        new THREE.MeshStandardMaterial({ color: 0x64748b })
+    );
+    torchBody.rotation.x = Math.PI / 2;
+    const torchHead = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.15, 0.1, 0.2),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8 })
+    );
+    torchHead.position.z = 0.3;
+    torchHead.rotation.x = Math.PI / 2;
+    torchMesh.add(torchBody, torchHead);
+    scene.add(torchMesh);
+
+    const groundGeo = new THREE.PlaneGeometry(100, 100);
+    const groundMat = new THREE.MeshStandardMaterial({ color: COLORS.ground, roughness: 0.8 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    const grid = new THREE.GridHelper(40, 40, 0x334155, 0x1e293b);
+    grid.position.y = 0.01;
+    scene.add(grid);
+
+    // --- Object Models ---
+    let currentObject = null;
+    const objectContainer = new THREE.Group();
+    scene.add(objectContainer);
+
+    function createStick() {
+        const geo = new THREE.CylinderGeometry(0.05, 0.05, 2);
+        const mat = new THREE.MeshStandardMaterial({ color: 0x78350f });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.y = 1;
+        mesh.castShadow = true;
+        return mesh;
+    }
+
+    function createTree() {
+        const group = new THREE.Group();
+        const trunkGeo = new THREE.CylinderGeometry(0.15, 0.2, 1);
+        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x451a03 });
+        const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+        trunk.position.y = 0.5;
+        trunk.castShadow = true;
+
+        const leavesGeo = new THREE.ConeGeometry(0.8, 2, 8);
+        const leavesMat = new THREE.MeshStandardMaterial({ color: 0x14532d });
+        const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+        leaves.position.y = 2;
+        leaves.castShadow = true;
+
+        group.add(trunk, leaves);
+        return group;
+    }
+
+    function createChild() {
+        const group = new THREE.Group();
+        const bodyGeo = new THREE.CapsuleGeometry(0.3, 1, 4, 8);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.8;
+        body.castShadow = true;
+
+        const headGeo = new THREE.SphereGeometry(0.25, 16, 16);
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 1.7;
+        head.castShadow = true;
+
+        group.add(body, head);
+        return group;
+    }
+
+    function updateObject() {
+        if (currentObject) objectContainer.remove(currentObject);
+        switch(state.objectType) {
+            case 'stick': currentObject = createStick(); break;
+            case 'tree': currentObject = createTree(); break;
+            case 'child': currentObject = createChild(); break;
+        }
+        objectContainer.add(currentObject);
+    }
+
+    // --- Interaction Logic ---
+    const timeSlider = document.getElementById('time-slider');
+    const timeValDisplay = document.getElementById('time-val');
+    const heightSlider = document.getElementById('height-slider');
+    const heightValDisplay = document.getElementById('height-val');
+    const objectPicker = document.getElementById('object-picker');
+    const modeSunBtn = document.getElementById('mode-sun');
+    const modeTorchBtn = document.getElementById('mode-torch');
+    const resetBtn = document.getElementById('reset-btn');
+    const torchHint = document.getElementById('torch-hint');
+    const timeCtrlContainer = document.getElementById('time-ctrl-container');
+    const heightCtrlContainer = document.getElementById('torch-height-container');
+
+    function updateTimeUI() {
+        const h = Math.floor(state.time);
+        const m = Math.round((state.time - h) * 60);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const displayH = h > 12 ? h - 12 : (h === 12 ? 12 : h);
+        timeValDisplay.innerText = `${displayH}:${m.toString().padStart(2, '0')} ${ampm}`;
+    }
+
+    function updateHeightUI() {
+        heightValDisplay.innerText = `${state.torchHeight.toFixed(1)}m`;
+    }
+
+    function updateSunPosition() {
+        const t = (state.time - 6) / 12; 
+        const angle = Math.PI * (1 - t); 
+        const radius = 15;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+
+        sunSphere.position.set(x, y, 0);
+        mainLight.position.set(x, y, 0);
+
+        const colorFactor = y / radius; 
+        const lerpColor = new THREE.Color();
+        lerpColor.lerpColors(new THREE.Color(COLORS.sunOrange), new THREE.Color(COLORS.sunYellow), colorFactor);
+        sunSphere.material.color.copy(lerpColor);
+    }
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+    window.addEventListener('mousedown', (e) => {
+        if (state.mode !== 'torch') return;
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObject(torchMesh, true);
+        if (intersects.length > 0) {
+            state.isDraggingTorch = true;
+            controls.enabled = false;
+        }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!state.isDraggingTorch) return;
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+
+        const intersectPoint = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(plane, intersectPoint)) {
+            if (e.shiftKey) {
+                state.torchHeight += e.movementY * -0.05;
+                state.torchHeight = Math.max(1, Math.min(10, state.torchHeight));
+                heightSlider.value = state.torchHeight;
+                updateHeightUI();
+            }
+
+            torchMesh.position.copy(intersectPoint);
+            torchMesh.position.y = state.torchHeight; 
+            torchMesh.lookAt(0, 1, 0);
+            torchLight.position.copy(torchMesh.position);
+            torchLight.target.position.set(0, 1, 0);
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        state.isDraggingTorch = false;
+        controls.enabled = true;
+    });
+
+    // --- Event Listeners - FIX 1: Verified setMode updates all visual states and DOM ---
+    function setMode(mode) {
+        state.mode = mode;
+        if (mode === 'sun') {
+            modeSunBtn.classList.add('active');
+            modeTorchBtn.classList.remove('active');
+            mainLight.visible = true;
+            torchLight.visible = false;
+            sunSphere.visible = true;
+            torchMesh.visible = false;
+            torchHint.style.display = 'none';
+            timeCtrlContainer.classList.remove('hidden');
+            heightCtrlContainer.classList.add('hidden');
+        } else {
+            modeTorchBtn.classList.add('active');
+            modeSunBtn.classList.remove('active');
+            mainLight.visible = false;
+            torchLight.visible = true;
+            sunSphere.visible = false;
+            torchMesh.visible = true;
+            torchHint.style.display = 'block';
+            timeCtrlContainer.classList.add('hidden');
+            heightCtrlContainer.classList.remove('hidden');
+        }
+    }
+
+    modeSunBtn.addEventListener('click', () => setMode('sun'));
+    modeTorchBtn.addEventListener('click', () => setMode('torch'));
+
+    timeSlider.addEventListener('input', (e) => {
+        state.time = parseFloat(e.target.value);
+        updateTimeUI();
+        updateSunPosition();
+    });
+
+    // FIX 2: Ensure height slider updates both mesh and light position immediately in scene
+    heightSlider.addEventListener('input', (e) => {
+        state.torchHeight = parseFloat(e.target.value);
+        updateHeightUI();
+        if (state.mode === 'torch') {
+            torchMesh.position.y = state.torchHeight;
+            torchLight.position.copy(torchMesh.position);
+        }
+    });
+
+    objectPicker.addEventListener('change', (e) => {
+        state.objectType = e.target.value;
+        updateObject();
+    });
+
+    resetBtn.addEventListener('click', () => {
+        state.time = 12;
+        state.objectType = 'stick';
+        state.torchHeight = 3;
+        timeSlider.value = 12;
+        heightSlider.value = 3;
+        objectPicker.value = 'stick';
+        setMode('sun');
+        updateTimeUI();
+        updateSunPosition();
+        updateHeightUI();
+        updateObject();
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        if (state.mode === 'torch') {
+            const pulse = 1 + Math.sin(Date.now() * 0.005) * 0.1;
+            torchLight.intensity = 80 * pulse;
+        }
+        renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Init
+    updateObject();
+    updateTimeUI();
+    updateHeightUI();
+    updateSunPosition();
+    setMode('sun'); 
+    animate();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Machine: Linear Expressions</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-dark: #0f1115;
+            --bg-gradient-start: #1a1d26;
+            --bg-gradient-end: #0f1115;
+            --surface: #2d3748;
+            --surface-hover: #374151;
+            
+            --accent-green: #00ff9d; /* Output / Success */
+            --accent-red: #ff6b6b;   /* Input / Warning */
+            --accent-teal: #4ecdc4;  /* Graph / Secondary */
+            --accent-yellow: #ffe66d; /* Active Step */
+            
+            --text-primary: #e2e8f0;
+            --text-secondary: #a0aec0;
+            
+            /* Typography */
+            --font-display: 'Nunito', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'SF Mono', 'Fira Code', monospace;
+
+            /* Layout */
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at top right, #1f232e 0%, transparent 40%),
+                              linear-gradient(to bottom, var(--bg-gradient-start), var(--bg-gradient-end));
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        /* Grid Pattern Overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(var(--text-secondary) 1px, transparent 1px),
+                              linear-gradient(90deg, var(--text-secondary) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* --- Header --- */
+        header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            text-shadow: 0 0 20px rgba(78, 205, 196, 0.3);
+        }
+        h1 span { color: var(--accent-teal); }
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* --- Cards --- */
+        .card {
+            background: rgba(45, 55, 72, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-soft);
+        }
+
+        /* --- Machine Visualization --- */
+        .machine-section {
+            position: relative;
+            min-height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .machine-svg {
+            width: 100%;
+            height: 240px;
+            max-width: 800px;
+        }
+
+        /* Machine Styles */
+        .machine-box { fill: #1a202c; stroke: var(--accent-teal); stroke-width: 3; rx: 10; }
+        .chamber-divider { stroke: rgba(78, 205, 196, 0.4); stroke-width: 2; stroke-dasharray: 4 4; }
+        .machine-label { fill: var(--text-secondary); font-family: var(--font-body); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; pointer-events: none; }
+        .machine-value { fill: var(--accent-yellow); font-family: var(--font-mono); font-weight: bold; font-size: 16px; }
+        
+        /* Orb Styles */
+        .orb { r: 14; filter: drop-shadow(0 0 8px currentColor); cursor: pointer; }
+        .orb-input { fill: var(--accent-red); color: var(--accent-red); opacity: 0; }
+        .orb-output { fill: var(--accent-green); color: var(--accent-green); opacity: 0; }
+
+        /* --- Controls --- */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .val-display {
+            font-family: var(--font-mono);
+            color: var(--accent-teal);
+            font-weight: 600;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        
+        /* Track */
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #1a202c;
+            border-radius: 3px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        /* Thumb */
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--accent-teal);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -7px; /* center on track */
+            box-shadow: 0 0 10px rgba(78, 205, 196, 0.4);
+            transition: transform 0.1s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #fff;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        button {
+            font-family: var(--font-display);
+            font-weight: 700;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--accent-green);
+            color: #0f1115;
+            box-shadow: 0 4px 15px rgba(0, 255, 157, 0.3);
+        }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 157, 0.4);
+            background: #fff;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--accent-teal);
+            color: var(--accent-teal);
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(78, 205, 196, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+        .btn-reset:hover:not(:disabled) {
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* --- Expression Display --- */
+        .expression-display {
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 1.8rem;
+            padding: 1.5rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .expr-part { transition: color 0.3s ease; }
+        .highlight-val { color: var(--accent-yellow); text-shadow: 0 0 8px rgba(255, 230, 109, 0.4); }
+        .highlight-result { color: var(--accent-green); font-weight: bold; }
+
+        /* --- Bottom Split View --- */
+        .bottom-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .bottom-split { grid-template-columns: 1fr; }
+        }
+
+        /* Table */
+        .data-table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); }
+        th { text-align: left; color: var(--text-secondary); padding: 0.8rem; border-bottom: 2px solid rgba(255,255,255,0.1); font-size: 0.9rem; }
+        td { padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); }
+        
+        tr.active-row { background: rgba(78, 205, 196, 0.1); }
+        tr.active-row td:first-child { color: var(--accent-teal); font-weight: bold; }
+
+        /* Graph */
+        .graph-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+        }
+        svg.graph-svg { width: 100%; height: 100%; overflow: visible; }
+        
+        /* Graph Elements */
+        .grid-line { stroke: rgba(255,255,255,0.05); stroke-width: 1; }
+        .axis-line { stroke: var(--text-secondary); stroke-width: 2; }
+        .axis-label { fill: var(--text-secondary); font-size: 12px; font-family: var(--font-body); }
+        
+        .data-point { 
+            r: 5; 
+            fill: var(--accent-green); 
+            stroke: #fff; 
+            stroke-width: 2;
+            filter: drop-shadow(0 0 4px var(--accent-green));
+        }
+        .connection-line { 
+            stroke: var(--accent-teal); 
+            stroke-width: 2; 
+            stroke-dasharray: 6 4; 
+            opacity: 0.7;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <header>
+        <h1>Function <span>Machine</span></h1>
+        <p class="subtitle">Explore linear expressions: y = ax + b</p>
+    </header>
+
+    <!-- Machine Visualization -->
+    <div class="card machine-section">
+        <svg class="machine-svg" viewBox="0 0 800 240" preserveAspectRatio="xMidYMid meet">
+            <!-- Input Hopper -->
+            <path d="M -10,60 L 50,60 L 70,100 L 30,100 Z" fill="#ff6b6b" opacity="0.2"/>
+            <text x="10" y="85" class="machine-label" fill="#ff6b6b">INPUT</text>
+
+            <!-- Main Box -->
+            <rect x="30" y="40" width="740" height="160" class="machine-box"/>
+            
+            <!-- Chamber Divider -->
+            <line x1="400" y1="40" x2="400" y2="200" class="chamber-divider"/>
+
+            <!-- Labels inside box -->
+            <text x="215" y="90" text-anchor="middle" class="machine-label">Multiply by a</text>
+            <text x="215" y="180" text-anchor="middle" class="machine-value" id="lbl-a-display">x 2</text>
+
+            <text x="615" y="90" text-anchor="middle" class="machine-label">Add b</text>
+            <text x="615" y="180" text-anchor="middle" class="machine-value" id="lbl-b-display">+ 0</text>
+
+            <!-- Output Chute -->
+            <path d="M 730,100 L 770,100 L 790,60 L 850,60" fill="none" stroke="#00ff9d" stroke-width="4" opacity="0.5"/>
+            <text x="790" y="50" text-anchor="middle" class="machine-label" fill="#00ff9d">OUTPUT</text>
+
+            <!-- Animated Orbs -->
+            <!-- Input Orb (Red) -->
+            <circle id="orb-in" r="14" class="orb orb-input" cx="-20" cy="80"/>
+            
+            <!-- Output Orb (Green) -->
+            <circle id="orb-out" r="14" class="orb orb-output" cx="850" cy="60"/>
+
+        </svg>
+    </div>
+
+    <!-- Controls & Expression -->
+    <div class="card">
+        
+        <div class="expression-display" id="expr-container">
+            <!-- Populated by JS: Rule: [a]x + [b] = ? -->
+        </div>
+
+        <div class="controls-grid">
+            
+            <div class="slider-group">
+                <div class="label-row">
+                    <label for="slider-a">Multiplier (a)</label>
+                    <span id="val-a" class="val-display">2</span>
+                </div>
+                <input type="range" id="slider-a" min="-10" max="10" step="1" value="2">
+            </div>
+
+            <div class="slider-group">
+                <div class="label-row">
+                    <label for="slider-b">Constant (b)</label>
+                    <span id="val-b" class="val-display">0</span>
+                </div>
+                <input type="range" id="slider-b" min="-20" max="20" step="1" value="0">
+            </div>
+
+            <div class="slider-group">
+                <div class="label-row">
+                    <label for="slider-x">Input Value (x)</label>
+                    <span id="val-x" class="val-display">3</span>
+                </div>
+                <input type="range" id="slider-x" min="-10" max="10" step="1" value="3">
+            </div>
+
+        </div>
+
+        <div class="btn-group">
+            <button id="btn-run" class="btn-primary">Run Machine</button>
+            <button id="btn-fill" class="btn-secondary">Fill Table</button>
+            <button id="btn-reset" class="btn-secondary btn-reset">Reset</button>
+        </div>
+
+    </div>
+
+    <!-- Bottom Split: Table & Graph -->
+    <div class="bottom-split">
+        
+        <!-- Data Table -->
+        <div class="card data-table-container">
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th>Input (x)</th>
+                        <th>Output (y)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows injected by JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mini Graph -->
+        <div class="card graph-container">
+            <svg id="graph-svg" viewBox="-120 -120 240 240" preserveAspectRatio="xMidYMid meet">
+                <!-- Grid & Axes generated by JS or static -->
+                <g class="grid-group"></g>
+                <line x1="-110" y1="0" x2="110" y2="0" class="axis-line"/>
+                <line x1="0" y1="-110" x2="0" y2="110" class="axis-line"/>
+                <text x="105" y="-10" class="axis-label">x</text>
+                <text x="10" y="-105" class="axis-label">y</text>
+                
+                <!-- Dynamic Content -->
+                <g id="graph-lines"></g>
+                <g id="graph-points"></g>
+            </svg>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    // --- State Management ---
+    const state = {
+        a: 2,
+        b: 0,
+        x: 3,
+        history: [] // Array of {x, y} objects
+    };
+
+    const defaults = { a: 2, b: 0, x: 3 };
+
+    // --- DOM Elements ---
+    const els = {
+        sliderA: document.getElementById('slider-a'),
+        sliderB: document.getElementById('slider-b'),
+        sliderX: document.getElementById('slider-x'),
+        valA: document.getElementById('val-a'),
+        valB: document.getElementById('val-b'),
+        valX: document.getElementById('val-x'),
+        lblADisplay: document.getElementById('lbl-a-display'),
+        lblBDisplay: document.getElementById('lbl-b-display'),
+        exprContainer: document.getElementById('expr-container'),
+        btnRun: document.getElementById('btn-run'),
+        btnFill: document.getElementById('btn-fill'),
+        btnReset: document.getElementById('btn-reset'),
+        orbIn: document.getElementById('orb-in'),
+        orbOut: document.getElementById('orb-out'),
+        tableBody: document.querySelector('#data-table tbody'),
+        graphLines: document.getElementById('graph-lines'),
+        graphPoints: document.getElementById('graph-points')
+    };
+
+    // --- Initialization ---
+    function init() {
+        updateUI();
+        renderGraph();
+        
+        // Event Listeners
+        els.sliderA.addEventListener('input', (e) => handleInput('a', parseInt(e.target.value)));
+        els.sliderB.addEventListener('input', (e) => handleInput('b', parseInt(e.target.value)));
+        els.sliderX.addEventListener('input', (e) => handleInput('x', parseInt(e.target.value)));
+        
+        els.btnRun.addEventListener('click', runMachine);
+        els.btnFill.addEventListener('click', fillTable);
+        els.btnReset.addEventListener('click', resetApp);
+
+        // Initial Animation for orbs
+        gsap.set(els.orbIn, { opacity: 0 });
+        gsap.set(els.orbOut, { opacity: 0 });
+    }
+
+    // --- Core Logic ---
+    function calculateY(a, b, x) {
+        return (a * x) + b;
+    }
+
+    function handleInput(key, value) {
+        state[key] = value;
+        
+        // Sync sliders if called programmatically (e.g. reset)
+        if (key === 'a') els.sliderA.value = value;
+        if (key === 'b') els.sliderB.value = value;
+        if (key === 'x') els.sliderX.value = value;
+
+        updateUI();
+    }
+
+    function formatSign(num) {
+        return num >= 0 ? `+ ${num}` : `- ${Math.abs(num)}`;
+    }
+
+    function updateUI() {
+        const y = calculateY(state.a, state.b, state.x);
+
+        // Update Text Values
+        els.valA.textContent = state.a;
+        els.valB.textContent = state.b;
+        els.valX.textContent = state.x;
+
+        // Update Machine Labels
+        els.lblADisplay.textContent = `x ${state.a}`;
+        els.lblBDisplay.textContent = formatSign(state.b);
+
+        // Update Expression Display
+        const sign = state.b >= 0 ? '+' : '-';
+        const absB = Math.abs(state.b);
+        
+        let html = `<span class="expr-part">Rule: </span>`;
+        html += `<span class="highlight-val">${state.a}</span>x <span class="expr-part">${sign} </span> <span class="highlight-val">${absB}</span>`;
+        html += ` &nbsp;=&nbsp; <span class="highlight-result">? </span>`;
+        
+        // Live preview of output (smaller, dimmed)
+        html += `<div style="font-size: 1rem; color: var(--text-secondary); margin-top:0.5rem;">If x=${state.x}, then y = ${y}</div>`;
+
+        els.exprContainer.innerHTML = html;
+    }
+
+    // --- Animation Sequence (GSAP) ---
+    async function runMachine() {
+        const y = calculateY(state.a, state.b, state.x);
+        
+        // Disable controls during animation
+        toggleControls(false);
+
+        // 1. Input Orb appears and moves to Chamber 1
+        gsap.set(els.orbIn, { opacity: 1, x: -20, y: 80 });
+        
+        const tl = gsap.timeline({
+            onComplete: () => {
+                toggleControls(true);
+                // Show final result in expression
+                els.exprContainer.innerHTML = `
+                    <span class="expr-part">Rule: </span>
+                    <span class="highlight-val">${state.a}</span>x ${state.b >= 0 ? '+' : '-'} <span class="highlight-val">${Math.abs(state.b)}</span>
+                    &nbsp;=&nbsp; 
+                    <span class="highlight-result" style="font-size: 1.2em;">${y}</span>
+                `;
+            }
+        });
+
+        // Move Input Orb to Chamber 1 (Multiply) center approx x=215, y=140
+        tl.to(els.orbIn, { 
+            duration: 0.8, 
+            x: 215, 
+            y: 140, 
+            ease: "power2.inOut" 
+        })
+        // Pause at Chamber 1
+        .to(els.orbIn, { duration: 0.3, scale: 1.2, opacity: 0.8 })
+        .to(els.orbIn, { duration: 0.3, scale: 1, opacity: 1 })
+        
+        // Move to Chamber 2 (Add) center approx x=615, y=140
+        .to(els.orbIn, { 
+            duration: 0.8, 
+            x: 615, 
+            y: 140, 
+            ease: "power2.inOut" 
+        })
+        // Pause at Chamber 2
+        .to(els.orbIn, { duration: 0.3, scale: 1.2, opacity: 0.8 })
+        .to(els.orbIn, { duration: 0.3, scale: 1, opacity: 1 })
+
+        // Move to Output Chute
+        .to(els.orbIn, { 
+            duration: 0.6, 
+            x: 750, 
+            y: 60, 
+            ease: "power2.in",
+            onUpdate: function() {
+                // Fade out input orb as it transforms
+                if(this.progress() > 0.8) els.orbIn.style.opacity = Math.max(0, 1 - (this.progress()-0.8)*5);
+            }
+        })
+        
+        // Spawn Output Orb at chute end
+        .set(els.orbOut, { opacity: 1, x: 750, y: 60, scale: 0.5 })
+        .to(els.orbOut, { 
+            duration: 0.4, 
+            x: 820, 
+            y: 60, 
+            scale: 1, 
+            ease: "back.out(1.7)" 
+        });
+
+        // Update table row highlight to reflect current run
+        updateTableHighlight(state.x);
+    }
+
+    function toggleControls(enabled) {
+        els.sliderA.disabled = !enabled;
+        els.sliderB.disabled = !enabled;
+        els.sliderX.disabled = !enabled;
+        els.btnRun.disabled = !enabled;
+        els.btnFill.disabled = !enabled;
+        
+        if(!enabled) els.btnRun.textContent = "Processing...";
+        else els.btnRun.textContent = "Run Machine";
+    }
+
+    // --- Table Logic ---
+    function fillTable() {
+        const y = calculateY(state.a, state.b, state.x);
+        
+        // Check for duplicates
+        if (state.history.some(h => h.x === state.x)) {
+            updateTableHighlight(state.x);
+            return; 
+        }
+
+        state.history.push({ x: state.x, y });
+        renderTable();
+    }
+
+    function renderTable() {
+        els.tableBody.innerHTML = '';
+        
+        // Render in reverse order so newest is top? Or chronological? Let's do chronological top-down.
+        state.history.forEach((row, index) => {
+            const tr = document.createElement('tr');
+            if (index === state.history.length - 1) tr.classList.add('active-row');
+            
+            tr.innerHTML = `
+                <td>${row.x}</td>
+                <td style="color: var(--accent-green);">${row.y}</td>
+            `;
+            
+            // Animate entry
+            gsap.from(tr, { opacity: 0, x: -20, duration: 0.3 });
+            
+            els.tableBody.appendChild(tr);
+        });
+
+        renderGraph();
+    }
+
+    function updateTableHighlight(xVal) {
+        const rows = document.querySelectorAll('#data-table tbody tr');
+        rows.forEach(r => r.classList.remove('active-row'));
+        
+        // Find row with matching x (or just the last one if it was just added)
+        const idx = state.history.findIndex(h => h.x === xVal);
+        if (idx !== -1 && rows[idx]) {
+            rows[idx].classList.add('active-row');
+        } else if (rows.length > 0) {
+            // If not in table, highlight the last one or just flash the input value?
+            // Let's highlight the last row as "current"
+            rows[rows.length - 1].classList.add('active-row');
+        }
+    }
+
+    // --- Graph Logic ---
+    function renderGraph() {
+        els.graphLines.innerHTML = '';
+        els.graphPoints.innerHTML = '';
+
+        if (state.history.length < 2) return;
+
+        const points = state.history.map(h => ({ x: h.x, y: h.y }));
+
+        // Draw Lines connecting points
+        let pathD = `M ${points[0].x} ${-points[0].y}`; // SVG Y is inverted (down is positive)
+        
+        for(let i=1; i<points.length; i++) {
+            pathD += ` L ${points[i].x} ${-points[i].y}`;
+        }
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", pathD);
+        path.setAttribute("class", "connection-line");
+        
+        // Animate stroke drawing
+        const length = path.getTotalLength();
+        path.style.strokeDasharray = length;
+        path.style.strokeDashoffset = length;
+        
+        els.graphLines.appendChild(path);
+
+        gsap.to(path, {
+            strokeDashoffset: 0,
+            duration: 1,
+            ease: "power2.inOut"
+        });
+
+        // Draw Points
+        points.forEach((p, i) => {
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("cx", p.x);
+            circle.setAttribute("cy", -p.y);
+            circle.setAttribute("class", "data-point");
+            
+            els.graphPoints.appendChild(circle);
+
+            gsap.from(circle, {
+                scale: 0,
+                duration: 0.4,
+                delay: i * 0.1 + 0.5, // Delay after line starts drawing
+                ease: "back.out(2)"
+            });
+        });
+    }
+
+    function resetApp() {
+        state.history = [];
+        
+        // Reset sliders
+        handleInput('a', defaults.a);
+        handleInput('b', defaults.b);
+        handleInput('x', defaults.x);
+
+        renderTable();
+        renderGraph();
+        
+        // Reset Expression to default state
+        els.exprContainer.innerHTML = `
+            <span class="expr-part">Rule: </span>
+            <span class="highlight-val">${state.a}</span>x ${formatSign(state.b)} 
+            &nbsp;=&nbsp; <span class="highlight-result">?</span>
+        `;
+
+        // Reset Orbs
+        gsap.killTweensOf(els.orbIn);
+        gsap.killTweensOf(els.orbOut);
+        gsap.set([els.orbIn, els.orbOut], { opacity: 0 });
+    }
+
+    // Start
+    init();
+
+</script>
+</body>
+</html>

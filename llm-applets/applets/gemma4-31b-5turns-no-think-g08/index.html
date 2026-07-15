@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slope-Intercept Explorer</title>
+    <!-- KaTeX for beautiful math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <!-- Lucide for icons -->
+    <script src="https://unpkg.com/lucide@0.321.0"></script>
+    <style>
+        :root {
+            --bg-deep: #0f121d;
+            --bg-radial: radial-gradient(circle at center, #1a1f2e 0%, #0f121d 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --accent-primary: #22d3ee; /* Cyan */
+            --accent-secondary: #a78bfa; /* Violet */
+            --accent-tertiary: #f472b6; /* Pink */
+            --text-main: #f8fafc;
+            --text-dim: #9aa4b8;
+            --grid-color: rgba(100, 116, 139, 0.2);
+            --axis-color: rgba(156, 165, 196, 0.5);
+            --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-deep);
+            background-image: var(--bg-radial);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #app {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            width: 95vw;
+            height: 90vh;
+            gap: 24px;
+            max-width: 1600px;
+        }
+
+        /* Control Panel */
+        .controls {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 16px;
+            border: 1px solid var(--panel-border);
+        }
+
+        .group-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .val-badge {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+            color: var(--accent-primary);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--text-main);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]:active::-webkit-slider-thumb {
+            transform: scale(1.2);
+        }
+
+        input[type="range"]:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            user-select: none;
+        }
+
+        /* Custom Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider-round {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            transition: .3s;
+            border-radius: 20px;
+        }
+        .slider-round:before {
+            position: absolute;
+            content: "";
+            height: 14px; width: 14px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider-round { background-color: var(--accent-primary); }
+        input:checked + .slider-round:before { transform: translateX(20px); }
+
+        select {
+            background: #1e293b;
+            color: white;
+            border: 1px solid var(--panel-border);
+            padding: 8px;
+            border-radius: 8px;
+            font-family: var(--font-ui);
+            cursor: pointer;
+        }
+
+        /* Stage */
+        .stage {
+            position: relative;
+            background: rgba(0,0,0,0.2);
+            border-radius: 24px;
+            border: 1px solid var(--panel-border);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Tooltip / Equation Overlay */
+        #equation-overlay {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: rgba(15, 18, 29, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 16px 24px;
+            border-radius: 16px;
+            border: 1px solid var(--panel-border);
+            pointer-events: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: opacity 0.2s ease; /* FIX 3: Soften KaTeX updates */
+        }
+
+        #probe-tooltip {
+            position: absolute;
+            background: white;
+            color: black;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            pointer-events: none;
+            display: none;
+            transform: translate(-50%, -130%);
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        @media (max-width: 900px) {
+            #app { grid-template-columns: 1fr; height: auto; overflow: visible; }
+            .controls { width: 100%; height: auto; }
+            .stage { height: 600px; }
+        }
+    </style>
+</head>
+<body >
+
+<div id="app">
+    <aside class="controls">
+        <div style="margin-bottom: 8px;">
+            <h1>Slope-Intercept Explorer</h1>
+            <p class="subtitle">Visualize how $m$ and $c$ shape a linear equation in real-time.</p>
+        </div>
+
+        <!-- Primary Line Controls -->
+        <div class="control-group">
+            <div class="group-label">Primary Line (Cyan)</div>
+            <div class="slider-row">
+                <div class="slider-header">
+                    <label for="m1">Slope ($m$)</label>
+                    <span id="m1-val" class="val-badge">1.0</span>
+                </div>
+                <input type="range" id="m1" min="-10" max="10" step="0.1" value="1.0">
+            </div>
+            <div class="slider-row">
+                <div class="slider-header">
+                    <label for="c1">Y-Intercept ($c$)</label>
+                    <span id="c1-val" class="val-badge">0</span>
+                </div>
+                <input type="range" id="c1" min="-10" max="10" step="0.5" value="0">
+            </div>
+        </div>
+
+        <!-- Secondary Line Controls -->
+        <div class="control-group">
+            <div class="group-label">Secondary Line (Violet)</div>
+            <div class="toggle-row">
+                <span>Enable Second Line</span>
+                <label class="switch">
+                    <input type="checkbox" id="showL2">
+                    <span class="slider-round"></span>
+                </label>
+            </div>
+            
+            <div id="l2-controls" style="display: none; flex-direction: column; gap: 16px; margin-top: 8px;">
+                <div class="slider-row">
+                    <div class="slider-header">
+                        <label>Mode</label>
+                    </div>
+                    <select id="l2-mode">
+                        <option value="independent">Independent</option>
+                        <option value="parallel">Parallel</option>
+                        <option value="perpendicular">Perpendicular</option>
+                    </select>
+                </div>
+                <div class="slider-row" id="m2-container">
+                    <div class="slider-header">
+                        <label for="m2">Slope ($m_2$)</label>
+                        <span id="m2-val" class="val-badge">1.0</span>
+                    </div>
+                    <input type="range" id="m2" min="-10" max="10" step="0.1" value="1.0">
+                </div>
+                <div class="slider-row">
+                    <div class="slider-header">
+                        <label for="c2">Y-Intercept ($c_2$)</label>
+                        <span id="c2-val" class="val-badge">0</span>
+                    </div>
+                    <input type="range" id="c2" min="-10" max="10" step="0.5" value="0">
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Toggles -->
+        <div class="control-group">
+            <div class="group-label">Visualization Settings</div>
+            <div class="toggle-row">
+                <span>Show Slope Triangle</span>
+                <label class="switch">
+                    <input type="checkbox" id="showTriangle" checked>
+                    <span class="slider-round"></span>
+                </label>
+            </div>
+            <div class="toggle-row">
+                <span>Show Grid</span>
+                <label class="switch">
+                    <input type="checkbox" id="showGrid" checked>
+                    <span class="slider-round"></span>
+                </label>
+            </div>
+        </div>
+    </aside>
+
+    <main class="stage" id="stage">
+        <div id="equation-overlay"></div>
+        <div id="probe-tooltip"></div>
+        <canvas id="canvas"></canvas>
+    </main>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const stage = document.getElementById('stage');
+    const overlay = document.getElementById('equation-overlay');
+    const tooltip = document.getElementById('probe-tooltip');
+
+    // State
+    const state = {
+        m1: 1.0,
+        c1: 0,
+        m2: 1.0,
+        c2: 0,
+        showL2: false,
+        l2Mode: 'independent',
+        showTriangle: true,
+        showGrid: true,
+        probeX: 2.0, 
+        targetProbeX: 2.0, 
+        isDraggingProbe: false,
+        pixelRatio: window.devicePixelRatio || 1
+    };
+
+    // UI Elements
+    const inputs = {
+        m1: document.getElementById('m1'),
+        c1: document.getElementById('c1'),
+        m2: document.getElementById('m2'),
+        c2: document.getElementById('c2'),
+        showL2: document.getElementById('showL2'),
+        l2Mode: document.getElementById('l2-mode'),
+        showTriangle: document.getElementById('showTriangle'),
+        showGrid: document.getElementById('showGrid')
+    };
+
+    const displays = {
+        m1: document.getElementById('m1-val'),
+        c1: document.getElementById('c1-val'),
+        m2: document.getElementById('m2-val'),
+        c2: document.getElementById('c2-val')
+    };
+
+    const SCALE = 40; 
+    let offsetX, offsetY;
+
+    function resize() {
+        canvas.width = stage.clientWidth * state.pixelRatio;
+        canvas.height = stage.clientHeight * state.pixelRatio;
+        ctx.scale(state.pixelRatio, state.pixelRatio);
+        offsetX = stage.clientWidth / 2;
+        offsetY = stage.clientHeight / 2;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    const worldToScreenX = (x) => offsetX + x * SCALE;
+    const worldToScreenY = (y) => offsetY - y * SCALE;
+    const screenToWorldX = (sx) => (sx - offsetX) / SCALE;
+    const screenToWorldY = (sy) => (offsetY - sy) / SCALE;
+
+    let springVelocity = 0;
+    const SPRING_STIFFNESS = 0.15;
+    const SPRING_DAMPING = 0.8;
+
+    function updateProbePhysics() {
+        if (state.isDraggingProbe) {
+            const force = (state.targetProbeX - state.probeX) * SPRING_STIFFNESS;
+            springVelocity += force;
+            springVelocity *= SPRING_DAMPING;
+            state.probeX += springVelocity;
+        } else {
+            springVelocity *= SPRING_DAMPING;
+            state.probeX += springVelocity;
+        }
+    }
+
+    function formatEquation(m, c) {
+        let mStr = "";
+        if (Math.abs(m - 1) < 0.01) mStr = "x";
+        else if (Math.abs(m + 1) < 0.01) mStr = "-x";
+        else mStr = `${m.toFixed(2)}x`;
+
+        let cStr = "";
+        if (Math.abs(c) < 0.01) {
+            cStr = "";
+        } else if (c > 0) {
+            cStr = ` + ${c.toFixed(2)}`;
+        } else {
+            cStr = ` - ${Math.abs(c).toFixed(2)}`;
+        }
+
+        if (Math.abs(m) < 0.01 && Math.abs(c) < 0.01) return "y = 0";
+        if (Math.abs(m) < 0.01) return `y = ${c.toFixed(2)}`;
+
+        return `y = ${mStr}${cStr}`;
+    }
+
+    function updateState() {
+        state.m1 = parseFloat(inputs.m1.value);
+        state.c1 = parseFloat(inputs.c1.value);
+        state.showL2 = inputs.showL2.checked;
+        state.l2Mode = inputs.l2Mode.value;
+        state.showTriangle = inputs.showTriangle.checked;
+        state.showGrid = inputs.showGrid.checked;
+
+        if (state.l2Mode === 'parallel') {
+            state.m2 = state.m1;
+            inputs.m2.value = state.m1.toFixed(1);
+            inputs.m2.disabled = true;
+            document.getElementById('m2-container').style.opacity = '0.5';
+        } else if (state.l2Mode === 'perpendicular') {
+            state.m2 = Math.abs(state.m1) < 0.01 ? 999 : -1 / state.m1;
+            inputs.m2.value = isFinite(state.m2) && Math.abs(state.m2) < 100 ? state.m2.toFixed(1) : '∞';
+            inputs.m2.disabled = true;
+            document.getElementById('m2-container').style.opacity = '0.5';
+        } else {
+            state.m2 = parseFloat(inputs.m2.value);
+            inputs.m2.disabled = false;
+            document.getElementById('m2-container').style.opacity = '1';
+        }
+        state.c2 = parseFloat(inputs.c2.value);
+
+        displays.m1.innerText = state.m1.toFixed(1);
+        displays.c1.innerText = state.c1.toFixed(1);
+        // FIX 2: Ensure m2 and c2 badges update regardless of visibility (or specifically when visible)
+        displays.m2.innerText = isFinite(state.m2) && Math.abs(state.m2) < 100 ? state.m2.toFixed(2) : '∞';
+        displays.c2.innerText = state.c2.toFixed(1);
+
+        document.getElementById('l2-controls').style.display = state.showL2 ? 'flex' : 'none';
+
+        updateEquationText();
+    }
+
+    function updateEquationText() {
+        const eq1 = formatEquation(state.m1, state.c1);
+        let latex = `L_1: ${eq1}`;
+        if (state.showL2) {
+            const eq2 = isFinite(state.m2) && Math.abs(state.m2) < 100 ? formatEquation(state.m2, state.c2) : `x = ${state.c2.toFixed(2)}`;
+            latex += ` \\\\ L_2: ${eq2}`;
+        }
+
+        // FIX 3: Fade out and in to prevent jarring jump during KaTeX render
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            katex.render(latex, overlay, { throwOnError: false, displayMode: false });
+            overlay.style.opacity = '1';
+        }, 50);
+    }
+
+    function drawGrid() {
+        if (!state.showGrid) return;
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(100, 116, 139, 0.15)';
+        ctx.lineWidth = 1;
+
+        for (let x = -20; x <= 20; x++) {
+            const sx = worldToScreenX(x);
+            ctx.moveTo(sx, 0);
+            ctx.lineTo(sx, stage.clientHeight);
+        }
+        for (let y = -20; y <= 20; y++) {
+            const sy = worldToScreenY(y);
+            ctx.moveTo(0, sy);
+            ctx.lineTo(stage.clientWidth, sy);
+        }
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(156, 165, 196, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.moveTo(0, offsetY); ctx.lineTo(stage.clientWidth, offsetY);
+        ctx.moveTo(offsetX, 0); ctx.lineTo(offsetX, stage.clientHeight);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(156, 165, 196, 0.8)';
+        ctx.font = '10px JetBrains Mono';
+        for (let i = -10; i <= 10; i++) {
+            if (i === 0) continue;
+            ctx.textAlign = 'center';
+            ctx.fillText(i, worldToScreenX(i), offsetY + 15);
+            ctx.textAlign = 'right';
+            ctx.fillText(i, offsetX - 8, worldToScreenY(i) + 4);
+        }
+    }
+
+    function drawLine(m, c, color, width = 3, dashed = false) {
+        if (!isFinite(m) || Math.abs(m) > 100) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            if (dashed) ctx.setLineDash([5, 5]); else ctx.setLineDash([]);
+            const sx = worldToScreenX(c); 
+            ctx.moveTo(sx, 0);
+            ctx.lineTo(sx, stage.clientHeight);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            return;
+        }
+
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        if (dashed) ctx.setLineDash([5, 5]); else ctx.setLineDash([]);
+
+        const xMin = -20;
+        const xMax = 20;
+        const y1 = m * xMin + c;
+        const y2 = m * xMax + c;
+
+        ctx.moveTo(worldToScreenX(xMin), worldToScreenY(y1));
+        ctx.lineTo(worldToScreenX(xMax), worldToScreenY(y2));
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    function drawSlopeTriangle() {
+        if (!state.showTriangle) return;
+        const m = state.m1;
+        const c = state.c1;
+        
+        const run = m >= 0 ? 1 : -1;
+        const rise = m * run;
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+
+        ctx.moveTo(worldToScreenX(0), worldToScreenY(c));
+        ctx.lineTo(worldToScreenX(run), worldToScreenY(c));
+        ctx.lineTo(worldToScreenX(run), worldToScreenY(m * run + c));
+
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = 'white';
+        ctx.font = '12px JetBrains Mono';
+        ctx.textAlign = 'center';
+        ctx.fillText(`run: ${run}`, worldToScreenX(run/2), worldToScreenY(c) + 20);
+        ctx.textAlign = 'left';
+        ctx.fillText(`rise: ${rise.toFixed(1)}`, worldToScreenX(run) + 5, worldToScreenY((m * run / 2) + c));
+    }
+
+    function drawProbe() {
+        if (state.probeX === null) return;
+
+        const y = state.m1 * state.probeX + state.c1;
+        const sx = worldToScreenX(state.probeX);
+        const sy = worldToScreenY(y);
+
+        ctx.beginPath();
+        ctx.fillStyle = 'white';
+        ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        tooltip.style.display = 'block';
+        tooltip.style.left = `${sx}px`;
+        tooltip.style.top = `${sy}px`;
+        tooltip.innerHTML = `(${state.probeX.toFixed(2)}, ${y.toFixed(2)})<br><span style="color:#666; font-size:10px">${y.toFixed(2)} ≈ ${state.m1.toFixed(1)}(${state.probeX.toFixed(2)}) + ${state.c1}</span>`;
+    }
+
+    function drawInterceptMarker() {
+        const sx = worldToScreenX(0);
+        const sy = worldToScreenY(state.c1);
+
+        ctx.beginPath();
+        ctx.fillStyle = '#f472b6'; 
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#f472b6';
+        ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    function render() {
+        updateProbePhysics();
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+        drawLine(state.m1, state.c1, '#22d3ee', 4);
+        drawInterceptMarker();
+        drawSlopeTriangle();
+
+        if (state.showL2) {
+            drawLine(state.m2, state.c2, '#a78bfa', 3);
+        }
+
+        drawProbe();
+        requestAnimationFrame(render);
+    }
+
+    function handleMouseDown(e) {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        
+        // FIX 1: Robust proximity check. 
+        // Instead of just vertical distance to line, we check Euclidean distance to the probe point itself.
+        const px = worldToScreenX(state.probeX);
+        const py = worldToScreenY(state.m1 * state.probeX + state.c1);
+        
+        const dx = mx - px;
+        const dy = my - py;
+        const distSq = dx*dx + dy*dy;
+
+        // Hitbox radius of 30px (distSq < 900)
+        if (distSq < 900) {
+            state.isDraggingProbe = true;
+            state.targetProbeX = screenToWorldX(mx);
+            state.probeX = state.targetProbeX;
+            springVelocity = 0;
+        } else {
+            // Also allow grabbing the line if they are close to it, but not necessarily on the probe
+            const wx = screenToWorldX(mx);
+            const wy = screenToWorldY(my);
+            const lineY = state.m1 * wx + state.c1;
+            const distToLine = Math.abs(wy - lineY) * SCALE;
+
+            if (distToLine < 30) {
+                state.isDraggingProbe = true;
+                state.targetProbeX = wx;
+                state.probeX = wx;
+                springVelocity = 0;
+            }
+        }
+    }
+
+    function handleMouseMove(e) {
+        if (state.isDraggingProbe) {
+            const rect = canvas.getBoundingClientRect();
+            state.targetProbeX = screenToWorldX(e.clientX - rect.left);
+        }
+    }
+
+    function handleMouseUp() {
+        state.isDraggingProbe = false;
+    }
+
+    canvas.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    Object.keys(inputs).forEach(key => {
+        inputs[key].addEventListener('input', updateState);
+    });
+
+    updateState();
+    render();
+</script>
+</body>
+</html>

@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circuit Lab | Conductivity Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0f111a;
+            --bg-gradient: radial-gradient(circle at center, #1a1d2b 0%, #0f111a 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --accent-glow: #fbbf24;
+            --accent-wire: #22d3ee;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --danger: #ef4444;
+            --success: #10b981;
+            --radius: 16px;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-deep);
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #app {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            width: 95vw;
+            height: 90vh;
+            gap: 24px;
+            max-width: 1400px;
+        }
+
+        #workbench {
+            position: relative;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: var(--radius);
+            border: 1px solid var(--panel-border);
+            box-shadow: inset 0 0 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .material-tray {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .material-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            outline: none;
+        }
+
+        .material-item:hover, .material-item:focus {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-4px) scale(1.05);
+            border-color: var(--accent-wire);
+        }
+
+        .mat-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+        }
+
+        .mat-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .status-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .status-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.3);
+            transition: var(--transition);
+        }
+
+        .status-open { color: var(--danger); border: 1px solid var(--danger); }
+        .status-closed { color: var(--success); border: 1px solid var(--success); box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+
+        .controls-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Custom Toggle Switch */
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .switch-ui {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch-ui input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-wire);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        button {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--panel-border);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        button:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: white;
+        }
+
+        @media (max-width: 900px) {
+            #app { grid-template-columns: 1fr; height: auto; overflow: visible; }
+            #workbench { height: 60vh; width: 100%; }
+            #sidebar { order: 2; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="workbench">
+        <canvas id="circuitCanvas"></canvas>
+    </div>
+
+    <aside id="sidebar">
+        <div class="panel">
+            <h1>Circuit Lab</h1>
+            <p class="subtitle">Build a closed loop to power the bulb. Test materials in the gap!</p>
+            
+            <div class="status-card">
+                <span class="status-label">Status</span>
+                <span id="circuitStatus" class="status-value status-open">OPEN</span>
+            </div>
+
+            <div class="controls-group">
+                <label class="toggle-wrapper">
+                    <span class="status-label">Connection Mode</span>
+                    <div class="switch-ui">
+                        <input type="checkbox" id="connMode" checked>
+                        <span class="slider"></span>
+                    </div>
+                </label>
+                <button id="resetBtn">Reset Laboratory</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <span class="status-label" style="display:block; margin-bottom:12px;">Material Picker</span>
+            <div class="material-tray" id="tray"></div>
+        </div>
+    </aside>
+</div>
+
+<script>
+/** 
+ * CIRCUIT LAB LOGIC - FIXED VERSION
+ */
+const canvas = document.getElementById('circuitCanvas');
+const ctx = canvas.getContext('2d');
+const statusEl = document.getElementById('circuitStatus');
+const resetBtn = document.getElementById('resetBtn');
+const trayEl = document.getElementById('tray');
+const connModeToggle = document.getElementById('connMode');
+
+let width, height;
+let dpr = window.devicePixelRatio || 1;
+
+// State
+const state = {
+    isClosed: false,
+    switchOpen: true,
+    activeMaterial: null,
+    draggingItem: null,
+    mouse: { x: 0, y: 0 },
+    particles: [],
+    bulbGlow: 0,
+    snapFlash: { active: false, x: 0, y: 0, timer: 0 }
+};
+
+const MATERIALS = [
+    { id: 'key', name: 'Metal Key', conductive: true, color: '#94a3b8' },
+    { id: 'coin', name: 'Metal Coin', conductive: true, color: '#fbbf24' },
+    { id: 'eraser', name: 'Rubber Eraser', conductive: false, color: '#f472b6' },
+    { id: 'scale', name: 'Plastic Scale', conductive: false, color: '#60a5fa' },
+    { id: 'pencil', name: 'Wooden Pencil', conductive: false, color: '#b45309' },
+];
+
+const components = {
+    battery: { x: 0, y: 150, w: 80, h: 40, label: 'Battery', terminals: [{x:0, y:-20}, {x:0, y:20}] },
+    bulb: { x: -180, y: 0, r: 25, label: 'Bulb', terminals: [{x:-25, y:0}, {x:25, y:0}] },
+    switch: { x: 180, y: 0, w: 60, h: 20, label: 'Switch', terminals: [{x:-30, y:0}, {x:30, y:0}] },
+    gap: { x: 0, y: -150, w: 100, h: 40, label: 'Test Gap', terminals: [{x:-50, y:0}, {x:50, y:0}] }
+};
+
+const wires = [
+    { from: 'battery', fromIdx: 0, to: 'gap', toIdx: 0, p1: {x:0,y:0}, p2: {x:0,y:0} },
+    { from: 'gap', fromIdx: 1, to: 'bulb', toIdx: 0, p1: {x:0,y:0}, p2: {x:0,y:0} },
+    { from: 'bulb', fromIdx: 1, to: 'switch', toIdx: 0, p1: {x:0,y:0}, p2: {x:0,y:0} },
+    { from: 'switch', fromIdx: 1, to: 'battery', toIdx: 1, p1: {x:0,y:0}, p2: {x:0,y:0} }
+];
+
+let draggedWireEnd = null; 
+let isDraggingMat = null;
+let matPos = { x: 0, y: 0 };
+
+function init() {
+    resize();
+    window.addEventListener('resize', resize);
+    
+    canvas.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    
+    resetBtn.addEventListener('click', resetLab);
+
+    MATERIALS.forEach((mat) => {
+        const div = document.createElement('div');
+        div.className = 'material-item';
+        div.setAttribute('role', 'button');
+        div.setAttribute('tabindex', '0');
+        div.setAttribute('aria-label', `Pick ${mat.name}`);
+        div.innerHTML = `
+            <div class="mat-icon" style="background: ${mat.color}"></div>
+            <div class="mat-label">${mat.name}</div>
+        `;
+        
+        // Fix 2: Direct click handler for accessibility/automation and ease of use
+        div.addEventListener('mousedown', (e) => {
+            isDraggingMat = mat;
+            matPos = { x: e.clientX, y: e.clientY };
+            state.activeMaterial = mat; // Set active immediately on pick
+            e.stopPropagation();
+        });
+
+        div.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter' || e.key === ' ') {
+                state.activeMaterial = mat;
+            }
+        });
+        trayEl.appendChild(div);
+    });
+
+    updateWirePositions();
+    requestAnimationFrame(loop);
+}
+
+function resize() {
+    width = canvas.clientWidth;
+    height = canvas.clientHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+    updateWirePositions();
+}
+
+function updateWirePositions() {
+    const cx = width / 2;
+    const cy = height / 2;
+    wires.forEach(w => {
+        const startComp = components[w.from];
+        const endComp = components[w.to];
+        w.p1 = { x: cx + startComp.x + startComp.terminals[w.fromIdx].x, y: cy + startComp.y + startComp.terminals[w.fromIdx].y };
+        w.p2 = { x: cx + endComp.x + endComp.terminals[w.toIdx].x, y: cy + endComp.y + endComp.terminals[w.toIdx].y };
+    });
+}
+
+function resetLab() {
+    // Fix 1: Full visual and logical reset
+    state.activeMaterial = null;
+    state.switchOpen = true;
+    state.bulbGlow = 0;
+    state.particles = [];
+    updateWirePositions();
+}
+
+function getMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: (e.clientX - rect.left), y: (e.clientY - rect.top) };
+}
+
+function handleMouseDown(e) {
+    const pos = getMousePos(e);
+    const cx = width/2;
+    const cy = height/2;
+
+    const s = components.switch;
+    if (pos.x > cx + s.x - 40 && pos.x < cx + s.x + 40 && pos.y > cy + s.y - 30 && pos.y < cy + s.y + 30) {
+        state.switchOpen = !state.switchOpen;
+        return;
+    }
+
+    wires.forEach((w, idx) => {
+        if (dist(pos.x, pos.y, w.p1.x, w.p1.y) < 15) draggedWireEnd = { wireIdx: idx, end: 'p1' };
+        else if (dist(pos.x, pos.y, w.p2.x, w.p2.y) < 15) draggedWireEnd = { wireIdx: idx, end: 'p2' };
+    });
+}
+
+function handleMouseMove(e) {
+    const pos = getMousePos(e);
+    
+    if (draggedWireEnd) {
+        const w = wires[draggedWireEnd.wireIdx];
+        const oldX = draggedWireEnd.end === 'p1' ? w.p1.x : w.p2.x;
+        const oldY = draggedWireEnd.end === 'p1' ? w.p1.y : w.p2.y;
+
+        if (draggedWireEnd.end === 'p1') { w.p1.x = pos.x; w.p1.y = pos.y; }
+        else { w.p2.x = pos.x; w.p2.y = pos.y; }
+
+        const snapDist = 20;
+        const cx = width/2;
+        const cy = height/2;
+        Object.keys(components).forEach(key => {
+            const comp = components[key];
+            comp.terminals.forEach((t) => {
+                const tx = cx + comp.x + t.x;
+                const ty = cy + comp.y + t.y;
+                if (dist(pos.x, pos.y, tx, ty) < snapDist) {
+                    if (draggedWireEnd.end === 'p1') { w.p1.x = tx; w.p1.y = ty; }
+                    else { w.p2.x = tx; w.p2.y = ty; }
+                    
+                    // Fix 4: Magnetic click effect (visual flash)
+                    if (dist(oldX, oldY, tx, ty) > 5) {
+                        state.snapFlash = { active: true, x: tx, y: ty, timer: 10 };
+                    }
+                }
+            });
+        });
+    }
+
+    if (isDraggingMat) {
+        matPos = { x: e.clientX, y: e.clientY };
+    }
+}
+
+function handleMouseUp(e) {
+    if (isDraggingMat) {
+        const rect = canvas.getBoundingClientRect();
+        const cx = e.clientX - rect.left;
+        const cy = e.clientY - rect.top;
+        const gap = components.gap;
+        const gx = width/2 + gap.x;
+        const gy = height/2 + gap.y;
+        if (cx > gx - 60 && cx < gx + 60 && cy > gy - 40 && cy < gy + 40) {
+            state.activeMaterial = isDraggingMat;
+        } else {
+            // If dropped outside the gap, it doesn't bridge the circuit
+            // but we keep it as "selected" in state for visual feedback if desired.
+            // For this lab, only being IN the gap counts.
+            state.activeMaterial = null; 
+        }
+    }
+    draggedWireEnd = null;
+    isDraggingMat = null;
+}
+
+function dist(x1, y1, x2, y2) {
+    return Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+function update() {
+    const hasConductiveBridge = state.activeMaterial && state.activeMaterial.conductive;
+    const connectionModeActive = connModeToggle.checked;
+    
+    let wiresConnected = true;
+    const cx = width/2, cy = height/2;
+    wires.forEach(w => {
+        const startComp = components[w.from];
+        const endComp = components[w.to];
+        const p1Target = { x: cx + startComp.x + startComp.terminals[w.fromIdx].x, y: cy + startComp.y + startComp.terminals[w.fromIdx].y };
+        const p2Target = { x: cx + endComp.x + endComp.terminals[w.toIdx].x, y: cy + endComp.y + endComp.terminals[w.toIdx].y };
+        if (dist(w.p1.x, w.p1.y, p1Target.x, p1Target.y) > 5 || dist(w.p2.x, w.p2.y, p2Target.x, p2Target.y) > 5) {
+            wiresConnected = false;
+        }
+    });
+
+    const circuitComplete = !state.switchOpen && hasConductiveBridge && connectionModeActive && wiresConnected;
+    state.isClosed = circuitComplete;
+
+    if (state.isClosed) {
+        statusEl.textContent = 'CLOSED';
+        statusEl.className = 'status-value status-closed';
+        state.bulbGlow = Math.min(1, state.bulbGlow + 0.05);
+    } else {
+        statusEl.textContent = 'OPEN';
+        statusEl.className = 'status-value status-open';
+        state.bulbGlow = Math.max(0, state.bulbGlow - 0.05);
+    }
+
+    if (state.isClosed) {
+        if (Math.random() > 0.8) state.particles.push({ t: 0, speed: 0.004 + Math.random() * 0.002 });
+    } else {
+        state.particles = [];
+    }
+    state.particles.forEach(p => p.t += p.speed);
+    state.particles = state.particles.filter(p => p.t < 1);
+
+    if (state.snapFlash.timer > 0) state.snapFlash.timer--;
+}
+
+function draw() {
+    ctx.clearRect(0, 0, width, height);
+    const cx = width / 2;
+    const cy = height / 2;
+
+    wires.forEach(w => {
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#334155';
+        ctx.beginPath();
+        ctx.moveTo(w.p1.x, w.p1.y);
+        ctx.lineTo(w.p2.x, w.p2.y);
+        ctx.stroke();
+
+        if (state.isClosed) {
+            ctx.strokeStyle = varColor('--accent-wire');
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(w.p1.x, w.p1.y);
+            ctx.lineTo(w.p2.x, w.p2.y);
+            ctx.stroke();
+        }
+    });
+
+    drawBattery(cx, cy);
+    drawBulb(cx, cy);
+    drawSwitch(cx, cy);
+    drawGap(cx, cy);
+
+    if (state.isClosed) {
+        ctx.fillStyle = varColor('--accent-glow');
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = varColor('--accent-glow');
+        state.particles.forEach(p => {
+            const pos = getPointOnPath(p.t, wires);
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.shadowBlur = 0;
+    }
+
+    if (isDraggingMat) {
+        const rect = canvas.getBoundingClientRect();
+        ctx.fillStyle = isDraggingMat.color;
+        ctx.save();
+        ctx.translate(matPos.x - rect.left, matPos.y - rect.top);
+        ctx.scale(1.1, 1.1);
+        ctx.beginPath(); ctx.roundRect(-20, -15, 40, 30, 8); ctx.fill();
+        ctx.restore();
+    }
+
+    wires.forEach(w => {
+        ctx.fillStyle = '#64748b';
+        ctx.beginPath(); ctx.arc(w.p1.x, w.p1.y, 4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(w.p2.x, w.p2.y, 4, 0, Math.PI*2); ctx.fill();
+    });
+
+    // Draw Snap Flash
+    if (state.snapFlash.timer > 0) {
+        const grad = ctx.createRadialGradient(state.snapFlash.x, state.snapFlash.y, 0, state.snapFlash.x, state.snapFlash.y, 15);
+        grad.addColorStop(0, `rgba(34, 211, 238, ${state.snapFlash.timer / 10})`);
+        grad.addColorStop(1, 'rgba(34, 211, 238, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(state.snapFlash.x, state.snapFlash.y, 15, 0, Math.PI*2); ctx.fill();
+    }
+}
+
+function drawBattery(cx, cy) {
+    const b = components.battery;
+    const x = cx + b.x - b.w/2;
+    const y = cy + b.y;
+    ctx.fillStyle = '#4b5563';
+    ctx.beginPath(); ctx.roundRect(x, y, b.w, b.h, 8); ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 12px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText('BATTERY', cx + b.x, y + b.h/2 + 5);
+}
+
+function drawBulb(cx, cy) {
+    const b = components.bulb;
+    const x = cx + b.x;
+    const y = cy + b.y;
+    if (state.bulbGlow > 0) {
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, b.r * 3);
+        grad.addColorStop(0, `rgba(251, 191, 36, ${state.bulbGlow * 0.6})`);
+        grad.addColorStop(1, 'rgba(251, 191, 36, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(x, y, b.r * 3, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2;
+    ctx.fillStyle = state.bulbGlow > 0 ? `rgba(251, 191, 36, ${0.3 + state.bulbGlow * 0.7})` : 'rgba(255,255,255,0.1)';
+    ctx.beginPath(); ctx.arc(x, y, b.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = state.bulbGlow > 0 ? varColor('--accent-glow') : '#4b5563';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x - 5, y + 5); ctx.lineTo(x, y - 5); ctx.lineTo(x + 5, y + 5); ctx.stroke();
+}
+
+function drawSwitch(cx, cy) {
+    const s = components.switch;
+    const x = cx + s.x;
+    const y = cy + s.y;
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(x - 30, y, 60, 8);
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    if (state.switchOpen) { ctx.moveTo(x - 20, y); ctx.lineTo(x - 10, y - 20); }
+    else { ctx.moveTo(x - 20, y); ctx.lineTo(x + 20, y); }
+    ctx.stroke();
+    ctx.fillStyle = 'white';
+    ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText('SWITCH', x, y + 25);
+}
+
+function drawGap(cx, cy) {
+    const g = components.gap;
+    const x = cx + g.x;
+    const y = cy + g.y;
+    const modeActive = connModeToggle.checked;
+    ctx.strokeStyle = modeActive ? 'rgba(34, 211, 238, 0.5)' : 'rgba(239, 68, 68, 0.5)';
+    ctx.setLineDash([5, 5]);
+    ctx.strokeRect(x - g.w/2, y - g.h/2, g.w, g.h);
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = modeActive ? 'rgba(255,255,255,0.3)' : 'rgba(239, 68, 68, 0.7)';
+    ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'center';
+    const label = modeActive ? 'TEST GAP' : 'CIRCUIT DISABLED';
+    ctx.fillText(label, x, y + g.h/2 + 15);
+
+    if (state.activeMaterial) {
+        ctx.fillStyle = state.activeMaterial.color;
+        ctx.beginPath(); ctx.roundRect(x - 20, y - 15, 40, 30, 8); ctx.fill();
+        ctx.strokeStyle = 'white'; ctx.lineWidth = 1; ctx.stroke();
+    }
+}
+
+function getPointOnPath(t, wires) {
+    const segs = wires.length;
+    const idx = Math.floor(t * segs);
+    const localT = (t * segs) - idx;
+    if (idx >= segs) return wires[segs-1].p2;
+    const w = wires[idx];
+    return { x: w.p1.x + (w.p2.x - w.p1.x) * localT, y: w.p1.y + (w.p2.y - w.p1.y) * localT };
+}
+
+function varColor(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+init();
+</script>
+</body>
+</html>

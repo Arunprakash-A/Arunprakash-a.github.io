@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Principle of Moments | Interactive Physics</title>
+    <!-- GSAP for smooth physics and animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- KaTeX for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <style>
+        :root {
+            --bg-deep: #0f111a;
+            --bg-gradient: radial-gradient(circle at center, #1a1c2c 0%, #05070d 100%);
+            --surface: rgba(30, 41, 59, 0.8);
+            --border: rgba(148, 163, 184, 0.2);
+            --accent-cyan: #38bdf8;
+            --accent-amber: #fbbf24;
+            --accent-red: #f87171;
+            --text-bright: #f8fafc;
+            --text-dim: #94a3b8;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', 'Roboto Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-bright);
+            font-family: var(--font-main);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #app {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 1400px;
+            max-height: 900px;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        /* Stage Area - Fixed dimensions and visibility */
+        #stage {
+            position: relative;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: visible; /* Ensure weights and labels aren't clipped */
+            min-width: 800px;
+            min-height: 600px;
+            z-index: 1;
+        }
+
+        #beam-container {
+            position: relative;
+            width: 800px;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+        }
+
+        #pivot {
+            position: absolute;
+            bottom: 80px;
+            width: 60px;
+            height: 80px;
+            background: linear-gradient(to bottom, #475569, #1e293b);
+            clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+            z-index: 10;
+            border-top: 4px solid var(--accent-cyan);
+        }
+
+        #beam {
+            position: relative;
+            width: 700px;
+            height: 24px;
+            background: linear-gradient(to bottom, #64748b, #334155);
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform-origin: center center;
+            z-index: 11;
+        }
+
+        .notch {
+            position: absolute;
+            width: 2px;
+            height: 8px;
+            background: rgba(0,0,0,0.5);
+            bottom: -4px;
+        }
+
+        .notch-label {
+            position: absolute;
+            top: 16px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-dim);
+            transform: translateX(-50%);
+            user-select: none;
+        }
+
+        /* Weights */
+        .weight {
+            position: absolute;
+            cursor: grab;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: var(--font-mono);
+            font-weight: bold;
+            border-radius: 6px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.3), 0 8px 15px rgba(0,0,0,0.2);
+            user-select: none;
+            transition: box-shadow 0.2s ease;
+            z-index: 20;
+        }
+
+        .weight:active { cursor: grabbing; }
+        .weight:hover { filter: brightness(1.1); }
+
+        .weight-label {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 17, 26, 0.9);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 13px;
+            white-space: nowrap;
+            pointer-events: none;
+            border: 1px solid var(--border);
+            color: var(--text-bright);
+        }
+
+        /* Tray - Floating bottom center */
+        #tray {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            padding: 20px 30px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            z-index: 100;
+        }
+
+        .tray-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            margin-right: 10px;
+            font-weight: 700;
+        }
+
+        /* Controls Panel - Sleek side panel on the right */
+        #controls {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            height: fit-content;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            font-size: 22px;
+            margin-bottom: 8px;
+            color: var(--text-bright);
+            letter-spacing: -0.5px;
+        }
+
+        .description {
+            font-size: 14px;
+            color: var(--text-dim);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        button {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-family: var(--font-main);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 15px;
+        }
+
+        button:hover { background: #475569; transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
+        button.primary { background: var(--accent-cyan); color: #0f111a; }
+        button.primary:hover { background: #7dd3fc; }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: border 0.2s ease;
+        }
+        .toggle-container:hover { border-color: var(--border); }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #475569;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; width: 18px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--accent-cyan); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Balance Meter - Vertical Gauge */
+        #meter-container {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #meter-gauge {
+            width: 12px;
+            height: 140px;
+            background: #1e293b;
+            border-radius: 6px;
+            position: relative;
+            border: 1px solid var(--border);
+            margin-top: 10px;
+        }
+
+        #meter-needle {
+            position: absolute;
+            width: 24px;
+            height: 4px;
+            background: var(--accent-amber);
+            left: 50%;
+            top: 50%; /* Center */
+            transform: translate(-50%, -50%);
+            transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 8px var(--accent-amber);
+        }
+
+        .meter-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        /* Feedback Overlay */
+        #feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 100px;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 1000;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="stage" data-viz-id="physics-stage">
+        <!-- Vertical Balance Meter -->
+        <div id="meter-container">
+            <span class="meter-label">Balance</span>
+            <div id="meter-gauge">
+                <div id="meter-needle"></div>
+            </div>
+        </div>
+
+        <div id="beam-container">
+            <div id="pivot"></div>
+            <div id="beam" data-viz-id="balancing-beam">
+                <!-- Notches generated by JS -->
+            </div>
+        </div>
+
+        <div id="tray">
+            <span class="tray-label">Weight Tray</span>
+            <!-- Weights generated by JS -->
+        </div>
+
+        <div id="feedback"></div>
+    </div>
+
+    <div id="controls">
+        <div>
+            <h1>Principle of Moments</h1>
+            <p class="description">Balance the beam! Discover how distance affects torque: a small weight far from center can balance a heavy one close by.</p>
+        </div>
+
+        <div class="btn-group">
+            <button id="checkBtn" class="primary">
+                <span>⚖️</span> Check Balance
+            </button>
+            <button id="resetBtn">
+                <span>🔄</span> Reset All
+            </button>
+        </div>
+
+        <div class="toggle-container" onclick="document.getElementById('notchToggle').click()">
+            <span style="font-size: 14px; font-weight: 500;">Show Notches</span>
+            <label class="switch">
+                <input type="checkbox" id="notchToggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div style="margin-top: auto; font-size: 12px; color: var(--text-dim); line-height: 1.6; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 12px;">
+            <strong style="color: var(--accent-cyan)">Formula:</strong><br>
+            Moment = Weight × Distance<br>
+            Balance occurs when:<br>
+            $\sum M_{left} = \sum M_{right}$
+        </div>
+    </div>
+</div>
+
+<script>
+    const CONFIG = {
+        notchCount: 10,
+        beamWidth: 700,
+        weightColors: {
+            1: '#94a3b8',
+            2: '#60a5fa',
+            3: '#fbbf24',
+            4: '#f87171',
+            5: '#c084fc'
+        },
+        weightSizes: {
+            1: 30, 2: 30, 3: 30, 4: 30, 5: 30
+        }
+    };
+
+    let state = {
+        weightsOnBeam: [], // { id, mass, position }
+        isDragging: null,
+        beamAngle: 0,
+        showNotches: true
+    };
+
+    const beamEl = document.getElementById('beam');
+    const trayEl = document.getElementById('tray');
+    const needleEl = document.getElementById('meter-needle');
+    const feedbackEl = document.getElementById('feedback');
+
+    function init() {
+        createNotches();
+        createTrayWeights();
+        setupEventListeners();
+        updatePhysics();
+        // Render the formula in the footer using KaTeX
+        const formulaEl = document.querySelector('#controls div:last-child');
+        if (formulaEl) {
+            // We just let it be as text or use katex if we want to be fancy, 
+            // but for simplicity and reliability we'll keep the simple string unless needed.
+        }
+    }
+
+    function createNotches() {
+        // Explicitly handle left side (1-10) and right side (1-10)
+        for (let i = 1; i <= CONFIG.notchCount; i++) {
+            addNotch(-i); // Left
+            addNotch(i);  // Right
+        }
+    }
+
+    function addNotch(pos) {
+        const notch = document.createElement('div');
+        notch.className = 'notch';
+        const offset = (pos * (CONFIG.beamWidth / (CONFIG.notchCount * 2 + 1)));
+        notch.style.left = `calc(50% + ${offset}px)`;
+        
+        const label = document.createElement('div');
+        label.className = 'notch-label';
+        label.innerText = Math.abs(pos);
+        label.style.left = `calc(50% + ${offset}px)`;
+        
+        beamEl.appendChild(notch);
+        beamEl.appendChild(label);
+    }
+
+    function createTrayWeights() {
+        for (let m = 1; m <= 5; m++) {
+            const w = createWeightElement(m, null);
+            trayEl.appendChild(w);
+        }
+    }
+
+    function createWeightElement(mass, id) {
+        const el = document.createElement('div');
+        el.className = 'weight';
+        el.dataset.mass = mass;
+        el.id = id || `weight-${Date.now()}-${Math.random()}`;
+        
+        const size = CONFIG.weightSizes[mass];
+        el.style.width = `${size}px`;
+        el.style.height = `${size * (0.8 + mass * 0.2)}px`;
+        el.style.backgroundColor = CONFIG.weightColors[mass];
+        el.innerText = mass;
+
+        el.onmousedown = (e) => startDrag(e, el);
+
+        return el;
+    }
+
+    function startDrag(e, el) {
+        e.preventDefault();
+
+        const rect = el.getBoundingClientRect();
+        const isAlreadyOnBeam = el.parentElement === beamEl;
+
+        state.isDragging = {
+            el: el,
+            mass: parseInt(el.dataset.mass),
+            offsetX: e.clientX - rect.left,
+            offsetY: e.clientY - rect.top,
+            originalParent: el.parentElement,
+            wasOnBeam: isAlreadyOnBeam
+        };
+        
+        document.body.appendChild(el);
+        el.style.position = 'fixed';
+        el.style.left = (e.clientX - state.isDragging.offsetX) + 'px';
+        el.style.top = (e.clientY - state.isDragging.offsetY) + 'px';
+        el.style.transform = 'none';
+    }
+
+    function setupEventListeners() {
+        window.onmousemove = (e) => {
+            if (!state.isDragging) return;
+            const { el, offsetX, offsetY } = state.isDragging;
+            el.style.left = (e.clientX - offsetX) + 'px';
+            el.style.top = (e.clientY - offsetY) + 'px';
+
+            if (state.isDragging.wasOnBeam) {
+                const beamRect = beamEl.getBoundingClientRect();
+                const centerX = beamRect.left + beamRect.width / 2;
+                const relativeX = e.clientX - centerX;
+                const notchSpacing = CONFIG.beamWidth / (CONFIG.notchCount * 2 + 1);
+                let currentNotch = Math.round(relativeX / notchSpacing);
+                
+                currentNotch = Math.max(-CONFIG.notchCount, Math.min(CONFIG.notchCount, currentNotch));
+                if (currentNotch === 0) return;
+
+                const weightState = state.weightsOnBeam.find(w => w.id === el.id);
+                if (weightState && weightState.position !== currentNotch) {
+                    weightState.position = currentNotch;
+                    updateLabels();
+                    updatePhysics();
+                }
+            }
+        };
+
+        window.onmouseup = (e) => {
+            if (!state.isDragging) return;
+            const { el, mass } = state.isDragging;
+            
+            const beamRect = beamEl.getBoundingClientRect();
+            const weightRect = el.getBoundingClientRect();
+            const centerX = beamRect.left + beamRect.width / 2;
+            const centerY = beamRect.top + beamRect.height / 2;
+
+            const wCenterX = weightRect.left + weightRect.width / 2;
+            const wCenterY = weightRect.top + weightRect.height / 2;
+
+            if (wCenterX > beamRect.left && wCenterX < beamRect.right && 
+                wCenterY > beamRect.top - 60 && wCenterY < beamRect.bottom + 60) {
+                
+                const relativeX = wCenterX - centerX;
+                const notchSpacing = CONFIG.beamWidth / (CONFIG.notchCount * 2 + 1);
+                let notchPos = Math.round(relativeX / notchSpacing);
+                
+                if (notchPos === 0 || Math.abs(notchPos) > CONFIG.notchCount) {
+                    returnToTray(el);
+                } else {
+                    snapToBeam(el, notchPos, mass);
+                }
+            } else {
+                returnToTray(el);
+            }
+
+            state.isDragging = null;
+        };
+
+        document.getElementById('resetBtn').onclick = resetAll;
+        document.getElementById('checkBtn').onclick = checkBalance;
+        document.getElementById('notchToggle').onchange = (e) => {
+            state.showNotches = e.target.checked;
+            document.querySelectorAll('.notch, .notch-label').forEach(el => {
+                el.classList.toggle('hidden', !state.showNotches);
+            });
+        };
+    }
+
+    function snapToBeam(el, pos, mass) {
+        state.weightsOnBeam = state.weightsOnBeam.filter(w => w.id !== el.id);
+        state.weightsOnBeam.push({ id: el.id, mass, position: pos });
+        
+        el.style.position = 'absolute';
+        el.style.left = 'auto';
+        el.style.top = 'auto';
+        
+        const notchSpacing = CONFIG.beamWidth / (CONFIG.notchCount * 2 + 1);
+        const xOffset = pos * notchSpacing;
+        
+        el.style.left = `calc(50% + ${xOffset}px)`;
+        el.style.transform = `translateX(-50%) translateY(-${el.offsetHeight / 2}px)`;
+        
+        beamEl.appendChild(el);
+
+        let label = document.getElementById(`label-${el.id}`);
+        if (!label) {
+            label = document.createElement('div');
+            label.className = 'weight-label';
+            label.id = `label-${el.id}`;
+            el.appendChild(label);
+        }
+        updateLabels();
+
+        gsap.fromTo(el, 
+            { scale: 0.5 }, 
+            { scale: 1, duration: 0.4, ease: "elastic.out(1, 0.5)" }
+        );
+        updatePhysics();
+    }
+
+    function returnToTray(el) {
+        state.weightsOnBeam = state.weightsOnBeam.filter(w => w.id !== el.id);
+        const label = document.getElementById(`label-${el.id}`);
+        if (label) label.remove();
+        
+        el.style.position = 'relative';
+        el.style.left = 'auto';
+        el.style.top = 'auto';
+        el.style.transform = 'none';
+        trayEl.appendChild(el);
+        updatePhysics();
+    }
+
+    function updateLabels() {
+        state.weightsOnBeam.forEach(w => {
+            const label = document.getElementById(`label-${w.id}`);
+            if (label) {
+                katex.render(`${w.mass}\\text{kg} \\times ${Math.abs(w.position)} = ${w.mass * Math.abs(w.position)}`, label, {
+                    throwOnError: false,
+                    displayMode: false
+                });
+            }
+        });
+    }
+
+    function updatePhysics() {
+        let leftMoment = 0;
+        let rightMoment = 0;
+
+        state.weightsOnBeam.forEach(w => {
+            const moment = w.mass * Math.abs(w.position);
+            if (w.position < 0) leftMoment += moment;
+            else rightMoment += moment;
+        });
+
+        const diff = rightMoment - leftMoment;
+        const targetAngle = Math.max(-15, Math.min(15, diff * 2));
+        
+        gsap.to(beamEl, {
+            rotation: targetAngle,
+            duration: 0.8,
+            ease: "elastic.out(1, 0.7)"
+        });
+
+        // Vertical Meter Logic: Top is Right-heavy, Bottom is Left-heavy
+        const normalizedDiff = Math.max(-1, Math.min(1, diff / 20));
+        const meterTopPos = 50 + (normalizedDiff * 45); // % from top
+        
+        gsap.killTweensOf(needleEl);
+        needleEl.style.top = `${meterTopPos}%`;
+
+        if (Math.abs(diff) < 5 && Math.abs(diff) > 0) {
+            gsap.to(needleEl, {
+                y: "random(-3, 3)",
+                duration: 0.2,
+                repeat: -1,
+                yoyo: true,
+                ease: "sine.inOut"
+            });
+        } else {
+            gsap.set(needleEl, { y: 0 });
+        }
+    }
+
+    function checkBalance() {
+        let leftMoment = 0;
+        let rightMoment = 0;
+        state.weightsOnBeam.forEach(w => {
+            const moment = w.mass * Math.abs(w.position);
+            if (w.position < 0) leftMoment += moment;
+            else rightMoment += moment;
+        });
+
+        const isBalanced = leftMoment === rightMoment && state.weightsOnBeam.length > 0;
+        
+        feedbackEl.innerText = isBalanced ? '✅' : '❌';
+        gsap.fromTo(feedbackEl, 
+            { opacity: 0, scale: 0.5 }, 
+            { opacity: 1, scale: 1.2, duration: 0.3, yoyo: true, repeat: 1, 
+              onComplete: () => { gsap.to(feedbackEl, { opacity: 0, duration: 0.5 }); } 
+            }
+        );
+    }
+
+    function resetAll() {
+        const weights = document.querySelectorAll('.weight');
+        weights.forEach(el => returnToTray(el));
+        updatePhysics();
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>

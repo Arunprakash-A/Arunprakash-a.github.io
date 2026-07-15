@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counting Playground | One-to-One Correspondence</title>
+    <!-- Google Fonts: Fredoka for friendly UI, JetBrains Mono for numbers -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    <!-- GSAP for high-end animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Canvas Confetti for celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-start: #1a1c2c;
+            --bg-end: #0f111a;
+            --surface: rgba(45, 49, 77, 0.6);
+            --border: rgba(255, 255, 255, 0.1);
+            --accent-primary: #ffeb3b; /* Glowing Yellow */
+            --accent-success: #4ade80; /* Lime Green */
+            --accent-secondary: #f472b6; /* Soft Pink */
+            --accent-error: #ef4444; /* Red for incorrect feedback */
+            --text-main: #ffffff;
+            --text-dim: #94a3b8;
+            --font-ui: 'Fredoka', system-ui, sans-serif;
+            --font-num: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, var(--bg-start) 0%, var(--bg-end) 100%);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #app {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 1200px;
+            max-height: 900px;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        /* Hero Stage */
+        #stage {
+            position: relative;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 32px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        /* Countable Object (Star) */
+        .star {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            cursor: pointer;
+            filter: drop-shadow(0 0 10px rgba(255, 235, 59, 0.3));
+            transition: filter 0.3s ease;
+            z-index: 10;
+        }
+        .star.counted {
+            filter: drop-shadow(0 0 20px var(--accent-primary)) grayscale(0.4) opacity(0.8);
+            pointer-events: none;
+        }
+        .checkmark {
+            position: absolute;
+            top: -10px; right: -10px;
+            width: 24px; height: 24px;
+            background: var(--accent-success);
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .star.counted .checkmark {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Side Panel */
+        #side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            justify-content: center;
+        }
+
+        .card {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Ten Frame */
+        .ten-frame-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .ten-frame {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 8px;
+            background: rgba(0,0,0,0.3);
+            padding: 8px;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+        }
+        .slot {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+        }
+        .token {
+            position: absolute;
+            width: 100%; height: 100%;
+            background: var(--accent-secondary);
+            border-radius: 50%;
+            transform: translateY(20px);
+            opacity: 0;
+            box-shadow: inset -4px -4px 8px rgba(0,0,0,0.3), 0 0 10px var(--accent-secondary);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .token.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Controls */
+        .controls-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .stepper {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(0,0,0,0.2);
+            padding: 8px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+        .btn-circle {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            border: none;
+            background: #3d426b;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-circle:hover { background: #4d538b; transform: scale(1.1); }
+        .btn-circle:active { transform: scale(0.9); }
+
+        .count-display {
+            font-family: var(--font-num);
+            font-size: 2.5rem;
+            text-align: center;
+            color: var(--accent-primary);
+            margin: 0 1rem;
+            min-width: 60px;
+        }
+
+        .action-btn {
+            height: 64px;
+            border-radius: 16px;
+            border: none;
+            font-family: var(--font-ui);
+            font-weight: 600;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-primary {
+            background: var(--accent-success);
+            color: #064e3b;
+            box-shadow: 0 4px 20px rgba(74, 222, 128, 0.3);
+        }
+        .btn-primary:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 8px 25px rgba(74, 222, 128, 0.5); }
+        .btn-secondary {
+            background: #3d426b;
+            color: white;
+        }
+        .btn-secondary:hover { background: #4d538b; transform: translateY(-2px); }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            #app {
+                grid-template-columns: 1fr;
+                overflow-y: auto;
+                height: auto;
+                padding: 1rem;
+            }
+            #stage { height: 60vh; }
+            #side-panel { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+        }
+
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(5deg); }
+        }
+        .floating { animation: float 3s ease-in-out infinite; }
+
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="stage"></div>
+
+    <div id="side-panel">
+        <!-- Ten Frame Section -->
+        <div class="card ten-frame-container">
+            <span class="label">Ten Frames</span>
+            <div id="frame1" class="ten-frame"></div>
+            <div id="frame2" class="ten-frame"></div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="card controls-group">
+            <span class="label">Set Quantity</span>
+            <div class="stepper">
+                <button class="btn-circle" onclick="changeQuantity(-1)" aria-label="Decrease quantity">−</button>
+                <div id="qty-val" class="count-display">7</div>
+                <button class="btn-circle" onclick="changeQuantity(1)" aria-label="Increase quantity">+</button>
+            </div>
+
+            <button class="action-btn btn-secondary" onclick="initGame()">
+                <span>🔄</span> New Set
+            </button>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="action-btn btn-primary" style="flex: 2;" onclick="checkCount()">
+                    <span>✅</span> Check
+                </button>
+                <button class="action-btn btn-secondary" style="flex: 1; height: 64px;" onclick="resetCurrent()" title="Reset count">
+                    <span>🗑️</span> <span style="font-size: 0.9rem;">Reset</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Current Count Display -->
+        <div class="card" style="text-align: center;" id="count-card">
+            <span class="label">I counted...</span>
+            <div id="current-count" class="count-display" style="font-size: 4rem; margin: 0;">0</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State Management
+    const state = {
+        totalObjects: 7,
+        currentCount: 0,
+        objects: [] // Stores coordinates to prevent overlap
+    };
+
+    const stage = document.getElementById('stage');
+    const currentCountEl = document.getElementById('current-count');
+    const qtyValEl = document.getElementById('qty-val');
+    const frame1 = document.getElementById('frame1');
+    const frame2 = document.getElementById('frame2');
+    const countCard = document.getElementById('count-card');
+
+    // Initialize Ten Frames (20 slots total)
+    function createFrames() {
+        [frame1, frame2].forEach(f => {
+            f.innerHTML = '';
+            for(let i=0; i<10; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'slot';
+                const token = document.createElement('div');
+                token.className = 'token';
+                slot.appendChild(token);
+                f.appendChild(slot);
+            }
+        });
+    }
+
+    function updateTenFrame() {
+        const allTokens = document.querySelectorAll('.token');
+        allTokens.forEach((t, i) => {
+            if (i < state.currentCount) {
+                t.classList.add('active');
+            } else {
+                t.classList.remove('active');
+            }
+        });
+    }
+
+    function changeQuantity(delta) {
+        const oldQty = state.totalObjects;
+        state.totalObjects = Math.max(1, Math.min(20, state.totalObjects + delta));
+        qtyValEl.innerText = state.totalObjects;
+        
+        // Only re-init if quantity actually changed to ensure pixel changes are detectable
+        if (oldQty !== state.totalObjects) {
+            initGame();
+        }
+    }
+
+    function resetCurrent() {
+        state.currentCount = 0;
+        currentCountEl.innerText = '0';
+        currentCountEl.style.color = 'var(--accent-primary)';
+        updateTenFrame();
+        
+        // Explicitly remove counted state from all stars to ensure visual change
+        const stars = document.querySelectorAll('.star');
+        stars.forEach(s => {
+            s.classList.remove('counted');
+            s.classList.add('floating');
+        });
+    }
+
+    function initGame() {
+        // Reset count state before regenerating objects
+        state.currentCount = 0;
+        currentCountEl.innerText = '0';
+        currentCountEl.style.color = 'var(--accent-primary)';
+        updateTenFrame();
+
+        // Clear stage and coordinate list
+        stage.innerHTML = '';
+        state.objects = [];
+
+        for (let i = 0; i < state.totalObjects; i++) {
+            createStar();
+        }
+    }
+
+    function createStar() {
+        const star = document.createElement('div');
+        star.className = 'star floating';
+        star.style.animationDelay = `${Math.random() * 2}s`;
+        
+        star.innerHTML = `
+            <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <path d="M50 5L63 38H97L70 60L82 93L50 71L18 93L30 60L3 38H37Z" fill="var(--accent-primary)" />
+            </svg>
+            <div class="checkmark">✓</div>
+        `;
+
+        const pos = findEmptyPosition();
+        star.style.left = `${pos.x}px`;
+        star.style.top = `${pos.y}px`;
+
+        star.addEventListener('mousedown', (e) => handleStarClick(e, star));
+        stage.appendChild(star);
+    }
+
+    function findEmptyPosition() {
+        const padding = 80;
+        // Use actual client dimensions or fallback for headless environments
+        const width = stage.clientWidth || 600;
+        const height = stage.clientHeight || 400;
+        const maxX = width - padding;
+        const maxY = height - padding;
+        
+        let attempts = 0;
+        while (attempts < 100) {
+            const x = Math.random() * maxX + 20;
+            const y = Math.random() * maxY + 20;
+            
+            let overlap = false;
+            for (let obj of state.objects) {
+                const dist = Math.hypot(obj.x - x, obj.y - y);
+                if (dist < 90) { overlap = true; break; }
+            }
+            
+            if (!overlap) {
+                state.objects.push({x, y});
+                return {x, y};
+            }
+            attempts++;
+        }
+
+        // Grid-based fallback to ensure objects are always placed and visible
+        const cols = Math.ceil(Math.sqrt(state.totalObjects));
+        const rows = Math.ceil(state.totalObjects / cols);
+        const cellW = maxX / cols;
+        const cellH = maxY / rows;
+        
+        const idx = state.objects.length;
+        const gx = (idx % cols) * cellW + 20;
+        const gy = Math.floor(idx / cols) * cellH + 20;
+        
+        state.objects.push({x: gx, y: gy});
+        return {x: gx, y: gy};
+    }
+
+    function handleStarClick(e, el) {
+        if (el.classList.contains('counted')) return;
+
+        // Squash and stretch animation
+        gsap.to(el, {
+            scaleX: 1.3, scaleY: 0.7, duration: 0.1, 
+            onComplete: () => {
+                gsap.to(el, { scaleX: 1, scaleY: 1, duration: 0.2, ease: "elastic.out(1, 0.3)" });
+            }
+        });
+
+        state.currentCount++;
+        el.classList.add('counted');
+        el.classList.remove('floating');
+        
+        currentCountEl.innerText = state.currentCount;
+        updateTenFrame();
+
+        // Pop animation for the number
+        gsap.fromTo("#current-count", 
+            { scale: 1 }, 
+            { scale: 1.4, duration: 0.1, yoyo: true, repeat: 1 }
+        );
+    }
+
+    function checkCount() {
+        if (state.currentCount === state.totalObjects) {
+            // SUCCESS FEEDBACK
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ffeb3b', '#4ade80', '#f472b6']
+            });
+
+            // Screen shake for high impact
+            gsap.to("#app", { x: -10, duration: 0.05, repeat: 5, yoyo: true });
+        } else {
+            // FAILURE FEEDBACK
+            currentCountEl.style.color = 'var(--accent-error)';
+            
+            // Shake the count card specifically to ensure pixel change is detected
+            gsap.to(countCard, { 
+                x: -15, 
+                duration: 0.08, 
+                repeat: 5, 
+                yoyo: true, 
+                onComplete: () => {
+                    gsap.to(countCard, { x: 0 });
+                    setTimeout(() => {
+                        currentCountEl.style.color = 'var(--accent-primary)';
+                    }, 1000);
+                }
+            });
+
+            gsap.to("#current-count", { x: -5, duration: 0.05, repeat: 5, yoyo: true });
+        }
+    }
+
+    window.onload = () => {
+        createFrames();
+        initGame();
+    };
+
+    window.addEventListener('resize', () => {
+        // Re-calculate positions on resize to keep stars in view
+        initGame();
+    });
+
+</script>
+</body>
+</html>

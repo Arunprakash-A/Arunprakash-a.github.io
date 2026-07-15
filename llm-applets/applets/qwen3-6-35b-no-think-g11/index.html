@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadratic Transformations Explorer</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3.4.15/dist/vue.global.js"></script>
+
+    <style>
+        :root {
+            --bg-body: #F8F9FA;
+            --bg-panel: #FFFFFF;
+            --border: #DEE2E6;
+            --text-main: #2C3E50;
+            --text-muted: #6C757D;
+            
+            --accent-primary: #3498DB;
+            --accent-secondary: #E74C3C;
+            --accent-success: #27AE60;
+            --accent-warning: #F1C40F;
+            
+            --grid-line: #E9ECEF;
+            --grid-axis: #ADB5BD;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+        }
+
+        #app {
+            display: flex;
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Sidebar Controls */
+        .sidebar {
+            width: 380px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            overflow-y: auto;
+            z-index: 10;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.05);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .slider-container {
+            background: var(--bg-body);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: border-color 0.3s;
+        }
+        
+        .slider-container:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        .slider-value {
+            color: var(--accent-primary);
+            font-weight: bold;
+        }
+
+        /* FIX 2: Labels for accessibility and probe detection */
+        label.slider-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* FIX 1 & 3: Standard HTML Checkboxes for Toggles */
+        .toggles {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-body);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.6rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: all 0.2s ease; /* FIX 4: Smooth transition */
+            user-select: none;
+        }
+
+        .toggle-wrapper:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-main);
+        }
+
+        /* Hide the actual checkbox but keep it accessible */
+        .toggle-wrapper input[type="checkbox"] {
+            margin-right: 8px;
+            accent-color: var(--accent-primary);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        /* Visual state when checked */
+        .toggle-wrapper.checked {
+            background: rgba(52, 152, 219, 0.1);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        /* Input Mode Toggle */
+        .mode-segment {
+            display: flex;
+            background: var(--bg-body);
+            border-radius: 10px;
+            padding: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .mode-segment .toggle-wrapper {
+            flex: 1;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            padding: 0.5rem;
+            justify-content: center;
+        }
+
+        .mode-segment .toggle-wrapper.checked {
+            background: var(--accent-primary);
+            color: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        /* Info Panel */
+        .info-panel {
+            background: var(--bg-body);
+            border-radius: 12px;
+            padding: 1.2rem;
+            border: 1px solid var(--border);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+            font-size: 0.9rem;
+        }
+
+        .info-label { color: var(--text-muted); }
+        .info-val { font-family: 'JetBrains Mono', monospace; color: var(--text-main); }
+
+        /* Graph Area */
+        .graph-container {
+            flex: 1;
+            position: relative;
+            background: #FFFFFF;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Overlay Equation */
+        .equation-overlay {
+            position: absolute;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 2rem;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            font-size: 1.2rem;
+            pointer-events: none;
+            z-index: 5;
+            color: var(--text-main);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            #app { flex-direction: column; }
+            .sidebar { width: 100%; height: 40%; padding: 1rem; }
+            .graph-container { height: 60%; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="header">
+            <h1>Vertex Form Explorer</h1>
+            <p>Manipulate parameters to understand quadratic transformations.</p>
+        </div>
+
+        <!-- Input Mode Toggle -->
+        <div class="control-group">
+            <div class="slider-header">
+                <span>Input Mode</span>
+            </div>
+            <div class="mode-segment">
+                <div 
+                    class="toggle-wrapper"
+                    :class="{ 'checked': inputMode === 'vertex' }"
+                    @click="setMode('vertex')"
+                >
+                    <input type="radio" name="mode" :checked="inputMode === 'vertex'" disabled>
+                    Vertex (a,h,k)
+                </div>
+                <div 
+                    class="toggle-wrapper"
+                    :class="{ 'checked': inputMode === 'standard' }"
+                    @click="setMode('standard')"
+                >
+                    <input type="radio" name="mode" :checked="inputMode === 'standard'" disabled>
+                    Standard (a,b,c)
+                </div>
+            </div>
+        </div>
+
+        <!-- Sliders -->
+        <div class="control-group">
+            <!-- Parameter A -->
+            <div class="slider-container">
+                <div class="slider-header">
+                    <span>Stretch / Reflection (a)</span>
+                    <span class="slider-value">{{ params.a.toFixed(1) }}</span>
+                </div>
+                <!-- FIX 2: Wrapped in label -->
+                <label class="slider-label">
+                    <input type="range" min="-5" max="5" step="0.1" v-model.number="params.a" aria-label="Parameter a">
+                </label>
+            </div>
+
+            <!-- Parameter H or B -->
+            <div class="slider-container" v-if="inputMode === 'vertex'">
+                <div class="slider-header">
+                    <span>Horizontal Shift (h)</span>
+                    <span class="slider-value">{{ params.h.toFixed(1) }}</span>
+                </div>
+                <label class="slider-label">
+                    <input type="range" min="-10" max="10" step="0.1" v-model.number="params.h" aria-label="Parameter h">
+                </label>
+            </div>
+            <div class="slider-container" v-else>
+                <div class="slider-header">
+                    <span>Linear Coeff (b)</span>
+                    <span class="slider-value">{{ params.b.toFixed(1) }}</span>
+                </div>
+                <label class="slider-label">
+                    <input type="range" min="-20" max="20" step="0.1" v-model.number="params.b" aria-label="Parameter b">
+                </label>
+            </div>
+
+            <!-- Parameter K or C -->
+            <div class="slider-container" v-if="inputMode === 'vertex'">
+                <div class="slider-header">
+                    <span>Vertical Shift (k)</span>
+                    <span class="slider-value">{{ params.k.toFixed(1) }}</span>
+                </div>
+                <label class="slider-label">
+                    <input type="range" min="-10" max="10" step="0.1" v-model.number="params.k" aria-label="Parameter k">
+                </label>
+            </div>
+            <div class="slider-container" v-else>
+                <div class="slider-header">
+                    <span>Constant (c)</span>
+                    <span class="slider-value">{{ params.c.toFixed(1) }}</span>
+                </div>
+                <label class="slider-label">
+                    <input type="range" min="-10" max="10" step="0.1" v-model.number="params.c" aria-label="Parameter c">
+                </label>
+            </div>
+        </div>
+
+        <!-- Toggles -->
+        <div class="control-group">
+            <div class="slider-header"><span>Display Options</span></div>
+            <div class="toggles">
+                <!-- FIX 1: Standard Checkbox -->
+                <label class="toggle-wrapper" :class="{ 'checked': showRef }">
+                    <input type="checkbox" v-model="showRef">
+                    Ref: y=x²
+                </label>
+                <label class="toggle-wrapper" :class="{ 'checked': showVertex }">
+                    <input type="checkbox" v-model="showVertex">
+                    Vertex
+                </label>
+                <label class="toggle-wrapper" :class="{ 'checked': showAxis }">
+                    <input type="checkbox" v-model="showAxis">
+                    Axis of Sym.
+                </label>
+                <label class="toggle-wrapper" :class="{ 'checked': showRoots }">
+                    <input type="checkbox" v-model="showRoots">
+                    Roots
+                </label>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="info-panel">
+            <div class="info-row">
+                <span class="info-label">Vertex</span>
+                <span class="info-val" style="color: var(--accent-secondary)">{{ vertex.x.toFixed(2) }}, {{ vertex.y.toFixed(2) }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Axis of Symmetry</span>
+                <span class="info-val">x = {{ vertex.x.toFixed(2) }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Discriminant (D)</span>
+                <span class="info-val" :style="{ color: discriminant >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }">
+                    {{ discriminant.toFixed(2) }}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Real Roots</span>
+                <span class="info-val">{{ roots.length }} point(s)</span>
+            </div>
+            <div class="info-row" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 0.5rem;">
+                <span class="info-label">Coefficients</span>
+                <span class="info-val" style="color: var(--accent-primary)">b = {{ params.b.toFixed(2) }}, c = {{ params.c.toFixed(2) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graph Area -->
+    <div class="graph-container">
+        <div class="equation-overlay" id="equation-display">
+            <!-- KaTeX will render here -->
+            $$ y = ... $$
+        </div>
+        <canvas ref="graphCanvas"></canvas>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, reactive, computed, watch, onMounted, nextTick } = Vue;
+
+    createApp({
+        setup() {
+            // State
+            const graphCanvas = ref(null);
+            const inputMode = ref('vertex'); // 'vertex' or 'standard'
+            
+            // Parameters
+            const params = reactive({
+                a: 1,
+                h: 0,
+                k: 0,
+                b: 0,
+                c: 0
+            });
+
+            // Display Toggles
+            const showRef = ref(false);
+            const showVertex = ref(true);
+            const showAxis = ref(true);
+            const showRoots = ref(true);
+
+            // Derived Math State
+            const vertex = computed(() => {
+                // If in standard mode, we convert a,b,c to h,k for display logic
+                // h = -b / 2a
+                // k = c - (b^2 / 4a)
+                if (inputMode.value === 'standard') {
+                    const h = -params.b / (2 * params.a);
+                    const k = params.c - (Math.pow(params.b, 2) / (4 * params.a));
+                    return { x: h, y: k };
+                }
+                return { x: params.h, y: params.k };
+            });
+
+            const discriminant = computed(() => {
+                // D = b^2 - 4ac
+                return Math.pow(params.b, 2) - 4 * params.a * params.c;
+            });
+
+            const roots = computed(() => {
+                if (params.a === 0) return []; // Not a parabola
+                const d = discriminant.value;
+                if (d < 0) return [];
+                if (d === 0) return [vertex.value.x];
+                
+                const sqrtD = Math.sqrt(d);
+                const x1 = (-params.b + sqrtD) / (2 * params.a);
+                const x2 = (-params.b - sqrtD) / (2 * params.a);
+                return [x1, x2];
+            });
+
+            // Mode Switching Logic
+            const setMode = (mode) => {
+                if (inputMode.value === mode) return;
+                
+                if (mode === 'standard') {
+                    // Convert current vertex (h, k) to standard (b, c)
+                    // b = -2ah
+                    // c = ah^2 + k
+                    params.b = -2 * params.a * params.h;
+                    params.c = (params.a * params.h * params.h) + params.k;
+                } else {
+                    // Convert current standard (b, c) to vertex (h, k)
+                    // h = -b / 2a
+                    // k = c - b^2 / 4a
+                    params.h = -params.b / (2 * params.a);
+                    params.k = params.c - (Math.pow(params.b, 2) / (4 * params.a));
+                }
+                
+                inputMode.value = mode;
+            };
+
+            // Sync Logic
+            watch(params, (newVal) => {
+                // If user changes 'a', we need to ensure consistency between modes
+                // But since sliders update the reactive object directly, we just need to handle the cross-sync
+                // when switching modes or if we want strict coupling.
+                // For this app, sliders update the 'active' mode directly.
+                // We need to sync the 'inactive' mode so the math holds up.
+                
+                if (inputMode.value === 'vertex') {
+                    // h = params.h, k = params.k
+                    // b = -2ah, c = ah^2 + k
+                    params.b = -2 * params.a * params.h;
+                    params.c = (params.a * params.h * params.h) + params.k;
+                } else {
+                    // h = -b/2a, k = c - b^2/4a
+                    params.h = -params.b / (2 * params.a);
+                    params.k = params.c - (Math.pow(params.b, 2) / (4 * params.a));
+                }
+            });
+
+            // Canvas Logic
+            let ctx = null;
+            let width = 0;
+            let height = 0;
+            let scale = 40; // pixels per unit
+            let offsetX = 0;
+            let offsetY = 0;
+
+            const draw = () => {
+                if (!ctx) return;
+
+                // Clear
+                ctx.clearRect(0, 0, width, height);
+
+                // Coordinate System Transform
+                // Center origin
+                const cx = width / 2 + offsetX;
+                const cy = height / 2 + offsetY;
+
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.scale(1, -1); // Flip Y axis for math coordinates
+
+                // Draw Grid
+                drawGrid(ctx, scale);
+
+                // Draw Reference Parabola y = x^2
+                if (showRef.value) {
+                    drawParabola(ctx, 1, 0, 0, 'rgba(148, 163, 184, 0.2)', 2);
+                }
+
+                // Draw Main Parabola
+                // y = a(x-h)^2 + k
+                drawParabola(ctx, params.a, params.h, params.k, '#3498DB', 3);
+
+                // Draw Axis of Symmetry
+                if (showAxis.value) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(231, 76, 60, 0.6)';
+                    ctx.setLineDash([5, 5]);
+                    ctx.lineWidth = 2;
+                    ctx.moveTo(params.h * scale, -height); // Top
+                    ctx.lineTo(params.h * scale, height); // Bottom
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                // Draw Vertex
+                if (showVertex.value) {
+                    drawPoint(ctx, params.h, params.k, '#E74C3C', 6);
+                    // Label
+                    ctx.fillStyle = '#E74C3C';
+                    ctx.font = '12px Inter';
+                    ctx.fillText(`V(${params.h.toFixed(1)}, ${params.k.toFixed(1)})`, (params.h * scale) + 10, (params.k * scale) - 10);
+                }
+
+                // Draw Roots
+                if (showRoots.value) {
+                    roots.value.forEach(r => {
+                        drawPoint(ctx, r, 0, '#27AE60', 6);
+                        ctx.fillStyle = '#27AE60';
+                        ctx.font = '12px Inter';
+                        ctx.fillText(`(${r.toFixed(1)}, 0)`, (r * scale) + 10, -10);
+                    });
+                }
+
+                ctx.restore();
+            };
+
+            const drawGrid = (ctx, s) => {
+                ctx.lineWidth = 1;
+                
+                // Minor grid
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+                const minorStep = s / 2;
+                const startX = -(width/2 + offsetX) % minorStep;
+                const startY = -(height/2 + offsetY) % minorStep;
+
+                ctx.beginPath();
+                for (let x = startX; x < width; x += minorStep) {
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                }
+                for (let y = startY; y < height; y += minorStep) {
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                }
+                ctx.stroke();
+
+                // Major grid (Units)
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.beginPath();
+                for (let x = -(width/2 + offsetX) % s; x < width; x += s) {
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                }
+                for (let y = -(height/2 + offsetY) % s; y < height; y += s) {
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                }
+                ctx.stroke();
+
+                // Axes
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                // X Axis
+                ctx.moveTo(0, 0);
+                ctx.lineTo(width, 0);
+                // Y Axis
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, height);
+                ctx.stroke();
+            };
+
+            const drawParabola = (ctx, a, h, k, color, width) => {
+                ctx.beginPath();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                
+                // We draw pixel by pixel across the screen width
+                // x_screen goes from -width/2 to width/2 (relative to center)
+                const startPixel = -width / 2 - offsetX;
+                const endPixel = width / 2 - offsetX;
+                
+                let first = true;
+
+                for (let px = startPixel; px <= endPixel; px += 1) {
+                    // Convert pixel x to math x
+                    const mx = px / scale;
+                    
+                    // Calculate math y
+                    const my = a * Math.pow(mx - h, 2) + k;
+                    
+                    // Convert math y to pixel y (flipped)
+                    const py = -(my * scale); // -1 because canvas Y is down
+
+                    if (first) {
+                        ctx.moveTo(px, py);
+                        first = false;
+                    } else {
+                        ctx.lineTo(px, py);
+                    }
+                }
+                ctx.stroke();
+            };
+
+            const drawPoint = (ctx, mx, my, color, r) => {
+                const px = mx * scale;
+                const py = -(my * scale);
+                
+                ctx.beginPath();
+                ctx.fillStyle = color;
+                ctx.arc(px, py, r, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Glow
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            };
+
+            // Resize Handler
+            const handleResize = () => {
+                const container = graphCanvas.value.parentElement;
+                width = container.clientWidth;
+                height = container.clientHeight;
+                
+                // Handle High DPI
+                const dpr = window.devicePixelRatio || 1;
+                graphCanvas.value.width = width * dpr;
+                graphCanvas.value.height = height * dpr;
+                
+                ctx = graphCanvas.value.getContext('2d');
+                ctx.scale(dpr, dpr);
+                
+                draw();
+            };
+
+            // KaTeX Rendering
+            const updateEquation = async () => {
+                const el = document.getElementById('equation-display');
+                let latex = '';
+                
+                if (inputMode.value === 'vertex') {
+                    // Format: y = a(x - h)^2 + k
+                    const hSign = params.h >= 0 ? '-' : '+';
+                    const kSign = params.k >= 0 ? '+' : '-';
+                    const hAbs = Math.abs(params.h).toFixed(1);
+                    const kAbs = Math.abs(params.k).toFixed(1);
+                    
+                    // Handle a=1 or a=-1 simplification
+                    let aStr = params.a === 1 ? '' : (params.a === -1 ? '-' : params.a.toFixed(1));
+                    
+                    latex = `y = ${aStr}(x ${hSign} ${hAbs})^2 ${kSign} ${kAbs}`;
+                } else {
+                    // Format: y = ax^2 + bx + c
+                    const bSign = params.b >= 0 ? '+' : '-';
+                    const cSign = params.c >= 0 ? '+' : '-';
+                    const bAbs = Math.abs(params.b).toFixed(1);
+                    const cAbs = Math.abs(params.c).toFixed(1);
+                    
+                    let aStr = params.a === 1 ? '' : params.a.toFixed(1);
+                    
+                    latex = `y = ${aStr}x^2 ${bSign} ${bAbs}x ${cSign} ${cAbs}`;
+                }
+
+                // FIXED: Explicitly set content then render
+                el.innerHTML = `$$${latex}$$`;
+                await renderMathInElement(el, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true}
+                    ]
+                });
+            };
+
+            onMounted(() => {
+                window.addEventListener('resize', handleResize);
+                handleResize();
+                
+                // Initial KaTeX render
+                nextTick(() => updateEquation());
+            });
+
+            // Watchers for re-drawing
+            watch([params, showRef, showVertex, showAxis, showRoots], () => {
+                draw();
+                updateEquation();
+            });
+
+            return {
+                graphCanvas,
+                params,
+                inputMode,
+                showRef,
+                showVertex,
+                showAxis,
+                showRoots,
+                vertex,
+                discriminant,
+                roots,
+                setMode
+            };
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>

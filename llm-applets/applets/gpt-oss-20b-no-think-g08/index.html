@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Slope‑Intercept Line Explorer</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<style>
+:root{
+  --bg-gradient: radial-gradient(circle at center,#0a0c12 0%,#12151f 100%);
+  --accent1:#22d3ee;
+  --accent2:#a78bfa;
+  --surface:#1e1e2e;
+  --text-primary:#ffffff;
+  --text-secondary:#cbd5e1;
+}
+html,body{
+  margin:0;padding:0;height:100%;font-family:Inter,system-ui,sans-serif;color:var(--text-primary);
+  background:var(--bg-gradient);overflow:hidden;
+}
+.app{display:flex;flex-direction:row;height:100vh;}
+.canvas-container{flex:2;padding:20px;display:flex;justify-content:center;align-items:center;}
+.control-panel{flex:1;background:var(--surface);color:var(--text-primary);
+  border-left:1px solid rgba(255,255,255,.05);overflow-y:auto;}
+.card{margin:20px;padding:20px;background:rgba(30,30,46,.8);backdrop-filter:blur(10px);
+  border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.5);}
+h2{font-size:1.6rem;margin-bottom:.8rem;}
+label{display:block;font-weight:500;margin-top:.8rem;}
+input[type=range]{width:100%;margin-top:.4rem;appearance:none;background:transparent;height:4px;border-radius:2px;}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none;width:12px;height:12px;border-radius:50%;background:var(--accent1);cursor:pointer;
+}
+input[type=range]::-moz-range-thumb{
+  width:12px;height:12px;border-radius:50%;background:var(--accent1);cursor:pointer;
+}
+.switch{position:relative;display:inline-block;width:48px;height:24px;margin-right:.5rem;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:24px;transition:.2s;}
+.slider::before{
+  position:absolute;content:"";height:20px;width:20px;background:white;border-radius:50%;bottom:2px;left:2px;transition:.2s;
+}
+input:checked + .slider{background:var(--accent1);}
+input:checked + .slider::before{transform:translateX(24px);}
+.radio-group label{display:inline-block;margin-right:1rem;}
+#equation-display{margin-top:1rem;font-size:.9rem;}
+svg{width:100%;height:auto;max-width:800px;border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,.5);background:var(--surface);}
+@media (max-width:768px){
+  .app{flex-direction:column;}
+  .canvas-container,.control-panel{width:100%;}
+}
+#draggable-point{
+  cursor:grab;
+  transition:transform 0.4s cubic-bezier(0.25,1.5,0.5,1);
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="canvas-container">
+    <svg id="graph" viewBox="-10 -10 20 20" preserveAspectRatio="xMidYMid meet"></svg>
+  </div>
+  <aside class="control-panel">
+    <h2>Slope‑Intercept Line Explorer</h2>
+    <div class="card">
+      <label for="slope-slider">Slope: <span id="slope-value">1.00</span></label>
+      <input type="range" id="slope-slider" min="-5" max="5" step="0.05" value="1" aria-label="Slope slider">
+
+      <label for="intercept-slider">Intercept: <span id="intercept-value">0.00</span></label>
+      <input type="range" id="intercept-slider" min="-10" max="10" step="0.1" value="0" aria-label="Intercept slider">
+
+      <div class="toggle-group">
+        <label class="switch"><input type="checkbox" id="grid-toggle" checked aria-label="Toggle grid"><span class="slider"></span> Grid</label>
+        <label class="switch"><input type="checkbox" id="triangle-toggle" checked aria-label="Toggle slope triangle"><span class="slider"></span> Slope Triangle</label>
+        <label class="switch"><input type="checkbox" id="second-line-toggle" aria-label="Toggle second line"><span class="slider"></span> Second Line</label>
+      </div>
+
+      <label for="tick-spacing-slider">Tick Spacing: <span id="tick-spacing-value">1.00</span></label>
+      <input type="range" id="tick-spacing-slider" min="0.5" max="10" step="0.5" value="1" aria-label="Tick spacing slider">
+
+      <div id="second-line-controls" style="display:none;">
+        <label for="slope2-slider">Second Slope: <span id="slope2-value">1.00</span></label>
+        <input type="range" id="slope2-slider" min="-5" max="5" step="0.05" value="1" aria-label="Second slope slider">
+
+        <label for="intercept2-slider">Second Intercept: <span id="intercept2-value">0.00</span></label>
+        <input type="range" id="intercept2-slider" min="-10" max="10" step="0.1" value="0" aria-label="Second intercept slider">
+
+        <div class="radio-group">
+          <label><input type="radio" name="relation" value="parallel" checked> Parallel</label>
+          <label><input type="radio" name="relation" value="perpendicular"> Perpendicular</label>
+          <label><input type="radio" name="relation" value="custom"> Custom</label>
+        </div>
+      </div>
+
+      <div id="equation-display"></div>
+    </div>
+  </aside>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.8.4/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.11/dist/interact.min.js"></script>
+
+<script>
+const svg = d3.select('#graph');
+svg.append('g').attr('id','grid');
+
+const primaryLine = svg.append('path')
+  .attr('id','primary-line')
+  .attr('stroke', 'var(--accent1)')
+  .attr('stroke-width',2)
+  .attr('fill','none');
+
+const triangleGroup = svg.append('g').attr('id','triangle-group');
+triangleGroup.append('path')
+  .attr('id','triangle-horizontal')
+  .attr('stroke', 'var(--accent2)')
+  .attr('stroke-width',2);
+triangleGroup.append('path')
+  .attr('id','triangle-vertical')
+  .attr('stroke', 'var(--accent2)')
+  .attr('stroke-width',2);
+
+const interceptMarker = svg.append('circle')
+  .attr('id','intercept-marker')
+  .attr('r',0.3)
+  .attr('fill', 'var(--accent1)');
+
+const draggablePoint = svg.append('circle')
+  .attr('id','draggable-point')
+  .attr('r',0.4)
+  .attr('fill', 'var(--accent1)')
+  .style('cursor','grab');
+
+const secondLine = svg.append('path')
+  .attr('id','second-line')
+  .attr('stroke', 'var(--accent2)')
+  .attr('stroke-width',2)
+  .attr('fill','none');
+
+let m = 1, c = 0;
+let m2 = 1, c2 = 0;
+let relation = 'parallel';
+let pointX = 0, pointY = m*pointX + c;
+
+const slopeSlider = document.getElementById('slope-slider');
+const interceptSlider = document.getElementById('intercept-slider');
+const gridToggle = document.getElementById('grid-toggle');
+const triangleToggle = document.getElementById('triangle-toggle');
+const secondLineToggle = document.getElementById('second-line-toggle');
+const slope2Slider = document.getElementById('slope2-slider');
+const intercept2Slider = document.getElementById('intercept2-slider');
+const tickSpacingSlider = document.getElementById('tick-spacing-slider');
+const tickSpacingValueSpan = document.getElementById('tick-spacing-value');
+
+function formatNumber(n){ return n.toFixed(2); }
+
+function updateEquation(){
+  const eqStr = `y = ${m.toFixed(2)}\\cdot x + ${c.toFixed(2)}`;
+  const pointStr = `(${pointX.toFixed(2)},${pointY.toFixed(2)})`;
+  const diff = m*pointX + c - pointY;
+  const diffStr = diff.toExponential(3);
+  document.getElementById('equation-display').innerHTML =
+    `<div>${katex.renderToString(eqStr,{throwOnError:false})}</div>
+     <div>Point ${katex.renderToString(pointStr)} satisfies equation with Δ=${diffStr}</div>`;
+}
+
+function update(){
+  // Update value displays
+  document.getElementById('slope-value').textContent = formatNumber(m);
+  document.getElementById('intercept-value').textContent = formatNumber(c);
+
+  if(secondLineToggle.checked){
+    const radios = document.querySelectorAll('input[name="relation"]');
+    let rel;
+    radios.forEach(r=>{ if(r.checked) rel=r.value;});
+    relation=rel;
+
+    // Compute m2/c2 based on relation
+    if(relation==='parallel'){
+      m2=m;
+      c2=c;
+    } else if(relation==='perpendicular'){
+      m2 = (m !== 0) ? -1/m : 0;
+      c2 = c;
+    } else { // custom
+      m2=parseFloat(slope2Slider.value);
+      c2=parseFloat(intercept2Slider.value);
+    }
+
+    slope2Slider.disabled=false;
+    intercept2Slider.disabled=false;
+
+    slope2Slider.value=m2;
+    intercept2Slider.value=c2;
+    document.getElementById('slope2-value').textContent=formatNumber(m2);
+    document.getElementById('intercept2-value').textContent=formatNumber(c2);
+
+  } else {
+    slope2Slider.disabled=true;
+    intercept2Slider.disabled=true;
+  }
+
+  // Primary line
+  const x1=-10, y1=m*x1+c, x2=10, y2=m*x2+c;
+  d3.select('#primary-line')
+    .attr('d',`M ${x1} ${y1} L ${x2} ${y2}`)
+    .transition().duration(300).ease(d3.easeCubicOut);
+
+  // Slope triangle
+  if(triangleToggle.checked){
+    const run=1, rise=m;
+    d3.select('#triangle-horizontal')
+      .attr('d',`M 0 0 L ${run} 0`)
+      .transition().duration(300).ease(d3.easeCubicOut);
+    d3.select('#triangle-vertical')
+      .attr('d',`M 0 0 L 0 ${rise}`)
+      .transition().duration(300).ease(d3.easeCubicOut);
+    d3.select('#triangle-group').style('display','block');
+  }else{
+    d3.select('#triangle-group').style('display','none');
+  }
+
+  // Intercept marker
+  d3.select('#intercept-marker')
+    .attr('cx',0).attr('cy',c);
+
+  // Draggable point
+  if(isNaN(pointX)) pointX=0;
+  pointY = m*pointX + c;
+  d3.select('#draggable-point')
+    .attr('transform',`translate(${pointX},${pointY})`);
+
+  // Second line
+  if(secondLineToggle.checked){
+    const x1s=-10, y1s=m2*x1s+c2, x2s=10, y2s=m2*x2s+c2;
+    d3.select('#second-line')
+      .attr('d',`M ${x1s} ${y1s} L ${x2s} ${y2s}`)
+      .attr('stroke', relation==='parallel' ? 'var(--accent2)' : 'var(--accent1)')
+      .transition().duration(300).ease(d3.easeCubicOut)
+      .attr('display','');
+  }else{
+    d3.select('#second-line').attr('display','none');
+  }
+
+  // Grid
+  if(gridToggle.checked){
+    const grid = d3.select('#grid');
+    grid.selectAll('*').remove();
+    const tickSpacing = parseFloat(tickSpacingSlider.value);
+    for(let i=-10;i<=10;i+=tickSpacing){
+      grid.append('line')
+        .attr('x1',i).attr('y1',-10)
+        .attr('x2',i).attr('y2',10)
+        .attr('stroke','#444').attr('stroke-width',0.5);
+      grid.append('line')
+        .attr('x1',-10).attr('y1',i)
+        .attr('x2',10).attr('y2',i)
+        .attr('stroke','#444').attr('stroke-width',0.5);
+    }
+  }else{
+    d3.select('#grid').selectAll('*').remove();
+  }
+
+  updateEquation();
+}
+
+slopeSlider.addEventListener('input',()=>{
+  m=parseFloat(slopeSlider.value);
+  update();
+});
+interceptSlider.addEventListener('input',()=>{
+  c=parseFloat(interceptSlider.value);
+  pointY = m*pointX + c;
+  d3.select('#draggable-point')
+    .attr('transform',`translate(${pointX},${pointY})`);
+  update();
+});
+
+gridToggle.addEventListener('change',()=>{ 
+  tickSpacingSlider.disabled=!gridToggle.checked;
+  update(); 
+});
+triangleToggle.addEventListener('change',()=>{update();});
+secondLineToggle.addEventListener('change',()=>{
+  document.getElementById('second-line-controls').style.display=
+    secondLineToggle.checked?'block':'none';
+  update();
+});
+
+document.querySelectorAll('input[name="relation"]').forEach(radio=>{
+  radio.addEventListener('change',()=>{
+    relation=radio.value;
+    update();
+  });
+});
+slope2Slider.addEventListener('input',()=>{m2=parseFloat(slope2Slider.value);update();});
+intercept2Slider.addEventListener('input',()=>{c2=parseFloat(intercept2Slider.value);update();});
+
+tickSpacingSlider.addEventListener('input',()=>{
+  tickSpacingValueSpan.textContent = formatNumber(parseFloat(tickSpacingSlider.value));
+  if(gridToggle.checked) update();
+});
+
+interact('#draggable-point').draggable({
+  listeners:{
+    move(event){
+      const svgNode=document.getElementById('graph');
+      const rect=svgNode.getBoundingClientRect();
+      let px=event.clientX-rect.left;
+      let py=event.clientY-rect.top;
+      let xData=(px/rect.width)*20-10;
+      if(xData<-10)xData=-10;if(xData>10)xData=10;
+      pointX=xData;
+      pointY=m*pointX+c;
+      d3.select('#draggable-point')
+        .attr('transform',`translate(${pointX},${pointY})`);
+      updateEquation();
+    },
+    end(event){
+      const targetX = pointX;
+      const targetY = pointY;
+      const overshootX = targetX + (Math.random() < 0.5 ? -0.2 : 0.2);
+      d3.select('#draggable-point')
+        .transition()
+        .duration(150)
+        .ease(d3.easeBackOut)
+        .attr('transform',`translate(${overshootX},${targetY})`)
+        .transition()
+        .duration(200)
+        .ease(d3.easeCubicInOut)
+        .attr('transform',`translate(${targetX},${targetY})`);
+    }
+  },
+  inertia:true,
+  modifiers: [
+    interact.modifiers.restrictRect({
+      restriction: 'parent',
+      endOnly: true
+    })
+  ]
+});
+
+update();
+</script>
+</body>
+</html>

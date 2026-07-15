@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embeddings Explorer: Visualizing Vector Spaces</title>
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://unpkg.com/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://unpkg.com/katex@0.16.9/dist/katex.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-deep: #020617;
+            --bg-surface: #0f172a;
+            --bg-panel: rgba(30, 41, 59, 0.7);
+            
+            --accent-primary: #38bdf8; /* Sky Blue */
+            --accent-secondary: #a78bfa; /* Violet */
+            --accent-tertiary: #f472b6; /* Pink */
+            --accent-success: #34d399; /* Emerald */
+            --accent-warning: #fbbf24; /* Amber */
+            
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: rgba(148, 163, 184, 0.2);
+            
+            /* Typography */
+            --font-sans: 'Inter', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+
+            /* Layout */
+            --radius-lg: 16px;
+            --radius-md: 8px;
+        }
+
+        * { box-sizing: border-box; outline: none; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-deep);
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, var(--bg-deep) 60%);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Layout Container */
+        .app-container {
+            display: grid;
+            grid-template-columns: 3fr 1.2fr;
+            width: 95vw;
+            height: 90vh;
+            max-width: 1600px;
+            gap: 24px;
+        }
+
+        /* Canvas Area */
+        .canvas-wrapper {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+
+        /* Grid Pattern */
+        .grid-pattern line { stroke: var(--text-main); opacity: 0.05; }
+
+        /* Sidebar / Controls */
+        .sidebar {
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        h2 { font-size: 1rem; color: var(--text-muted); margin: 0 0 8px 0; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem; }
+
+        /* Controls */
+        .control-group { display: flex; flex-direction: column; gap: 12px; }
+
+        .toggle-btn-group {
+            display: flex;
+            background: rgba(0,0,0,0.3);
+            border-radius: var(--radius-md);
+            padding: 4px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: var(--accent-primary);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        /* Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        /* Readout Panel */
+        .readout-card {
+            background: rgba(0,0,0,0.25);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .math-display {
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin-bottom: 8px;
+            color: var(--accent-primary);
+        }
+
+        .value-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            margin-top: 8px;
+            color: var(--text-muted);
+        }
+
+        .value-highlight { color: var(--accent-success); font-weight: bold; }
+
+        /* Tooltip */
+        #tooltip {
+            position: fixed;
+            background: rgba(15, 23, 42, 0.98);
+            border: 1px solid var(--accent-primary);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            z-index: 9999;
+            color: var(--text-main);
+        }
+
+        /* Animations */
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.8; stroke-width: 2px; }
+            100% { transform: scale(2.5); opacity: 0; stroke-width: 0.5px; }
+        }
+
+        .pulse-circle {
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .app-container { grid-template-columns: 1fr; height: auto; overflow-y: auto; padding-bottom: 24px; }
+            body { overflow-y: auto; height: auto; display: block; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Left: Visualization -->
+    <div class="canvas-wrapper" id="canvasWrapper">
+        <svg id="mainSvg">
+            <defs>
+                <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                    <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#94a3b8" stroke-width="1"/>
+                </pattern>
+                <!-- Glow Filter -->
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+            </defs>
+            
+            <!-- Background Grid -->
+            <rect width="100%" height="100%" fill="url(#grid)" opacity="0.05" />
+
+            <!-- Axes -->
+            <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#475569" stroke-width="1" stroke-dasharray="4 4"/>
+            <line x1="50%" y1="0" x2="50%" y2="100%" stroke="#475569" stroke-width="1" stroke-dasharray="4 4"/>
+
+            <!-- Content Group (Centered) -->
+            <g id="contentGroup"></g>
+        </svg>
+    </div>
+
+    <!-- Right: Controls & Readouts -->
+    <aside class="sidebar">
+        <header>
+            <h1>Embeddings Explorer</h1>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Visualizing Vector Spaces</p>
+        </header>
+
+        <!-- Mode Toggle -->
+        <div class="control-group">
+            <h2>Mode</h2>
+            <div class="toggle-btn-group">
+                <button class="toggle-btn active" id="btnExplore" onclick="setMode('explore')">Explore (NN)</button>
+                <button class="toggle-btn" id="btnArith" onclick="setMode('arithmetic')">Arithmetic</button>
+            </div>
+        </div>
+
+        <!-- Metric Toggle -->
+        <div class="control-group">
+            <h2>Similarity Metric</h2>
+            <div class="toggle-btn-group">
+                <button class="toggle-btn active" id="btnCosine" onclick="setMetric('cosine')">Cosine Sim</button>
+                <button class="toggle-btn" id="btnEuclidean" onclick="setMetric('euclidean')">Distance</button>
+            </div>
+        </div>
+
+        <!-- K Slider -->
+        <div class="control-group">
+            <h2>Nearest Neighbors (K): <span id="kValue" style="color: var(--accent-primary)">5</span></h2>
+            <input type="range" min="1" max="10" value="5" id="kSlider" oninput="updateK(this.value)">
+        </div>
+
+        <!-- Readout Panel -->
+        <div class="control-group">
+            <h2>Similarity Readout</h2>
+            <div class="readout-card">
+                <div id="formulaDisplay" class="math-display"></div>
+                
+                <!-- Angle Visualization -->
+                <svg viewBox="0 0 100 100" style="width: 80px; height: 80px; margin: 10px auto; display:block;">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#334155" stroke-width="2"/>
+                    <!-- Dynamic Arc -->
+                    <path id="angleArc" d="" fill="rgba(56, 189, 248, 0.2)" stroke="var(--accent-primary)" stroke-width="1"/>
+                    <line x1="50" y1="50" x2="50" y2="5" stroke="#fff" stroke-width="2" id="refLine"/>
+                </svg>
+
+                <div class="value-row">
+                    <span>Cosine Sim:</span>
+                    <span id="cosVal" class="value-highlight">1.00</span>
+                </div>
+                <div class="value-row">
+                    <span>Angle (θ):</span>
+                    <span id="angleVal">0°</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Arithmetic Info -->
+        <div class="control-group" id="arithInfo" style="display:none;">
+            <h2>Vector Operation</h2>
+            <div class="readout-card">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Drag points A, B, C to change the result.</p>
+                <div class="math-display" id="arithFormula"></div>
+                <div class="value-row">
+                    <span>Resultant R:</span>
+                    <span id="resultVector" style="color: var(--accent-tertiary)">[0, 0]</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reset -->
+        <button onclick="resetApp()" style="margin-top: auto; background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px; border-radius: 6px; cursor: pointer;">Reset View</button>
+    </aside>
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip"></div>
+
+<script>
+/**
+ * EMBEDDINGS EXPLORER LOGIC - FIXED VERSION
+ */
+
+// --- Data & State ---
+const DATA = [
+    { id: 'king', x: 0.8, y: 0.7, label: 'King' },
+    { id: 'queen', x: 0.75, y: -0.6, label: 'Queen' },
+    { id: 'man', x: -0.9, y: 0.8, label: 'Man' },
+    { id: 'woman', x: -0.85, y: -0.7, label: 'Woman' },
+    { id: 'apple', x: 0.6, y: 0.3, label: 'Apple' },
+    { id: 'orange', x: 0.55, y: -0.25, label: 'Orange' },
+    { id: 'car', x: -0.4, y: 0.9, label: 'Car' },
+    { id: 'bus', x: -0.35, y: 0.85, label: 'Bus' },
+    { id: 'paris', x: 0.2, y: -0.9, label: 'Paris' },
+    { id: 'london', x: -0.1, y: -0.85, label: 'London' },
+    { id: 'happy', x: 0.9, y: 0.1, label: 'Happy' },
+    { id: 'sad', x: -0.7, y: 0.05, label: 'Sad' }
+];
+
+// Arithmetic Mode Draggable Points (Initial positions)
+const ARITH_INIT = {
+    A: { x: 0.8, y: 0.7 }, // King
+    B: { x: -0.9, y: 0.8 }, // Man
+    C: { x: -0.85, y: -0.7 } // Woman
+};
+
+let state = {
+    mode: 'explore', // 'explore' | 'arithmetic'
+    metric: 'cosine', // 'cosine' | 'euclidean'
+    k: 5,
+    selectedId: null,
+    comparedId: null, // NEW: Second point for comparison
+    arith: { A: {...ARITH_INIT.A}, B: {...ARITH_INIT.B}, C: {...ARITH_INIT.C} },
+    hoveredId: null
+};
+
+// --- Math Helpers ---
+const dot = (a, b) => a.x * b.x + a.y * b.y;
+const mag = (v) => Math.sqrt(v.x * v.x + v.y * v.y);
+const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y });
+const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y });
+
+function cosineSimilarity(v1, v2) {
+    const m1 = mag(v1);
+    const m2 = mag(v2);
+    if (m1 === 0 || m2 === 0) return 0;
+    return dot(v1, v2) / (m1 * m2);
+}
+
+function euclideanDistance(p1, p2) {
+    return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+}
+
+// --- Coordinate Mapping ---
+const svg = document.getElementById('mainSvg');
+let width, height;
+
+function resize() {
+    const rect = svg.getBoundingClientRect();
+    width = rect.width;
+    height = rect.height;
+    render(); 
+}
+window.addEventListener('resize', resize);
+
+// Map data coords (-1 to 1) to SVG space (with padding)
+const PADDING = 60;
+function mapX(x) { return width / 2 + x * (width / 2 - PADDING); }
+function mapY(y) { return height / 2 - y * (height / 2 - PADDING); } // Invert Y
+
+// --- Rendering Engine ---
+const contentGroup = document.getElementById('contentGroup');
+
+function render() {
+    contentGroup.innerHTML = ''; // Clear
+    
+    if (state.mode === 'explore') {
+        renderExploreMode();
+    } else {
+        renderArithmeticMode();
+    }
+}
+
+// --- Explore Mode Logic ---
+function renderExploreMode() {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); // FIX: Standard DOM API
+    
+    // 1. Draw Points
+    DATA.forEach(p => {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", mapX(p.x));
+        circle.setAttribute("cy", mapY(p.y));
+        
+        // Visual state based on selection
+        let fill, r;
+        if (state.selectedId === p.id) {
+            fill = "#fff";
+            r = 8;
+        } else if (state.comparedId === p.id) {
+            fill = "var(--accent-tertiary)"; // Pink for comparison
+            r = 7;
+        } else {
+            fill = "var(--accent-primary)";
+            r = 6;
+        }
+
+        circle.setAttribute("r", r);
+        circle.setAttribute("fill", fill);
+        
+        // Glow effect only on selected
+        if (state.selectedId === p.id || state.comparedId === p.id) {
+            circle.setAttribute("filter", "url(#glow)");
+        } else {
+            circle.removeAttribute("filter");
+        }
+
+        circle.style.cursor = "pointer";
+        
+        // Events - FIX: Ensure proper event handling
+        circle.addEventListener('mouseenter', (e) => showTooltip(e, p));
+        circle.addEventListener('mousemove', (e) => moveTooltip(e));
+        circle.addEventListener('mouseleave', hideTooltip);
+        circle.addEventListener('click', () => selectPoint(p.id));
+
+        g.appendChild(circle);
+
+        // Label
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", mapX(p.x) + 10);
+        text.setAttribute("y", mapY(p.y) - 10);
+        text.setAttribute("fill", "#94a3b8");
+        text.setAttribute("font-size", "12px");
+        text.setAttribute("font-family", "var(--font-sans)");
+        text.textContent = p.label;
+        g.appendChild(text);
+    });
+
+    // 2. Draw Connections (if selected)
+    if (state.selectedId) {
+        drawConnections(g, state.selectedId);
+        
+        // FIX: Draw comparison line if second point is selected
+        if (state.comparedId) {
+            const source = DATA.find(d => d.id === state.selectedId);
+            const comp = DATA.find(d => d.id === state.comparedId);
+            
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", mapX(source.x));
+            line.setAttribute("y1", mapY(source.y));
+            line.setAttribute("x2", mapX(comp.x));
+            line.setAttribute("y2", mapY(comp.y));
+            line.setAttribute("stroke", "var(--accent-tertiary)");
+            line.setAttribute("stroke-width", "2");
+            line.setAttribute("stroke-dasharray", "4 4");
+            
+            // Animate in
+            line.style.opacity = "0";
+            line.style.transition = "opacity 0.3s ease";
+            g.appendChild(line);
+            
+            void line.getBoundingClientRect();
+            requestAnimationFrame(() => { line.style.opacity = "1"; });
+        }
+    }
+
+    contentGroup.appendChild(g);
+}
+
+function selectPoint(id) {
+    // If a point is already selected, clicking another sets it as the comparison point
+    if (state.selectedId && state.comparedId === null) {
+        state.comparedId = id;
+    } else {
+        // Otherwise, reset and set new selection
+        state.selectedId = id;
+        state.comparedId = null;
+    }
+    
+    updateReadout();
+    render();
+}
+
+// FIXED: Animation trigger logic for nearest neighbor lines
+function drawConnections(parentG, sourceId) {
+    const source = DATA.find(d => d.id === sourceId);
+    
+    // Calculate distances/similarities to all others
+    let neighbors = DATA.filter(d => d.id !== sourceId).map(d => {
+        let val;
+        if (state.metric === 'cosine') {
+            val = cosineSimilarity({x:source.x, y:source.y}, {x:d.x, y:d.y});
+        } else {
+            val = euclideanDistance(source, d);
+        }
+        return { point: d, score: val };
+    });
+
+    // Sort: Cosine (higher is better), Distance (lower is better)
+    neighbors.sort((a, b) => state.metric === 'cosine' ? b.score - a.score : a.score - b.score);
+
+    const topK = neighbors.slice(0, state.k);
+
+    topK.forEach((n, i) => {
+        // Line
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", mapX(source.x));
+        line.setAttribute("y1", mapY(source.y));
+        line.setAttribute("x2", mapX(n.point.x));
+        line.setAttribute("y2", mapY(n.point.y));
+        
+        const color = state.metric === 'cosine' ? 'var(--accent-secondary)' : 'var(--accent-warning)';
+        line.setAttribute("stroke", color);
+        line.setAttribute("stroke-width", "1.5");
+        line.setAttribute("stroke-dasharray", "4 2");
+        
+        // Staggered animation - FIXED: Force reflow before setting opacity to 1
+        line.style.opacity = "0";
+        line.style.transition = `opacity 0.3s ease ${i * 0.1}s`;
+        
+        parentG.appendChild(line);
+
+        // Label (Score) at midpoint
+        const midX = (mapX(source.x) + mapX(n.point.x)) / 2;
+        const midY = (mapY(source.y) + mapY(n.point.y)) / 2;
+        
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", midX);
+        text.setAttribute("y", midY - 5);
+        text.setAttribute("fill", "#fff");
+        text.setAttribute("font-size", "10px");
+        text.setAttribute("font-family", "var(--font-mono)");
+        text.textContent = state.metric === 'cosine' ? n.score.toFixed(2) : n.score.toFixed(3);
+        
+        // Background for text readability
+        const bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        bgRect.setAttribute("x", midX - 20);
+        bgRect.setAttribute("y", midY - 18);
+        bgRect.setAttribute("width", "40");
+        bgRect.setAttribute("height", "15");
+        bgRect.setAttribute("fill", "#0f172a");
+        bgRect.setAttribute("opacity", "0.8");
+
+        parentG.appendChild(bgRect);
+        parentG.appendChild(text);
+
+        // Trigger animation - FIXED: Force reflow before setting opacity to 1
+        void line.getBoundingClientRect();
+        requestAnimationFrame(() => { 
+            line.style.opacity = "1"; 
+        });
+    });
+}
+
+// --- Arithmetic Mode Logic ---
+function renderArithmeticMode() {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); // FIX: Standard DOM API
+    
+    // 1. Draw Data Points (Dimmed)
+    DATA.forEach(p => {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", mapX(p.x));
+        circle.setAttribute("cy", mapY(p.y));
+        circle.setAttribute("r", 4);
+        circle.setAttribute("fill", "#475569"); // Dimmed
+        g.appendChild(circle);
+    });
+
+    const { A, B, C } = state.arith;
+    
+    const vecA = { x: A.x, y: A.y };
+    const vecB = { x: B.x, y: B.y };
+    const vecC = { x: C.x, y: C.y };
+
+    // FIX: Correct Vector Math R = A - B + C
+    const vecR = sub(add(vecA, vecC), vecB); 
+    
+    const Rx = vecR.x;
+    const Ry = vecR.y;
+
+    // 2. Draw Arrows (Step-by-step visualization)
+    
+    // Draw A from origin
+    drawArrow(g, {x:0,y:0}, vecA, "var(--accent-warning)", "A");
+    
+    // Visualizing subtraction: Draw -B from tip of A
+    const tipOfA = { x: vecA.x, y: vecA.y };
+    const negB = sub({x:0,y:0}, vecB);
+    drawArrow(g, tipOfA, add(tipOfA, negB), "var(--accent-secondary)", "-B");
+
+    // Draw C from tip of -B (which is A-B)
+    const tipOfAB = { x: vecA.x + negB.x, y: vecA.y + negB.y };
+    drawArrow(g, tipOfAB, add(tipOfAB, vecC), "var(--accent-tertiary)", "C");
+
+    // 3. Draw Resultant R (Dashed) from origin to final tip
+    const rLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    rLine.setAttribute("x1", mapX(0)); rLine.setAttribute("y1", mapY(0));
+    rLine.setAttribute("x2", mapX(Rx)); rLine.setAttribute("y2", mapY(Ry));
+    rLine.setAttribute("stroke", "#fff");
+    rLine.setAttribute("stroke-width", "2");
+    rLine.setAttribute("stroke-dasharray", "5 5");
+    g.appendChild(rLine);
+
+    // 4. Find Nearest Data Point to R (Using Euclidean distance in data space)
+    let minDist = Infinity;
+    let nearestId = null;
+    
+    DATA.forEach(d => {
+        const dist = euclideanDistance({x:Rx, y:Ry}, d);
+        if (dist < minDist) {
+            minDist = dist;
+            nearestId = d.id;
+        }
+    });
+
+    // 5. Highlight Nearest Point with Pulse
+    const nearestPt = DATA.find(d => d.id === nearestId);
+    
+    // Pulsing Ring
+    const pulseCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    pulseCircle.setAttribute("cx", mapX(nearestPt.x));
+    pulseCircle.setAttribute("cy", mapY(nearestPt.y));
+    pulseCircle.setAttribute("r", 10);
+    pulseCircle.setAttribute("fill", "none");
+    pulseCircle.setAttribute("stroke", "var(--accent-success)");
+    pulseCircle.classList.add("pulse-circle");
+    g.appendChild(pulseCircle);
+
+    // Solid Point
+    const solidPt = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    solidPt.setAttribute("cx", mapX(nearestPt.x));
+    solidPt.setAttribute("cy", mapY(nearestPt.y));
+    solidPt.setAttribute("r", 6);
+    solidPt.setAttribute("fill", "#fff");
+    g.appendChild(solidPt);
+
+    // Label Result - FIXED: Use properly declared variable 'resLabel' instead of undefined 'text'
+    const resLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    resLabel.setAttribute("x", mapX(Rx));
+    resLabel.setAttribute("y", mapY(Ry) - 15);
+    resLabel.setAttribute("fill", "#fff");
+    resLabel.setAttribute("font-size", "14px");
+    resLabel.textContent = `R ≈ ${nearestPt.label}`;
+    g.appendChild(resLabel);
+
+    // 6. Draggable Points (A, B, C) - FIXED: Global listeners
+    drawDraggable(g, A, 'A', 'var(--accent-warning)', state.arith.A, 'A');
+    drawDraggable(g, B, 'B', 'var(--accent-secondary)', state.arith.B, 'B');
+    drawDraggable(g, C, 'C', 'var(--accent-tertiary)', state.arith.C, 'C');
+
+    contentGroup.appendChild(g);
+    
+    // Update Readout
+    updateArithmeticReadout(Rx, Ry);
+}
+
+function drawArrow(parentG, start, end, color, label) {
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", mapX(start.x));
+    line.setAttribute("y1", mapY(start.y));
+    line.setAttribute("x2", mapX(end.x));
+    line.setAttribute("y2", mapY(end.y));
+    line.setAttribute("stroke", color);
+    line.setAttribute("stroke-width", "3");
+    
+    parentG.appendChild(line);
+
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.setAttribute("x", mapX(end.x) + 5);
+    text.setAttribute("y", mapY(end.y));
+    text.setAttribute("fill", color);
+    text.textContent = label;
+    parentG.appendChild(text);
+}
+
+// FIXED: Global mousemove/mouseup listeners to prevent accumulation
+let activeDragPoint = null;
+
+function drawDraggable(parentG, pos, label, color, dataObj, key) {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); // FIX: Standard DOM API
+    
+    // Visuals
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", mapX(pos.x));
+    circle.setAttribute("cy", mapY(pos.y));
+    circle.setAttribute("r", 10);
+    circle.setAttribute("fill", color);
+    circle.style.cursor = "grab";
+    
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.textContent = label;
+    text.setAttribute("font-size", "14px");
+    text.setAttribute("font-weight", "bold");
+    text.setAttribute("fill", "#fff");
+
+    g.appendChild(circle);
+    g.appendChild(text);
+    
+    const onDown = (e) => {
+        activeDragPoint = key;
+        circle.style.cursor = 'grabbing';
+        e.preventDefault();
+    };
+
+    // We don't attach move/up here anymore. They are global.
+    circle.addEventListener('mousedown', onDown);
+
+    parentG.appendChild(g);
+}
+
+// Global listeners for dragging - FIXED: Single set of listeners
+window.addEventListener('mousemove', (e) => {
+    if (!activeDragPoint) return;
+    
+    // Get SVG coordinates from mouse event
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+
+    // Map back to data space (-1 to 1)
+    const normX = (svgP.x - width/2) / (width/2 - PADDING);
+    const normY = -(svgP.y - height/2) / (height/2 - PADDING);
+
+    state.arith[activeDragPoint] = { x: normX, y: normY };
+    
+    // Update visual position immediately for responsiveness
+    render(); 
+});
+
+window.addEventListener('mouseup', () => {
+    if (activeDragPoint) {
+        activeDragPoint = null;
+        // Reset cursor on all draggable circles
+        document.querySelectorAll('.drag-circle').forEach(c => c.style.cursor = 'grab');
+    }
+});
+
+
+// --- UI Interactions ---
+
+function setMode(mode) {
+    state.mode = mode;
+    
+    // Update Buttons - FIXED: Ensure active class is toggled correctly
+    const btnExplore = document.getElementById('btnExplore');
+    const btnArith = document.getElementById('btnArith');
+    
+    if (mode === 'explore') {
+        btnExplore.classList.add('active');
+        btnArith.classList.remove('active');
+    } else {
+        btnExplore.classList.remove('active');
+        btnArith.classList.add('active');
+    }
+
+    // Show/Hide Arithmetic Info
+    const arithInfo = document.getElementById('arithInfo');
+    arithInfo.style.display = mode === 'arithmetic' ? 'flex' : 'none';
+
+    state.selectedId = null; 
+    state.comparedId = null; // NEW: Reset comparison on mode switch
+    
+    render();
+}
+
+function setMetric(metric) {
+    state.metric = metric;
+    
+    const btnCosine = document.getElementById('btnCosine');
+    const btnEuclidean = document.getElementById('btnEuclidean');
+    
+    if (metric === 'cosine') {
+        btnCosine.classList.add('active');
+        btnEuclidean.classList.remove('active');
+    } else {
+        btnCosine.classList.remove('active');
+        btnEuclidean.classList.add('active');
+    }
+
+    // FIXED: Update readout when switching metrics if a point is selected
+    if (state.selectedId) {
+        updateReadout();
+        render(); 
+    }
+}
+
+function updateK(val) {
+    state.k = parseInt(val);
+    document.getElementById('kValue').textContent = val;
+    // FIXED: Ensure re-render happens when K changes, even without selection
+    if (state.selectedId) render();
+}
+
+function resetApp() {
+    // FIX: Reset arith BEFORE switching modes to prevent visual glitches
+    state.arith = {...ARITH_INIT};
+    state.selectedId = null;
+    state.comparedId = null; // NEW: Reset comparison
+    
+    // FIXED: Explicitly reset metric and mode UI states for robustness
+    setMode('explore');
+    setMetric('cosine');
+    
+    updateK(5);
+    resize(); // Force re-render
+}
+
+// --- Tooltip & Readouts ---
+
+const tooltip = document.getElementById('tooltip');
+
+function showTooltip(e, point) {
+    tooltip.style.opacity = 1;
+    tooltip.innerHTML = `<strong>${point.label}</strong><br>x: ${point.x.toFixed(2)}<br>y: ${point.y.toFixed(2)}`;
+    
+    // Position relative to viewport since tooltip is now fixed
+    const x = e.clientX + 15;
+    const y = e.clientY - 40;
+    
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+}
+
+function moveTooltip(e) {
+    // Move tooltip with mouse to prevent overflow
+    const x = e.clientX + 15;
+    const y = e.clientY - 40;
+    
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+}
+
+function hideTooltip() {
+    tooltip.style.opacity = 0;
+}
+
+function updateReadout() {
+    const formulaDiv = document.getElementById('formulaDisplay');
+    
+    if (!state.selectedId || state.mode !== 'explore') {
+        // Default State
+        formulaDiv.innerHTML = "Select a point to see similarity metrics.";
+        return;
+    }
+
+    const source = DATA.find(d => d.id === state.selectedId);
+    
+    // FIX: If comparison point is selected, show similarity between them
+    if (state.comparedId) {
+        const comp = DATA.find(d => d.id === state.comparedId);
+        const sim = cosineSimilarity({x:source.x, y:source.y}, {x:comp.x, y:comp.y});
+        
+        formulaDiv.innerHTML = `\\( \\cos(\\theta) = ${sim.toFixed(3)} \\)`;
+        
+        try {
+            katex.render(`\\cos(\\theta) = ${sim.toFixed(3)}`, formulaDiv, { throwOnError: false });
+            
+            if (formulaDiv.innerHTML === '') {
+                formulaDiv.textContent = `cos(θ) = ${sim.toFixed(3)}`;
+            }
+        } catch(e) {
+            formulaDiv.textContent = `cos(θ) = ${sim.toFixed(3)}`;
+        }
+
+        const angleRad = Math.acos(Math.max(-1, Math.min(1, sim))); // Clamp for safety
+        const angleDeg = (angleRad * 180 / Math.PI).toFixed(1);
+        
+        document.getElementById('cosVal').textContent = sim.toFixed(2);
+        document.getElementById('angleVal').textContent = `${angleDeg}°`;
+
+        drawAngleArc(angleRad, true); // Pass true to indicate two-vector mode
+        
+    } else {
+        // Find top neighbor for display (single selection mode)
+        let neighbors = DATA.filter(d => d.id !== source.id).map(d => {
+            let val = cosineSimilarity({x:source.x, y:source.y}, {x:d.x, y:d.y});
+            return { point: d, score: val };
+        });
+        neighbors.sort((a,b) => b.score - a.score);
+        const top = neighbors[0];
+
+        // Update Formula (KaTeX)
+        formulaDiv.innerHTML = `\\( \\cos(\\theta) = ${top.score.toFixed(3)} \\)`;
+        
+        try {
+            katex.render(`\\cos(\\theta) = ${top.score.toFixed(3)}`, formulaDiv, { throwOnError: false });
+            
+            if (formulaDiv.innerHTML === '') {
+                formulaDiv.textContent = `cos(θ) = ${top.score.toFixed(3)}`;
+            }
+        } catch(e) {
+            formulaDiv.textContent = `cos(θ) = ${top.score.toFixed(3)}`;
+        }
+
+        // Update Angle Viz
+        const angleRad = Math.acos(Math.max(-1, Math.min(1, top.score)));
+        const angleDeg = (angleRad * 180 / Math.PI).toFixed(1);
+        
+        document.getElementById('cosVal').textContent = top.score.toFixed(2);
+        document.getElementById('angleVal').textContent = `${angleDeg}°`;
+
+        drawAngleArc(angleRad, false); // Pass false to indicate single-vector mode
+    }
+}
+
+function drawAngleArc(rad, isTwoVector) {
+    const r = 40;
+    const cx = 50, cy = 50;
+    
+    // Start at top (270deg or -90deg) -> x=50, y=10
+    // End at angle rad from vertical
+    
+    // Convert to standard math angle (from positive X axis counter-clockwise)
+    // Vertical Up is PI/2. 
+    const startAngle = -Math.PI / 2;
+    
+    let endAngle;
+    if (isTwoVector && state.comparedId) {
+        // For two vectors, we need to calculate the angle between them
+        const source = DATA.find(d => d.id === state.selectedId);
+        const comp = DATA.find(d => d.id === state.comparedId);
+        
+        const v1 = { x: source.x, y: source.y };
+        const v2 = { x: comp.x, y: comp.y };
+        
+        // Calculate angle of each vector from vertical
+        const angleV1 = Math.atan2(v1.x, -v1.y); // Angle from vertical (y-axis)
+        const angleV2 = Math.atan2(v2.x, -v2.y);
+        
+        startAngle = -Math.PI / 2 + Math.min(angleV1, angleV2);
+        endAngle = -Math.PI / 2 + Math.max(angleV1, angleV2);
+    } else {
+        // Single vector mode: angle from vertical to the vector
+        const source = DATA.find(d => d.id === state.selectedId);
+        const v1 = { x: source.x, y: source.y };
+        
+        startAngle = -Math.PI / 2;
+        endAngle = startAngle + rad;
+    }
+
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    
+    // If angle is large (> PI), use large arc flag
+    const largeArc = (endAngle - startAngle) > Math.PI ? 1 : 0;
+    
+    const x2 = cx + r * Math.cos(endAngle);
+    const y2 = cy + r * Math.sin(endAngle);
+
+    const d = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+    
+    document.getElementById('angleArc').setAttribute('d', d);
+}
+
+function updateArithmeticReadout(Rx, Ry) {
+    const formulaDiv = document.getElementById('arithFormula');
+    // Render LaTeX for R = A - B + C
+    try {
+        katex.render(`\\vec{R} = \\vec{A} - \\vec{B} + \\vec{C}`, formulaDiv, { throwOnError: false });
+        
+        if (formulaDiv.innerHTML === '') {
+            formulaDiv.textContent = 'R = A - B + C';
+        }
+    } catch(e) {
+        formulaDiv.textContent = 'R = A - B + C';
+    }
+
+    document.getElementById('resultVector').textContent = `[${Rx.toFixed(2)}, ${Ry.toFixed(2)}]`;
+}
+
+// --- Initialization ---
+resize();
+render();
+updateReadout(); // Init default readout state
+
+</script>
+</body>
+</html>

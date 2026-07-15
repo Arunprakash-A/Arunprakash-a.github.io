@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Derivative as Slope Explorer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{
+  --bg-gradient: radial-gradient(circle at center, #12151f 0%, #0a0c12 100%);
+  --accent-cyan:#22d3ee;
+  --accent-violet:#a78bfa;
+  --surface-panel:#1e293b;
+  --text-heading:#f4f6fb;
+  --text-secondary:#9aa4b8;
+  --border-color:rgba(255,255,255,.15);
+}
+html,body{
+  height:100%;
+  margin:0;
+  background:var(--bg-gradient);
+  font-family:"Inter",system-ui,sans-serif;
+  color:var(--text-heading);
+  overflow:hidden;
+}
+.app{
+  display:flex;
+  flex-direction:row;
+  gap:24px;
+  padding:24px;
+  max-width:1200px;
+  margin:auto;
+  height:calc(100% - 48px);
+}
+.sidebar{
+  width:25%;
+  min-width:200px;
+  background:var(--surface-panel);
+  border-radius:12px;
+  box-shadow:0 4px 8px rgba(0,0,0,.5);
+  padding:24px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.main{
+  flex-grow:1;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.plot{
+  flex-grow:1;
+  background:var(--surface-panel);
+  border-radius:12px;
+  box-shadow:0 4px 8px rgba(0,0,0,.5);
+  position:relative;
+  overflow:hidden;
+}
+.deriv-graph{
+  height:200px;
+  background:var(--surface-panel);
+  border-radius:12px;
+  box-shadow:0 4px 8px rgba(0,0,0,.5);
+  overflow:hidden;
+  animation:oscillate 6s ease-in-out infinite;
+}
+@keyframes oscillate{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-2px);}
+}
+h1{
+  margin:0;
+  font-size:1.5rem;
+  color:var(--text-heading);
+}
+label{
+  display:block;
+  font-weight:600;
+  margin-bottom:4px;
+  color:var(--text-secondary);
+}
+select, input[type=range]{
+  width:100%;
+  background:transparent;
+  border:none;
+  outline:none;
+  appearance:none;
+  height:8px;
+  border-radius:4px;
+  background:rgba(255,255,255,.1);
+  transition:background .25s ease-in-out;
+}
+select:hover, input[type=range]:hover{
+  background:rgba(255,255,255,.2);
+}
+option{
+  color:#fff;
+  background-color:var(--surface-panel);
+}
+.switch{
+  position:relative;
+  display:inline-block;
+  width:48px;
+  height:24px;
+}
+.switch input{opacity:0;width:0;height:0;}
+.slider{
+  position:absolute;
+  cursor:pointer;
+  top:0;left:0;
+  right:0;bottom:0;
+  background-color:#ccc;
+  transition:.4s;
+  border-radius:34px;
+}
+.slider::before{
+  position:absolute;
+  content:"";
+  height:18px;width:18px;
+  left:3px;
+  bottom:3px;
+  background:white;
+  transition:.4s;
+  border-radius:50%;
+}
+input:checked + .slider{background-color:var(--accent-cyan);}
+input:checked + .slider::before{
+  transform:translateX(24px);
+}
+.toggle-label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--text-secondary);
+}
+.value-display{
+  font-family:"Fira Code",monospace;
+  font-size:.9rem;
+  color:var(--accent-violet);
+  margin-top:4px;
+}
+@media(max-width:768px){
+  .app{flex-direction:column;}
+  .sidebar{width:100%;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <h1>Derivative as Slope Explorer</h1>
+    <div>
+      <label for="function-select">Function</label>
+      <select id="function-select" aria-label="Select function">
+        <option value="x2">x²</option>
+        <option value="sin">sin x</option>
+        <option value="poly">x³ – 3x + 1</option>
+      </select>
+    </div>
+    <div>
+      <label for="h-slider">Secant interval h: <span id="h-value" class="value-display">0.500</span></label>
+      <input type="range" id="h-slider" min="0.001" max="2" step="0.001" value="0.5" aria-label="Set secant interval">
+    </div>
+    <div class="toggle-label">
+      <label class="switch"><input type="checkbox" id="tangent-toggle" checked><span class="slider"></span></label>
+      Tangent line
+    </div>
+    <div class="toggle-label">
+      <label class="switch"><input type="checkbox" id="secant-toggle" checked><span class="slider"></span></label>
+      Secant line
+    </div>
+    <div class="toggle-label">
+      <label class="switch"><input type="checkbox" id="deriv-toggle" checked><span class="slider"></span></label>
+      Derivative graph
+    </div>
+    <div id="tangent-slope" class="value-display">Slope: 0.0000</div>
+  </aside>
+
+  <main class="main">
+    <section class="plot">
+      <svg id="function-svg" width="100%" height="100%"></svg>
+    </section>
+    <section class="deriv-graph" id="deriv-section">
+      <svg id="deriv-svg" width="100%" height="100%"></svg>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script>
+(() => {
+  "use strict";
+  const margin = {top:20,right:30,bottom:40,left:50};
+  const derivMargin = {top:10,right:30,bottom:30,left:50};
+
+  const plotEl = document.querySelector('.plot');
+  const derivEl = document.querySelector('.deriv-graph');
+
+  const width = plotEl.clientWidth - margin.left - margin.right;
+  const height = plotEl.clientHeight - margin.top - margin.bottom;
+
+  const derivWidth = derivEl.clientWidth - derivMargin.left - derivMargin.right;
+  const derivHeight = derivEl.clientHeight - derivMargin.top - derivMargin.bottom;
+
+  const svg = d3.select('#function-svg')
+    .attr('width', width + margin.left + margin.right)
+    .attr('height', height + margin.top + margin.bottom);
+
+  const derivSvg = d3.select('#deriv-svg')
+    .attr('width', derivWidth + derivMargin.left + derivMargin.right)
+    .attr('height', derivHeight + derivMargin.top + derivMargin.bottom);
+
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+  const derivG = derivSvg.append('g').attr('transform', `translate(${derivMargin.left},${derivMargin.top})`);
+
+  // Scales
+  let xScale = d3.scaleLinear().domain([-5,5]).range([0,width]);
+  let yScale = d3.scaleLinear().domain([-10,10]).range([height,0]);
+
+  let derivXScale = d3.scaleLinear().domain([-5,5]).range([0,derivWidth]);
+  let derivYScale = d3.scaleLinear().domain([-20,20]).range([derivHeight,0]);
+
+  // Axes
+  const xAxis = g.append('g')
+    .attr('transform', `translate(0,${height})`)
+    .call(d3.axisBottom(xScale).ticks(10));
+
+  const yAxis = g.append('g')
+    .call(d3.axisLeft(yScale).ticks(8));
+
+  const derivXAxis = derivG.append('g')
+    .attr('transform', `translate(0,${derivHeight})`)
+    .call(d3.axisBottom(derivXScale).ticks(10));
+
+  const derivYAxis = derivG.append('g')
+    .call(d3.axisLeft(derivYScale).ticks(6));
+
+  // Function and derivative definitions
+  let currentFunc = 'x2';
+  function getFuncs(name){
+    switch(name){
+      case 'x2': return {f: x=>x*x, df: x=>2*x};
+      case 'sin': return {f: Math.sin, df: Math.cos};
+      case 'poly': return {f: x=>Math.pow(x,3)-3*x+1, df: x=>3*Math.pow(x,2)-3};
+    }
+  }
+
+  let funcs = getFuncs(currentFunc);
+
+  // Data for function plot
+  const funcData = d3.range(-5,5.01,0.02).map(d=>({x:d,y:funcs.f(d)}));
+  const line = d3.line().x(d=>xScale(d.x)).y(d=>yScale(d.y));
+
+  const path = g.append('path')
+    .datum(funcData)
+    .attr('fill','none')
+    .attr('stroke', 'var(--accent-violet)')
+    .attr('stroke-width',2)
+    .attr('d', line);
+
+  // Derivative data
+  let derivData = d3.range(-5,5.01,0.02).map(d=>({x:d,y:funcs.df(d)}));
+  const derivLine = d3.line().x(d=>derivXScale(d.x)).y(d=>derivYScale(d.y));
+
+  const derivPath = derivG.append('path')
+    .datum(derivData)
+    .attr('fill','none')
+    .attr('stroke', 'var(--accent-cyan)')
+    .attr('stroke-width',2)
+    .attr('d', derivLine);
+
+  // Draggable point
+  let currentX = 0;
+  const pointRadius = 6;
+
+  const point = g.append('circle')
+    .attr('r',pointRadius)
+    .attr('fill','var(--accent-cyan)')
+    .attr('stroke','white')
+    .attr('stroke-width',1.5)
+    .call(d3.drag()
+      .on('drag', dragged));
+
+  function updatePoint(){
+    const y = funcs.f(currentX);
+    point.attr('cx',xScale(currentX))
+         .attr('cy',yScale(y));
+    updateTangent();
+    updateSecant();
+    updateDerivHighlight();
+  }
+
+  // Tangent line
+  const tangentGroup = g.append('g').style('opacity',1);
+  const tangentLine = tangentGroup.append('line')
+    .attr('stroke','var(--accent-cyan)')
+    .attr('stroke-width',2)
+    .attr('stroke-dasharray','4,2');
+
+  // Secant line
+  const secantGroup = g.append('g').style('opacity',1);
+  const secantLine = secantGroup.append('line')
+    .attr('stroke','var(--accent-violet)')
+    .attr('stroke-width',2);
+
+  const diffText = secantGroup.append('text')
+    .attr('fill','var(--accent-violet)')
+    .attr('font-family', 'Fira Code, monospace')
+    .attr('font-size','12px')
+    .attr('dy','-8');
+
+  // Derivative graph highlight
+  const derivHighlight = derivG.append('g').style('opacity',1);
+  const vertLine = derivHighlight.append('line')
+    .attr('stroke','var(--accent-cyan)')
+    .attr('stroke-width',2)
+    .attr('stroke-dasharray','4,2');
+
+  const dot = derivHighlight.append('circle')
+    .attr('r',5)
+    .attr('fill','var(--accent-cyan)');
+
+  // Initial positions
+  updatePoint();
+
+  function dragged(event){
+    let x = xScale.invert(event.x);
+    if(x<-5)x=-5;
+    if(x>5)x=5;
+    currentX=x;
+    updatePoint();
+  }
+
+  function updateTangent(){
+    const slope = funcs.df(currentX);
+    const y0 = funcs.f(currentX);
+    const delta = 1.5; // length of tangent line
+    const x1 = currentX - delta;
+    const y1 = y0 - slope*delta;
+    const x2 = currentX + delta;
+    const y2 = y0 + slope*delta;
+    tangentLine.attr('x1',xScale(x1))
+      .attr('y1',yScale(y1))
+      .attr('x2',xScale(x2))
+      .attr('y2',yScale(y2));
+    document.getElementById('tangent-slope').textContent = `Slope: ${slope.toFixed(4)}`;
+  }
+
+  function updateSecant(){
+    const h = +document.getElementById('h-slider').value;
+    const x0=currentX;
+    const y0=funcs.f(x0);
+    let x1=x0+h;
+    if(x1>5)x1=5;
+    const y1=funcs.f(x1);
+    secantLine.attr('x1',xScale(x0))
+      .attr('y1',yScale(y0))
+      .attr('x2',xScale(x1))
+      .attr('y2',yScale(y1));
+    const diff=(y1-y0)/h;
+    diffText.text(`Δf/Δx = ${diff.toFixed(4)}`)
+      .attr('x',xScale((x0+x1)/2))
+      .attr('y',Math.min(yScale(y0),yScale(y1))-10);
+  }
+
+  function updateDerivHighlight(){
+    const x=currentX;
+    vertLine.attr('x1',derivXScale(x))
+      .attr('y1',0)
+      .attr('x2',derivXScale(x))
+      .attr('y2',derivHeight);
+    dot.attr('cx',derivXScale(x))
+       .attr('cy',derivYScale(funcs.df(x)));
+  }
+
+  // UI event listeners
+  document.getElementById('function-select').addEventListener('change', e=>{
+    currentFunc=e.target.value;
+    funcs=getFuncs(currentFunc);
+    funcData.forEach(d=>{d.y=funcs.f(d.x);});
+    path.datum(funcData).attr('d',line);
+    derivData.forEach(d=>{d.y=funcs.df(d.x);});
+    derivPath.datum(derivData).attr('d',derivLine);
+    updatePoint();
+  });
+
+  document.getElementById('h-slider').addEventListener('input', e=>{
+    const val=e.target.value;
+    document.getElementById('h-value').textContent=parseFloat(val).toFixed(3);
+    updateSecant();
+  });
+
+  document.getElementById('tangent-toggle').addEventListener('change', e=>{
+    tangentGroup.transition().duration(200)
+      .style('opacity',e.target.checked?1:0);
+  });
+  document.getElementById('secant-toggle').addEventListener('change', e=>{
+    secantGroup.transition().duration(200)
+      .style('opacity',e.target.checked?1:0);
+  });
+  document.getElementById('deriv-toggle').addEventListener('change', e=>{
+    const section=document.getElementById('deriv-section');
+    section.style.display=e.target.checked?'block':'none';
+  });
+
+  // Initial toggle states
+  if(!document.getElementById('tangent-toggle').checked) tangentGroup.style('opacity',0);
+  if(!document.getElementById('secant-toggle').checked) secantGroup.style('opacity',0);
+  if(!document.getElementById('deriv-toggle').checked) document.getElementById('deriv-section').style.display='none';
+})();
+</script>
+</body>
+</html>

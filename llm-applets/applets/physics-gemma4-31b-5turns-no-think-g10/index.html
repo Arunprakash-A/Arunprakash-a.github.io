@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ray-Optics Explorer | Reflection & Refraction</title>
+    <!-- KaTeX for beautiful formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <!-- Lucide for icons -->
+    <script src="https://unpkg.com/lucide@0.321.0"></script>
+    <style>
+        :root {
+            --bg-deep: #0a0c12;
+            --bg-gradient: radial-gradient(circle at center, #1a1f2c 0%, #0a0c12 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #22d3ee;
+            --accent-violet: #a78bfa;
+            --accent-amber: #fbbf24;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-dim: #9aa4b8;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: var(--bg-deep);
+            background-image: var(--bg-gradient);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            height: 100vh;
+            width: 100vw;
+            padding: 24px;
+            gap: 24px;
+        }
+
+        .stage {
+            position: relative;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 24px;
+            border: 1px solid var(--panel-border);
+            overflow: hidden;
+            cursor: crosshair;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #formula-panel {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: var(--transition-smooth);
+            opacity: 1;
+            pointer-events: none;
+        }
+        #formula-panel.hidden { opacity: 0; transform: translateY(20px); pointer-events: none; }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .control-card {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 20px;
+            transition: var(--transition-smooth);
+        }
+
+        .control-card:hover { border-color: rgba(34, 211, 238, 0.3); }
+
+        h2 {
+            margin: 0 0 16px 0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group { margin-bottom: 20px; }
+        .control-group:last-child { margin-bottom: 0; }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+        .val-badge {
+            font-family: var(--font-mono);
+            color: var(--accent-cyan);
+            background: rgba(34, 211, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            appearance: none;
+            background: rgba(255,255,255,0.1);
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px; height: 18px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+        }
+
+        .toggle-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-toggle {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--panel-border);
+            color: var(--text-dim);
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: var(--transition-smooth);
+            font-family: var(--font-sans);
+        }
+        .btn-toggle.active {
+            background: var(--accent-cyan);
+            color: #000;
+            border-color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: var(--text-dim);
+        }
+        .checkbox-item input { cursor: pointer; accent-color: var(--accent-cyan); }
+
+        @media (max-width: 900px) {
+            .app-container { grid-template-columns: 1fr; overflow-y: auto; height: auto; }
+            .stage { height: 60vh; position: sticky; top: 0; z-index: 10; }
+            .sidebar { padding-bottom: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="stage" id="stage">
+        <canvas id="opticsCanvas"></canvas>
+        <div id="formula-panel"></div>
+    </div>
+
+    <div class="sidebar">
+        <div class="control-card">
+            <h2><i data-lucide="settings-2"></i> Optical Element</h2>
+            <div class="control-group">
+                <label>Component Type</label>
+                <div class="toggle-grid">
+                    <button id="mode-lens" class="btn-toggle active" onclick="setMode('lens')">Lens</button>
+                    <button id="mode-mirror" class="btn-toggle" onclick="setMode('mirror')">Mirror</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Curvature Type</label>
+                <div class="toggle-grid">
+                    <button id="type-convex" class="btn-toggle active" onclick="setType('convex')">Convex</button>
+                    <button id="type-concave" class="btn-toggle" onclick="setType('concave')">Concave</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Focal Length <span class="val-badge" id="f-val">20</span></label>
+                <input type="range" id="focalLength" min="10" max="50" value="20" step="1">
+            </div>
+        </div>
+
+        <div class="control-card">
+            <h2><i data-lucide="arrow-up-right"></i> Object Properties</h2>
+            <div class="control-group">
+                <label>Object Distance <span class="val-badge" id="u-val">-30</span></label>
+                <input type="range" id="objDist" min="-100" max="100" value="-30" step="1">
+            </div>
+            <div class="control-group">
+                <label>Object Height <span class="val-badge" id="h-val">20</span></label>
+                <input type="range" id="objHeight" min="10" max="50" value="20" step="1">
+            </div>
+        </div>
+
+        <div class="control-card">
+            <h2><i data-lucide="eye"></i> Visualization</h2>
+            <div class="checkbox-group">
+                <label class="checkbox-item"><input type="checkbox" id="ray-parallel" checked> Parallel Ray <span style="color:var(--accent-cyan)">●</span></label>
+                <label class="checkbox-item"><input type="checkbox" id="ray-center" checked> Center Ray <span style="color:var(--accent-violet)">●</span></label>
+                <label class="checkbox-item"><input type="checkbox" id="ray-focal" checked> Focal Ray <span style="color:var(--accent-amber)">●</span></label>
+                <hr style="border:0; border-top:1px solid var(--panel-border); margin: 12px 0;">
+                <label class="checkbox-item"><input type="checkbox" id="show-formula" checked> Show Formula Panel</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const state = {
+        mode: 'lens', 
+        type: 'convex', 
+        f: 20,
+        u: -30,
+        h: 20,
+        rays: { parallel: true, center: true, focal: true },
+        showFormula: true,
+        isDragging: false,
+        morphProgress: 1.0,
+        imageOpacity: 1.0, // For fading transition between real/virtual
+        lastVSign: -1
+    };
+
+    const canvas = document.getElementById('opticsCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let dpr = window.devicePixelRatio || 1;
+
+    function calculateImage() {
+        let effectiveF = state.f;
+        if (state.mode === 'lens') {
+            effectiveF = state.type === 'convex' ? state.f : -state.f;
+        } else {
+            // Mirror: Concave is converging (+), Convex is diverging (-)
+            effectiveF = state.type === 'concave' ? state.f : -state.f;
+        }
+
+        const u_val = state.u; 
+        let v;
+
+        if (state.mode === 'lens') {
+            // Lens: 1/v - 1/u = 1/f  => 1/v = 1/f + 1/u
+            if (Math.abs(1/effectiveF + 1/u_val) < 0.001) v = Infinity;
+            else v = 1 / (1/effectiveF + 1/u_val);
+        } else {
+            // Mirror: 1/v + 1/u = 1/f => 1/v = 1/f - 1/u
+            if (Math.abs(1/effectiveF - 1/u_val) < 0.001) v = Infinity;
+            else v = 1 / (1/effectiveF - 1/u_val);
+        }
+
+        const magnification = state.mode === 'lens' ? (v / u_val) : (-v / u_val);
+        const h_prime = state.h * magnification;
+
+        return { v, h_prime, effectiveF };
+    }
+
+    function worldToCanvas(x, y) {
+        const scale = 5;
+        return { cx: width/2 + x * scale, cy: height/2 - y * scale };
+    }
+
+    function drawLine(x1, y1, x2, y2, color, dashed = false, lineWidth = 2) {
+        ctx.beginPath();
+        ctx.setLineDash(dashed ? [5, 5] : []);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    function drawArrow(x, y, height, color, label, isGhost = false) {
+        const start = worldToCanvas(x, 0);
+        const end = worldToCanvas(x, height);
+        
+        // Use the animated opacity for image arrow ghosting/fading
+        ctx.globalAlpha = (isGhost) ? state.imageOpacity * 0.6 : 1;
+        
+        drawLine(start.cx, start.cy, end.cx, end.cy, color, false, 3);
+        
+        const headSize = 6;
+        const angle = height > 0 ? -Math.PI/2 : Math.PI/2;
+        ctx.beginPath();
+        ctx.moveTo(end.cx, end.cy);
+        ctx.lineTo(end.cx - Math.cos(angle-0.5)*headSize, end.cy - Math.sin(angle-0.5)*headSize);
+        ctx.lineTo(end.cx - Math.cos(angle+0.5)*headSize, end.cy - Math.sin(angle+0.5)*headSize);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        if (label) {
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = 'var(--text-dim)';
+            ctx.font = '12px var(--font-mono)';
+            ctx.textAlign = 'center';
+            const textPos = worldToCanvas(x, height > 0 ? height + 5 : height - 15);
+            ctx.fillText(label, textPos.cx, textPos.cy);
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    function drawOpticalElement(f_eff) {
+        const center = worldToCanvas(0, 0);
+        const thickness = 12;
+        const heightPx = 150;
+        
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 2;
+
+        if (state.mode === 'lens') {
+            const curveVal = f_eff > 0 ? 15 : -15;
+            const currentCurve = curveVal * state.morphProgress;
+            ctx.beginPath();
+            ctx.moveTo(center.cx - thickness/2, center.cy - heightPx/2);
+            ctx.quadraticCurveTo(center.cx + currentCurve, center.cy, center.cx - thickness/2, center.cy + heightPx/2);
+            ctx.quadraticCurveTo(center.cx - currentCurve, center.cy, center.cx - thickness/2, center.cy - heightPx/2);
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(34, 211, 238, 0.05)';
+            ctx.fill();
+        } else {
+            const curveVal = f_eff > 0 ? -20 : 20;
+            const currentCurve = curveVal * state.morphProgress;
+            ctx.beginPath();
+            ctx.moveTo(center.cx, center.cy - heightPx/2);
+            ctx.quadraticCurveTo(center.cx + currentCurve, center.cy, center.cx, center.cy + heightPx/2);
+            ctx.stroke();
+            ctx.setLineDash([2, 4]);
+            ctx.lineWidth = 1;
+            for(let i=-heightPx/2; i<heightPx/2; i+=10) {
+                ctx.beginPath();
+                ctx.moveTo(center.cx + currentCurve*0.5, center.cy + i);
+                ctx.lineTo(center.cx + currentCurve*0.8, center.cy + i + 5);
+                ctx.stroke();
+            }
+        }
+        ctx.restore();
+    }
+
+    function updateFormulaPanel(v, f_eff) {
+        const panel = document.getElementById('formula-panel');
+        if (!state.showFormula) { panel.classList.add('hidden'); return; }
+        panel.classList.remove('hidden');
+
+        const formula = state.mode === 'lens' ? `\\frac{1}{f} = \\frac{1}{v} - \\frac{1}{u}` : `\\frac{1}{f} = \\frac{1}{v} + \\frac{1}{u}`;
+        const values = `f = ${f_eff.toFixed(1)}, \\quad u = ${state.u.toFixed(1)}, \\quad v = ${v === Infinity ? '\\infty' : v.toFixed(1)}`;
+        
+        panel.innerHTML = `<div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase;">Live Calculation</div><div id="katex-formula" style="font-size: 1.2rem; margin-bottom: 8px;"></div><div id="katex-values" style="font-family: var(--font-mono); color: var(--accent-cyan);"></div>`;
+        katex.render(formula, document.getElementById('katex-formula'), { displayMode: false });
+        katex.render(values, document.getElementById('katex-values'), { displayMode: false });
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, width, height);
+        const axisStart = worldToCanvas(-200, 0);
+        const axisEnd = worldToCanvas(200, 0);
+        drawLine(axisStart.cx, axisStart.cy, axisEnd.cx, axisEnd.cy, 'rgba(255,255,255,0.1)', false, 1);
+
+        const { v, h_prime, effectiveF } = calculateImage();
+        
+        // Handle Image Opacity Transition (Real vs Virtual)
+        if (v !== Infinity) {
+            const currentSign = Math.sign(v);
+            if (currentSign !== state.lastVSign) {
+                state.imageOpacity = 0; // Trigger fade in from zero when sign flips
+                state.lastVSign = currentSign;
+            }
+            if (state.imageOpacity < 1.0) state.imageOpacity += 0.05;
+        }
+
+        const fL = worldToCanvas(-effectiveF, 0), fR = worldToCanvas(effectiveF, 0);
+        const f2L = worldToCanvas(-2*effectiveF, 0), f2R = worldToCanvas(2*effectiveF, 0);
+        ctx.fillStyle = 'var(--text-dim)';
+        ctx.font = '10px var(--font-mono)';
+        ctx.textAlign = 'center';
+        ctx.fillText('F', fL.cx, fL.cy + 20); ctx.fillText('2F', f2L.cx, f2L.cy + 20);
+        ctx.fillText('F', fR.cx, fR.cy + 20); ctx.fillText('2F', f2R.cx, f2R.cy + 20);
+
+        drawOpticalElement(effectiveF);
+        drawArrow(state.u, state.h, 'var(--accent-cyan)', 'Object');
+        if (v !== Infinity) drawArrow(v, h_prime, 'var(--accent-violet)', 'Image', false, true);
+
+        const objTip = worldToCanvas(state.u, state.h);
+        const imgTip = worldToCanvas(v, h_prime);
+
+        if (state.rays.parallel) {
+            const pMid = worldToCanvas(0, state.h);
+            drawLine(objTip.cx, objTip.cy, pMid.cx, pMid.cy, 'var(--accent-cyan)');
+            if (state.mode === 'lens') {
+                const isVirtual = v < 0;
+                drawLine(pMid.cx, pMid.cy, imgTip.cx, imgTip.cy, 'var(--accent-cyan)', isVirtual);
+                if (isVirtual) {
+                    const fPoint = worldToCanvas(effectiveF, 0);
+                    drawLine(pMid.cx, pMid.cy, fPoint.cx, fPoint.cy, 'var(--accent-cyan)', true);
+                }
+            } else {
+                // Mirror: Parallel ray reflects through focal point F (on the same side as object for concave)
+                // For mirrors, physical F is at -effectiveF relative to vertex if converging
+                const mirrorF = worldToCanvas(-effectiveF, 0); 
+                drawLine(pMid.cx, pMid.cy, mirrorF.cx, mirrorF.cy, 'var(--accent-cyan)');
+                const isVirtual = v > 0;
+                if (isVirtual) {
+                    drawLine(pMid.cx, pMid.cy, imgTip.cx, imgTip.cy, 'var(--accent-cyan)', true);
+                } else {
+                    drawLine(mirrorF.cx, mirrorF.cy, imgTip.cx, imgTip.cy, 'var(--accent-cyan)', false);
+                }
+            }
+        }
+
+        if (state.rays.center) {
+            if (state.mode === 'lens') {
+                drawLine(objTip.cx, objTip.cy, imgTip.cx, imgTip.cy, 'var(--accent-violet)', v < 0);
+            } else {
+                const mirrorSurface = worldToCanvas(0, state.h);
+                drawLine(objTip.cx, objTip.cy, mirrorSurface.cx, mirrorSurface.cy, 'var(--accent-violet)');
+                const isVirtual = v > 0;
+                drawLine(mirrorSurface.cx, mirrorSurface.cy, imgTip.cx, imgTip.cy, 'var(--accent-violet)', isVirtual);
+            }
+        }
+
+        if (state.rays.focal) {
+            if (state.mode === 'lens') {
+                const fLPoint = worldToCanvas(-effectiveF, 0);
+                drawLine(objTip.cx, objTip.cy, fLPoint.cx, fLPoint.cy, 'var(--accent-amber)');
+                const pMid = worldToCanvas(0, state.h);
+                drawLine(fLPoint.cx, fLPoint.cy, pMid.cx, pMid.cy, 'var(--accent-amber)');
+                drawLine(pMid.cx, pMid.cy, imgTip.cx, imgTip.cy, 'var(--accent-amber)', v < 0);
+            } else {
+                const mirrorF = worldToCanvas(-effectiveF, 0);
+                const mirrorSurface = worldToCanvas(0, state.h);
+                drawLine(objTip.cx, objTip.cy, mirrorF.cx, mirrorF.cy, 'var(--accent-amber)');
+                drawLine(mirrorF.cx, mirrorF.cy, mirrorSurface.cx, mirrorSurface.cy, 'var(--accent-amber)');
+                const isVirtual = v > 0;
+                drawLine(mirrorSurface.cx, mirrorSurface.cy, imgTip.cx, imgTip.cy, 'var(--accent-amber)', isVirtual);
+            }
+        }
+
+        updateFormulaPanel(v, effectiveF);
+    }
+
+    function animate() {
+        let needsRender = false;
+        if (state.morphProgress !== 1.0) {
+            state.morphProgress += 0.05;
+            if (state.morphProgress > 1.0) state.morphProgress = 1.0;
+            needsRender = true;
+        }
+        // Check if opacity is still transitioning
+        if (state.imageOpacity < 1.0) {
+            state.imageOpacity += 0.05;
+            if (state.imageOpacity > 1.0) state.imageOpacity = 1.0;
+            needsRender = true;
+        }
+
+        if (needsRender) render();
+        requestAnimationFrame(animate);
+    }
+
+    function setMode(m) {
+        state.mode = m;
+        document.getElementById('mode-lens').classList.toggle('active', m === 'lens');
+        document.getElementById('mode-mirror').classList.toggle('active', m === 'mirror');
+        state.morphProgress = 0;
+        render();
+    }
+
+    function setType(t) {
+        state.type = t;
+        document.getElementById('type-convex').classList.toggle('active', t === 'convex');
+        document.getElementById('type-concave').classList.toggle('active', t === 'concave');
+        state.morphProgress = 0;
+        render();
+    }
+
+    function initControls() {
+        const fInput = document.getElementById('focalLength');
+        fInput.addEventListener('input', (e) => {
+            state.f = parseFloat(e.target.value);
+            document.getElementById('f-val').innerText = state.f;
+            render();
+        });
+
+        const uInput = document.getElementById('objDist');
+        uInput.addEventListener('input', (e) => {
+            state.u = parseFloat(e.target.value);
+            document.getElementById('u-val').innerText = state.u;
+            render();
+        });
+
+        const hInput = document.getElementById('objHeight');
+        hInput.addEventListener('input', (e) => {
+            state.h = parseFloat(e.target.value);
+            document.getElementById('h-val').innerText = state.h;
+            render();
+        });
+
+        document.getElementById('ray-parallel').addEventListener('change', (e) => { state.rays.parallel = e.target.checked; render(); });
+        document.getElementById('ray-center').addEventListener('change', (e) => { state.rays.center = e.target.checked; render(); });
+        document.getElementById('ray-focal').addEventListener('change', (e) => { state.rays.focal = e.target.checked; render(); });
+        document.getElementById('show-formula').addEventListener('change', (e) => { state.showFormula = e.target.checked; render(); });
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mx = (e.clientX - rect.left);
+            const ux = worldToCanvas(state.u, 0).cx;
+            if (Math.abs(mx - ux) < 20) state.isDragging = true;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!state.isDragging) return;
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            let newU = (mx - width/2) / 5;
+            newU = Math.max(-100, Math.min(100, newU));
+            state.u = newU;
+            document.getElementById('objDist').value = state.u;
+            document.getElementById('u-val').innerText = Math.round(state.u);
+            render();
+        });
+
+        window.addEventListener('mouseup', () => { state.isDragging = false; });
+    }
+
+    function resize() {
+        width = canvas.clientWidth;
+        height = canvas.clientHeight;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+        render();
+    }
+
+    window.addEventListener('resize', resize);
+    lucide.createIcons();
+    initControls();
+    resize();
+    requestAnimationFrame(animate);
+
+</script>
+</body>
+</html>

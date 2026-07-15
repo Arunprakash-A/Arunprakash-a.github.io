@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Push & Pull Playground</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-start: #1a1c2c;
+            --bg-end: #0f101a;
+            --panel-bg: rgba(61, 66, 107, 0.4);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --accent-yellow: #ffeb3b;
+            --accent-cyan: #00e5ff;
+            --accent-pink: #ff4081;
+            --text-main: #ffffff;
+            --text-dim: #b0b3c1;
+            --radius: 24px;
+            --transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: radial-gradient(circle at center, var(--bg-start) 0%, var(--bg-end) 100%);
+            font-family: 'Nunito', sans-serif;
+            color: var(--text-main);
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            position: relative;
+        }
+
+        h1 {
+            position: absolute;
+            top: 40px;
+            font-weight: 900;
+            font-size: clamp(24px, 5vw, 32px);
+            margin: 0;
+            color: var(--text-main);
+            opacity: 0.8;
+            letter-spacing: 2px;
+            pointer-events: none;
+            z-index: 1;
+            text-align: center;
+        }
+
+        /* Stage Area */
+        #stage-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            touch-action: none;
+            display: block;
+        }
+
+        canvas:active { cursor: grabbing; }
+
+        /* Control Panel */
+        #controls {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            padding: 24px;
+            border-radius: var(--radius);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 32px;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            z-index: 10;
+            width: auto;
+            max-width: 95vw;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            font-weight: 700;
+        }
+
+        /* Object Selector */
+        .selector {
+            display: flex;
+            gap: 12px;
+            background: rgba(0,0,0,0.2);
+            padding: 8px;
+            border-radius: 16px;
+        }
+
+        .obj-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            border: 2px solid transparent;
+            background: #2a2d45;
+            cursor: pointer;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .obj-btn.active {
+            border-color: var(--accent-yellow);
+            background: #3d426b;
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255, 235, 59, 0.3);
+        }
+
+        /* Strength Picker */
+        .strength-picker {
+            display: flex;
+            gap: 8px;
+            background: rgba(0,0,0,0.2);
+            padding: 8px;
+            border-radius: 16px;
+        }
+
+        .str-btn {
+            width: 54px;
+            height: 48px;
+            border-radius: 10px;
+            border: none;
+            background: #2a2d45;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .str-btn.active {
+            background: var(--accent-yellow);
+            color: #000;
+            transform: scale(1.1);
+        }
+
+        /* Action Buttons */
+        .action-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn-push, .btn-pull {
+            width: 140px;
+            height: 72px;
+            border-radius: 16px;
+            border: none;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 900;
+            font-size: 24px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-push {
+            background: var(--accent-cyan);
+            color: #003a40;
+            box-shadow: 0 6px 0 #008b9c;
+        }
+
+        .btn-pull {
+            background: var(--accent-pink);
+            color: #4d0a21;
+            box-shadow: 0 6px 0 #ad2a5e;
+        }
+
+        .btn-push:active, .btn-pull:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+        }
+
+        /* Reset Button */
+        .btn-reset {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: none;
+            background: #2a2d45;
+            color: white;
+            cursor: pointer;
+            font-size: 24px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-reset:hover {
+            background: #3d426b;
+            transform: rotate(-45deg);
+        }
+
+        @media (max-width: 768px) {
+            #controls {
+                bottom: 20px;
+                gap: 16px;
+                padding: 16px;
+                flex-direction: column;
+                width: 90%;
+            }
+            .action-group { width: 100%; justify-content: center; }
+            h1 { top: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <h1>PUSH & PULL</h1>
+    
+    <div id="stage-container">
+        <canvas id="physicsCanvas"></canvas>
+    </div>
+
+    <div id="controls">
+        <div class="control-group">
+            <span class="label">Toy</span>
+            <div class="selector">
+                <button class="obj-btn active" data-type="cart" title="Cart">🛒</button>
+                <button class="obj-btn" data-type="ball" title="Ball">⚽</button>
+                <button class="obj-btn" data-type="swing" title="Swing">🎡</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="label">Strength</span>
+            <div class="strength-picker">
+                <button class="str-btn" data-val="1">➔</button>
+                <button class="str-btn active" data-val="2">➔➔</button>
+                <button class="str-btn" data-val="3">➔➔➔</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="label">Action</span>
+            <div class="action-group">
+                <button class="btn-push">PUSH</button>
+                <button class="btn-pull">PULL</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="label">Reset</span>
+            <button class="btn-reset" title="Reset Position">🔄</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/** 
+ * PHYSICS ENGINE & VISUALIZATION
+ */
+const canvas = document.getElementById('physicsCanvas');
+const ctx = canvas.getContext('2d');
+
+let width, height;
+let dpr = window.devicePixelRatio || 1;
+
+// State
+const state = {
+    objectType: 'cart', 
+    strength: 2,       
+    posX: 0,
+    posY: 0,
+    velX: 0,
+    velY: 0,
+    isResetting: false,
+    isDragging: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    forceActive: false,
+    forceType: 'push', 
+    forceStrength: 0,
+    forceTimer: 0,
+    particles: [],
+    trails: [],
+    // Swing specific physics
+    swingAngle: 0,
+    swingVel: 0,
+    pivotX: 0,
+    pivotY: 0
+};
+
+const CONFIG = {
+    friction: 0.96,
+    basePower: 18,
+    resetLerp: 0.12, 
+    boundaryBounce: -0.5,
+    swingGravity: 0.01,
+    swingDamping: 0.99,
+    swingLength: 120
+};
+
+function resize() {
+    const container = canvas.parentElement;
+    const newWidth = container.clientWidth;
+    const newHeight = container.clientHeight;
+    
+    // Maintain relative position during resize to avoid snapping
+    const relX = width ? state.posX / width : 0.5;
+    const relY = height ? state.posY / height : 0.6;
+
+    width = newWidth;
+    height = newHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+    
+    state.posX = width * relX || width / 2;
+    state.posY = height * relY || height / 2 + 50;
+    
+    // Update swing pivot to be relative to current position
+    state.pivotX = state.posX;
+    state.pivotY = state.posY - CONFIG.swingLength;
+}
+
+window.addEventListener('resize', resize);
+resize();
+
+// Input Handling
+document.querySelectorAll('.obj-btn').forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll('.obj-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.objectType = btn.dataset.type;
+        // Reset pivot for swing when switching
+        state.pivotX = state.posX;
+        state.pivotY = state.posY - CONFIG.swingLength;
+    };
+});
+
+document.querySelectorAll('.str-btn').forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll('.str-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.strength = parseInt(btn.dataset.val);
+    };
+});
+
+document.querySelector('.btn-push').onclick = () => applyForce('push');
+document.querySelector('.btn-pull').onclick = () => applyForce('pull');
+document.querySelector('.btn-reset').onclick = () => {
+    state.isResetting = true;
+};
+
+function applyForce(type) {
+    state.isResetting = false; 
+    const power = CONFIG.basePower * state.strength;
+    
+    if (type === 'push') {
+        // PUSH moves object away from center/viewer (+X)
+        state.velX += power;
+    } else {
+        // FIX: PULL now moves object toward viewer/center (-X), opposite of push
+        state.velX -= power;
+    }
+    
+    state.forceActive = true;
+    state.forceType = type;
+    state.forceStrength = state.strength;
+    state.forceTimer = 25; 
+}
+
+// Dragging logic
+canvas.onmousedown = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const dist = Math.hypot(mx - state.posX, my - state.posY);
+    if (dist < 60) {
+        state.isDragging = true;
+        state.isResetting = false;
+        state.dragStartX = mx;
+        state.dragStartY = my;
+    }
+};
+
+window.onmousemove = (e) => {
+    if (!state.isDragging) return;
+    const rect = canvas.getBoundingClientRect();
+    state.posX = e.clientX - rect.left;
+    state.posY = e.clientY - rect.top;
+    state.velX = 0;
+    state.velY = 0;
+};
+
+window.onmouseup = (e) => {
+    if (!state.isDragging) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    
+    const dx = mx - state.dragStartX;
+    const dy = my - state.dragStartY;
+    state.velX = dx * 0.25;
+    state.velY = dy * 0.25;
+    
+    state.isDragging = false;
+};
+
+function createSparkles(x, y) {
+    for (let i = 0; i < 12; i++) {
+        state.particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 8,
+            vy: (Math.random() - 0.5) * 8,
+            life: 1.0,
+            color: `hsl(${Math.random() * 360}, 80%, 60%)`
+        });
+    }
+}
+
+function drawObject(x, y, time) {
+    ctx.save();
+    
+    if (state.objectType === 'swing') {
+        // FIX: Implement actual angular physics for the swing
+        const angle = state.swingAngle;
+        const sx = state.pivotX + Math.sin(angle) * CONFIG.swingLength;
+        const sy = state.pivotY + Math.cos(angle) * CONFIG.swingLength;
+
+        // Draw Rope
+        ctx.strokeStyle = '#aaa';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(state.pivotX, state.pivotY);
+        ctx.lineTo(sx, sy);
+        ctx.stroke();
+
+        ctx.translate(sx, sy);
+    } else {
+        ctx.translate(x, y);
+    }
+    
+    const scale = 1 + Math.sin(time * 0.003) * 0.03;
+    ctx.scale(scale, scale);
+
+    const speed = Math.hypot(state.velX, state.velY);
+    const stretch = 1 + (speed * 0.006);
+    const squash = 1 - (speed * 0.004);
+    ctx.scale(stretch, squash);
+
+    if (state.objectType === 'cart') {
+        ctx.fillStyle = '#ffeb3b';
+        ctx.beginPath();
+        ctx.roundRect(-40, -20, 80, 40, 10);
+        ctx.fill();
+        ctx.fillStyle = '#333';
+        ctx.beginPath();
+        ctx.arc(-25, 20, 10, 0, Math.PI * 2);
+        ctx.arc(25, 20, 10, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (state.objectType === 'ball') {
+        const grad = ctx.createRadialGradient(-10, -10, 5, 0, 0, 30);
+        grad.addColorStop(0, '#fff');
+        grad.addColorStop(1, '#ff4081');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, 30, 0, Math.PI * 2);
+        ctx.fill();
+    } else { 
+        // Swing Seat Visual
+        ctx.strokeStyle = '#00e5ff';
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.arc(0, 0, 30, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.restore();
+}
+
+function drawArrow(x, y, type, strength) {
+    const length = 60 * strength;
+    const headSize = 15;
+    
+    ctx.save();
+    ctx.translate(x, y);
+    
+    let color = '';
+    let dx = 0, dy = 0;
+
+    if (type === 'push') {
+        color = getComputedStyle(document.documentElement).getPropertyValue('--accent-cyan');
+        dx = length;
+        dy = 0;
+    } else {
+        // FIX: PULL arrow now points LEFT (-X) toward the viewer/center
+        color = getComputedStyle(document.documentElement).getPropertyValue('--accent-pink');
+        dx = -length;
+        dy = 0; 
+    }
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 8 * strength;
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(dx, dy);
+    ctx.stroke();
+
+    // Arrow head
+    ctx.save();
+    ctx.translate(dx, dy);
+    ctx.rotate(Math.atan2(dy, dx));
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-headSize, -headSize/2);
+    ctx.lineTo(-headSize, headSize/2);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+    
+    ctx.restore();
+}
+
+function update(time) {
+    if (state.isDragging) return;
+
+    if (state.isResetting) {
+        const targetX = width / 2;
+        const targetY = height / 2 + 50;
+        
+        const dx = targetX - state.posX;
+        const dy = targetY - state.posY;
+        
+        state.posX += dx * CONFIG.resetLerp;
+        state.posY += dy * CONFIG.resetLerp;
+        
+        state.velX *= 0.5;
+        state.velY *= 0.5;
+
+        if (Math.abs(dx) < 1 && Math.abs(dy) < 1) {
+            state.posX = targetX;
+            state.posY = targetY;
+            state.isResetting = false;
+        }
+    } else {
+        if (state.objectType === 'swing') {
+            // Pendulum Physics: angle acceleration based on gravity
+            state.swingVel -= Math.sin(state.swingAngle) * CONFIG.swingGravity;
+            state.swingVel *= CONFIG.swingDamping;
+            state.swingAngle += state.swingVel;
+
+            // If a force is applied to the swing, it affects angular velocity
+            if (state.forceActive) {
+                const power = (state.forceType === 'push' ? 1 : -1) * (state.strength * 0.05);
+                state.swingVel += power;
+            }
+
+            // Update world position based on angle for collision/trails
+            state.posX = state.pivotX + Math.sin(state.swingAngle) * CONFIG.swingLength;
+            state.posY = state.pivotY + Math.cos(state.swingAngle) * CONFIG.swingLength;
+        } else {
+            state.posX += state.velX;
+            state.posY += state.velY;
+            state.velX *= CONFIG.friction;
+            state.velY *= CONFIG.friction;
+
+            if (state.posX < 50) {
+                createSparkles(state.posX, state.posY);
+                state.posX = 50;
+                state.velX *= CONFIG.boundaryBounce;
+            } else if (state.posX > width - 50) {
+                createSparkles(state.posX, state.posY);
+                state.posX = width - 50;
+                state.velX *= CONFIG.boundaryBounce;
+            }
+
+            if (state.posY < 50) {
+                createSparkles(state.posX, state.posY);
+                state.posY = 50;
+                state.velY *= CONFIG.boundaryBounce;
+            } else if (state.posY > height - 50) {
+                createSparkles(state.posX, state.posY);
+                state.posY = height - 50;
+                state.velY *= CONFIG.boundaryBounce;
+            }
+        }
+    }
+}
+
+function render(time) {
+    ctx.clearRect(0, 0, width, height);
+
+    // Draw Floor Line (Perspective hint)
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, height / 2 + 70);
+    ctx.lineTo(width, height / 2 + 70);
+    ctx.stroke();
+
+    // Trails
+    const speed = Math.hypot(state.velX, state.velY);
+    if (speed > 6) {
+        state.trails.push({ x: state.posX, y: state.posY, life: 1.0 });
+    }
+    state.trails = state.trails.filter(t => t.life > 0);
+    state.trails.forEach(t => {
+        ctx.fillStyle = `rgba(255, 255, 255, ${t.life * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, 4 * t.life, 0, Math.PI * 2);
+        ctx.fill();
+        t.life -= 0.05;
+    });
+
+    // Particles
+    state.particles = state.particles.filter(p => p.life > 0);
+    state.particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.02;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1.0;
+
+    // Force Arrow
+    if (state.forceActive) {
+        drawArrow(state.posX, state.posY, state.forceType, state.forceStrength);
+        state.forceTimer--;
+        if (state.forceTimer <= 0) state.forceActive = false;
+    }
+
+    drawObject(state.posX, state.posY, time);
+
+    update(time);
+    requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

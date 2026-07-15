@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravity Sandbox | Projectile Motion</title>
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <style>
+        :root {
+            --bg-deep: #05070d;
+            --bg-gradient: radial-gradient(circle at center, #1a1c2c 0%, #05070d 100%);
+            --panel-bg: rgba(30, 41, 59, 0.6);
+            --panel-border: rgba(255, 255, 255, 0.12);
+            --accent-cyan: #22d3ee;
+            --accent-violet: #a78bfa;
+            --accent-yellow: #facc15;
+            --text-main: #f8fafc;
+            --text-dim: #9aa4b8;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-deep);
+            background-image: var(--bg-gradient);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #app {
+            position: relative;
+            width: 98vw;
+            height: 95vh;
+            max-width: 1600px;
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 24px;
+        }
+
+        .sidebar {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--text-main);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h1 span { color: var(--accent-cyan); }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .group-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--text-dim);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .input-row {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .label-val {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .label-val span:last-child {
+            font-family: var(--font-mono);
+            color: var(--accent-cyan);
+        }
+
+        input[type="range"] {
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 12px rgba(34, 211, 238, 0.6);
+            transition: var(--transition-smooth);
+        }
+
+        input[type="range"]:hover::-webkit-slider-thumb {
+            transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.9);
+        }
+
+        .toggle-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn-toggle {
+            background: rgba(51, 65, 85, 0.5);
+            border: 1px solid transparent;
+            color: var(--text-dim);
+            padding: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: var(--transition-smooth);
+            font-family: var(--font-sans);
+        }
+
+        .btn-toggle:hover {
+            background: rgba(51, 65, 85, 0.8);
+            color: var(--text-main);
+        }
+
+        .btn-toggle.active {
+            background: rgba(34, 211, 238, 0.15);
+            border-color: var(--accent-cyan);
+            color: var(--text-main);
+            box-shadow: inset 0 0 10px rgba(34, 211, 238, 0.1);
+        }
+
+        .action-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: auto;
+        }
+
+        .btn-primary {
+            background: var(--accent-cyan);
+            color: #05070d;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            letter-spacing: 0.05em;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(34, 211, 238, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--panel-border);
+            padding: 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.3);
+            transform: translateY(-3px);
+        }
+
+        .stage-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 24px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--panel-border);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hud {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 24px;
+            border-radius: 20px;
+            min-width: 260px;
+            pointer-events: none;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7), 
+                        inset 0 0 15px rgba(255,255,255,0.05);
+            transition: var(--transition-smooth);
+        }
+
+        .hud-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+            letter-spacing: 0.15em;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .hud-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+        }
+
+        .hud-stat span:first-child {
+            color: var(--text-dim);
+            font-family: var(--font-sans);
+            font-weight: 500;
+        }
+
+        .hud-stat span:last-child {
+            color: var(--accent-yellow);
+            text-shadow: 0 0 10px rgba(250, 204, 21, 0.3);
+        }
+
+        .katex-display { margin: 0; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <aside class="sidebar">
+        <div>
+            <h1><span>Gravity</span> Sandbox</h1>
+            <p style="font-size: 0.85rem; color: var(--text-dim); font-weight: 400;">Projectile Motion Simulator</p>
+        </div>
+
+        <div class="control-group">
+            <div class="group-label">Launch Parameters</div>
+            <div class="input-row">
+                <div class="label-val">
+                    <span>Initial Speed</span>
+                    <span id="val-speed">50 m/s</span>
+                </div>
+                <input type="range" id="input-speed" min="0" max="100" value="50">
+            </div>
+            <div class="input-row">
+                <div class="label-val">
+                    <span>Launch Angle</span>
+                    <span id="val-angle">45°</span>
+                </div>
+                <input type="range" id="input-angle" min="0" max="90" value="45">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="group-label">Environment</div>
+            <div class="toggle-group">
+                <button id="btn-earth" class="btn-toggle active">Earth</button>
+                <button id="btn-moon" class="btn-toggle">Moon</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="group-label">Visibility</div>
+            <div class="toggle-group">
+                <button id="btn-vector" class="btn-toggle active">Velocity</button>
+                <button id="btn-trace" class="btn-toggle active">Path Trace</button>
+            </div>
+        </div>
+
+        <div class="action-btns">
+            <button id="btn-launch" class="btn-primary">LAUNCH</button>
+            <button id="btn-reset" class="btn-secondary">RESET</button>
+        </div>
+    </aside>
+
+    <main class="stage-container">
+        <canvas id="canvas"></canvas>
+        <div class="hud">
+            <div class="hud-title">Live Telemetry</div>
+            <div class="hud-stat"><span>Max Height</span> <span id="hud-height">0.00 m</span></div>
+            <div class="hud-stat"><span>Range</span> <span id="hud-range">0.00 m</span></div>
+            <div class="hud-stat"><span>Flight Time</span> <span id="hud-time">0.00 s</span></div>
+            <div id="formula" style="margin-top: 16px; font-size: 0.85rem; color: var(--text-dim); text-align: center;"></div>
+        </div>
+    </main>
+</div>
+
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+
+        const state = {
+            speed: 50,
+            angle: 45,
+            gravity: 9.81,
+            isMoon: false,
+            showVector: true,
+            showTrace: true,
+            isRunning: false,
+            time: 0,
+            projectile: { x: 0, y: 0, vx: 0, vy: 0 },
+            path: [], 
+            strobeMarkers: [],
+            impacted: false,
+            lastFrameTime: 0,
+            impactScale: 1.0
+        };
+
+        const SCALE = 5; 
+        const GROUND_Y_OFFSET = 120; 
+        const STROBE_INTERVAL = 0.1; 
+
+        const inputs = {
+            speed: document.getElementById('input-speed'),
+            angle: document.getElementById('input-angle'),
+            valSpeed: document.getElementById('val-speed'),
+            valAngle: document.getElementById('val-angle'),
+            btnEarth: document.getElementById('btn-earth'),
+            btnMoon: document.getElementById('btn-moon'),
+            btnVector: document.getElementById('btn-vector'),
+            btnTrace: document.getElementById('btn-trace'),
+            btnLaunch: document.getElementById('btn-launch'),
+            btnReset: document.getElementById('btn-reset'),
+            hudHeight: document.getElementById('hud-height'),
+            hudRange: document.getElementById('hud-range'),
+            hudTime: document.getElementById('hud-time'),
+            formulaDiv: document.getElementById('formula')
+        };
+
+        function init() {
+            resize();
+            window.addEventListener('resize', resize);
+            setupListeners();
+            updateHUD();
+            
+            if (typeof katex !== 'undefined') {
+                katex.render("y = v_0\\sin(\\theta)t - \\frac{1}{2}gt^2", inputs.formulaDiv, { 
+                    displayMode: false, 
+                    throwOnError: false 
+                });
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        function resize() {
+            canvas.width = canvas.clientWidth * dpr;
+            canvas.height = canvas.clientHeight * dpr;
+            ctx.scale(dpr, dpr);
+        }
+
+        function setupListeners() {
+            inputs.speed.oninput = (e) => {
+                state.speed = parseFloat(e.target.value);
+                inputs.valSpeed.innerText = `${state.speed} m/s`;
+                updateHUD(); // Always update HUD to keep predictive markers moving
+            };
+
+            inputs.angle.oninput = (e) => {
+                state.angle = parseFloat(e.target.value);
+                inputs.valAngle.innerText = `${state.angle}°`;
+                updateHUD();
+            };
+
+            inputs.btnEarth.onclick = () => {
+                state.gravity = 9.81;
+                state.isMoon = false;
+                inputs.btnEarth.classList.add('active');
+                inputs.btnMoon.classList.remove('active');
+                updateHUD();
+            };
+
+            inputs.btnMoon.onclick = () => {
+                state.gravity = 1.62;
+                state.isMoon = true;
+                inputs.btnMoon.classList.add('active');
+                inputs.btnEarth.classList.remove('active');
+                updateHUD();
+            };
+
+            inputs.btnVector.onclick = () => {
+                state.showVector = !state.showVector;
+                inputs.btnVector.classList.toggle('active');
+            };
+
+            inputs.btnTrace.onclick = () => {
+                state.showTrace = !state.showTrace;
+                inputs.btnTrace.classList.toggle('active');
+            };
+
+            inputs.btnLaunch.onclick = launch;
+            inputs.btnReset.onclick = reset;
+        }
+
+        function updateHUD() {
+            const rad = (state.angle * Math.PI) / 180;
+            const v0y = state.speed * Math.sin(rad);
+            const v0x = state.speed * Math.cos(rad);
+            const tFlight = (2 * v0y) / state.gravity;
+            const maxHeight = (v0y * v0y) / (2 * state.gravity);
+            const range = v0x * tFlight;
+
+            inputs.hudHeight.innerText = `${maxHeight.toFixed(2)} m`;
+            inputs.hudRange.innerText = `${range.toFixed(2)} m`;
+            inputs.hudTime.innerText = `${tFlight.toFixed(2)} s`;
+        }
+
+        function launch() {
+            if (state.isRunning) return;
+            const rad = (state.angle * Math.PI) / 180;
+            state.projectile = {
+                x: 0, y: 0,
+                vx: state.speed * Math.cos(rad),
+                vy: state.speed * Math.sin(rad)
+            };
+            state.time = 0;
+            state.path = [];
+            state.strobeMarkers = [];
+            state.isRunning = true;
+            state.impacted = false;
+            state.impactScale = 1.0;
+        }
+
+        function reset() {
+            state.isRunning = false;
+            state.time = 0;
+            state.projectile = { x: 0, y: 0, vx: 0, vy: 0 };
+            state.path = [];
+            state.strobeMarkers = [];
+            state.impacted = false;
+            state.impactScale = 1.0;
+            updateHUD();
+        }
+
+        function loop(timestamp) {
+            const dt = (timestamp - state.lastFrameTime) / 1000 || 0;
+            state.lastFrameTime = timestamp;
+
+            if (state.isRunning && !state.impacted) {
+                const safeDt = Math.min(dt, 0.1);
+                state.time += safeDt;
+                
+                const rad = (state.angle * Math.PI) / 180;
+                const v0x = state.speed * Math.cos(rad);
+                const v0y = state.speed * Math.sin(rad);
+
+                state.projectile.x = v0x * state.time;
+                state.projectile.y = (v0y * state.time) - (0.5 * state.gravity * state.time * state.time);
+                state.projectile.vx = v0x;
+                state.projectile.vy = v0y - (state.gravity * state.time);
+
+                if (state.projectile.y <= 0 && state.time > 0.1) {
+                    state.projectile.y = 0;
+                    state.impacted = true;
+                    state.impactScale = 1.3;
+                }
+
+                state.path.push({ x: state.projectile.x, y: state.projectile.y, t: state.time });
+
+                if (Math.floor(state.time / STROBE_INTERVAL) > state.strobeMarkers.length) {
+                    state.strobeMarkers.push({ x: state.projectile.x, y: state.projectile.y });
+                }
+            }
+
+            if (state.impacted && state.impactScale > 1.0) {
+                state.impactScale -= 0.02;
+                if (state.impactScale < 1.0) state.impactScale = 1.0;
+            }
+
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const groundY = (canvas.height / dpr) - GROUND_Y_OFFSET;
+            const startX = 60;
+
+            // Grid ticks
+            ctx.strokeStyle = 'rgba(100, 116, 139, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let x = startX; x < canvas.width / dpr; x += SCALE * 10) {
+                ctx.moveTo(x, groundY);
+                ctx.lineTo(x, groundY + 5);
+            }
+            ctx.stroke();
+
+            // Ground Line
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(canvas.width / dpr, groundY);
+            ctx.stroke();
+
+            // Path Trace - Fixed to strictly respect state.showTrace
+            if (state.showTrace && state.path.length > 1) {
+                for (let i = 0; i < state.path.length - 1; i++) {
+                    const p1 = state.path[i];
+                    const p2 = state.path[i+1];
+                    const age = state.time - p1.t;
+                    const opacity = Math.max(0, 0.6 - (age * 0.4)); 
+                    
+                    ctx.strokeStyle = `rgba(34, 211, 238, ${opacity})`;
+                    ctx.lineWidth = 3 * (opacity + 0.2);
+                    ctx.beginPath();
+                    ctx.moveTo(startX + p1.x * SCALE, groundY - p1.y * SCALE);
+                    ctx.lineTo(startX + p2.x * SCALE, groundY - p2.y * SCALE);
+                    ctx.stroke();
+                }
+            }
+
+            // Strobe Markers
+            state.strobeMarkers.forEach((m, idx) => {
+                const opacity = 1 - (idx / (state.strobeMarkers.length + 5));
+                ctx.fillStyle = `rgba(167, 139, 250, ${opacity * 0.6})`;
+                ctx.beginPath();
+                ctx.arc(startX + m.x * SCALE, groundY - m.y * SCALE, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Projectile
+            const px = startX + state.projectile.x * SCALE;
+            const py = groundY - state.projectile.y * SCALE;
+            const radius = 7 * state.impactScale;
+
+            ctx.fillStyle = '#facc15';
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#facc15';
+            ctx.beginPath();
+            ctx.arc(px, py, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Velocity Vector - Fixed to strictly respect state.showVector
+            if (state.showVector && state.isRunning) {
+                const vecScale = 1.8;
+                const vxPx = state.projectile.vx * SCALE * vecScale;
+                const vyPx = -state.projectile.vy * SCALE * vecScale;
+
+                ctx.strokeStyle = '#a78bfa';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(px, py);
+                ctx.lineTo(px + vxPx, py + vyPx);
+                ctx.stroke();
+
+                const angle = Math.atan2(vyPx, vxPx);
+                ctx.beginPath();
+                ctx.moveTo(px + vxPx, py + vyPx);
+                ctx.lineTo(px + vxPx - 10 * Math.cos(angle - Math.PI/6), py + vyPx - 10 * Math.sin(angle - Math.PI/6));
+                ctx.lineTo(px + vxPx - 10 * Math.cos(angle + Math.PI/6), py + vyPx - 10 * Math.sin(angle + Math.PI/6));
+                ctx.closePath();
+                ctx.fillStyle = '#a78bfa';
+                ctx.fill();
+            }
+
+            // Predictive Markers (Range and Apex) - Fixed to be visible always
+            const rad = (state.angle * Math.PI) / 180;
+            const v0y = state.speed * Math.sin(rad);
+            const v0x = state.speed * Math.cos(rad);
+            const tFlight = (2 * v0y) / state.gravity;
+            const maxHeight = (v0y * v0y) / (2 * state.gravity);
+            const range = v0x * tFlight;
+
+            // Range Marker
+            ctx.strokeStyle = '#facc15';
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(startX + range * SCALE, groundY);
+            ctx.lineTo(startX + range * SCALE, groundY - 20);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#facc15';
+            ctx.font = '11px JetBrains Mono';
+            ctx.textAlign = 'center';
+            ctx.fillText(`RANGE: ${range.toFixed(1)}m`, startX + range * SCALE, groundY + 25);
+
+            // Apex Marker
+            const apexX = v0x * (tFlight / 2);
+            ctx.strokeStyle = '#a78bfa';
+            ctx.beginPath();
+            ctx.moveTo(startX + apexX * SCALE, groundY - maxHeight * SCALE);
+            ctx.lineTo(startX + apexX * SCALE, groundY);
+            ctx.stroke();
+            ctx.fillStyle = '#a78bfa';
+            ctx.fillText(`APEX: ${maxHeight.toFixed(1)}m`, startX + apexX * SCALE, groundY - maxHeight * SCALE - 15);
+        }
+
+        init();
+    });
+</script>
+</body>
+</html>

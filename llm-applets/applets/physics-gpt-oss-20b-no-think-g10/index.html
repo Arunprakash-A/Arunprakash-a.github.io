@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ray‑Optics Explorer</title>
+<style>
+:root{
+  --bg-gradient: radial-gradient(circle at center,#0a0c12 0%,#12151f 100%);
+  --surface:#1e1e2e;
+  --accent1:#22d3ee;
+  --accent2:#a78bfa;
+  --text-primary:#f4f6fb;
+  --text-secondary:#cbd5e1;
+}
+html,body{
+  margin:0; padding:0; height:100%; background:var(--bg-gradient); color:var(--text-primary);
+  font-family:"Inter",system-ui,sans-serif;
+}
+.container{display:flex; flex-wrap:wrap; min-height:100vh;}
+.canvas-wrapper{flex:1 1 70%; position:relative; display:flex; justify-content:center; align-items:center;}
+#opticalCanvas{background:var(--surface); border-radius:12px; box-shadow:0 4px 8px rgba(0,0,0,.3);}
+.sidebar{flex:1 1 30%; padding:16px; box-sizing:border-box;}
+.card{
+  background:var(--surface);
+  border-radius:12px;
+  box-shadow:0 2px 6px rgba(0,0,0,.25);
+  padding:16px;
+  margin-bottom:16px;
+}
+.card label{display:block;font-size:.9rem;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;}
+input[type=range]{width:100%;appearance:none;background:#444;border-radius:6px;height:8px;margin-top:4px;}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent1);cursor:pointer;transition:.2s;}
+input[type=range]:focus-visible{outline:2px solid var(--accent2);}
+select, input[type=checkbox]{margin-top:4px;}
+.formula-panel{
+  position:absolute;
+  top:8px; left:50%;
+  transform:translate(-50%,0) translateX(100%);
+  opacity:0;
+  background:var(--surface);
+  border-radius:12px;
+  padding:12px 16px;
+  box-shadow:0 4px 10px rgba(0,0,0,.3);
+  color:var(--text-primary);
+  transition:transform .3s ease-in-out, opacity .3s ease-in-out;
+}
+.formula-panel.visible{
+  transform:translate(-50%,0) translateX(0);
+  opacity:1;
+}
+#imageTipOverlay{
+  position:absolute; pointer-events:none;
+  transition:opacity .3s ease-in-out, transform .3s ease-in-out;
+  opacity:0; transform:translateY(10px);
+}
+#imageTipOverlay.visible{
+  opacity:1; transform:translateY(0);
+}
+@media(max-width:768px){
+  .container{flex-direction:column;}
+  .canvas-wrapper{width:100%;height:auto;order:1;}
+  .sidebar{width:100%;order:2;}
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+</head>
+<body>
+<div class="container">
+  <div class="canvas-wrapper">
+    <canvas id="opticalCanvas" width="800" height="600"></canvas>
+    <div id="formulaPanel" class="formula-panel"></div>
+    <div id="imageTipOverlay"><span></span></div>
+  </div>
+  <aside class="sidebar">
+    <div class="card">
+      <label for="objDistSlider">Object Distance (cm)</label>
+      <input type="range" id="objDistSlider" min="0.5" max="50" step="0.1" value="10">
+      <span id="objDistVal"></span>
+    </div>
+    <div class="card">
+      <label for="focalLenSlider">Focal Length (cm)</label>
+      <input type="range" id="focalLenSlider" min="1" max="30" step="0.1" value="15">
+      <span id="focalLenVal"></span>
+    </div>
+    <div class="card">
+      <label for="objHeightSlider">Object Height (cm)</label>
+      <input type="range" id="objHeightSlider" min="0.5" max="20" step="0.1" value="5">
+      <span id="objHeightVal"></span>
+    </div>
+    <div class="card">
+      <label for="lensToggle">Lens / Mirror</label>
+      <select id="lensToggle">
+        <option>Convex Lens</option>
+        <option>Concave Lens</option>
+        <option>Convex Mirror</option>
+        <option>Concave Mirror</option>
+      </select>
+    </div>
+    <div class="card">
+      <label for="rayVisibilityCheckbox">Show Rays</label>
+      <input type="checkbox" id="rayVisibilityCheckbox" checked>
+    </div>
+    <div class="card">
+      <label for="formulaPanelCheckbox">Show Formula Panel</label>
+      <input type="checkbox" id="formulaPanelCheckbox" checked>
+    </div>
+  </aside>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('opticalCanvas');
+  const ctx = canvas.getContext('2d', {alpha: false});
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 800 * dpr;
+  canvas.height = 600 * dpr;
+  canvas.style.width = '800px';
+  canvas.style.height = '600px';
+  ctx.scale(dpr, dpr);
+  const scale = 20; // px per cm
+  const centerX = canvas.width / (2*dpr);
+  const centerY = canvas.height / (2*dpr);
+
+  const state = {
+    u: 10,
+    f: 15,
+    h_o: 5,
+    lensType: 'Convex Lens',
+    showRays: true,
+    showFormula: true
+  };
+
+  const targetState = {...state};
+  const displayState = {...state};
+
+  let animating = false;
+  const duration = 300; // ms
+
+  const objDistSlider = document.getElementById('objDistSlider');
+  const focalLenSlider = document.getElementById('focalLenSlider');
+  const objHeightSlider = document.getElementById('objHeightSlider');
+  const lensToggle = document.getElementById('lensToggle');
+  const rayVisibilityCheckbox = document.getElementById('rayVisibilityCheckbox');
+  const formulaPanelCheckbox = document.getElementById('formulaPanelCheckbox');
+
+  const objDistVal = document.getElementById('objDistVal');
+  const focalLenVal = document.getElementById('focalLenVal');
+  const objHeightVal = document.getElementById('objHeightVal');
+  const formulaPanel = document.getElementById('formulaPanel');
+  const imageTipOverlay = document.getElementById('imageTipOverlay');
+
+  let rayAnim = {progress:1, target:1};
+  let imageAnim = {progress:1, target:1};
+  let lastV = null;
+
+  function lerp(a,b,t){return a + (b-a)*t;}
+
+  function startAnimation(){
+    if(animating) return;
+    animating = true;
+    const startTime = performance.now();
+    requestAnimationFrame(function animate(now){
+      const t = Math.min((now - startTime)/duration,1);
+      displayState.u = lerp(displayState.u, targetState.u, t);
+      displayState.f = lerp(displayState.f, targetState.f, t);
+      displayState.h_o = lerp(displayState.h_o, targetState.h_o, t);
+
+      rayAnim.progress = lerp(rayAnim.progress, rayAnim.target, t);
+      imageAnim.progress = lerp(imageAnim.progress, imageAnim.target, t);
+
+      render();
+
+      if(t<1){
+        requestAnimationFrame(animate);
+      }else{
+        Object.assign(displayState,targetState);
+        animating=false;
+        render();
+      }
+    });
+  }
+
+  function getEffectiveFocalLength(lensType,f){
+    let fEff = f;
+    if(lensType.includes('Mirror')){
+      fEff = lensType.startsWith('Convex') ? -f : f;
+    }else{
+      fEff = lensType.startsWith('Concave') ? -f : f;
+    }
+    return fEff;
+  }
+
+  function computeImageDistance(u,f,lensType){
+    const fEff = getEffectiveFocalLength(lensType, f);
+    const denom = (1 / fEff) - (1 / u);
+    if(Math.abs(denom) < 1e-6) return Infinity;
+    return 1 / denom;
+  }
+
+  function computeMagnification(u,f,lensType){
+    const v = computeImageDistance(u,f,lensType);
+    return -v / u; // unified sign convention
+  }
+
+  function updateValues(){
+    state.u = parseFloat(objDistSlider.value);
+    state.f = parseFloat(focalLenSlider.value);
+    state.h_o = parseFloat(objHeightSlider.value);
+    state.lensType = lensToggle.value;
+    state.showRays = rayVisibilityCheckbox.checked;
+    state.showFormula = formulaPanelCheckbox.checked;
+
+    objDistVal.textContent = `${state.u.toFixed(1)} cm`;
+    focalLenVal.textContent = `${state.f.toFixed(1)} cm`;
+    objHeightVal.textContent = `${state.h_o.toFixed(1)} cm`;
+
+    targetState.u = state.u;
+    targetState.f = state.f;
+    targetState.h_o = state.h_o;
+
+    if(state.showFormula){
+      formulaPanel.classList.add('visible');
+      const eq = `\\frac{1}{f} = \\frac{1}{v} + \\frac{1}{u}`;
+      if(typeof katex !== 'undefined'){
+        formulaPanel.innerHTML='';
+        katex.render(eq, formulaPanel, {throwOnError:false});
+        const v = computeImageDistance(state.u,state.f,state.lensType);
+        const m = computeMagnification(state.u,state.f,state.lensType);
+        const info = `<br>u=${state.u.toFixed(2)} cm, f=${state.f.toFixed(2)} cm<br>` +
+                      `v=${v.toFixed(2)} cm, m=${m.toFixed(2)}`;
+        formulaPanel.innerHTML += info;
+      }
+    }else{
+      formulaPanel.classList.remove('visible');
+    }
+
+    const newV = computeImageDistance(state.u,state.f,state.lensType);
+    if(!isFinite(newV)){
+      imageAnim.target = 0;
+    }else{
+      if(lastV===null || !isFinite(lastV) || Math.sign(newV)!==Math.sign(lastV)){
+        imageAnim.progress = 0;
+        imageAnim.target = 1;
+      }
+    }
+    lastV = newV;
+
+    rayAnim.progress = 0;
+    rayAnim.target = 1;
+
+    startAnimation();
+  }
+
+  function drawAxis(){
+    ctx.strokeStyle = '#555';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, centerY);
+    ctx.lineTo(canvas.width/dpr, centerY);
+    ctx.stroke();
+  }
+
+  function drawFocalMarkers(){
+    const fEff = getEffectiveFocalLength(state.lensType,state.f);
+    const fPx = Math.abs(fEff) * scale;
+    const markers = [
+      {x: centerX + fPx, label:'f'},
+      {x: centerX - fPx, label:'-f'}
+    ];
+    ctx.fillStyle = '#888';
+    ctx.font = '12px "Fira Code", monospace';
+    markers.forEach(m=>{
+      ctx.beginPath();
+      ctx.arc(m.x, centerY, 4,0,2*Math.PI);
+      ctx.fill();
+      ctx.fillText(m.label, m.x-6, centerY+20);
+    });
+  }
+
+  function drawObject(){
+    const uPx = displayState.u * scale;
+    const hPx = displayState.h_o * scale;
+    const xObj = centerX - uPx;
+    const yTop = centerY - hPx;
+    const yBottom = centerY + hPx;
+
+    ctx.strokeStyle = '#22d3ee';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(xObj, yTop);
+    ctx.lineTo(xObj, yBottom);
+    ctx.stroke();
+
+    ctx.fillStyle = '#22d3ee';
+    ctx.beginPath();
+    ctx.moveTo(xObj-6,yTop+6);
+    ctx.lineTo(xObj+6,yTop+6);
+    ctx.lineTo(xObj,yTop);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawRays(){
+    const uPx = displayState.u * scale;
+    const hPx = displayState.h_o * scale;
+    const xObj = centerX - uPx;
+    const yTop = centerY - hPx;
+
+    const fEff = getEffectiveFocalLength(state.lensType, displayState.f);
+    const fPx = Math.abs(fEff) * scale;
+    const xFRight = centerX + fEff*scale;
+    const xFLeft  = centerX - fEff*scale;
+
+    const lensCenter = {x:centerX, y:centerY};
+
+    ctx.lineWidth = 2;
+
+    if(state.lensType.includes('Lens')){
+      const targetX = fEff > 0 ? xFRight : xFLeft;
+      ctx.strokeStyle = '#a78bfa';
+      ctx.beginPath();
+      ctx.moveTo(xObj, yTop);
+      ctx.lineTo(lensCenter.x, lensCenter.y);
+      ctx.lineTo(targetX, centerY);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#22d3ee';
+      const dx = lensCenter.x - xObj;
+      const dy = lensCenter.y - yTop;
+      const len = Math.hypot(dx,dy);
+      const ux = dx/len, uy=dy/len;
+      const endX = lensCenter.x + 200*ux;
+      const endY = lensCenter.y + 200*uy;
+      ctx.beginPath();
+      ctx.moveTo(xObj,yTop);
+      ctx.lineTo(lensCenter.x,lensCenter.y);
+      ctx.lineTo(endX,endY);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#22d3ee';
+      const t = (xFLeft - xObj)/(lensCenter.x - xObj);
+      const yAtLens = yTop + t*(lensCenter.y - yTop);
+      ctx.beginPath();
+      ctx.moveTo(xObj,yTop);
+      ctx.lineTo(lensCenter.x, yAtLens);
+      ctx.lineTo(centerX+200, centerY);
+      ctx.stroke();
+
+    } else {
+      const targetX = xFRight;
+      ctx.strokeStyle = '#a78bfa';
+      ctx.beginPath();
+      ctx.moveTo(xObj, yTop);
+      ctx.lineTo(lensCenter.x, lensCenter.y);
+      ctx.lineTo(targetX, centerY);
+      ctx.stroke();
+
+      const dx = lensCenter.x - xObj;
+      const dy = lensCenter.y - yTop;
+      const len = Math.hypot(dx,dy);
+      const ux = dx/len, uy=dy/len;
+      const endX = lensCenter.x + 200*ux;
+      const endY = lensCenter.y + 200*uy;
+      const rx = -ux, ry=uy;
+      const rEndX = lensCenter.x + 200*rx;
+      const rEndY = lensCenter.y + 200*ry;
+      ctx.strokeStyle = '#22d3ee';
+      ctx.beginPath();
+      ctx.moveTo(xObj,yTop);
+      ctx.lineTo(lensCenter.x,lensCenter.y);
+      ctx.lineTo(rEndX,rEndY);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#22d3ee';
+      ctx.beginPath();
+      ctx.moveTo(targetX, centerY);
+      ctx.lineTo(lensCenter.x, centerY);
+      const dir = (targetX < centerX) ? -1 : 1;
+      ctx.lineTo(centerX + dir*200, centerY);
+      ctx.stroke();
+    }
+  }
+
+  function drawImageTip(){
+    const v = computeImageDistance(displayState.u,displayState.f,state.lensType);
+    if(!isFinite(v)) return;
+    const hPx = displayState.h_o * scale;
+    const m = computeMagnification(displayState.u,displayState.f,state.lensType);
+    const h_i_px = Math.abs(m) * hPx;
+    const xImg = centerX + v * scale;
+    const yTop = centerY - h_i_px;
+    const yBottom = centerY + h_i_px;
+
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = (v>0)?'#22d3ee':'#a78bfa';
+    if(v<0) ctx.setLineDash([5,5]); else ctx.setLineDash([]);
+    ctx.globalAlpha = imageAnim.progress;
+    ctx.beginPath();
+    ctx.moveTo(xImg,yTop);
+    ctx.lineTo(xImg,yBottom);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    const orient = (m<0)?'Inverted':'Upright';
+    const txt = `${(h_i_px/scale).toFixed(2)} cm ${orient}`;
+    imageTipOverlay.querySelector('span').textContent = txt;
+    imageTipOverlay.style.left = `${xImg + 8}px`;
+    imageTipOverlay.style.top = `${centerY - h_i_px/2}px`;
+    if(isFinite(v)){
+      imageTipOverlay.classList.add('visible');
+    }else{
+      imageTipOverlay.classList.remove('visible');
+    }
+  }
+
+  function render(){
+    ctx.clearRect(0,0,canvas.width/dpr,canvas.height/dpr);
+    drawAxis();
+    drawFocalMarkers();
+    drawObject();
+    if(state.showRays){
+      ctx.globalAlpha = rayAnim.progress;
+      drawRays();
+      ctx.globalAlpha = 1;
+    }
+    drawImageTip();
+  }
+
+  objDistSlider.addEventListener('input', () => { updateValues(); });
+  focalLenSlider.addEventListener('input', () => { updateValues(); });
+  objHeightSlider.addEventListener('input', () => { updateValues(); });
+  lensToggle.addEventListener('change', () => {
+    state.lensType = lensToggle.value;
+    targetState.u = state.u;
+    targetState.f = state.f;
+    targetState.h_o = state.h_o;
+    if(state.showFormula) updateValues();
+    else render();
+  });
+  rayVisibilityCheckbox.addEventListener('change', () => { state.showRays = rayVisibilityCheckbox.checked; render(); });
+  formulaPanelCheckbox.addEventListener('change', () => { state.showFormula = formulaPanelCheckbox.checked; updateValues(); });
+
+  let dragging=false;
+  canvas.addEventListener('mousedown',(e)=>{
+    const rect=canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left;
+    const my=e.clientY-rect.top;
+    const uPx=displayState.u*scale;
+    const hPx=displayState.h_o*scale;
+    const xObj=centerX-uPx;
+    const yTop=centerY-hPx;
+    if(Math.abs(mx-xObj)<10 && Math.abs(my-yTop)<hPx+10){
+      dragging=true;
+    }
+  });
+  canvas.addEventListener('mousemove',(e)=>{
+    if(!dragging)return;
+    const rect=canvas.getBoundingClientRect();
+    let mx=e.clientX-rect.left;
+    mx=Math.max(0,Math.min(canvas.width/dpr,mx));
+    const newU=(centerX-mx)/scale;
+    state.u = Math.max(0.5,Math.min(50,newU));
+    targetState.u = state.u;
+    objDistSlider.value=state.u.toFixed(1);
+    updateValues();
+  });
+  canvas.addEventListener('mouseup',()=>{dragging=false;});
+  canvas.addEventListener('mouseleave',()=>{dragging=false;});
+
+  updateValues();
+})();
+</script>
+</body>
+</html>

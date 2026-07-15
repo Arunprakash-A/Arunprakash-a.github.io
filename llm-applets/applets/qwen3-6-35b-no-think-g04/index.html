@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equivalent Fractions Explorer</title>
+    <!-- Google Fonts: Nunito for rounded, playful typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Theme Variables */
+            --bg-dark: #F0F4F8;
+            --panel-bg: rgba(255, 255, 255, 0.8);
+            --panel-border: rgba(0, 0, 0, 0.1);
+            --text-main: #333333;
+            --text-muted: #64748B;
+            
+            /* Palette */
+            --accent-primary: #4A90E2; /* Blue */
+            --accent-secondary: #50E3C2; /* Teal */
+            --accent-warn: #FF6B6B; /* Red/Pink */
+            --accent-gold: #F5A623; /* Orange/Gold */
+            --accent-purple: #9013FE; /* Purple */
+            --accent-green: #7ED321; /* Green */
+            
+            --font-stack: 'Nunito', sans-serif;
+            --radius-lg: 24px;
+            --radius-md: 12px;
+            --shadow: 0 10px 30px -10px rgba(0,0,0,0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-stack);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Layout --- */
+        .app-container {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            height: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* --- Header / Controls --- */
+        header {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius-lg);
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+        }
+
+        .brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        /* Stepper Group */
+        .stepper-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.05);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+        }
+
+        .stepper-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .stepper-btn {
+            background: rgba(0,0,0,0.05);
+            border: none;
+            color: var(--text-main);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .stepper-btn:hover { background: rgba(0,0,0,0.1); transform: scale(1.1); }
+        .stepper-btn:active { transform: scale(0.95); }
+
+        .fraction-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+            min-width: 80px;
+        }
+
+        .fraction-display .num { color: var(--accent-primary); }
+        .fraction-display .den { color: var(--accent-secondary); }
+        .fraction-display .line { width: 100%; height: 4px; background: var(--text-muted); margin: 4px 0; border-radius: 2px; }
+
+        /* Toggles & Actions */
+        .action-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .toggle-container {
+            display: flex;
+            background: rgba(0,0,0,0.1);
+            border-radius: 20px;
+            padding: 4px;
+            position: relative;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-family: var(--font-stack);
+            font-weight: 600;
+            transition: color 0.3s;
+            z-index: 2;
+        }
+
+        .toggle-btn.active {
+            color: #FFFFFF;
+            background: var(--accent-primary);
+            box-shadow: 0 2px 10px rgba(74, 144, 226, 0.4);
+        }
+
+        .btn-action {
+            background: var(--accent-gold);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            cursor: pointer;
+            font-family: var(--font-stack);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 166, 35, 0.4);
+        }
+
+        .btn-reset {
+            background: transparent;
+            border: 1px solid var(--panel-border);
+            color: var(--text-muted);
+        }
+        .btn-reset:hover { border-color: var(--text-main); color: var(--text-main); }
+
+        /* --- Main Visualization Area --- */
+        main {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 20px;
+            min-height: 0; /* Allow scrolling if needed */
+        }
+
+        .viz-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius-lg);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .viz-header {
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        .decimal-box {
+            background: rgba(0,0,0,0.05);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 1.2rem;
+            color: var(--accent-secondary);
+            border: 1px solid rgba(80, 227, 194, 0.3);
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* --- Number Line Panel --- */
+        .number-line-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .nl-label {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- Fraction Wall --- */
+        .fraction-wall-container {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+        }
+
+        .wall-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .wall-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .wall-row {
+            display: flex;
+            align-items: center;
+            height: 32px;
+            gap: 4px;
+        }
+
+        .wall-label {
+            width: 60px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-align: right;
+            padding-right: 10px;
+            font-weight: 600;
+        }
+
+        .wall-segment {
+            height: 100%;
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: rgba(0,0,0,0.5);
+            font-weight: 600;
+        }
+
+        .wall-segment.highlight {
+            background: var(--accent-gold);
+            color: #000;
+            box-shadow: 0 0 10px var(--accent-gold);
+            animation: pulse 2s infinite;
+        }
+
+        .wall-segment.current {
+            border: 2px solid var(--accent-primary);
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 600px) {
+            main { grid-template-columns: 1fr; }
+            .number-line-panel { display: none; } /* Hide NL only on very small screens */
+            .app-container { overflow-y: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Header Controls -->
+    <header>
+        <div class="brand">Fraction Explorer</div>
+        
+        <div class="controls">
+            <!-- Numerator Stepper -->
+            <div class="stepper-group">
+                <span class="stepper-label">Num</span>
+                <button class="stepper-btn" id="num-down">-</button>
+                <div class="fraction-display">
+                    <span class="num" id="num-val">1</span>
+                    <div class="line"></div>
+                    <span class="den" id="den-val">2</span>
+                </div>
+                <button class="stepper-btn" id="num-up">+</button>
+            </div>
+
+            <!-- Denominator Stepper -->
+            <div class="stepper-group">
+                <span class="stepper-label">Den</span>
+                <button class="stepper-btn" id="den-down">-</button>
+                <!-- FIX 1: Removed duplicate fraction display elements (num-val-2, den-val-2) -->
+                <button class="stepper-btn" id="den-up">+</button>
+            </div>
+
+            <!-- Actions -->
+            <div class="action-group">
+                <div class="toggle-container">
+                    <button class="toggle-btn active" id="mode-bar">Bar</button>
+                    <button class="toggle-btn" id="mode-circle">Circle</button>
+                </div>
+                <button class="btn-action" id="btn-simplify">
+                    <span>✨</span> Simplify
+                </button>
+                <button class="btn-action btn-reset" id="btn-reset">
+                    <span>↺</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Visualization -->
+    <main>
+        <!-- Left: Model Visualization -->
+        <div class="viz-panel">
+            <div class="viz-header">
+                <span style="font-weight: 600; color: var(--text-muted);">Visual Model</span>
+                <div class="decimal-box" id="decimal-display">0.50</div>
+            </div>
+            <div class="canvas-container">
+                <canvas id="main-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Right: Number Line -->
+        <div class="number-line-panel">
+            <div class="nl-label">Number Line (0 to 1)</div>
+            <div class="canvas-container" style="padding: 0 20px;">
+                <canvas id="nl-canvas"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom: Fraction Wall -->
+    <div class="fraction-wall-container">
+        <div class="wall-header">
+            <span>Fraction Wall</span>
+            <span>Equivalent Fractions</span>
+        </div>
+        <div class="wall-grid" id="wall-grid">
+            <!-- Generated by JS -->
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * Fraction Explorer App Logic
+ */
+
+// --- State Management ---
+const state = {
+    numerator: 1,
+    denominator: 2,
+    mode: 'bar', // 'bar' or 'circle'
+    isAnimating: false
+};
+
+// --- DOM Elements ---
+const els = {
+    numVal: document.getElementById('num-val'),
+    denVal: document.getElementById('den-val'),
+    // FIX 1: Removed references to duplicate elements (denVal2, numVal2)
+    decimal: document.getElementById('decimal-display'),
+    wallGrid: document.getElementById('wall-grid'),
+    mainCanvas: document.getElementById('main-canvas'),
+    nlCanvas: document.getElementById('nl-canvas'),
+    btnNumUp: document.getElementById('num-up'),
+    btnNumDown: document.getElementById('num-down'),
+    btnDenUp: document.getElementById('den-up'),
+    btnDenDown: document.getElementById('den-down'),
+    btnSimplify: document.getElementById('btn-simplify'),
+    btnReset: document.getElementById('btn-reset'),
+    modeBar: document.getElementById('mode-bar'),
+    modeCircle: document.getElementById('mode-circle')
+};
+
+// --- Math Helpers ---
+function gcd(a, b) {
+    return b === 0 ? a : gcd(b, a % b);
+}
+
+function getDecimal(num, den) {
+    return (num / den).toFixed(2);
+}
+
+// --- Initialization ---
+function init() {
+    resizeCanvases();
+    renderWall();
+    updateUI();
+    window.addEventListener('resize', () => {
+        resizeCanvases();
+        draw();
+    });
+}
+
+function resizeCanvases() {
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Main Canvas
+    const rectMain = els.mainCanvas.parentElement.getBoundingClientRect();
+    els.mainCanvas.width = rectMain.width * dpr;
+    els.mainCanvas.height = rectMain.height * dpr;
+    els.mainCanvas.style.width = `${rectMain.width}px`;
+    els.mainCanvas.style.height = `${rectMain.height}px`;
+    
+    // NL Canvas
+    const rectNL = els.nlCanvas.parentElement.getBoundingClientRect();
+    els.nlCanvas.width = rectNL.width * dpr;
+    els.nlCanvas.height = rectNL.height * dpr;
+    els.nlCanvas.style.width = `${rectNL.width}px`;
+    els.nlCanvas.style.height = `${rectNL.height}px`;
+}
+
+// --- Core Logic ---
+
+function updateUI() {
+    // Update Text
+    els.numVal.textContent = state.numerator;
+    els.denVal.textContent = state.denominator;
+    
+    // Update Decimal
+    els.decimal.textContent = getDecimal(state.numerator, state.denominator);
+
+    // Update Wall Highlights
+    highlightWall();
+    
+    // Redraw
+    draw();
+}
+
+function changeNumerator(delta) {
+    const newVal = state.numerator + delta;
+    // FIX 3: Strictly enforce range 0 to 12
+    if (newVal >= 0 && newVal <= 12) {
+        state.numerator = newVal;
+        updateUI();
+    }
+}
+
+function changeDenominator(delta) {
+    const newVal = state.denominator + delta;
+    if (newVal >= 1 && newVal <= 12) {
+        state.denominator = newVal;
+        updateUI();
+    }
+}
+
+function simplify() {
+    if (state.isAnimating) return;
+    
+    const common = gcd(state.numerator, state.denominator);
+    if (common === 1) {
+        // Already simplified, maybe shake animation?
+        els.btnSimplify.style.transform = "translateX(5px)";
+        setTimeout(() => els.btnSimplify.style.transform = "translateX(0)", 100);
+        return;
+    }
+
+    state.isAnimating = true;
+    
+    // Animation Sequence
+    const startNum = state.numerator;
+    const startDen = state.denominator;
+    const targetNum = startNum / common;
+    const targetDen = startDen / common;
+    
+    // FIX 4: Use Web Animations API for smoother transitions
+    // We animate the text content and the visual model
+    
+    // Animate Text
+    const numAnim = els.numVal.animate([
+        { opacity: 0, transform: 'translateY(-10px)' },
+        { opacity: 1, transform: 'translateY(0)' }
+    ], {
+        duration: 500,
+        easing: 'ease-out'
+    });
+    
+    const denAnim = els.denVal.animate([
+        { opacity: 0, transform: 'translateY(-10px)' },
+        { opacity: 1, transform: 'translateY(0)' }
+    ], {
+        duration: 500,
+        easing: 'ease-out'
+    });
+
+    // Animate Decimal
+    const decAnim = els.decimal.animate([
+        { opacity: 0 },
+        { opacity: 1 }
+    ], {
+        duration: 500,
+        easing: 'ease-out'
+    });
+
+    // Wait for text animation to finish before updating values
+    Promise.all([numAnim.finished, denAnim.finished, decAnim.finished]).then(() => {
+        state.numerator = targetNum;
+        state.denominator = targetDen;
+        state.isAnimating = false;
+        updateUI(); // Finalize
+    });
+}
+
+function reset() {
+    state.numerator = 1;
+    state.denominator = 2;
+    state.mode = 'bar';
+    els.modeBar.classList.add('active');
+    els.modeCircle.classList.remove('active');
+    updateUI();
+}
+
+function toggleMode(mode) {
+    state.mode = mode;
+    if (mode === 'bar') {
+        els.modeBar.classList.add('active');
+        els.modeCircle.classList.remove('active');
+    } else {
+        els.modeCircle.classList.add('active');
+        els.modeBar.classList.remove('active');
+    }
+    draw();
+}
+
+// --- Rendering ---
+
+function draw() {
+    drawMainModel();
+    drawNumberLine();
+}
+
+function drawMainModel() {
+    const ctx = els.mainCanvas.getContext('2d');
+    const w = els.mainCanvas.width;
+    const h = els.mainCanvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    
+    // Clear
+    ctx.clearRect(0, 0, w, h);
+    
+    const num = state.numerator;
+    const den = state.denominator;
+    const fraction = num / den;
+    
+    // Colors
+    const colorFill = '#4A90E2';
+    const colorStroke = '#FFFFFF';
+    const colorBg = 'rgba(0,0,0,0.05)';
+    
+    if (state.mode === 'bar') {
+        drawBarModel(ctx, w, h, num, den, colorFill, colorStroke, colorBg);
+    } else {
+        drawCircleModel(ctx, w, h, num, den, colorFill, colorStroke, colorBg);
+    }
+}
+
+function drawBarModel(ctx, w, h, num, den, fill, stroke, bg) {
+    const padding = 40;
+    const barHeight = 100;
+    const barWidth = w - (padding * 2);
+    const startX = padding;
+    const startY = (h - barHeight) / 2;
+    const segmentWidth = barWidth / den;
+    
+    // Draw Background Track
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.roundRect(startX, startY, barWidth, barHeight, 10);
+    ctx.fill();
+    
+    // Draw Shaded Segments
+    ctx.fillStyle = fill;
+    for (let i = 0; i < num; i++) {
+        ctx.beginPath();
+        ctx.roundRect(startX + (i * segmentWidth) + 2, startY + 2, segmentWidth - 4, barHeight - 4, 6);
+        ctx.fill();
+    }
+    
+    // Draw Grid Lines
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i <= den; i++) {
+        const x = startX + (i * segmentWidth);
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, startY + barHeight);
+    }
+    ctx.stroke();
+    
+    // Labels
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 24px Nunito';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Draw numbers on segments if they fit
+    if (segmentWidth > 40) {
+        for (let i = 0; i < den; i++) {
+            const x = startX + (i * segmentWidth) + (segmentWidth / 2);
+            ctx.fillStyle = (i < num) ? '#FFFFFF' : 'rgba(255,255,255,0.3)';
+            ctx.fillText(i + 1, x, startY + (barHeight / 2));
+        }
+    }
+}
+
+function drawCircleModel(ctx, w, h, num, den, fill, stroke, bg) {
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = Math.min(w, h) / 2 - 40;
+    
+    // Draw Background
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw Slices
+    const sliceAngle = (Math.PI * 2) / den;
+    
+    // Draw Shaded
+    ctx.fillStyle = fill;
+    for (let i = 0; i < num; i++) {
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, i * sliceAngle - Math.PI/2, (i + 1) * sliceAngle - Math.PI/2);
+        ctx.closePath();
+        ctx.fill();
+    }
+    
+    // Draw Lines
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < den; i++) {
+        const angle = i * sliceAngle - Math.PI/2;
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
+    }
+    ctx.stroke();
+    
+    // Draw Outline
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.stroke();
+}
+
+function drawNumberLine() {
+    const ctx = els.nlCanvas.getContext('2d');
+    const w = els.nlCanvas.width;
+    const h = els.nlCanvas.height;
+    
+    ctx.clearRect(0, 0, w, h);
+    
+    const padding = 30;
+    const lineY = h / 2;
+    const lineStart = padding;
+    const lineEnd = w - padding;
+    const lineWidth = lineEnd - lineStart;
+    
+    // Line
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(lineStart, lineY);
+    ctx.lineTo(lineEnd, lineY);
+    ctx.stroke();
+    
+    // Ticks and Labels
+    const ticks = [
+        { val: 0, label: '0' },
+        { val: 0.25, label: '1/4' },
+        { val: 0.5, label: '1/2' },
+        { val: 0.75, label: '3/4' },
+        { val: 1, label: '1' }
+    ];
+    
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '16px Nunito';
+    ctx.textAlign = 'center';
+    
+    ticks.forEach(tick => {
+        const x = lineStart + (tick.val * lineWidth);
+        
+        // Tick mark
+        ctx.beginPath();
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 2;
+        ctx.moveTo(x, lineY - 10);
+        ctx.lineTo(x, lineY + 10);
+        ctx.stroke();
+        
+        // Label
+        ctx.fillText(tick.label, x, lineY + 30);
+    });
+    
+    // Marker
+    const fraction = state.numerator / state.denominator;
+    const markerX = lineStart + (fraction * lineWidth);
+    
+    // Glow
+    ctx.shadowColor = '#F5A623';
+    ctx.shadowBlur = 20;
+    
+    // Marker Line
+    ctx.strokeStyle = '#F5A623';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(markerX, lineY - 20);
+    ctx.lineTo(markerX, lineY + 20);
+    ctx.stroke();
+    
+    // Marker Dot
+    ctx.fillStyle = '#F5A623';
+    ctx.beginPath();
+    ctx.arc(markerX, lineY, 8, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Reset Shadow
+    ctx.shadowBlur = 0;
+    
+    // Label above marker
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 20px Nunito';
+    ctx.fillText(`${state.numerator}/${state.denominator}`, markerX, lineY - 35);
+}
+
+// --- Fraction Wall Logic ---
+
+function renderWall() {
+    els.wallGrid.innerHTML = '';
+    
+    // Generate rows for denominators 2 to 12
+    for (let d = 2; d <= 12; d++) {
+        const row = document.createElement('div');
+        row.className = 'wall-row';
+        
+        // Label
+        const label = document.createElement('div');
+        label.className = 'wall-label';
+        label.textContent = `1/${d}`;
+        row.appendChild(label);
+        
+        // Segments
+        for (let n = 1; n <= d; n++) {
+            const seg = document.createElement('div');
+            seg.className = 'wall-segment';
+            // Width percentage
+            seg.style.width = `${(1/d)*100}%`;
+            seg.dataset.val = (n/d);
+            seg.dataset.den = d;
+            seg.textContent = `${n}/${d}`;
+            row.appendChild(seg);
+        }
+        
+        els.wallGrid.appendChild(row);
+    }
+}
+
+function highlightWall() {
+    const currentVal = state.numerator / state.denominator;
+    const segments = document.querySelectorAll('.wall-segment');
+    
+    segments.forEach(seg => {
+        const val = parseFloat(seg.dataset.val);
+        // Check equivalence (floating point tolerance)
+        if (Math.abs(val - currentVal) < 0.001) {
+            seg.classList.add('highlight');
+        } else {
+            seg.classList.remove('highlight');
+        }
+    });
+}
+
+// --- Event Listeners ---
+
+els.btnNumUp.addEventListener('click', () => changeNumerator(1));
+els.btnNumDown.addEventListener('click', () => changeNumerator(-1));
+els.btnDenUp.addEventListener('click', () => changeDenominator(1));
+els.btnDenDown.addEventListener('click', () => changeDenominator(-1));
+
+els.btnSimplify.addEventListener('click', simplify);
+els.btnReset.addEventListener('click', reset);
+
+els.modeBar.addEventListener('click', () => toggleMode('bar'));
+els.modeCircle.addEventListener('click', () => toggleMode('circle'));
+
+// Keyboard support
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp') changeNumerator(1);
+    if (e.key === 'ArrowDown') changeNumerator(-1);
+    if (e.key === 'ArrowRight') changeDenominator(1);
+    if (e.key === 'ArrowLeft') changeDenominator(-1);
+});
+
+// FIX 2: Add mouse/touch event listeners to the number line canvas to allow dragging
+function setupNumberLineInteraction() {
+    const canvas = els.nlCanvas;
+    let isDragging = false;
+
+    function updateFractionFromPointer(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const x = (clientX - rect.left) * scaleX;
+        
+        const padding = 30;
+        const lineStart = padding;
+        const lineEnd = canvas.width - padding;
+        const lineWidth = lineEnd - lineStart;
+        
+        let fraction = (x - lineStart) / lineWidth;
+        
+        // Clamp fraction between 0 and 1
+        if (fraction < 0) fraction = 0;
+        if (fraction > 1) fraction = 1;
+        
+        // Convert fraction to nearest valid numerator/denominator (1-12)
+        // We look for the closest fraction with denominator <= 12
+        let bestNum = 0;
+        let bestDen = 1;
+        let minDiff = 1;
+        
+        for (let d = 1; d <= 12; d++) {
+            let n = Math.round(fraction * d);
+            if (n > d) n = d;
+            if (n < 0) n = 0;
+            
+            const diff = Math.abs((n/d) - fraction);
+            if (diff < minDiff) {
+                minDiff = diff;
+                bestNum = n;
+                bestDen = d;
+            }
+        }
+        
+        // Update state
+        state.numerator = bestNum;
+        state.denominator = bestDen;
+        updateUI();
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        updateFractionFromPointer(e);
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        updateFractionFromPointer(e);
+    }, { passive: true });
+
+    window.addEventListener('mousemove', (e) => {
+        if (isDragging) updateFractionFromPointer(e);
+    });
+
+    window.addEventListener('touchmove', (e) => {
+        if (isDragging) updateFractionFromPointer(e);
+    }, { passive: true });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
+    window.addEventListener('touchend', () => {
+        isDragging = false;
+    });
+}
+
+// Start
+init();
+setupNumberLineInteraction();
+
+</script>
+</body>
+</html>

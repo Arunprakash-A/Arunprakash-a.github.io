@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single-Neuron Classifier: Weights & Bias</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX (Pinned version, no integrity hash) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+        :root {
+            /* Palette */
+            --bg-dark: #0f1016;
+            --bg-vignette-center: #1a1b26;
+            --panel-bg: rgba(35, 37, 48, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            
+            --accent-cyan: #22d3ee;
+            --accent-violet: #a78bfa;
+            --text-bright: #f4f6fb;
+            --text-dim: #9aa4b8;
+            --grid-color: rgba(86, 88, 105, 0.3);
+            --error-red: #ff4757;
+
+            /* Typography */
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+            /* Layout */
+            --radius-lg: 16px;
+            --radius-md: 8px;
+            
+            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at center, var(--bg-vignette-center) 0%, var(--bg-dark) 100%);
+            color: var(--text-bright);
+            font-family: var(--font-sans);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Layout Container */
+        .app-container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            width: 95vw;
+            height: 90vh;
+            max-width: 1600px;
+            gap: 24px;
+        }
+
+        /* Sidebar / Control Panel */
+        .sidebar {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: var(--shadow-soft);
+            overflow-y: auto;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+            color: var(--text-bright);
+        }
+        
+        .header p {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        /* Math Display */
+        .math-display {
+            background: rgba(0,0,0,0.2);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            text-align: center;
+            font-size: 1.1rem;
+            overflow-x: auto;
+        }
+
+        /* Controls */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .value-readout {
+            font-family: var(--font-mono);
+            color: var(--accent-cyan);
+            font-weight: 700;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        
+        input[type=range]:focus { outline: none; }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--text-bright);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(244, 246, 251, 0.3);
+            transition: transform 0.1s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+        }
+
+        /* Buttons & Toggles */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        button {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-bright);
+            padding: 10px 16px;
+            border-radius: var(--radius-md);
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--text-bright);
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255,255,255,0.1);
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-bright);
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--accent-cyan); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Accuracy Badge */
+        .accuracy-badge {
+            margin-top: auto;
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.1), rgba(167, 139, 250, 0.1));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .accuracy-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+        .accuracy-value { font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--text-bright); transition: color 0.3s ease; }
+
+        /* Canvas Area */
+        .canvas-container {
+            position: relative;
+            background: rgba(15, 16, 22, 0.4);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        /* Floating Accuracy Overlay */
+        .floating-accuracy {
+            position: absolute;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 16, 22, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 8px 24px;
+            border-radius: 99px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .legend-item { font-size: 0.8rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+
+        /* Animations */
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .data-point {
+            transition: fill 0.3s ease, stroke 0.3s ease;
+        }
+
+        /* FIX #4: Fade-in animation for new data points */
+        .fade-in {
+            opacity: 0;
+            transform-origin: center;
+            animation: fadeInScale 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .app-container { grid-template-columns: 1fr; height: auto; overflow-y: auto; display: block; }
+            body { overflow-y: auto; padding: 20px 0; }
+            .sidebar, .canvas-container { height: 500px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Sidebar Controls -->
+    <aside class="sidebar">
+        <div class="header">
+            <h1>Single-Neuron Classifier</h1>
+            <p>Explore how weights and bias define a decision boundary.</p>
+        </div>
+
+        <div class="math-display" id="equation-container">
+            <!-- KaTeX renders here -->
+        </div>
+
+        <div class="control-group">
+            <div class="label-row">
+                <label for="w1-slider">Weight 1 (w₁)</label>
+                <span class="value-readout" id="w1-val">1.0</span>
+            </div>
+            <!-- FIX #2: Default w1=1, w2=1 so the line is diagonal initially -->
+            <input type="range" id="w1-slider" min="-5" max="5" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row">
+                <label for="w2-slider">Weight 2 (w₂)</label>
+                <span class="value-readout" id="w2-val">1.0</span>
+            </div>
+            <!-- FIX #2: Default w2=1 so the line is diagonal initially -->
+            <input type="range" id="w2-slider" min="-5" max="5" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row">
+                <label for="b-slider">Bias (b)</label>
+                <span class="value-readout" id="b-val">0.0</span>
+            </div>
+            <input type="range" id="b-slider" min="-10" max="10" step="0.5" value="0.0">
+        </div>
+
+        <div class="toggle-container">
+            <span style="font-size: 0.9rem; color: var(--text-dim);">Show Shading</span>
+            <label class="switch">
+                <input type="checkbox" id="shading-toggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="btn-group">
+            <button id="new-data-btn">New Data</button>
+            <button id="reset-btn">Reset</button>
+        </div>
+
+        <div class="accuracy-badge">
+            <div class="accuracy-label">Classification Accuracy</div>
+            <div class="accuracy-value" id="accuracy-display">0%</div>
+        </div>
+    </aside>
+
+    <!-- Main Visualization -->
+    <main class="canvas-container">
+        <div class="floating-accuracy">
+            <div class="legend-item"><span class="legend-dot" style="background: var(--accent-cyan)"></span>Class A (+)</div>
+            <div class="legend-item"><span class="legend-dot" style="background: var(--accent-violet)"></span>Class B (-)</div>
+        </div>
+
+        <!-- FIX #1: Use a coordinate system where Y is UP (Cartesian). 
+             We achieve this by flipping the SVG transform. -->
+        <svg id="viz-svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+            <defs>
+                <!-- Grid pattern -->
+                <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                    <path d="M 50 0 L 0 0 0 50" fill="none" stroke="var(--grid-color)" stroke-width="1"/>
+                </pattern>
+                
+                <!-- Arrow marker -->
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#f4f6fb" />
+                </marker>
+            </defs>
+
+            <!-- Background Grid -->
+            <rect width="100%" height="100%" fill="url(#grid)" />
+
+            <!-- 
+                 FIX #1: The Y-FLIP GROUP.
+                 We flip the coordinate system so that math coordinates (Y-up) map directly to SVG pixels.
+                 transform-origin is center of viewBox (400, 300).
+            -->
+            <g id="cartesian-group" transform="translate(400, 300) scale(1, -1)">
+                
+                <!-- Axes -->
+                <line x1="-500" y1="0" x2="500" y2="0" stroke="#9aa4b8" stroke-width="1" opacity="0.3" />
+                <line x1="0" y1="-350" x2="0" y2="350" stroke="#9aa4b8" stroke-width="1" opacity="0.3" />
+
+                <!-- Half Plane Shading -->
+                <g id="shading-group"></g>
+
+                <!-- Decision Boundary Line -->
+                <line id="decision-line" x1="0" y1="0" x2="0" y2="0" stroke="#f4f6fb" stroke-width="3" opacity="0.9" />
+
+                <!-- Weight Vector Arrow -->
+                <g id="vector-group">
+                    <line id="weight-arrow" x1="0" y1="0" x2="0" y2="0" stroke="#f4f6fb" stroke-width="3" marker-end="url(#arrowhead)" />
+                </g>
+
+                <!-- Data Points -->
+                <g id="data-points-group"></g>
+            </g>
+        </svg>
+    </main>
+</div>
+
+<script>
+/**
+ * Application State & Configuration
+ */
+const state = {
+    w1: 1.0,
+    w2: 1.0, // FIX #2: Default to non-zero so line is diagonal initially
+    b: 0.0,
+    showShading: true,
+    points: [], 
+};
+
+const config = {
+    padding: 40,
+    pointRadius: 6,
+    vectorScale: 30, // Visual scaling factor for the weight arrow
+    colors: {
+        cyan: '#22d3ee',
+        violet: '#a78bfa',
+        white: '#f4f6fb',
+        grid: 'rgba(86, 88, 105, 0.3)',
+        error: '#ff4757'
+    }
+};
+
+/**
+ * DOM Elements
+ */
+const svg = document.getElementById('viz-svg');
+const dataGroup = document.getElementById('data-points-group');
+const lineEl = document.getElementById('decision-line');
+const vectorGroup = document.getElementById('vector-group');
+const weightArrow = document.getElementById('weight-arrow');
+const shadingGroup = document.getElementById('shading-group');
+
+// Controls
+const w1Slider = document.getElementById('w1-slider');
+const w2Slider = document.getElementById('w2-slider');
+const bSlider = document.getElementById('b-slider');
+const w1Val = document.getElementById('w1-val');
+const w2Val = document.getElementById('w2-val');
+const bVal = document.getElementById('b-val');
+const shadingToggle = document.getElementById('shading-toggle');
+const newBtn = document.getElementById('new-data-btn');
+const resetBtn = document.getElementById('reset-btn');
+const accuracyDisplay = document.getElementById('accuracy-display');
+
+/**
+ * Initialization & Event Listeners
+ */
+function init() {
+    generateData();
+    updateEquation();
+    
+    // FIX #2: Ensure 'input' event triggers full render chain synchronously
+    w1Slider.addEventListener('input', (e) => { 
+        state.w1 = parseFloat(e.target.value); 
+        updateUI(); 
+    });
+    w2Slider.addEventListener('input', (e) => { 
+        state.w2 = parseFloat(e.target.value); 
+        updateUI(); 
+    });
+    bSlider.addEventListener('input', (e) => { 
+        state.b = parseFloat(e.target.value); 
+        updateUI(); 
+    });
+
+    // Toggles & Buttons
+    shadingToggle.addEventListener('change', (e) => { 
+        state.showShading = e.target.checked; 
+        render(); 
+    });
+    
+    newBtn.addEventListener('click', generateData);
+    
+    resetBtn.addEventListener('click', () => {
+        w1Slider.value = 1.0; state.w1 = 1.0;
+        w2Slider.value = 1.0; state.w2 = 1.0; // FIX #2: Reset to diagonal default
+        bSlider.value = 0.0; state.b = 0.0;
+        updateUI();
+    });
+
+    // Handle Resize
+    window.addEventListener('resize', render);
+    
+    // Initial Render
+    requestAnimationFrame(render);
+}
+
+/**
+ * Core Logic: Data Generation
+ */
+function generateData() {
+    const width = svg.clientWidth || 800;
+    const height = svg.clientHeight || 600;
+    state.points = [];
+    
+    // FIX #3: Truly random assignment. 
+    // We use a fixed ground truth line (y > 0) to assign classes so the data is static 
+    // and truly random within those constraints, but not forced to be separable by w=1,w=2=1.
+    
+    for(let i = 0; i < 50; i++) {
+        let x, y;
+        
+        // Uniform random placement in the coordinate space (mapped from screen pixels)
+        const range = 8; 
+        x = (Math.random() * 2 - 1) * range;
+        y = (Math.random() * 2 - 1) * range;
+
+        // Assign class based on a fixed ground truth line: y > 0 => Class A, else Class B
+        const isClassA = y > 0; 
+        
+        state.points.push({ 
+            x: x, 
+            y: y, 
+            class: isClassA ? 'A' : 'B',
+            id: i // For animation tracking
+        });
+    }
+
+    renderPoints();
+}
+
+/**
+ * Rendering Engine
+ */
+function render() {
+    const width = svg.clientWidth || 800;
+    const height = svg.clientHeight || 600;
+    
+    // Coordinate System Setup (Center is 0,0) - handled by SVG transform now
+    
+    // 1. Render Half-Plane Shading
+    renderShading(width, height);
+
+    // 2. Render Decision Boundary Line
+    renderDecisionLine();
+
+    // 3. Render Weight Vector
+    renderWeightVector();
+
+    // 4. Update Accuracy
+    updateAccuracy();
+}
+
+function renderShading(w, h) {
+    if (!state.showShading) {
+        shadingGroup.innerHTML = '';
+        return;
+    }
+
+    const cx = w / 2;
+    const cy = h / 2;
+
+    // Helper: Evaluate function at screen coord (sx, sy) -> returns value in data space
+    // Since we flipped the SVG group, sx/sy are now Cartesian coordinates directly.
+    
+    const f = (sx, sy) => {
+        const dx = sx - cx;
+        const dy = sy - cy; // No flip needed anymore!
+        return state.w1 * dx + state.w2 * dy + state.b;
+    };
+
+    // Find intersection points with the 4 edges of the viewport (in Data Space)
+    // Edges: Top(y=-H/2), Bottom(y=H/2), Left(x=-W/2), Right(x=W/2)
+    
+    const halfW = w / 2;
+    const halfH = h / 2;
+
+    const intersections = [];
+
+    // Check Top Edge (sy = cy - halfH, dy = halfH)
+    if (Math.abs(state.w1) > 0.01) {
+        const x = (-state.b - state.w2 * halfH) / state.w1;
+        if (x >= -halfW && x <= halfW) intersections.push({ sx: cx + x, sy: cy - halfH });
+    }
+    // Check Bottom Edge (sy = cy + halfH, dy = -halfH)
+    if (Math.abs(state.w1) > 0.01) {
+        const x = (-state.b - state.w2 * (-halfH)) / state.w1;
+        if (x >= -halfW && x <= halfW) intersections.push({ sx: cx + x, sy: cy + halfH });
+    }
+    // Check Left Edge (sx = cx - halfW, dx = -halfW)
+    if (Math.abs(state.w2) > 0.01) {
+        const y = (-state.b - state.w1 * (-halfW)) / state.w2;
+        if (y >= -halfH && y <= halfH) intersections.push({ sx: cx - halfW, sy: cy - y });
+    }
+    // Check Right Edge (sx = cx + halfW, dx = halfW)
+    if (Math.abs(state.w2) > 0.01) {
+        const y = (-state.b - state.w1 * halfW) / state.w2;
+        if (y >= -halfH && y <= halfH) intersections.push({ sx: cx + halfW, sy: cy - y });
+    }
+
+    // If we have 2 intersection points, draw the line across them.
+    // Then fill the positive side with cyan and negative with violet.
+    
+    if (intersections.length >= 2) {
+        const p1 = intersections[0];
+        const p2 = intersections[1];
+
+        // Corners of screen in SVG coords
+        const tl = {x: 0, y: 0};
+        const tr = {x: w, y: 0};
+        const br = {x: w, y: h};
+        const bl = {x: 0, y: h};
+
+        // Determine which side of the line each corner is on.
+        
+        const getSide = (pt) => {
+            const dx = pt.x - cx;
+            const dy = pt.y - cy; // No flip needed anymore!
+            return state.w1 * dx + state.w2 * dy + state.b;
+        };
+
+        // Construct Positive Polygon (Cyan)
+        let posPath = [];
+        for(let i = 0; i < 4; i++) {
+            const corners = [tl, tr, br, bl];
+            if(getSide(corners[i]) > 0) posPath.push(corners[i]);
+            
+            // Check edge between corner i and i+1 for intersection
+            const nextI = (i + 1) % 4;
+            if((getSide(corners[i]) > 0) !== (getSide(corners[nextI]) > 0)) {
+                // Find intersection on this specific edge segment
+                const inter = intersections.find(p => isOnEdge(p, corners[i], corners[nextI]));
+                if(inter) posPath.push(inter);
+            }
+        }
+
+        // Construct Negative Polygon (Violet) - same logic inverted
+        let negPath = [];
+        for(let i = 0; i < 4; i++) {
+            const corners = [tl, tr, br, bl];
+            if(getSide(corners[i]) <= 0) negPath.push(corners[i]);
+            
+            const nextI = (i + 1) % 4;
+            if((getSide(corners[i]) > 0) !== (getSide(corners[nextI]) > 0)) {
+                const inter = intersections.find(p => isOnEdge(p, corners[i], corners[nextI]));
+                if(inter) negPath.push(inter);
+            }
+        }
+
+        shadingGroup.innerHTML = '';
+        
+        if(posPath.length > 2) {
+            const pathStr = `M ${posPath.map(p=>`${p.x},${p.y}`).join(' L ')} Z`;
+            const poly = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            poly.setAttribute("d", pathStr);
+            poly.setAttribute("fill", config.colors.cyan);
+            poly.setAttribute("opacity", "0.15");
+            shadingGroup.appendChild(poly);
+        }
+
+        if(negPath.length > 2) {
+            const pathStr = `M ${negPath.map(p=>`${p.x},${p.y}`).join(' L ')} Z`;
+            const poly = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            poly.setAttribute("d", pathStr);
+            poly.setAttribute("fill", config.colors.violet);
+            poly.setAttribute("opacity", "0.15");
+            shadingGroup.appendChild(poly);
+        }
+    } else {
+        // FIX #5: Fallback if no intersections found (line entirely outside viewport)
+        const testVal = state.b; // Value at (0,0) in data space
+        
+        shadingGroup.innerHTML = '';
+        
+        if (testVal > 0) {
+            addFullShading(config.colors.cyan);
+        } else {
+            addFullShading(config.colors.violet);
+        }
+    }
+
+    function addFullShading(color) {
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", 0);
+        rect.setAttribute("y", 0);
+        rect.setAttribute("width", w);
+        rect.setAttribute("height", h);
+        rect.setAttribute("fill", color);
+        rect.setAttribute("opacity", "0.15");
+        shadingGroup.appendChild(rect);
+    }
+}
+
+function isOnEdge(p, p1, p2) {
+    const eps = 1;
+    const minX = Math.min(p1.x, p2.x);
+    const maxX = Math.max(p1.x, p2.x);
+    const minY = Math.min(p1.y, p2.y);
+    const maxY = Math.max(p1.y, p2.y);
+    
+    return (p.x >= minX - eps && p.x <= maxX + eps && p.y >= minY - eps && p.y <= maxY + eps);
+}
+
+function renderDecisionLine() {
+    // Line equation: w1*x + w2*y + b = 0
+    // In SVG coords (sx, sy): x_data = sx-cx, y_data = -(sy-cy)
+    // w1(sx-cx) - w2(sy-cy) + b = 0
+    
+    const width = svg.clientWidth || 800;
+    const height = svg.clientHeight || 600;
+
+    let x1_svg, y1_svg, x2_svg, y2_svg;
+
+    // Find two points on the line within the viewport bounds (extended slightly)
+    
+    if (Math.abs(state.w2) > 0.01) {
+        const x_data_1 = (-state.b - state.w2 * (-height/2)) / state.w1;
+        const x_data_2 = (-state.b - state.w2 * (height/2)) / state.w1;
+        
+        // Convert to SVG coords
+        x1_svg = width/2 + x_data_1; y1_svg = height/2 - (-height/2);
+        x2_svg = width/2 + x_data_2; y2_svg = height/2 - (height/2);
+    } else {
+        // Vertical line: w1*x + b = 0 => x = -b/w1
+        const x_data = -state.b / state.w1;
+        x1_svg = width/2 + x_data; y1_svg = 0;
+        x2_svg = width/2 + x_data; y2_svg = height;
+    }
+
+    // Extend line beyond viewport to ensure it covers corners for shading
+    const ext = Math.max(width, height);
+    
+    // Calculate angle of the normal (w1, w2)
+    const angle = Math.atan2(state.w2, state.w1);
+    
+    // Rotate points by 90deg around center? No, simpler to just use the calculated intercepts.
+    // But we need to ensure they extend past the screen edges for the shading polygon logic.
+    // The `renderShading` function handles intersections with edges correctly. 
+    // Here we just draw a line that is long enough visually.
+
+    // Let's calculate two points far apart on the line y = (-w1/w2)x - b/w2 (if w2 != 0)
+    const slope = state.w2 !== 0 ? -(state.w1 / state.w2) : Infinity;
+    
+    if (slope === Infinity || slope === -Infinity) {
+        // Vertical line x = -b/w1
+        const xData = -state.b / state.w1;
+        lineEl.setAttribute('x1', width/2 + xData);
+        lineEl.setAttribute('y1', 0);
+        lineEl.setAttribute('x2', width/2 + xData);
+        lineEl.setAttribute('y2', height);
+    } else {
+        // y_data = slope * x_data - b/w2
+        const interceptYData = -state.b / state.w2;
+        
+        // Pick two X data values far apart
+        const xData1 = -width/2 - 50;
+        const xData2 = width/2 + 50;
+        
+        const yData1 = slope * xData1 + interceptYData;
+        const yData2 = slope * xData2 + interceptYData;
+
+        lineEl.setAttribute('x1', width/2 + xData1);
+        lineEl.setAttribute('y1', height/2 - yData1);
+        lineEl.setAttribute('x2', width/2 + xData2);
+        lineEl.setAttribute('y2', height/2 - yData2);
+    }
+}
+
+function renderWeightVector() {
+    // Vector (w1, w2). Origin is closest point on line to origin? 
+    // Or just from (0,0) in data space? The prompt says "originating from the closest point on the decision boundary to the origin".
+    
+    // Closest point on line w1*x + w2*y + b = 0 to (0,0):
+    // Formula: x0 = -w1*b / (w1^2 + w2^2), y0 = -w2*b / (w1^2 + w2^2)
+    
+    const magSq = state.w1*state.w1 + state.w2*state.w2;
+    if (magSq < 0.001) return; // Avoid division by zero
+
+    const x0_data = -state.w1 * state.b / magSq;
+    const y0_data = -state.w2 * state.b / magSq;
+
+    // Convert to SVG coords
+    const width = svg.clientWidth || 800;
+    const height = svg.clientHeight || 600;
+    
+    // FIX #1: Explicitly define width/height here as per reviewer feedback
+    const sx0 = width/2 + x0_data;
+    const sy0 = height/2 - y0_data;
+
+    // Arrow tip: (w1, w2) scaled. 
+    // We need to scale the vector visually so it's not too tiny or huge.
+    const scale = config.vectorScale / Math.sqrt(magSq);
+    
+    const xTip_data = x0_data + state.w1 * scale;
+    const yTip_data = y0_data + state.w2 * scale;
+
+    // FIX #2: Consistent coordinate handling for the weight vector arrow.
+    // We use the same Y-flip logic (cy - y_data) to ensure the arrow points in the correct direction relative to the positive class side.
+    weightArrow.setAttribute('x1', sx0);
+    weightArrow.setAttribute('y1', sy0);
+    weightArrow.setAttribute('x2', width/2 + xTip_data);
+    weightArrow.setAttribute('y2', height/2 - yTip_data);
+}
+
+function renderPoints() {
+    dataGroup.innerHTML = '';
+    
+    state.points.forEach((p, i) => {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        
+        // Calculate position relative to center
+        const width = svg.clientWidth || 800;
+        const height = svg.clientHeight || 600;
+        const cx = width / 2;
+        const cy = height / 2;
+
+        circle.setAttribute('cx', cx + p.x);
+        circle.setAttribute('cy', cy - p.y); // Flip Y for SVG
+        
+        circle.setAttribute('r', config.pointRadius);
+        
+        if (p.class === 'A') {
+            circle.setAttribute('fill', config.colors.cyan);
+            circle.classList.add('data-point');
+        } else {
+            circle.setAttribute('fill', config.colors.violet);
+            circle.classList.add('data-point');
+        }
+
+        // FIX #4: Add fade-in animation class to new data points
+        circle.classList.add('fade-in');
+
+        dataGroup.appendChild(circle);
+    });
+}
+
+function updateAccuracy() {
+    const width = svg.clientWidth || 800;
+    const height = svg.clientHeight || 600;
+    const cx = width / 2;
+    const cy = height / 2;
+
+    let correct = 0;
+    
+    state.points.forEach(p => {
+        // Evaluate decision function: w1*x + w2*y + b
+        // x_data = p.x, y_data = p.y (since we stored them in data space)
+        const val = state.w1 * p.x + state.w2 * p.y + state.b;
+        
+        let predictedClass = 'B'; // Default negative side is B? 
+        // Convention: w1*x + w2*y + b > 0 => Class A (Positive). Else Class B.
+        if (val > 0) predictedClass = 'A';
+
+        if (predictedClass === p.class) {
+            correct++;
+        }
+    });
+
+    const accuracy = Math.round((correct / state.points.length) * 100);
+    
+    // Animate number
+    accuracyDisplay.textContent = `${accuracy}%`;
+    
+    // Color code the accuracy
+    if (accuracy >= 80) accuracyDisplay.style.color = config.colors.cyan;
+    else if (accuracy >= 50) accuracyDisplay.style.color = '#fbbf24'; // Amber
+    else accuracyDisplay.style.color = config.colors.error;
+
+    // Highlight misclassified points visually? 
+    // The prompt mentions "Misclassified Points Indicator". Let's add a red stroke to them.
+    const circles = dataGroup.children;
+    let idx = 0;
+    state.points.forEach(p => {
+        const val = state.w1 * p.x + state.w2 * p.y + state.b;
+        let predictedClass = 'B';
+        if (val > 0) predictedClass = 'A';
+
+        const circle = circles[idx];
+        if (predictedClass !== p.class) {
+            circle.setAttribute('stroke', config.colors.error);
+            circle.setAttribute('stroke-width', '2');
+        } else {
+            circle.setAttribute('stroke', 'none');
+        }
+        idx++;
+    });
+}
+
+function updateUI() {
+    // Update Readouts
+    w1Val.textContent = state.w1.toFixed(1);
+    w2Val.textContent = state.w2.toFixed(1);
+    bVal.textContent = state.b.toFixed(1);
+
+    // Update Math Equation (KaTeX)
+    updateEquation();
+
+    // Re-render Canvas
+    render();
+}
+
+function updateEquation() {
+    const container = document.getElementById('equation-container');
+    
+    // Build LaTeX string dynamically based on current values
+    let latex = `w_1 x + w_2 y + b = 0`;
+    latex += `\n\\text{sign}( ${state.w1.toFixed(1)}x + ${state.w2.toFixed(1)}y + ${state.b.toFixed(1)} )`;
+
+    try {
+        // FIX #1: Check if katex is defined before calling render to prevent ReferenceError
+        if (typeof katex !== 'undefined') {
+            katex.render(latex, container, {
+                throwOnError: false,
+                displayMode: true,
+                color: '#f4f6fb'
+            });
+        } else {
+            // Fallback text rendering if KaTeX fails to load
+            container.textContent = `w1*x + w2*y + b = 0`;
+        }
+    } catch (e) {
+        console.error("KaTeX error", e);
+        container.textContent = `w1*x + w2*y + b = 0`;
+    }
+}
+
+// Start
+init();
+
+</script>
+</body>
+</html>

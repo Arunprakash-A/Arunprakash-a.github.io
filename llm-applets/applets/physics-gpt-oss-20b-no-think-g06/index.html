@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Simple Circuit Builder</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root {
+  --bg-gradient: radial-gradient(circle at center, #12151f 0%, #0a0c12 100%);
+  --surface: #1e293b;
+  --accent-cyan: #22d3ee;
+  --accent-violet: #a78bfa;
+  --text-primary: #f5f6fb;
+  --text-secondary: #cbd5e1;
+  --border-radius: 12px;
+  --transition-duration: 300ms;
+}
+html, body {
+  margin:0; padding:0; height:100%; background: var(--bg-gradient); color: var(--text-primary);
+  font-family: Inter, system-ui, sans-serif; overflow-x:hidden;
+}
+.container { display:flex; flex-wrap:wrap; gap:2rem; padding:2rem; max-width:1200px; margin:auto; }
+#stage-container { flex:1 1 70%; min-height:400px; position:relative; }
+#circuit-stage { width:100%; height:auto; display:block; animation:spin 360s linear infinite; }
+.control-panel { flex:1 1 30%; background:var(--surface); border-radius:var(--border-radius);
+  box-shadow:0 4px 12px rgba(0,0,0,.5); padding:1.5rem; backdrop-filter:blur(10px);
+  color:var(--text-primary); }
+.control-panel h2 { margin-top:0; font-size:1.4rem; font-weight:bold; }
+.switch-control { display:flex; align-items:center; gap:.5rem; font-size:1rem; margin-bottom:1rem; }
+input[type="checkbox"] {
+  appearance:none;
+  width:40px;height:20px;background:#444;border-radius:10px;position:relative;cursor:pointer;
+  transition:background var(--transition-duration);
+}
+input[type="checkbox"]:checked { background:var(--accent-cyan); }
+input[type="checkbox"]::before{
+  content:""; position:absolute; top:2px; left:2px;width:16px;height:16px;background:#fff;border-radius:50%;
+  transition:left var(--transition-duration);
+}
+input[type="checkbox"]:checked::before{ left:22px; }
+#switch-knob { transition:transform var(--transition-duration) ease-in-out; cursor:pointer; }
+button, select {
+  width:100%; padding:.5rem .75rem; margin-bottom:1rem; background:var(--accent-cyan);
+  color:#000; border:none;border-radius:8px; cursor:pointer;
+  transition:background var(--transition-duration);
+}
+button:hover, select:hover { background:var(--accent-violet); }
+#reset-btn { background:var(--accent-violet); }
+.material-icon {
+  width:40px;height:40px;font-size:32px;display:flex;align-items:center;justify-content:center;
+  background:var(--surface);border-radius:8px;margin-bottom:.5rem;cursor:grab;
+}
+.wire { stroke:#555; }
+.wire-lit line {stroke:var(--accent-cyan);filter:url(#glow);}
+.gap-material {transition: opacity var(--transition-duration), transform var(--transition-duration);}
+#bulb.lit circle { fill:#ffea00; animation:pulse .8s ease-in-out infinite; }
+#battery.active { filter:drop-shadow(0 0 8px var(--accent-cyan)); }
+#highlight { opacity:0; transition:opacity var(--transition-duration); }
+@keyframes pulse {0%{transform:scale(1);}50%{transform:scale(1.05);}100%{transform:scale(1);}}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@media (max-width:600px){ .container{flex-direction:column;} }
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="stage-container">
+    <svg id="circuit-stage" viewBox="0 0 800 400">
+      <!-- Battery -->
+      <g id="battery">
+        <rect x="80" y="140" width="60" height="120" rx="8" fill="var(--surface)" stroke="var(--accent-cyan)" />
+        <circle cx="110" cy="140" r="10" fill="var(--accent-cyan)" />
+        <text x="110" y="145" font-size="12" text-anchor="middle" fill="#000">+</text>
+        <circle cx="110" cy="260" r="10" fill="var(--accent-cyan)" />
+        <text x="110" y="265" font-size="12" text-anchor="middle" fill="#000">-</text>
+      </g>
+
+      <!-- Switch -->
+      <g id="switch">
+        <rect x="310" y="190" width="80" height="20" rx="10" fill="var(--surface)" stroke="var(--accent-cyan)" />
+        <g id="switch-knob">
+          <circle cx="320" cy="200" r="10" fill="var(--accent-violet)" />
+        </g>
+      </g>
+
+      <!-- Bulb -->
+      <g id="bulb">
+        <circle cx="500" cy="200" r="30" fill="#555" stroke="var(--accent-cyan)" stroke-width="2"/>
+      </g>
+
+      <!-- Gap area -->
+      <rect id="gap" x="600" y="150" width="50" height="100" fill="var(--surface)" stroke="var(--accent-cyan)" />
+
+      <!-- Highlight path placeholder -->
+      <path id="highlight" d="" fill="none" stroke="var(--accent-cyan)" stroke-width="6" opacity="0" filter="url(#glow)"/>
+
+      <defs>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+    </svg>
+  </div>
+
+  <aside class="control-panel">
+    <h2>Circuit Controls</h2>
+    <label class="switch-control"><input type="checkbox" id="switch-toggle" aria-label="Switch toggle"> Switch</label>
+    <button id="loop-btn" aria-label="Toggle loop connection">Disconnect Loop</button>
+
+    <label for="material-select">Material:</label>
+    <select id="material-select" aria-label="Select material for gap">
+      <option value="metal key">Metal Key</option>
+      <option value="coin">Coin</option>
+      <option value="plastic scale">Plastic Scale</option>
+      <option value="wooden pencil">Wooden Pencil</option>
+      <option value="rubber eraser">Rubber Eraser</option>
+    </select>
+
+    <div id="palette"></div>
+
+    <button id="reset-btn" aria-label="Reset circuit">Reset</button>
+  </aside>
+</div>
+
+<script>
+const svg = document.getElementById('circuit-stage');
+const svgNS = 'http://www.w3.org/2000/svg';
+const switchToggle = document.getElementById('switch-toggle');
+const loopBtn = document.getElementById('loop-btn');
+const materialSelect = document.getElementById('material-select');
+const paletteDiv = document.getElementById('palette');
+const resetBtn = document.getElementById('reset-btn');
+const highlightPath = document.getElementById('highlight');
+const bulbGroup = document.getElementById('bulb');
+const batteryGroup = document.getElementById('battery');
+const gapRect = document.getElementById('gap');
+
+let switchOn = false;
+let loopConnected = true;
+let currentMaterial = null;
+let currentMaterialElement = null;
+
+const conductiveMaterials = ['metal key', 'coin'];
+const materialEmojis = {
+  'metal key': '🗝️',
+  'coin': '💰',
+  'plastic scale': '📏',
+  'wooden pencil': '✏️',
+  'rubber eraser': '❌'
+};
+
+const terminals = {
+  'battery+': {x:110, y:140},
+  'battery-': {x:110, y:260},
+  'switch-left': {x:310, y:200},
+  'switch-right': {x:390, y:200},
+  'bulb-left': {x:470, y:200},
+  'bulb-right': {x:530, y:200},
+  'gap-left': {x:625, y:200},
+  'gap-right': {x:675, y:200}
+};
+
+const wires = [];
+const wireGroups = {};
+
+function getSVGPoint(evt) {
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX;
+  pt.y = evt.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+let draggedHandle = null;
+
+function createHandle(wireId, side) {
+  const circle = document.createElementNS(svgNS,'circle');
+  circle.setAttribute('r','8');
+  circle.setAttribute('fill', 'var(--accent-cyan)');
+  circle.style.cursor='grab';
+  circle.dataset.wireId=wireId;
+  circle.dataset.side=side;
+  circle.addEventListener('mousedown', handleMouseDown);
+  return circle;
+}
+
+function createWire(id, startTerm, endTerm) {
+  const group = document.createElementNS(svgNS,'g');
+  group.setAttribute('id', id);
+
+  const line = document.createElementNS(svgNS,'line');
+  line.classList.add('wire');
+  line.setAttribute('stroke-width','4');
+  group.appendChild(line);
+
+  const startHandle = createHandle(id, 'start');
+  const endHandle = createHandle(id, 'end');
+  group.appendChild(startHandle);
+  group.appendChild(endHandle);
+
+  svg.appendChild(group);
+
+  const sPos = terminals[startTerm];
+  const ePos = terminals[endTerm];
+
+  line.setAttribute('x1',sPos.x);
+  line.setAttribute('y1',sPos.y);
+  line.setAttribute('x2',ePos.x);
+  line.setAttribute('y2',ePos.y);
+
+  startHandle.setAttribute('cx',sPos.x);
+  startHandle.setAttribute('cy',sPos.y);
+  endHandle.setAttribute('cx',ePos.x);
+  endHandle.setAttribute('cy',ePos.y);
+
+  wires.push({
+    id, line, startTerm, endTerm,
+    startHandle, endHandle,
+    startTermInit: startTerm,
+    endTermInit: endTerm
+  });
+
+  wireGroups[id] = group;
+}
+
+function handleMouseDown(e) {
+  e.preventDefault();
+  const target = e.target;
+  draggedHandle = {wireId:target.dataset.wireId, side:target.dataset.side};
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp);
+}
+
+function handleMouseMove(e) {
+  if (!draggedHandle) return;
+  const pt = getSVGPoint(e);
+  const wire = wires.find(w=>w.id===draggedHandle.wireId);
+  if (!wire) return;
+  const handle = draggedHandle.side==='start'?wire.startHandle:wire.endHandle;
+  handle.setAttribute('cx',pt.x);
+  handle.setAttribute('cy',pt.y);
+  if (draggedHandle.side==='start') {
+    wire.line.setAttribute('x1',pt.x);
+    wire.line.setAttribute('y1',pt.y);
+  } else {
+    wire.line.setAttribute('x2',pt.x);
+    wire.line.setAttribute('y2',pt.y);
+  }
+}
+
+function handleMouseUp(e) {
+  if (!draggedHandle) return;
+  const pt = getSVGPoint(e);
+  const wire = wires.find(w=>w.id===draggedHandle.wireId);
+  if (!wire) { cleanup(); return;}
+  let nearestTerm=null, minDist=Infinity;
+  for (const [term,pos] of Object.entries(terminals)) {
+    const dx=pt.x-pos.x, dy=pt.y-pos.y;
+    const dist=Math.hypot(dx,dy);
+    if (dist<minDist && dist<=20) { minDist=dist; nearestTerm=term;}
+  }
+  const handle = draggedHandle.side==='start'?wire.startHandle:wire.endHandle;
+  if (nearestTerm) {
+    const pos=terminals[nearestTerm];
+    handle.setAttribute('cx',pos.x);
+    handle.setAttribute('cy',pos.y);
+    if (draggedHandle.side==='start') {
+      wire.line.setAttribute('x1',pos.x);
+      wire.line.setAttribute('y1',pos.y);
+      wire.startTerm=nearestTerm;
+    } else {
+      wire.line.setAttribute('x2',pos.x);
+      wire.line.setAttribute('y2',pos.y);
+      wire.endTerm=nearestTerm;
+    }
+  } else {
+    if (draggedHandle.side==='start') wire.startTerm=null;
+    else wire.endTerm=null;
+  }
+
+  updateCircuit();
+  cleanup();
+}
+
+function cleanup() {
+  draggedHandle=null;
+  document.removeEventListener('mousemove', handleMouseMove);
+  document.removeEventListener('mouseup', handleMouseUp);
+}
+
+function setBulbLit(lit) {
+  if (lit) bulbGroup.classList.add('lit'); else bulbGroup.classList.remove('lit');
+}
+function setHighlight(lit) {
+  highlightPath.style.opacity = lit ? '1' : '0';
+}
+function setBatteryActive(active) {
+  if (active) batteryGroup.classList.add('active'); else batteryGroup.classList.remove('active');
+}
+
+function findPathEdges(start, end, adj) {
+  const path = [];
+  const visited = new Set();
+  function dfs(node) {
+    if (node === end) return true;
+    visited.add(node);
+    for (const nb of adj[node] || []) {
+      if (visited.has(nb)) continue;
+      // find wire connecting node and nb that is visible
+      const w = wires.find(w => ((w.startTerm===node && w.endTerm===nb) ||
+                                 (w.startTerm===nb && w.endTerm===node)) &&
+                               wireGroups[w.id].style.display !== 'none');
+      if (!w) continue;
+      path.push(w.id);
+      if (dfs(nb)) return true;
+      path.pop();
+    }
+    return false;
+  }
+  dfs(start);
+  return path;
+}
+
+function updateCircuit() {
+  const isConductive = currentMaterial && conductiveMaterials.includes(currentMaterial);
+  // Build connectivity graph
+  const adj = {};
+  for (const term in terminals) adj[term] = [];
+  for (const w of wires) {
+    if (wireGroups[w.id].style.display === 'none') continue;
+    const s = w.startTerm, e = w.endTerm;
+    if (!s || !e) continue;
+    adj[s].push(e);
+    adj[e].push(s);
+  }
+  // Add switch connection when closed
+  if (switchOn) {
+    adj['switch-left'].push('switch-right');
+    adj['switch-right'].push('switch-left');
+  }
+
+  let visited = new Set();
+  function dfs(node){
+    if (node==='battery-') return true;
+    visited.add(node);
+    for(const nb of adj[node]||[]){
+      if(!visited.has(nb)){
+        if(dfs(nb)) return true;
+      }
+    }
+    return false;
+  }
+  const loopConnectedGraph = dfs('battery+');
+  const lit = switchOn && isConductive && loopConnectedGraph;
+  setBulbLit(lit);
+  setHighlight(lit);
+  setBatteryActive(lit);
+
+  // Determine active wires for highlighting
+  let activeWireIds = new Set();
+  if (lit) {
+    const pathIds = findPathEdges('battery+','battery-',adj);
+    for(const id of pathIds) activeWireIds.add(id);
+  }
+
+  // Toggle wire glow only on active wires
+  for(const w of wires){
+    if(activeWireIds.has(w.id)){
+      wireGroups[w.id].classList.add('wire-lit');
+    } else {
+      wireGroups[w.id].classList.remove('wire-lit');
+    }
+  }
+
+  updateHighlightPath(activeWireIds);
+}
+
+function updateHighlightPath(activeWireIds) {
+  let d='';
+  for(const w of wires){
+    if (wireGroups[w.id].style.display==='none') continue;
+    if (!activeWireIds.has(w.id)) continue;
+    const x1=parseFloat(w.line.getAttribute('x1'));
+    const y1=parseFloat(w.line.getAttribute('y1'));
+    const x2=parseFloat(w.line.getAttribute('x2'));
+    const y2=parseFloat(w.line.getAttribute('y2'));
+    d+=`M${x1} ${y1} L${x2} ${y2} `;
+  }
+  highlightPath.setAttribute('d',d.trim());
+}
+
+function updateSwitchUI() {
+  const knob = document.getElementById('switch-knob');
+  if (switchOn) knob.style.transform='translateX(60px)';
+  else knob.style.transform='translateX(0)';
+}
+
+function createMaterialIcon(type){
+  const div=document.createElement('div');
+  div.className='material-icon';
+  div.textContent=materialEmojis[type];
+  div.setAttribute('draggable','true');
+  div.dataset.type=type;
+  div.setAttribute('role','img');
+  div.setAttribute('aria-label',type);
+  div.addEventListener('dragstart', e=>{
+    e.dataTransfer.setData('text/plain', type);
+  });
+  return div;
+}
+
+function updatePalette(type){
+  paletteDiv.innerHTML='';
+  const icon=createMaterialIcon(type);
+  paletteDiv.appendChild(icon);
+}
+
+switchToggle.addEventListener('change', e=>{
+  switchOn=e.target.checked;
+  updateSwitchUI();
+  updateCircuit();
+});
+
+loopBtn.addEventListener('click', ()=>{
+  loopConnected=!loopConnected;
+  if(loopConnected){
+    wireGroups['wire-loop'].style.display='block';
+  }else{
+    wireGroups['wire-loop'].style.display='none';
+  }
+  loopBtn.textContent=loopConnected?'Disconnect Loop':'Connect Loop';
+  updateCircuit();
+});
+
+materialSelect.addEventListener('change', e=>{
+  const type=e.target.value;
+  updatePalette(type);
+  currentMaterial=type;
+  updateCircuit();
+});
+
+gapRect.addEventListener('dragover', e=>{e.preventDefault();});
+gapRect.addEventListener('drop', e=>{
+  e.preventDefault();
+  const type=e.dataTransfer.getData('text/plain');
+  if(!type) return;
+  if(currentMaterialElement){currentMaterialElement.remove();}
+  const x=625, y=200;
+  const textEl=document.createElementNS(svgNS,'text');
+  textEl.setAttribute('x',x);
+  textEl.setAttribute('y',y);
+  textEl.setAttribute('font-size','32');
+  textEl.setAttribute('text-anchor','middle');
+  textEl.setAttribute('dominant-baseline','central');
+  textEl.textContent=materialEmojis[type];
+  textEl.style.pointerEvents='none';
+  // initial styles for animation
+  textEl.style.opacity='0';
+  textEl.style.transform='translateY(-20px)';
+  textEl.className='gap-material';
+  svg.appendChild(textEl);
+  requestAnimationFrame(()=>{
+    textEl.style.transition=`opacity var(--transition-duration), transform var(--transition-duration)`;
+    textEl.style.opacity='1';
+    textEl.style.transform='translateY(0)';
+  });
+  currentMaterialElement=textEl;
+  currentMaterial=type;
+  updateCircuit();
+});
+
+resetBtn.addEventListener('click', ()=>{
+  init();
+});
+
+function init(){
+  switchOn=false;
+  loopConnected=true;
+  currentMaterial=null;
+  if(currentMaterialElement){currentMaterialElement.remove(); currentMaterialElement=null;}
+  switchToggle.checked=false;
+  updateSwitchUI();
+  loopBtn.textContent='Disconnect Loop';
+  wireGroups['wire-loop'].style.display='block';
+  for(const w of wires){
+    const sPos=terminals[w.startTermInit];
+    const ePos=terminals[w.endTermInit];
+    w.line.setAttribute('x1',sPos.x);
+    w.line.setAttribute('y1',sPos.y);
+    w.line.setAttribute('x2',ePos.x);
+    w.line.setAttribute('y2',ePos.y);
+    w.startHandle.setAttribute('cx',sPos.x);
+    w.startHandle.setAttribute('cy',sPos.y);
+    w.endHandle.setAttribute('cx',ePos.x);
+    w.endHandle.setAttribute('cy',ePos.y);
+    w.startTerm=w.startTermInit;
+    w.endTerm=w.endTermInit;
+    wireGroups[w.id].style.display='block';
+  }
+  updateHighlightPath(new Set());
+  setBulbLit(false);
+  setHighlight(false);
+  setBatteryActive(false);
+
+  // bring highlight path to front
+  svg.appendChild(highlightPath);
+}
+
+createWire('wire-loop','battery+','switch-left');
+createWire('wire-switch-bulb','switch-right','bulb-left');
+createWire('wire-bulb-gap','bulb-right','gap-left');
+createWire('wire-gap-battery','gap-right','battery-');
+
+init();
+</script>
+</body>
+</html>

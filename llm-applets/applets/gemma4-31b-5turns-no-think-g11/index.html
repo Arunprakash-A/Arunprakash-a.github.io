@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadratic Transformations Explorer</title>
+    <!-- KaTeX for beautiful math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <style>
+        :root {
+            --bg-deep: #0f121d;
+            --bg-gradient: radial-gradient(circle at center, #1a1f2e 0%, #0f121d 100%);
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #22d3ee;
+            --accent-violet: #a78bfa;
+            --accent-pink: #f472b6;
+            --text-bright: #f8fafc;
+            --text-dim: #94a3b8;
+            --grid-color: rgba(148, 163, 184, 0.15);
+            --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+        }
+
+        * { box-sizing: border-box; }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: var(--bg-deep); 
+            background: var(--bg-gradient);
+            color: var(--text-bright);
+            font-family: var(--font-ui);
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            padding: 24px;
+            gap: 24px;
+        }
+
+        /* Stage / Canvas Area */
+        .stage {
+            flex: 6;
+            position: relative;
+            background: rgba(0,0,0,0.2);
+            border-radius: 24px;
+            border: 1px solid var(--panel-border);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+            cursor: crosshair;
+            min-width: 0;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Control Panel */
+        .controls-panel {
+            flex: 4;
+            width: 40%;
+            min-width: 320px;
+            max-width: 500px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            padding: 32px;
+            gap: 24px;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            z-index: 10;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-bright);
+        }
+
+        .section-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        /* Equation Cards */
+        .equation-card {
+            background: rgba(0,0,0,0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid var(--panel-border);
+            transition: all 0.3s ease;
+        }
+
+        .equation-card.active {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.2);
+        }
+
+        .math-display {
+            font-size: 1.2rem;
+            text-align: center;
+            margin: 10px 0;
+            min-height: 40px;
+        }
+
+        /* Standard Form Inputs */
+        .standard-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .input-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .input-field label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-align: center;
+        }
+        .input-field input {
+            background: #0f172a;
+            border: 1px solid var(--panel-border);
+            color: var(--accent-cyan);
+            font-family: var(--font-mono);
+            padding: 6px;
+            border-radius: 6px;
+            text-align: center;
+            outline: none;
+        }
+        .input-field input:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        /* Controls */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slider-label {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .slider-value {
+            font-family: var(--font-mono);
+            color: var(--accent-cyan);
+            font-weight: 600;
+            background: rgba(34, 211, 238, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Toggles */
+        .toggle-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-item input {
+            accent-color: var(--accent-cyan);
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Mode Switcher */
+        .mode-switcher {
+            display: flex;
+            background: #1e293b;
+            padding: 4px;
+            border-radius: 12px;
+            gap: 4px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: var(--accent-violet);
+            color: white;
+        }
+
+        /* Pulse Animation */
+        @keyframes pulse-glow {
+            0% { text-shadow: 0 0 0px rgba(255,255,255,0); color: inherit; }
+            50% { text-shadow: 0 0 10px var(--accent-cyan); color: #fff; }
+            100% { text-shadow: 0 0 0px rgba(255,255,255,0); color: inherit; }
+        }
+        .pulse { animation: pulse-glow 0.3s ease-out; }
+
+        @media (max-width: 900px) {
+            .app-container { 
+                flex-direction: column; 
+                padding: 0; 
+                gap: 0; 
+                overflow: hidden; 
+            }
+            .stage { 
+                height: 60vh; 
+                width: 100%; 
+                border-radius: 0; 
+                border: none; 
+                flex: none;
+            }
+            .controls-panel { 
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%; 
+                max-width: none; 
+                height: 40vh;
+                border-radius: 24px 24px 0 0;
+                flex: none;
+                box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="stage" id="stage">
+        <canvas id="graphCanvas"></canvas>
+    </div>
+
+    <aside class="controls-panel">
+        <div>
+            <h1>Quadratic Explorer</h1>
+            <p style="color: var(--text-dim); font-size: 0.9rem; margin: 8px 0 24px 0;">Visualize vertex form transformations.</p>
+        </div>
+
+        <div class="mode-switcher">
+            <button id="btnVertex" class="mode-btn active">Vertex Form</button>
+            <button id="btnStandard" class="mode-btn">Standard Form</button>
+        </div>
+
+        <div id="vertexCard" class="equation-card active">
+            <span class="section-label">Algebraic Representation</span>
+            <div id="mathVertex" class="math-display"></div>
+        </div>
+
+        <div id="standardCard" class="equation-card">
+            <span class="section-label">Expanded Form</span>
+            <div id="mathStandard" class="math-display"></div>
+            <div class="standard-inputs" id="stdInputsContainer" style="display: none;">
+                <div class="input-field">
+                    <label>a</label>
+                    <input type="number" id="inpA" step="0.1" value="1">
+                </div>
+                <div class="input-field">
+                    <label>b</label>
+                    <input type="number" id="inpB" step="0.1" value="0">
+                </div>
+                <div class="input-field">
+                    <label>c</label>
+                    <input type="number" id="inpC" step="0.1" value="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group" id="vertexControls">
+            <span class="section-label">Parameters</span>
+            
+            <div class="slider-row">
+                <div class="slider-header">
+                    <span class="slider-label">Stretch / Reflection (a)</span>
+                    <span id="valA" class="slider-value">1.0</span>
+                </div>
+                <input type="range" id="slideA" min="-10" max="10" step="0.1" value="1">
+            </div>
+
+            <div class="slider-row">
+                <div class="slider-header">
+                    <span class="slider-label">Horizontal Shift (h)</span>
+                    <span id="valH" class="slider-value">0.0</span>
+                </div>
+                <input type="range" id="slideH" min="-10" max="10" step="0.1" value="0">
+            </div>
+
+            <div class="slider-row">
+                <div class="slider-header">
+                    <span class="slider-label">Vertical Shift (k)</span>
+                    <span id="valK" class="slider-value">0.0</span>
+                </div>
+                <input type="range" id="slideK" min="-10" max="10" step="0.1" value="0">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="section-label">Visualization Options</span>
+            <div class="toggle-group">
+                <label class="toggle-item">
+                    <input type="checkbox" id="chkParent"> Parent Function
+                </label>
+                <label class="toggle-item">
+                    <input type="checkbox" id="chkSymmetry" checked> Axis of Symmetry
+                </label>
+                <label class="toggle-item">
+                    <input type="checkbox" id="chkRoots" checked> Show Roots
+                </label>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<script>
+    /** 
+     * STATE MANAGEMENT
+     */
+    const state = {
+        targetA: 1.0,
+        targetH: 0.0,
+        targetK: 0.0,
+        currentA: 1.0,
+        currentH: 0.0,
+        currentK: 0.0,
+        showParent: false,
+        showSymmetry: true,
+        showRoots: true,
+        mode: 'vertex',
+    };
+
+    const canvas = document.getElementById('graphCanvas');
+    const ctx = canvas.getContext('2d');
+    let dpr = window.devicePixelRatio || 1;
+
+    const els = {
+        slideA: document.getElementById('slideA'),
+        slideH: document.getElementById('slideH'),
+        slideK: document.getElementById('slideK'),
+        valA: document.getElementById('valA'),
+        valH: document.getElementById('valH'),
+        valK: document.getElementById('valK'),
+        chkParent: document.getElementById('chkParent'),
+        chkSymmetry: document.getElementById('chkSymmetry'),
+        chkRoots: document.getElementById('chkRoots'),
+        btnVertex: document.getElementById('btnVertex'),
+        btnStandard: document.getElementById('btnStandard'),
+        vertexCard: document.getElementById('vertexCard'),
+        standardCard: document.getElementById('standardCard'),
+        mathVertex: document.getElementById('mathVertex'),
+        mathStandard: document.getElementById('mathStandard'),
+        stdInputsContainer: document.getElementById('stdInputsContainer'),
+        inpA: document.getElementById('inpA'),
+        inpB: document.getElementById('inpB'),
+        inpC: document.getElementById('inpC'),
+        vertexControls: document.getElementById('vertexControls')
+    };
+
+    /** 
+     * MATH UTILS
+     */
+    function getStandardForm(a, h, k) {
+        const b = -2 * a * h;
+        const c = a * (h * h) + k;
+        return { a, b, c };
+    }
+
+    function getRoots(a, h, k) {
+        if (Math.abs(a) < 0.01) return []; 
+        // Vertex form: y = a(x-h)^2 + k => 0 = a(x-h)^2 + k => (x-h)^2 = -k/a
+        const ratio = -k / a;
+        if (ratio < 0) return [];
+        const sqrtRatio = Math.sqrt(ratio);
+        return [ h + sqrtRatio, h - sqrtRatio ];
+    }
+
+    /** 
+     * RENDERING ENGINE
+     */
+    function resize() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function worldToScreen(x, y) {
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        const scale = 40; 
+        return {
+            x: w / 2 + x * scale,
+            y: h / 2 - y * scale
+        };
+    }
+
+    function drawGrid() {
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.1)';
+        ctx.lineWidth = 1;
+
+        for (let x = -20; x <= 20; x++) {
+            const pos = worldToScreen(x, 0);
+            ctx.moveTo(pos.x, 0); ctx.lineTo(pos.x, h);
+        }
+        for (let y = -20; y <= 20; y++) {
+            const pos = worldToScreen(0, y);
+            ctx.moveTo(0, pos.y); ctx.lineTo(w, pos.y);
+        }
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.5)';
+        ctx.lineWidth = 2;
+        const origin = worldToScreen(0, 0);
+        ctx.moveTo(0, origin.y); ctx.lineTo(w, origin.y);
+        ctx.moveTo(origin.x, 0); ctx.lineTo(origin.x, h);
+        ctx.stroke();
+    }
+
+    function drawParabola(a, h, k, color, isDashed = false, lineWidth = 3) {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        if (isDashed) ctx.setLineDash([5, 5]); else ctx.setLineDash([]);
+
+        let first = true;
+        const range = 20;
+        const step = 0.1;
+
+        for (let x = -range; x <= range; x += step) {
+            const y = a * Math.pow(x - h, 2) + k;
+            const pos = worldToScreen(x, y);
+            if (first) { ctx.moveTo(pos.x, pos.y); first = false; } else { ctx.lineTo(pos.x, pos.y); }
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    function drawPoint(x, y, color, label) {
+        const pos = worldToScreen(x, y);
+        ctx.beginPath();
+        ctx.fillStyle = color;
+        ctx.arc(pos.x, pos.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (label) {
+            ctx.font = '12px JetBrains Mono';
+            ctx.fillStyle = '#94a3b8';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, pos.x, pos.y - 10);
+        }
+    }
+
+    function render() {
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        ctx.clearRect(0, 0, w, h);
+
+        drawGrid();
+
+        if (state.showParent) drawParabola(1, 0, 0, 'rgba(148, 163, 184, 0.3)', true, 2);
+
+        if (state.showSymmetry) {
+            const start = worldToScreen(state.currentH, -20);
+            const end = worldToScreen(state.currentH, 20);
+            ctx.beginPath();
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = 'rgba(167, 139, 250, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.moveTo(start.x, start.y); ctx.lineTo(end.x, end.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        drawParabola(state.currentA, state.currentH, state.currentK, '#22d3ee', false, 4);
+        drawPoint(state.currentH, state.currentK, '#f472b6', `Vertex (${state.currentH.toFixed(1)}, ${state.currentK.toFixed(1)})`);
+
+        if (state.showRoots) {
+            const roots = getRoots(state.currentA, state.currentH, state.currentK);
+            roots.forEach((rx, i) => drawPoint(rx, 0, '#a78bfa', `x${i+1}: ${rx.toFixed(2)}`));
+        }
+    }
+
+    /** 
+     * ANIMATION LOOP (LERP)
+     */
+    function lerp(start, end, amt) {
+        return (1 - amt) * start + amt * end;
+    }
+
+    function animate() {
+        state.currentA = lerp(state.currentA, state.targetA, 0.15);
+        state.currentH = lerp(state.currentH, state.targetH, 0.15);
+        state.currentK = lerp(state.currentK, state.targetK, 0.15);
+
+        render();
+        requestAnimationFrame(animate);
+    }
+
+    /** 
+     * UI & INTERACTIVITY
+     */
+    function updateMath() {
+        const { a, b, c } = getStandardForm(state.targetA, state.targetH, state.targetK);
+        
+        // Vertex Form LaTeX
+        const vExpr = `y = ${state.targetA.toFixed(1)}(x ${state.targetH >= 0 ? '-' : '+'} ${Math.abs(state.targetH).toFixed(1)})^2 ${state.targetK >= 0 ? '+' : '-'} ${Math.abs(state.targetK).toFixed(1)}`;
+        katex.render(vExpr, els.mathVertex, { throwOnError: false });
+
+        // Standard Form LaTeX
+        const sB = b >= 0 ? `+ ${b.toFixed(2)}` : `- ${Math.abs(b).toFixed(2)}`;
+        const sC = c >= 0 ? `+ ${c.toFixed(2)}` : `- ${Math.abs(c).toFixed(2)}`;
+        const sExpr = `y = ${state.targetA.toFixed(1)}x^2 ${sB} ${sC}`;
+        katex.render(sExpr, els.mathStandard, { throwOnError: false });
+
+        els.valA.innerText = state.targetA.toFixed(1);
+        els.valH.innerText = state.targetH.toFixed(1);
+        els.valK.innerText = state.targetK.toFixed(1);
+    }
+
+    function triggerPulse(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove('pulse');
+        void el.offsetWidth; 
+        el.classList.add('pulse');
+    }
+
+    function syncInputs() {
+        els.slideA.value = state.targetA;
+        els.slideH.value = state.targetH;
+        els.slideK.value = state.targetK;
+        const { a, b, c } = getStandardForm(state.targetA, state.targetH, state.targetK);
+        els.inpA.value = a.toFixed(2);
+        els.inpB.value = b.toFixed(2);
+        els.inpC.value = c.toFixed(2);
+    }
+
+    els.slideA.addEventListener('input', (e) => {
+        state.targetA = parseFloat(e.target.value);
+        updateMath();
+    });
+
+    els.slideH.addEventListener('input', (e) => {
+        state.targetH = parseFloat(e.target.value);
+        updateMath();
+    });
+
+    els.slideK.addEventListener('input', (e) => {
+        state.targetK = parseFloat(e.target.value);
+        updateMath();
+    });
+
+    const handleStandardInput = () => {
+        const a = parseFloat(els.inpA.value) || 0;
+        const b = parseFloat(els.inpB.value) || 0;
+        const c = parseFloat(els.inpC.value) || 0;
+
+        if (Math.abs(a) < 0.01) return; 
+
+        state.targetA = a;
+        state.targetH = -b / (2 * a);
+        state.targetK = c - (a * state.targetH * state.targetH);
+
+        syncInputs();
+        updateMath();
+    };
+
+    els.inpA.addEventListener('input', handleStandardInput);
+    els.inpB.addEventListener('input', handleStandardInput);
+    els.inpC.addEventListener('input', handleStandardInput);
+
+    els.chkParent.addEventListener('change', (e) => { state.showParent = e.target.checked; });
+    els.chkSymmetry.addEventListener('change', (e) => { state.showSymmetry = e.target.checked; });
+    els.chkRoots.addEventListener('change', (e) => { state.showRoots = e.target.checked; });
+
+    els.btnVertex.addEventListener('click', () => {
+        state.mode = 'vertex';
+        els.btnVertex.classList.add('active');
+        els.btnStandard.classList.remove('active');
+        els.vertexCard.classList.add('active');
+        els.standardCard.classList.remove('active');
+        els.stdInputsContainer.style.display = 'none';
+        els.vertexControls.style.opacity = '1';
+        els.vertexControls.style.pointerEvents = 'all';
+    });
+
+    els.btnStandard.addEventListener('click', () => {
+        state.mode = 'standard';
+        els.btnStandard.classList.add('active');
+        els.btnVertex.classList.remove('active');
+        els.standardCard.classList.add('active');
+        els.vertexCard.classList.remove('active');
+        els.stdInputsContainer.style.display = 'grid';
+        els.vertexControls.style.opacity = '0.4';
+        els.vertexControls.style.pointerEvents = 'none';
+    });
+
+    // Initialize safely
+    window.addEventListener('resize', resize);
+    
+    // Ensure DOM is ready and libraries are loaded before starting loop
+    function init() {
+        resize();
+        syncInputs();
+        updateMath();
+        requestAnimationFrame(animate);
+    }
+
+    if (document.readyState === 'complete') {
+        init();
+    } else {
+        window.addEventListener('load', init);
+    }
+
+</script>
+</body>
+</html>

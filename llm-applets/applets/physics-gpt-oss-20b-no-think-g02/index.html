@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Water Tank Explorer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Fira+Code:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: radial-gradient(circle at center, #12151f 0%, #0a0c12 100%);
+  --surface:#1e293b;
+  --accent:#22d3ee;
+  --primary-text:#f9fafb;
+  --secondary-text:#94a3b8;
+}
+html,body{
+  margin:0; padding:0; height:100%; font-family:'Inter',system-ui,sans-serif; color:var(--primary-text); background:var(--bg);
+}
+.wrapper{display:flex; flex-direction:row; min-height:100vh;}
+.sidebar{width:25%; max-width:300px; padding:1rem; box-sizing:border-box;}
+.main{flex:1; padding:1rem; box-sizing:border-box;}
+@media (max-width:600px){
+  .wrapper{flex-direction:column;}
+  .sidebar,.main{width:100%; max-width:none;}
+}
+.tray{display:flex; gap:.5rem; margin-bottom:1rem; overflow-x:auto; padding-bottom:.5rem; border-bottom:1px solid var(--secondary-text);}
+.object{
+  width:60px; height:40px; background:var(--accent); color:var(--primary-text);
+  border-radius:8px; display:flex; align-items:center; justify-content:center;
+  font-size:.9rem; cursor:pointer; user-select:none; box-shadow:0 2px 4px rgba(0,0,0,.5);
+}
+.object.selected{box-shadow:0 0 0 2px var(--accent);}
+.control-panel{margin-bottom:1rem;}
+.btn{
+  padding:.5rem 1rem; background:var(--accent); color:var(--primary-text); border:none;
+  border-radius:8px; cursor:pointer; font-weight:600; transition:background .2s;
+}
+.btn:hover:not([disabled]){background:#18b9d4;}
+.btn[disabled]{opacity:.5; pointer-events:none;}
+.toggle{display:flex; gap:.5rem; margin-bottom:.5rem;}
+.toggle button{
+  flex:1; padding:.5rem 0; border-radius:8px; border:1px solid var(--accent);
+  background:transparent; color:var(--secondary-text); font-weight:600;
+}
+.toggle button.active{background:var(--accent); color:var(--primary-text);}
+.lists{display:flex; gap:1rem;}
+.list{
+  flex:1; background:var(--surface); padding:.5rem; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,.7);
+}
+.list h3{margin-top:0; font-size:1rem; color:var(--secondary-text);}
+.list ul{list-style:none; padding-left:0; margin:0;}
+.list li{padding:.2rem 0;}
+.tank{
+  position:relative; width:100%; height:400px; background:rgba(255,255,255,.05); border-radius:12px;
+  overflow:hidden; box-shadow:inset 0 0 20px rgba(0,0,0,.5); border:1px solid var(--secondary-text);
+}
+.tank canvas{
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  pointer-events:none; opacity:0;
+}
+.water{
+  position:absolute; top:50%; left:0; width:100%; height:50%; background:#22d3ee;
+  transform:translateY(-50%); border-bottom-left-radius:12px; border-bottom-right-radius:12px;
+}
+.water::after{
+  content:''; position:absolute; top:-50%; left:0; width:200%; height:200%;
+  background:rgba(255,255,255,.05); border-radius:50%; animation:ripple 4s infinite ease-in-out;
+}
+@keyframes ripple{0%{transform:scale(1); opacity:1;}100%{transform:scale(1.02); opacity:.8;}}
+.splash{
+  position:absolute; width:20px; height:20px; background:rgba(255,255,255,.8);
+  border-radius:50%; pointer-events:none; transform-origin:center; transform:translate(-50%,-50%);
+}
+.confetti{position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.11/dist/interact.min.js"></script>
+</head>
+<body>
+<div class="wrapper">
+  <aside class="sidebar">
+    <h2>Object Tray</h2>
+    <div class="tray" id="tray"></div>
+    <div class="control-panel">
+      <div class="toggle" role="group" aria-label="Guess toggle">
+        <button id="guess-float">FLOAT</button>
+        <button id="guess-sink">SINK</button>
+      </div>
+      <button class="btn" id="drop-btn" disabled aria-label="Drop object">Drop</button>
+      <button class="btn" id="takeout-btn" aria-label="Take out or reset set">Take Out / New Set</button>
+      <button class="btn" id="reset-btn" aria-label="Reset all">Reset</button>
+    </div>
+    <div class="lists">
+      <div class="list" id="floats">
+        <h3>Floats</h3>
+        <ul id="floats-list"></ul>
+      </div>
+      <div class="list" id="sinks">
+        <h3>Sinks</h3>
+        <ul id="sinks-list"></ul>
+      </div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="tank" id="tank">
+      <canvas id="tankCanvas" width="400" height="400"></canvas>
+      <div class="water"></div>
+    </div>
+  </main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const objects = [
+    {name:'cork', label:'Cork'},
+    {name:'wood block', label:'Wood Block'},
+    {name:'plastic boat', label:'Plastic Boat'},
+    {name:'leaf', label:'Leaf'},
+    {name:'sponge', label:'Sponge'},
+    {name:'coin', label:'Coin'},
+    {name:'iron nail', label:'Iron Nail'},
+    {name:'stone', label:'Stone'},
+    {name:'marble', label:'Marble'} // Added marble object
+  ];
+  const floaters = new Set(['cork','wood block','plastic boat','leaf','sponge']);
+  const tray = document.getElementById('tray');
+  const tank = document.getElementById('tank');
+  const floatsList = document.getElementById('floats-list');
+  const sinksList = document.getElementById('sinks-list');
+  const dropBtn = document.getElementById('drop-btn');
+  const guessToggleFloat = document.getElementById('guess-float');
+  const guessToggleSink = document.getElementById('guess-sink');
+  const takeOutBtn = document.getElementById('takeout-btn');
+  const resetBtn = document.getElementById('reset-btn');
+
+  let selectedObjectName = null;
+  let guessState = null; // 'float' or 'sink'
+  let objectsInTank = [];
+  let lastDroppedObj = null;
+
+  function attachObjectListeners(el) {
+    el.addEventListener('click', () => {
+      if (selectedObjectName === el.dataset.name) {
+        selectedObjectName = null;
+        el.classList.remove('selected');
+      } else {
+        const prev = tray.querySelector('.object.selected');
+        if (prev) prev.classList.remove('selected');
+        selectedObjectName = el.dataset.name;
+        el.classList.add('selected');
+      }
+      updateDropButton();
+    });
+  }
+
+  function createTrayObjects() {
+    tray.innerHTML='';
+    objects.forEach(obj => {
+      const el = document.createElement('div');
+      el.classList.add('object');
+      el.dataset.name = obj.name;
+      el.textContent = obj.label;
+      el.setAttribute('aria-label', obj.label);
+      attachObjectListeners(el);
+      tray.appendChild(el);
+    });
+  }
+
+  function initDraggables() {
+    interact('.tray .object').draggable({
+      inertia: false,
+      modifiers: [
+        interact.modifiers.restrictRect({ restriction: 'parent', endOnly: true })
+      ],
+      listeners: {
+        start(event) { event.target.classList.add('dragging'); },
+        move(event) {
+          const target = event.target;
+          const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+          const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+          target.style.transform = `translate(${x}px,${y}px)`;
+          target.setAttribute('data-x', x);
+          target.setAttribute('data-y', y);
+        },
+        end(event) { event.target.classList.remove('dragging'); }
+      }
+    });
+  }
+
+  function updateDropButton() {
+    dropBtn.disabled = !(selectedObjectName && guessState);
+  }
+
+  // Guess toggle
+  guessToggleFloat.addEventListener('click', () => {
+    guessState = 'float';
+    guessToggleFloat.classList.add('active');
+    guessToggleSink.classList.remove('active');
+    guessToggleFloat.setAttribute('aria-pressed','true');
+    guessToggleSink.setAttribute('aria-pressed','false');
+    updateDropButton();
+  });
+  guessToggleSink.addEventListener('click', () => {
+    guessState = 'sink';
+    guessToggleSink.classList.add('active');
+    guessToggleFloat.classList.remove('active');
+    guessToggleSink.setAttribute('aria-pressed','true');
+    guessToggleFloat.setAttribute('aria-pressed','false');
+    updateDropButton();
+  });
+
+  // Drop button
+  dropBtn.addEventListener('click', () => {
+    if (!selectedObjectName || !guessState) return;
+    const origEl = tray.querySelector(`.object[data-name="${selectedObjectName}"]`);
+    if (!origEl) return;
+    const clone = origEl.cloneNode(true);
+    clone.style.position = 'absolute';
+    tank.appendChild(clone);
+    // compute position
+    const x = (tank.clientWidth - clone.offsetWidth)/2;
+    clone.style.left = `${x}px`;
+    clone.style.top = `-${clone.offsetHeight}px`;
+    // Remove from tray
+    origEl.parentNode.removeChild(origEl);
+
+    const isFloatObj = floaters.has(clone.dataset.name);
+    animateDrop(clone, isFloatObj, guessState);
+  });
+
+  // Interact.js drag
+  initDraggables();
+
+  interact('#tank').dropzone({
+    accept: '.tray .object',
+    overlap: 0.5,
+    listeners: {
+      drop(event) {
+        const dragged = event.relatedTarget;
+        // Clone into tank
+        const clone = dragged.cloneNode(true);
+        clone.style.position = 'absolute';
+        tank.appendChild(clone);
+        // compute position relative to tank
+        const rectTank = tank.getBoundingClientRect();
+        const x = event.dragEvent.clientX - rectTank.left - clone.offsetWidth/2;
+        const y = -clone.offsetHeight; // start above tank
+        clone.style.left = `${x}px`;
+        clone.style.top = `${y}px`;
+        // Remove from tray
+        dragged.parentNode.removeChild(dragged);
+
+        const isFloatObj = floaters.has(clone.dataset.name);
+        animateDrop(clone, isFloatObj, guessState);
+      }
+    }
+  });
+
+  function createSplash(x,y){
+    const s=document.createElement('div');
+    s.className='splash';
+    s.style.left=`${x}px`;
+    s.style.top=`${y}px`;
+    tank.appendChild(s);
+    anime({
+      targets:s,
+      scale:[0,1.5],
+      opacity:[1,0],
+      duration:300,
+      easing:'easeOutQuad'
+    }).finished.then(()=>s.remove());
+  }
+
+  function animateDrop(objEl, isFloatObj, currentGuess) {
+    const waterSurfaceY = tank.clientHeight * 0.5;
+    const finalY = isFloatObj ? waterSurfaceY - objEl.offsetHeight/2 : tank.clientHeight - objEl.offsetHeight - 10;
+    // splash
+    const splashX = parseFloat(objEl.style.left)+objEl.offsetWidth/2;
+    const splashY = waterSurfaceY - 10;
+    createSplash(splashX, splashY);
+    anime({
+      targets: objEl,
+      translateY: [0, finalY + objEl.offsetHeight],
+      duration: 300,
+      easing: 'easeOutQuad',
+      complete: () => {
+        objectsInTank.push({name: objEl.dataset.name, el: objEl});
+        lastDroppedObj = {name: objEl.dataset.name, el: objEl};
+        // Update lists
+        const li = document.createElement('li');
+        li.textContent = objEl.dataset.name.replace(/_/g,' ');
+        li.dataset.name = objEl.dataset.name;
+        if (isFloatObj) floatsList.appendChild(li);
+        else sinksList.appendChild(li);
+
+        // Feedback
+        if (currentGuess) {
+          const guessMatches = (currentGuess === 'float' && isFloatObj) || (currentGuess === 'sink' && !isFloatObj);
+          if (guessMatches) showConfetti();
+          else shakeObject(objEl);
+        }
+
+        // If floating, start oscillation
+        if (isFloatObj) {
+          anime({
+            targets: objEl,
+            translateY: [-2, 2],
+            duration: 750,
+            easing: 'easeInOutSine',
+            loop: true,
+            direction: 'alternate'
+          });
+        }
+
+        // Reset selection and guess after animation
+        selectedObjectName = null;
+        guessState = null;
+        updateDropButton();
+        guessToggleFloat.classList.remove('active');
+        guessToggleSink.classList.remove('active');
+      }
+    });
+  }
+
+  function shakeObject(el) {
+    anime({
+      targets: el,
+      translateX: [-5,5,-5,5],
+      duration: 200,
+      easing: 'easeInOutQuad'
+    });
+  }
+
+  function showConfetti() {
+    let confettiContainer = tank.querySelector('.confetti');
+    if (!confettiContainer) {
+      confettiContainer = document.createElement('div');
+      confettiContainer.classList.add('confetti');
+      tank.appendChild(confettiContainer);
+    }
+    for (let i=0;i<20;i++){
+      const c = document.createElement('div');
+      c.style.position='absolute';
+      c.style.width='6px';
+      c.style.height='6px';
+      c.style.background='var(--accent)';
+      c.style.borderRadius='50%';
+      c.style.left=`${Math.random()*100}%`;
+      c.style.top=`${Math.random()*100}%`;
+      confettiContainer.appendChild(c);
+      anime({
+        targets: c,
+        scale:[0,1],
+        opacity:[1,0],
+        duration:400,
+        easing:'easeOutQuad',
+        delay:i*20
+      }).finished.then(()=>c.remove());
+    }
+  }
+
+  // Take Out / New Set button
+  takeOutBtn.addEventListener('click', () => {
+    if (objectsInTank.length>0) {
+      const obj = objectsInTank.pop();
+      // Remove from tank
+      obj.el.parentNode.removeChild(obj.el);
+      // Return to tray
+      const origObj = objects.find(o=>o.name===obj.name);
+      const origEl = document.createElement('div');
+      origEl.classList.add('object');
+      origEl.dataset.name = obj.name;
+      origEl.textContent = origObj.label;
+      origEl.setAttribute('aria-label', origObj.label);
+      attachObjectListeners(origEl);
+      tray.appendChild(origEl);
+      // Remove from lists
+      const liFloat = floatsList.querySelector(`li[data-name="${obj.name}"]`);
+      if (liFloat) liFloat.parentNode.removeChild(liFloat);
+      const liSink = sinksList.querySelector(`li[data-name="${obj.name}"]`);
+      if (liSink) liSink.parentNode.removeChild(liSink);
+      initDraggables();
+    } else {
+      resetAll();
+    }
+  });
+
+  function resetAll() {
+    objectsInTank.forEach(obj => {
+      obj.el.parentNode.removeChild(obj.el);
+      const origObj = objects.find(o=>o.name===obj.name);
+      const origEl = document.createElement('div');
+      origEl.classList.add('object');
+      origEl.dataset.name = obj.name;
+      origEl.textContent = origObj.label;
+      origEl.setAttribute('aria-label', origObj.label);
+      attachObjectListeners(origEl);
+      tray.appendChild(origEl);
+    });
+    objectsInTank = [];
+    floatsList.innerHTML='';
+    sinksList.innerHTML='';
+    selectedObjectName=null;
+    guessState=null;
+    updateDropButton();
+    guessToggleFloat.classList.remove('active');
+    guessToggleSink.classList.remove('active');
+    initDraggables();
+  }
+
+  resetBtn.addEventListener('click', () => {
+    resetAll();
+  });
+
+  createTrayObjects();
+});
+</script>
+</body>
+</html>

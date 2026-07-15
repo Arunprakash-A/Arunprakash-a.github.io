@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Circle Trigonometry Explorer</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <!-- GSAP for Animation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3.4.15/dist/vue.global.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #F8F9FA;
+            --panel-bg: #FFFFFF;
+            --panel-border: #E2E8F0;
+            --text-main: #2C3E50;
+            --text-muted: #64748B;
+            
+            /* Palette */
+            --accent-sin: #3498DB; /* Blue */
+            --accent-cos: #27AE60; /* Green */
+            --accent-tan: #F1C40F; /* Yellow */
+            --accent-theta: #9B59B6; /* Purple */
+            --accent-grid: #CBD5E1;
+            --accent-bg: #F1F5F9;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Layout */
+        #app {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr auto;
+            height: 100%;
+            width: 100%;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Canvas Area */
+        .canvas-container {
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: crosshair;
+            background-color: var(--bg-dark);
+            border-radius: 8px;
+        }
+        
+        canvas {
+            border-radius: 8px;
+            touch-action: none;
+        }
+
+        /* Controls & Readouts */
+        .controls-area {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--text-main);
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--accent-grid);
+            border-radius: 2px;
+        }
+
+        /* Toggles */
+        .toggles {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        .toggle-switch input {
+            display: none;
+        }
+
+        .switch-track {
+            width: 36px;
+            height: 20px;
+            background-color: var(--accent-grid);
+            border-radius: 20px;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        .switch-thumb {
+            width: 16px;
+            height: 16px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch input:checked + .switch-track {
+            background-color: var(--accent-theta);
+        }
+
+        .toggle-switch input:checked + .switch-track .switch-thumb {
+            transform: translateX(16px);
+        }
+
+        /* Readout Panel */
+        .readout-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .readout-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .readout-item {
+            background: var(--accent-bg);
+            padding: 0.8rem;
+            border-radius: 8px;
+            border-left: 3px solid transparent;
+        }
+
+        .readout-item.sin { border-color: var(--accent-sin); }
+        .readout-item.cos { border-color: var(--accent-cos); }
+        .readout-item.tan { border-color: var(--accent-tan); }
+        .readout-item.theta { border-color: var(--accent-theta); }
+
+        .readout-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
+        .readout-value { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; }
+        .readout-symbol { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
+
+        /* Buttons */
+        .action-btn {
+            background: var(--accent-theta);
+            color: white;
+            border: none;
+            padding: 0.8rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, filter 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .action-btn:hover { filter: brightness(1.1); }
+        .action-btn:active { transform: scale(0.98); }
+        .action-btn.secondary { background: var(--accent-grid); color: var(--text-main); }
+
+        /* Math Display */
+        .math-display {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--panel-border);
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        /* Special Angle Table */
+        .special-angle-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .special-angle-table th {
+            text-align: left;
+            color: var(--text-muted);
+            padding: 4px;
+            border-bottom: 1px solid var(--panel-border);
+        }
+        .special-angle-table td {
+            padding: 4px;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--panel-border);
+        }
+        .special-angle-table tr:hover {
+            background: var(--accent-bg);
+            cursor: pointer;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            #app {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+                overflow-y: auto;
+            }
+            .canvas-container { min-height: 300px; }
+            .controls-area { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- Left Panel: Visualization -->
+    <div class="panel">
+        <div class="canvas-container" ref="canvasWrapper">
+            <canvas ref="canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Right Panel: Graph -->
+    <div class="panel">
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Dynamic Graph</span>
+                <span style="color: var(--accent-sin)">y = sin(θ)</span>
+            </div>
+            <div class="canvas-container" style="flex-grow: 0; height: 200px;">
+                <canvas ref="graphCanvas"></canvas>
+            </div>
+        </div>
+        
+        <div class="math-display" id="math-expressions">
+            <!-- Rendered by KaTeX -->
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+                <span id="math-sin"></span>
+                <span id="math-cos"></span>
+                <span id="math-tan"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Panel: Controls & Readouts -->
+    <div class="controls-area">
+        <!-- Controls -->
+        <div class="panel">
+            <div class="slider-group">
+                <div class="slider-label">
+                    <!-- FIX #2: Dynamic Label -->
+                    <span>Angle Theta (θ) [{{ units === 'deg' ? 'deg' : 'rad' }}]</span>
+                    <span :style="{color: 'var(--accent-theta)'}">{{ displayAngle }}</span>
+                </div>
+                <!-- FIX #4: Slider range updates dynamically based on units -->
+                <input type="range" v-model.number="angle" :min="sliderMin" :max="sliderMax" :step="sliderStep" @input="onSliderInput">
+            </div>
+
+            <div class="toggles">
+                <label class="toggle-switch" style="color: var(--accent-sin)">
+                    <input type="checkbox" v-model="showSin">
+                    <div class="switch-track"><div class="switch-thumb"></div></div>
+                    Sine
+                </label>
+                <label class="toggle-switch" style="color: var(--accent-cos)">
+                    <input type="checkbox" v-model="showCos">
+                    <div class="switch-track"><div class="switch-thumb"></div></div>
+                    Cosine
+                </label>
+                <label class="toggle-switch" style="color: var(--accent-tan)">
+                    <input type="checkbox" v-model="showTan">
+                    <div class="switch-track"><div class="switch-thumb"></div></div>
+                    Tangent
+                </label>
+                <label class="toggle-switch" style="color: var(--accent-theta)">
+                    <input type="checkbox" v-model="showTrace">
+                    <div class="switch-track"><div class="switch-thumb"></div></div>
+                    Trace
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button class="action-btn" @click="toggleSweep" :style="{background: isSweeping ? '#ef4444' : 'var(--accent-theta)'}">
+                    {{ isSweeping ? '⏸ Pause Sweep' : '▶ Sweep Animation' }}
+                </button>
+                <button class="action-btn secondary" @click="reset">↺ Reset</button>
+                <button class="action-btn secondary" @click="toggleUnits" style="margin-left: auto;">
+                    {{ units === 'deg' ? 'Rad' : 'Deg' }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Readouts -->
+        <div class="panel readout-panel">
+            <div class="readout-item theta">
+                <div class="readout-label">Theta (θ)</div>
+                <!-- FIX #2: Readout matches selected unit -->
+                <div class="readout-value" style="color: var(--accent-theta)">{{ displayAngle }}</div>
+                <div class="readout-symbol">{{ displayAngleRad }}</div>
+            </div>
+            
+            <div class="readout-grid">
+                <div class="readout-item sin">
+                    <div class="readout-label">sin(θ)</div>
+                    <div class="readout-value" style="color: var(--accent-sin)">{{ valSin }}</div>
+                    <!-- FIX #1: Exact symbolic values -->
+                    <div class="readout-symbol">{{ exactSin }}</div>
+                </div>
+                <div class="readout-item cos">
+                    <div class="readout-label">cos(θ)</div>
+                    <div class="readout-value" style="color: var(--accent-cos)">{{ valCos }}</div>
+                    <!-- FIX #1: Exact symbolic values -->
+                    <div class="readout-symbol">{{ exactCos }}</div>
+                </div>
+                <div class="readout-item tan">
+                    <div class="readout-label">tan(θ)</div>
+                    <div class="readout-value" style="color: var(--accent-tan)">{{ valTan }}</div>
+                    <!-- FIX #1: Exact symbolic values -->
+                    <div class="readout-symbol">{{ exactTan }}</div>
+                </div>
+            </div>
+
+            <!-- FIX #2: Special Angle Table -->
+            <div style="margin-top: auto;">
+                <div class="readout-label">Special Angles</div>
+                <table class="special-angle-table">
+                    <tbody>
+                        <tr v-for="deg in specialAngles" :key="deg" @click="setAngle(deg)">
+                            <td>{{ deg }}°</td>
+                            <td>{{ getRadLabel(deg) }}</td>
+                            <td style="color: var(--accent-sin)">{{ getExactSin(deg) }}</td>
+                            <td style="color: var(--accent-cos)">{{ getExactCos(deg) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
+
+    createApp({
+        setup() {
+            // State
+            const angle = ref(45); // Degrees
+            const units = ref('deg'); // 'deg' or 'rad'
+            const isSweeping = ref(false);
+            const showSin = ref(true);
+            const showCos = ref(true);
+            const showTan = ref(true);
+            const showTrace = ref(true);
+            
+            const canvas = ref(null);
+            const graphCanvas = ref(null);
+            const canvasWrapper = ref(null);
+            
+            // Contexts
+            let ctx, gCtx;
+            let width, height;
+            let graphWidth, graphHeight;
+            
+            // Animation
+            let tracePoints = []; // Stores {x, y} for the sine graph
+
+            // Constants
+            const SPECIAL_ANGLES = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330, 360];
+            
+            // --- Math Helpers ---
+            
+            const toRad = (deg) => deg * (Math.PI / 180);
+            
+            // FIX #1: Corrected getExactValue to return symbolic LaTeX strings
+            const getExactValue = (val, type) => {
+                // Check if close to a special angle
+                const deg = parseFloat(angle.value);
+                const isSpecial = SPECIAL_ANGLES.some(a => Math.abs(a - deg) < 0.5);
+                
+                if (!isSpecial) return val.toFixed(4);
+
+                // Exact values logic
+                const rad = toRad(deg);
+                const sin = Math.sin(rad);
+                const cos = Math.cos(rad);
+                const tan = Math.tan(rad);
+
+                const format = (v, name) => {
+                    if (Math.abs(v) < 0.0001) return "0";
+                    if (Math.abs(v - 1) < 0.0001) return "1";
+                    if (Math.abs(v + 1) < 0.0001) return "-1";
+                    if (Math.abs(v - 0.5) < 0.0001) return "1/2";
+                    if (Math.abs(v + 0.5) < 0.0001) return "-1/2";
+                    if (Math.abs(v - Math.sqrt(3)/2) < 0.0001) return "\\frac{\\sqrt{3}}{2}";
+                    if (Math.abs(v + Math.sqrt(3)/2) < 0.0001) return "-\\frac{\\sqrt{3}}{2}";
+                    if (Math.abs(v - Math.sqrt(2)/2) < 0.0001) return "\\frac{\\sqrt{2}}{2}";
+                    if (Math.abs(v + Math.sqrt(2)/2) < 0.0001) return "-\\frac{\\sqrt{2}}{2}";
+                    if (Math.abs(v - Math.sqrt(3)) < 0.0001) return "\\sqrt{3}";
+                    if (Math.abs(v + Math.sqrt(3)) < 0.0001) return "-\\sqrt{3}";
+                    if (Math.abs(v - 1/Math.sqrt(3)) < 0.0001) return "\\frac{\\sqrt{3}}{3}";
+                    if (Math.abs(v + 1/Math.sqrt(3)) < 0.0001) return "-\\frac{\\sqrt{3}}{3}";
+                    return v.toFixed(4);
+                };
+
+                if (type === 'sin') return format(sin, 'sin');
+                if (type === 'cos') return format(cos, 'cos');
+                if (type === 'tan') return format(tan, 'tan');
+                return format(deg, 'deg');
+            };
+
+            // --- Computed Properties ---
+
+            // FIX #4: Slider range updates based on units
+            const sliderMin = computed(() => units.value === 'deg' ? 0 : 0);
+            const sliderMax = computed(() => units.value === 'deg' ? 360 : 2 * Math.PI);
+            const sliderStep = computed(() => units.value === 'deg' ? 1 : 0.01);
+
+            const displayAngle = computed(() => {
+                if (units.value === 'deg') return `${angle.value.toFixed(1)}°`;
+                return `${(angle.value * 180 / Math.PI).toFixed(2)} rad`;
+            });
+
+            const displayAngleRad = computed(() => {
+                // Always show radian fraction for reference
+                const deg = angle.value;
+                if (Math.abs(deg) < 0.1) return "0";
+                if (Math.abs(deg - 360) < 0.1) return "2π";
+                
+                // Simple fraction logic for special angles
+                const fractions = {
+                    30: "π/6", 45: "π/4", 60: "π/3", 90: "π/2",
+                    120: "2π/3", 135: "3π/4", 150: "5π/6", 180: "π",
+                    210: "7π/6", 225: "5π/4", 240: "4π/3", 270: "3π/2",
+                    300: "5π/3", 315: "7π/4", 330: "11π/6"
+                };
+                return fractions[Math.round(deg)] || `${(deg/180).toFixed(2)}π`;
+            });
+
+            const valSin = computed(() => Math.sin(toRad(angle.value)));
+            const valCos = computed(() => Math.cos(toRad(angle.value)));
+            const valTan = computed(() => Math.tan(toRad(angle.value)));
+
+            const exactSin = computed(() => getExactValue(valSin.value, 'sin'));
+            const exactCos = computed(() => getExactValue(valCos.value, 'cos'));
+            const exactTan = computed(() => getExactValue(valTan.value, 'tan'));
+
+            // --- Drawing Logic ---
+
+            const drawUnitCircle = () => {
+                if (!ctx) return;
+                const cx = width / 2;
+                const cy = height / 2;
+                const radius = Math.min(width, height) * 0.35;
+                const rad = toRad(angle.value);
+
+                ctx.clearRect(0, 0, width, height);
+
+                // 1. Grid & Axes
+                ctx.strokeStyle = '#CBD5E1';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                // Grid lines
+                for(let i = -1; i <= 1; i+=0.25) {
+                    ctx.moveTo(cx + i*radius, 0); ctx.lineTo(cx + i*radius, height);
+                    ctx.moveTo(0, cy + i*radius); ctx.lineTo(width, cy + i*radius);
+                }
+                ctx.stroke();
+
+                // Main Axes
+                ctx.strokeStyle = '#64748B';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, cy); ctx.lineTo(width, cy); // X
+                ctx.moveTo(cx, 0); ctx.lineTo(cx, height); // Y
+                ctx.stroke();
+
+                // 2. Unit Circle
+                ctx.strokeStyle = '#2C3E50';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // 3. Angle Arc
+                ctx.strokeStyle = '#9B59B6';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius * 0.2, 0, -rad, rad > 0);
+                ctx.stroke();
+
+                // 4. Triangle & Ratios
+                const px = cx + radius * Math.cos(rad);
+                const py = cy - radius * Math.sin(rad); // Canvas Y is inverted
+
+                // Cosine Line (Horizontal)
+                if (showCos.value) {
+                    ctx.strokeStyle = '#27AE60';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(px, cy);
+                    ctx.stroke();
+                }
+
+                // Sine Line (Vertical)
+                if (showSin.value) {
+                    ctx.strokeStyle = '#3498DB';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(px, cy);
+                    ctx.lineTo(px, py);
+                    ctx.stroke();
+                }
+
+                // Radius Line
+                ctx.strokeStyle = '#2C3E50';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(px, py);
+                ctx.stroke();
+
+                // FIX #3: Tangent Line (Geometric)
+                // Extends from (1,0) relative to center to the intersection with the radius line
+                if (showTan.value) {
+                    // Tangent point is at (1, 0) relative to circle center -> (cx + radius, cy)
+                    // Tangent line extends vertically from there
+                    // Length is tan(theta) * radius
+                    const tanVal = Math.tan(rad);
+                    // Avoid drawing infinite lines near 90/270
+                    if (Math.abs(tanVal) < 10) {
+                        const tx = cx + radius;
+                        const ty = cy - radius * tanVal;
+                        
+                        ctx.strokeStyle = '#F1C40F';
+                        ctx.lineWidth = 3;
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.moveTo(tx, cy);
+                        ctx.lineTo(tx, ty);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+
+                        // Dashed line from origin to tangent point to show geometry
+                        ctx.strokeStyle = 'rgba(241, 196, 15, 0.3)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(cx, cy);
+                        ctx.lineTo(tx, ty);
+                        ctx.stroke();
+                    }
+                }
+
+                // 5. Point on Circle
+                ctx.fillStyle = '#2C3E50';
+                ctx.shadowColor = '#2C3E50';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(px, py, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // 6. Trace (Sweep)
+                // FIX #4: Moved trace logic to graph canvas, removed from here
+            };
+
+            const drawGraph = () => {
+                if (!gCtx) return;
+                gCtx.clearRect(0, 0, graphWidth, graphHeight);
+                
+                const cx = 0;
+                const cy = graphHeight / 2;
+                const radius = graphHeight * 0.4;
+
+                // Axes
+                gCtx.strokeStyle = '#CBD5E1';
+                gCtx.lineWidth = 1;
+                gCtx.beginPath();
+                gCtx.moveTo(0, cy); gCtx.lineTo(graphWidth, cy);
+                gCtx.stroke();
+
+                // Sine Wave (Static Background)
+                gCtx.strokeStyle = 'rgba(52, 152, 219, 0.2)';
+                gCtx.lineWidth = 2;
+                gCtx.beginPath();
+                for (let x = 0; x < graphWidth; x++) {
+                    const y = cy - radius * Math.sin((x / graphWidth) * Math.PI * 2);
+                    if (x === 0) gCtx.moveTo(x, y);
+                    else gCtx.lineTo(x, y);
+                }
+                gCtx.stroke();
+
+                // Current Position Indicator
+                const currentX = (angle.value / 360) * graphWidth;
+                const currentY = cy - radius * Math.sin(toRad(angle.value));
+
+                // Vertical line connecting circle to graph (visual link)
+                // We draw this on the main canvas usually, but here we just highlight the point
+                
+                gCtx.fillStyle = '#3498DB';
+                gCtx.shadowColor = '#3498DB';
+                gCtx.shadowBlur = 10;
+                gCtx.beginPath();
+                gCtx.arc(currentX, currentY, 5, 0, Math.PI * 2);
+                gCtx.fill();
+                gCtx.shadowBlur = 0;
+
+                // FIX #4: Draw Trace on Graph Canvas
+                if (showTrace.value) {
+                    // Add current point to trace history
+                    // We map angle 0-360 to x-axis 0-width
+                    const traceX = (angle.value / 360) * graphWidth;
+                    tracePoints.push({x: traceX, y: currentY});
+                    
+                    // Limit trace points to avoid memory issues
+                    if (tracePoints.length > graphWidth) tracePoints.shift();
+
+                    gCtx.lineWidth = 2;
+                    gCtx.strokeStyle = '#9B59B6';
+                    gCtx.beginPath();
+                    if (tracePoints.length > 0) {
+                        gCtx.moveTo(tracePoints[0].x, tracePoints[0].y);
+                        for (let i = 1; i < tracePoints.length; i++) {
+                            gCtx.lineTo(tracePoints[i].x, tracePoints[i].y);
+                        }
+                    }
+                    gCtx.stroke();
+                }
+            };
+
+            const render = () => {
+                drawUnitCircle();
+                drawGraph();
+                
+                // Update MathJax
+                renderMath();
+            };
+
+            const renderMath = () => {
+                const sinTex = `\\sin(${displayAngleRad.value}) = ${exactSin.value}`;
+                const cosTex = `\\cos(${displayAngleRad.value}) = ${exactCos.value}`;
+                const tanTex = `\\tan(${displayAngleRad.value}) = ${exactTan.value}`;
+
+                // Only update if changed to prevent flickering
+                const sEl = document.getElementById('math-sin');
+                const cEl = document.getElementById('math-cos');
+                const tEl = document.getElementById('math-tan');
+
+                if (sEl.innerHTML !== sinTex) katex.render(sinTex, sEl, { throwOnError: false });
+                if (cEl.innerHTML !== cosTex) katex.render(cosTex, cEl, { throwOnError: false });
+                if (tEl.innerHTML !== tanTex) katex.render(tanTex, tEl, { throwOnError: false });
+            };
+
+            // --- Interaction ---
+
+            const handleResize = () => {
+                if (canvasWrapper.value) {
+                    width = canvasWrapper.value.clientWidth;
+                    height = canvasWrapper.value.clientHeight;
+                    canvas.value.width = width;
+                    canvas.value.height = height;
+                    
+                    // Graph canvas
+                    const gRect = graphCanvas.value.parentElement.getBoundingClientRect();
+                    graphWidth = gRect.width;
+                    graphHeight = gRect.height;
+                    graphCanvas.value.width = graphWidth;
+                    graphCanvas.value.height = graphHeight;
+                    
+                    render();
+                }
+            };
+
+            const toggleSweep = () => {
+                isSweeping.value = !isSweeping.value;
+                if (isSweeping.value) {
+                    tracePoints = []; // Clear trace on new sweep
+                    sweepLoop();
+                }
+            };
+
+            // FIX #4: Using GSAP for smooth animation
+            const sweepLoop = () => {
+                if (!isSweeping.value) return;
+                
+                // Calculate target angle (next 360)
+                const target = angle.value + 360;
+                
+                // Use GSAP to tween the value
+                gsap.to(angle, {
+                    value: target,
+                    duration: 4, // 4 seconds for a full rotation
+                    ease: "none",
+                    onUpdate: () => {
+                        // FIX #1: Update angle.value directly with modulo
+                        let current = angle.value;
+                        if (current > 360) current = current % 360;
+                        angle.value = current;
+                    },
+                    onComplete: () => {
+                        if (isSweeping.value) sweepLoop();
+                    }
+                });
+            };
+
+            const reset = () => {
+                angle.value = 0;
+                isSweeping.value = false;
+                tracePoints = [];
+            };
+
+            const toggleUnits = () => {
+                units.value = units.value === 'deg' ? 'rad' : 'deg';
+            };
+
+            // Mouse Drag Logic
+            const isDragging = ref(false);
+            
+            const getAngleFromMouse = (e) => {
+                const rect = canvas.value.getBoundingClientRect();
+                const x = e.clientX - rect.left - width / 2;
+                const y = -(e.clientY - rect.top - height / 2); // Invert Y
+                let rad = Math.atan2(y, x);
+                let deg = rad * (180 / Math.PI);
+                if (deg < 0) deg += 360;
+                return deg;
+            };
+
+            const onPointerDown = (e) => {
+                isDragging.value = true;
+                isSweeping.value = false;
+                tracePoints = [];
+                updateAngle(e);
+            };
+
+            const onPointerMove = (e) => {
+                if (!isDragging.value) return;
+                updateAngle(e);
+            };
+
+            const onPointerUp = () => {
+                isDragging.value = false;
+            };
+
+            const updateAngle = (e) => {
+                let deg = getAngleFromMouse(e);
+                // Snap to special angles if close
+                const snapDist = 3;
+                SPECIAL_ANGLES.forEach(s => {
+                    if (Math.abs(deg - s) < snapDist) deg = s;
+                });
+                angle.value = deg;
+            };
+
+            // FIX #4: Pause sweep on slider interaction
+            const onSliderInput = () => {
+                isSweeping.value = false;
+            };
+
+            // Helper for table
+            const specialAngles = [0, 30, 45, 60, 90];
+            const setAngle = (deg) => {
+                angle.value = deg;
+                isSweeping.value = false;
+            };
+            const getRadLabel = (deg) => {
+                const fractions = {
+                    0: "0", 30: "π/6", 45: "π/4", 60: "π/3", 90: "π/2"
+                };
+                return fractions[deg];
+            };
+            const getExactSin = (deg) => {
+                const vals = { 0: "0", 30: "1/2", 45: "\\frac{\\sqrt{2}}{2}", 60: "\\frac{\\sqrt{3}}{2}", 90: "1" };
+                return vals[deg];
+            };
+            const getExactCos = (deg) => {
+                const vals = { 0: "1", 30: "\\frac{\\sqrt{3}}{2}", 45: "\\frac{\\sqrt{2}}{2}", 60: "1/2", 90: "0" };
+                return vals[deg];
+            };
+
+            onMounted(() => {
+                ctx = canvas.value.getContext('2d');
+                gCtx = graphCanvas.value.getContext('2d');
+                
+                window.addEventListener('resize', handleResize);
+                handleResize();
+
+                // Canvas Events
+                canvas.value.addEventListener('mousedown', onPointerDown);
+                window.addEventListener('mousemove', onPointerMove);
+                window.addEventListener('mouseup', onPointerUp);
+                
+                // Touch Events
+                canvas.value.addEventListener('touchstart', (e) => { onPointerDown(e.touches[0]); e.preventDefault(); }, {passive: false});
+                window.addEventListener('touchmove', (e) => { onPointerMove(e.touches[0]); }, {passive: false});
+                window.addEventListener('touchend', onPointerUp);
+
+                // Initial Render
+                render();
+            });
+
+            // Watchers
+            watch(angle, () => render());
+            watch([showSin, showCos, showTan, showTrace], () => render());
+
+            return {
+                angle,
+                units,
+                displayAngle,
+                displayAngleRad,
+                valSin, valCos, valTan,
+                exactSin, exactCos, exactTan,
+                isSweeping,
+                showSin, showCos, showTan, showTrace,
+                canvas, graphCanvas, canvasWrapper,
+                toggleSweep, reset, toggleUnits,
+                onSliderInput,
+                specialAngles, setAngle, getRadLabel, getExactSin, getExactCos,
+                sliderMin, sliderMax, sliderStep
+            };
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>

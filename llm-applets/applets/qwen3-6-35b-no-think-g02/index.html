@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 2 Place-Value Workbench</title>
+    <!-- Fonts: Fredoka One for headings, Roboto Mono for digits -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto+Mono:wght@500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-light: #F0F4F8;
+            --panel-bg: #FFFFFF;
+            --panel-border: #D1D9E6;
+            --accent-blue: #3498DB;
+            --accent-red: #E74C3C;
+            --accent-green: #27AE60;
+            --accent-yellow: #F1C40F;
+            --text-main: #2C3E50;
+            --text-muted: #7F8C8D;
+            --font-head: 'Fredoka One', cursive;
+            --font-body: 'Roboto', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--panel-border);
+            background: var(--panel-bg);
+            z-index: 10;
+        }
+
+        h1 {
+            font-family: var(--font-head);
+            font-size: 28px; /* FIX 3: 28px */
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        /* Main Layout - FIX 3: Vertical Stack */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            gap: 1rem;
+            height: calc(100vh - 80px);
+        }
+
+        /* Controls Panel */
+        .controls {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .number-input-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .digit-input {
+            width: 60px;
+            height: 60px;
+            background: var(--bg-light);
+            border: 2px solid var(--panel-border);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 24px; /* FIX 3: 24px */
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .digit-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 15px rgba(52, 152, 219, 0.2);
+        }
+
+        .digit-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .toggle-container {
+            display: flex;
+            background: var(--bg-light);
+            border-radius: 12px;
+            padding: 4px;
+            position: relative;
+            border: 1px solid var(--panel-border);
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: 0.3s;
+            z-index: 2;
+            color: var(--text-muted);
+            border: none;
+            background: transparent;
+            font-family: var(--font-body);
+        }
+
+        .toggle-btn.active {
+            background: var(--accent-blue);
+            color: white;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-family: var(--font-body);
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, filter 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: white;
+        }
+
+        .btn:active { transform: scale(0.95); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-step { background: var(--accent-blue); }
+        .btn-auto { background: var(--accent-green); }
+        .btn-reset { background: var(--accent-red); }
+
+        /* Visualization Area */
+        .workspace {
+            flex: 1;
+            position: relative;
+            background: #FFFFFF;
+            border-radius: 16px;
+            border: 1px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Overlay UI */
+        .overlay-ui {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            pointer-events: none;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(4px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--panel-border);
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            color: var(--accent-yellow);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .badge.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .status-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text-main);
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-family: var(--font-head);
+            font-size: 1.2rem;
+            color: white;
+            border: 1px solid var(--panel-border);
+            text-align: center;
+            min-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 5;
+        }
+
+        /* Math View (Column) */
+        .math-view {
+            position: absolute;
+            right: 40px;
+            top: 40px;
+            font-family: var(--font-mono);
+            font-size: 3rem;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0;
+            opacity: 0.8;
+            z-index: 2;
+        }
+
+        .math-row { display: flex; gap: 10px; }
+        .math-digit { width: 0.8em; text-align: right; }
+        .math-line { width: 100%; height: 2px; background: var(--text-muted); margin: 5px 0; }
+        .math-op { color: var(--accent-blue); margin-right: 5px; }
+        
+        .math-highlight { color: var(--accent-blue); text-shadow: 0 0 10px rgba(52, 152, 219, 0.3); }
+        
+        /* FIX 4: Position badges correctly above columns */
+        .math-carry { 
+            font-size: 1.5rem; 
+            color: var(--accent-green); 
+            position: absolute; 
+            top: -30px; 
+            right: 0;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .math-borrow {
+            font-size: 1.5rem;
+            color: var(--accent-red);
+            position: absolute;
+            top: -30px;
+            right: 0;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* Responsive */
+        @media (max-width: 800px) {
+            main { flex-direction: column; }
+            .controls { flex-direction: column; gap: 1rem; }
+            .math-view { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Place-Value Workbench</h1>
+    <div style="font-family: var(--font-mono); color: var(--text-muted);">Grade 2 Math</div>
+</header>
+
+<main>
+    <div class="controls">
+        <div class="control-group">
+            <label>Operand A</label>
+            <div class="number-input-row">
+                <div>
+                    <input type="number" id="in-tens-a" class="digit-input" min="0" max="9" value="2">
+                    <div class="digit-label">Tens</div>
+                </div>
+                <div>
+                    <input type="number" id="in-ones-a" class="digit-input" min="0" max="9" value="4">
+                    <div class="digit-label">Ones</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Operation</label>
+            <div class="toggle-container">
+                <button class="toggle-btn active" id="btn-add" onclick="setMode('add')" role="switch" aria-checked="true">Add (+)</button>
+                <button class="toggle-btn" id="btn-sub" onclick="setMode('sub')" role="switch" aria-checked="false">Sub (-)</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Operand B</label>
+            <div class="number-input-row">
+                <div>
+                    <input type="number" id="in-tens-b" class="digit-input" min="0" max="9" value="1">
+                    <div class="digit-label">Tens</div>
+                </div>
+                <div>
+                    <input type="number" id="in-ones-b" class="digit-input" min="0" max="9" value="8">
+                    <div class="digit-label">Ones</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-reset" onclick="resetApp()" aria-label="Reset">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12" /><path d="M3 3v9h9" /></svg>
+                Reset
+            </button>
+            <button class="btn btn-step" id="btn-step" onclick="stepForward()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                Step
+            </button>
+            <button class="btn btn-auto" id="btn-auto" onclick="toggleAuto()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                Auto
+            </button>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <canvas id="workbench"></canvas>
+        
+        <!-- Math View Overlay -->
+        <div class="math-view" id="math-view">
+            <div class="math-carry" id="math-carry">1</div>
+            <div class="math-borrow" id="math-borrow">1</div>
+            <div class="math-row">
+                <span class="math-digit" id="mv-tens-a">2</span>
+                <span class="math-digit" id="mv-ones-a">4</span>
+            </div>
+            <div class="math-row">
+                <span class="math-op" id="mv-op">+</span>
+                <span class="math-digit" id="mv-tens-b">1</span>
+                <span class="math-digit" id="mv-ones-b">8</span>
+            </div>
+            <div class="math-line"></div>
+            <div class="math-row">
+                <span class="math-digit" id="mv-tens-res">?</span>
+                <span class="math-digit" id="mv-ones-res">?</span>
+            </div>
+        </div>
+
+        <div class="status-bar" id="status-text">Ready to start</div>
+    </div>
+</main>
+
+<script>
+/**
+ * APP STATE & CONFIGURATION
+ */
+const state = {
+    mode: 'add', // 'add' or 'sub'
+    a: { tens: 2, ones: 4 },
+    b: { tens: 1, ones: 8 },
+    step: 0, // 0: Start, 1: Ones Add/Sub, 2: Regroup?, 3: Tens Add/Sub, 4: Done
+    isAuto: false,
+    autoTimer: null,
+    // Animation State
+    animating: false,
+    blocks: [], // Array of block objects for canvas
+    particles: [], // For effects
+    carry: 0,
+    borrowed: false,
+    result: { tens: 0, ones: 0 }
+};
+
+// Canvas Setup
+const canvas = document.getElementById('workbench');
+const ctx = canvas.getContext('2d');
+let width, height;
+
+// Colors
+const COLORS = {
+    bg: '#F0F4F8',
+    rod: '#3498DB', // Blue
+    rodBorder: '#2980B9',
+    cube: '#E74C3C', // Red
+    cubeBorder: '#C0392B',
+    highlight: '#F1C40F',
+    text: '#2C3E50'
+};
+
+/**
+ * INITIALIZATION
+ */
+function init() {
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Inputs
+    const inputs = ['in-tens-a', 'in-ones-a', 'in-tens-b', 'in-ones-b'];
+    inputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', (e) => {
+            let val = parseInt(e.target.value);
+            if (isNaN(val)) val = 0;
+            if (val < 0) val = 0;
+            if (val > 9) val = 9;
+            
+            if (id.includes('a')) {
+                if(id.includes('tens')) state.a.tens = val;
+                else state.a.ones = val;
+            } else {
+                if(id.includes('tens')) state.b.tens = val;
+                else state.b.ones = val;
+            }
+            
+            // FIX 1: Strict validation for subtraction
+            const valA = state.a.tens * 10 + state.a.ones;
+            const valB = state.b.tens * 10 + state.b.ones;
+            if (state.mode === 'sub' && valB > valA) {
+                // Clamp B to prevent negative results
+                if(id.includes('tens')) state.b.tens = Math.min(Math.floor(valA/10), 9);
+                else state.b.ones = Math.min(valA % 10, 9);
+                e.target.value = state.b.ones; // Update UI
+            }
+
+            resetApp();
+        });
+    });
+
+    // Start Loop
+    requestAnimationFrame(loop);
+}
+
+function resize() {
+    const parent = canvas.parentElement;
+    canvas.width = parent.clientWidth;
+    canvas.height = parent.clientHeight;
+    width = canvas.width;
+    height = canvas.height;
+    // Re-calculate block positions if needed
+}
+
+function setMode(mode) {
+    state.mode = mode;
+    document.getElementById('btn-add').classList.toggle('active', mode === 'add');
+    document.getElementById('btn-sub').classList.toggle('active', mode === 'sub');
+    document.getElementById('mv-op').textContent = mode === 'add' ? '+' : '-';
+    resetApp();
+}
+
+/**
+ * LOGIC & STEPS
+ */
+function resetApp() {
+    stopAuto();
+    state.step = 0;
+    state.carry = 0;
+    state.borrowed = false;
+    state.animating = false;
+    state.blocks = [];
+    state.particles = [];
+    
+    // Initialize blocks for Operand A
+    createBlocks('a', state.a.tens, state.a.ones);
+    
+    updateMathView();
+    updateStatus("Ready to start");
+}
+
+function stepForward() {
+    if (state.animating) return;
+    
+    const valA = state.a.tens * 10 + state.a.ones;
+    const valB = state.b.tens * 10 + state.b.ones;
+    
+    // Logic branching
+    if (state.step === 0) {
+        // Step 1: Process Ones
+        if (state.mode === 'add') {
+            const sum = state.a.ones + state.b.ones;
+            if (sum >= 10) {
+                state.step = 1; // Need Regroup
+                updateStatus("Add ones: " + state.a.ones + " + " + state.b.ones + " = " + sum);
+                processOnesRegroup(sum);
+            } else {
+                state.step = 2; // No Regroup
+                updateStatus("Add ones: " + state.a.ones + " + " + state.b.ones + " = " + sum);
+                processOnesNoRegroup(sum);
+            }
+        } else {
+            // Subtraction
+            if (state.a.ones >= state.b.ones) {
+                state.step = 2;
+                updateStatus("Subtract ones: " + state.a.ones + " - " + state.b.ones);
+                processOnesNoRegroup(state.a.ones - state.b.ones);
+            } else {
+                state.step = 1; // Need Borrow
+                updateStatus("Need to borrow! " + state.a.ones + " is less than " + state.b.ones);
+                processBorrow();
+            }
+        }
+    } else if (state.step === 2) {
+        // Step 2: Process Tens
+        if (state.mode === 'add') {
+            const sum = state.a.tens + state.b.tens + state.carry;
+            state.result.tens = sum;
+            state.result.ones = state.step === 1 ? state.carry : state.result.ones; // Carry over logic fix
+            state.step = 3;
+            updateStatus("Add tens: " + state.a.tens + " + " + state.b.tens + (state.carry > 0 ? " + " + state.carry : ""));
+            processTensAdd(sum);
+        } else {
+            const diff = state.a.tens - state.b.tens - (state.borrowed ? 1 : 0);
+            state.result.tens = diff;
+            state.step = 3;
+            updateStatus("Subtract tens: " + state.a.tens + " - " + state.b.tens);
+            processTensSub(diff);
+        }
+    } else if (state.step === 3) {
+        state.step = 4;
+        updateStatus("Done! Result: " + (state.result.tens * 10 + state.result.ones));
+        state.animating = false; // Ensure loop stops
+    }
+}
+
+/**
+ * BLOCK GENERATION & ANIMATION HELPERS
+ */
+function createBlocks(operand, tens, ones) {
+    // Layout logic: Operand A on left, Operand B on right
+    const startX = operand === 'a' ? width * 0.2 : width * 0.5;
+    const startY = height * 0.3;
+    
+    // Tens Rods
+    for(let i=0; i<tens; i++) {
+        state.blocks.push({
+            type: 'rod',
+            x: startX + (i * 40),
+            y: startY,
+            w: 30,
+            h: 100,
+            color: COLORS.rod,
+            targetX: startX + (i * 40),
+            targetY: startY,
+            scale: 1,
+            opacity: 1,
+            operand: operand
+        });
+    }
+    
+    // Ones Cubes
+    for(let i=0; i<ones; i++) {
+        state.blocks.push({
+            type: 'cube',
+            x: startX + (i * 35),
+            y: startY + 120,
+            w: 30,
+            h: 30,
+            color: COLORS.cube,
+            targetX: startX + (i * 35),
+            targetY: startY + 120,
+            scale: 1,
+            opacity: 1,
+            operand: operand
+        });
+    }
+}
+
+function processOnesRegroup(sum) {
+    // 1. Move all ones to center
+    const centerX = width / 2;
+    const centerY = height * 0.6;
+    
+    const onesBlocks = state.blocks.filter(b => b.type === 'cube');
+    let offset = 0;
+    
+    onesBlocks.forEach(b => {
+        b.targetX = centerX - (onesBlocks.length * 15) + (offset * 35);
+        b.targetY = centerY;
+        offset++;
+    });
+    
+    state.animating = true;
+    
+    // Wait for animation to finish then transform
+    setTimeout(() => {
+        // Transform cubes to rods
+        const newRodCount = Math.floor(sum / 10);
+        const remainingOnes = sum % 10;
+        
+        // Remove cubes
+        state.blocks = state.blocks.filter(b => b.type !== 'cube');
+        
+        // Add new Rods
+        for(let i=0; i<newRodCount; i++) {
+            state.blocks.push({
+                type: 'rod',
+                x: centerX - (newRodCount * 20) + (i * 40),
+                y: centerY - 70, // Move up
+                w: 30,
+                h: 100,
+                color: COLORS.rod,
+                targetX: centerX - (newRodCount * 20) + (i * 40),
+                targetY: centerY - 70,
+                scale: 0, // Pop in
+                opacity: 1,
+                operand: 'result'
+            });
+        }
+        
+        // Add remaining cubes
+        for(let i=0; i<remainingOnes; i++) {
+            state.blocks.push({
+                type: 'cube',
+                x: centerX + (newRodCount * 40) + (i * 35),
+                y: centerY + 20,
+                w: 30,
+                h: 30,
+                color: COLORS.cube,
+                targetX: centerX + (newRodCount * 40) + (i * 35),
+                targetY: centerY + 20,
+                scale: 0,
+                opacity: 1,
+                operand: 'result'
+            });
+        }
+        
+        state.carry = newRodCount;
+        state.animating = false;
+        updateMathView();
+        
+        // FIX 5: Update delay to 500ms
+        if(state.isAuto) setTimeout(stepForward, 500);
+    }, 1000);
+}
+
+function processOnesNoRegroup(sum) {
+    // Just move them to result area
+    const centerX = width / 2;
+    const centerY = height * 0.6;
+    
+    const onesBlocks = state.blocks.filter(b => b.type === 'cube');
+    let offset = 0;
+    
+    onesBlocks.forEach(b => {
+        b.targetX = centerX - (onesBlocks.length * 15) + (offset * 35);
+        b.targetY = centerY;
+        offset++;
+    });
+    
+    state.animating = true;
+    
+    setTimeout(() => {
+        state.blocks = state.blocks.filter(b => b.type !== 'cube');
+        state.result.ones = sum;
+        
+        for(let i=0; i<sum; i++) {
+            state.blocks.push({
+                type: 'cube',
+                x: centerX - (sum * 15) + (i * 35),
+                y: centerY,
+                w: 30,
+                h: 30,
+                color: COLORS.cube,
+                targetX: centerX - (sum * 15) + (i * 35),
+                targetY: centerY,
+                scale: 1,
+                opacity: 1,
+                operand: 'result'
+            });
+        }
+        
+        state.animating = false;
+        updateMathView();
+        // FIX 5: Update delay to 500ms
+        if(state.isAuto) setTimeout(stepForward, 500);
+    }, 800);
+}
+
+function processBorrow() {
+    // Find a rod in A, move it to ones area, turn into cubes
+    const rodIndex = state.blocks.findIndex(b => b.type === 'rod' && b.operand === 'a');
+    if (rodIndex === -1) return; // Should not happen if logic is correct
+    
+    const rod = state.blocks[rodIndex];
+    const targetX = width * 0.35; // Move to ones column area
+    const targetY = height * 0.6;
+    
+    rod.targetX = targetX;
+    rod.targetY = targetY;
+    
+    state.animating = true;
+    
+    setTimeout(() => {
+        // Remove rod
+        state.blocks.splice(rodIndex, 1);
+        state.borrowed = true;
+        
+        // Add 10 cubes
+        for(let i=0; i<10; i++) {
+            state.blocks.push({
+                type: 'cube',
+                x: targetX,
+                y: targetY,
+                w: 30,
+                h: 30,
+                color: COLORS.cube,
+                targetX: targetX + (i * 35),
+                targetY: targetY,
+                scale: 0,
+                opacity: 1,
+                operand: 'a' // Still belongs to A conceptually
+            });
+        }
+        
+        state.animating = false;
+        updateMathView();
+        // FIX 5: Update delay to 500ms
+        if(state.isAuto) setTimeout(stepForward, 500);
+    }, 800);
+}
+
+function processTensAdd(sum) {
+    // Move rods to center
+    const rods = state.blocks.filter(b => b.type === 'rod');
+    const centerX = width / 2;
+    const startY = height * 0.3;
+    
+    rods.forEach((r, i) => {
+        r.targetX = centerX - (rods.length * 20) + (i * 40);
+        r.targetY = startY;
+    });
+    
+    state.animating = true;
+    
+    setTimeout(() => {
+        // Consolidate
+        state.blocks = state.blocks.filter(b => b.type !== 'rod');
+        
+        for(let i=0; i<sum; i++) {
+            state.blocks.push({
+                type: 'rod',
+                x: centerX - (sum * 20) + (i * 40),
+                y: startY,
+                w: 30,
+                h: 100,
+                color: COLORS.rod,
+                targetX: centerX - (sum * 20) + (i * 40),
+                targetY: startY,
+                scale: 1,
+                opacity: 1,
+                operand: 'result'
+            });
+        }
+        
+        state.animating = false;
+        updateMathView();
+        // FIX 5: Update delay to 500ms
+        if(state.isAuto) setTimeout(stepForward, 500);
+    }, 800);
+}
+
+function processTensSub(diff) {
+    // Remove rods
+    const rods = state.blocks.filter(b => b.type === 'rod');
+    state.blocks = state.blocks.filter(b => b.type !== 'rod');
+    
+    // Keep remaining
+    for(let i=0; i<diff; i++) {
+        const centerX = width / 2;
+        const startY = height * 0.3;
+        state.blocks.push({
+            type: 'rod',
+            x: centerX - (diff * 20) + (i * 40),
+            y: startY,
+            w: 30,
+            h: 100,
+            color: COLORS.rod,
+            targetX: centerX - (diff * 20) + (i * 40),
+            targetY: startY,
+            scale: 1,
+            opacity: 1,
+            operand: 'result'
+        });
+    }
+    
+    state.animating = false;
+    updateMathView();
+    // FIX 5: Update delay to 500ms
+    if(state.isAuto) setTimeout(stepForward, 500);
+}
+
+/**
+ * UI UPDATES
+ */
+function updateMathView() {
+    // Update inputs display
+    document.getElementById('mv-tens-a').textContent = state.a.tens;
+    document.getElementById('mv-ones-a').textContent = state.a.ones;
+    document.getElementById('mv-tens-b').textContent = state.b.tens;
+    document.getElementById('mv-ones-b').textContent = state.b.ones;
+    
+    // Update Carry/Borrow badges
+    const carryEl = document.getElementById('math-carry');
+    const borrowEl = document.getElementById('math-borrow');
+    
+    if (state.carry > 0) {
+        carryEl.textContent = state.carry;
+        carryEl.classList.add('visible');
+    } else {
+        carryEl.classList.remove('visible');
+    }
+    
+    if (state.borrowed) {
+        borrowEl.textContent = "1"; // Represents the 10
+        borrowEl.classList.add('visible');
+    } else {
+        borrowEl.classList.remove('visible');
+    }
+    
+    // Update Result
+    if (state.step >= 3) {
+        document.getElementById('mv-tens-res').textContent = state.result.tens;
+        document.getElementById('mv-ones-res').textContent = state.result.ones;
+        document.getElementById('mv-tens-res').classList.add('math-highlight');
+        document.getElementById('mv-ones-res').classList.add('math-highlight');
+    } else {
+        // FIX 6: Reset result digits to '?'
+        document.getElementById('mv-tens-res').textContent = "?";
+        document.getElementById('mv-ones-res').textContent = "?";
+        document.getElementById('mv-tens-res').classList.remove('math-highlight');
+        document.getElementById('mv-ones-res').classList.remove('math-highlight');
+    }
+}
+
+function updateStatus(msg) {
+    document.getElementById('status-text').textContent = msg;
+}
+
+function toggleAuto() {
+    state.isAuto = !state.isAuto;
+    const btn = document.getElementById('btn-auto');
+    btn.style.background = state.isAuto ? '#e67e22' : 'var(--accent-green)';
+    btn.innerHTML = state.isAuto ? 
+        `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Stop` : 
+        `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3" /></svg> Auto`;
+    
+    if (state.isAuto && !state.animating && state.step < 4) {
+        stepForward();
+    }
+}
+
+function stopAuto() {
+    state.isAuto = false;
+    const btn = document.getElementById('btn-auto');
+    btn.style.background = 'var(--accent-green)';
+    btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3" /></svg> Auto`;
+}
+
+/**
+ * RENDERING LOOP
+ */
+function loop() {
+    ctx.clearRect(0, 0, width, height);
+    
+    // Draw Grid (Subtle)
+    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+    ctx.lineWidth = 1;
+    const gridSize = 40;
+    for(let x=0; x<width; x+=gridSize) {
+        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,height); ctx.stroke();
+    }
+    for(let y=0; y<height; y+=gridSize) {
+        ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(width,y); ctx.stroke();
+    }
+
+    // Draw Blocks
+    state.blocks.forEach(b => {
+        // Interpolate position
+        b.x += (b.targetX - b.x) * 0.1;
+        b.y += (b.targetY - b.y) * 0.1;
+        
+        // Interpolate scale
+        b.scale += (1 - b.scale) * 0.1;
+
+        ctx.save();
+        ctx.translate(b.x + b.w/2, b.y + b.h/2);
+        ctx.scale(b.scale, b.scale);
+        ctx.translate(-(b.x + b.w/2), -(b.y + b.h/2));
+        
+        if (b.type === 'rod') {
+            // Draw Rod
+            ctx.fillStyle = b.color;
+            ctx.strokeStyle = b.color === COLORS.rod ? COLORS.rodBorder : COLORS.cubeBorder;
+            ctx.lineWidth = 2;
+            
+            // Rounded rect
+            roundRect(ctx, b.x, b.y, b.w, b.h, 4);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Grid lines on rod (FIX 3: Vertical lines added)
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+            for(let i=1; i<10; i++) {
+                ctx.moveTo(b.x, b.y + (b.h/10)*i);
+                ctx.lineTo(b.x + b.w, b.y + (b.h/10)*i);
+            }
+            // Vertical lines
+            for(let i=1; i<3; i++) {
+                ctx.moveTo(b.x + (b.w/3)*i, b.y);
+                ctx.lineTo(b.x + (b.w/3)*i, b.y + b.h);
+            }
+            ctx.stroke();
+            
+            // Shine
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fillRect(b.x + 5, b.y + 5, 5, b.h - 10);
+
+        } else {
+            // Draw Cube
+            ctx.fillStyle = b.color;
+            ctx.strokeStyle = b.color === COLORS.rod ? COLORS.rodBorder : COLORS.cubeBorder;
+            ctx.lineWidth = 2;
+            
+            roundRect(ctx, b.x, b.y, b.w, b.h, 6);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Shine
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.beginPath();
+            ctx.arc(b.x + 8, b.y + 8, 4, 0, Math.PI*2);
+            ctx.fill();
+        }
+        
+        ctx.restore();
+    });
+
+    // Draw Labels
+    ctx.font = "20px Roboto";
+    ctx.fillStyle = "rgba(0,0,0,0.3)";
+    ctx.textAlign = "center";
+    ctx.fillText("TENS", width * 0.2, height * 0.15);
+    ctx.fillText("ONES", width * 0.2, height * 0.15 + 140);
+    
+    ctx.fillText("TENS", width * 0.5, height * 0.15);
+    ctx.fillText("ONES", width * 0.5, height * 0.15 + 140);
+    
+    ctx.fillText("RESULT", width * 0.75, height * 0.15);
+
+    requestAnimationFrame(loop);
+}
+
+// Helper for rounded rects
+function roundRect(ctx, x, y, w, h, r) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+}
+
+// Start
+init();
+
+</script>
+</body>
+</html>
