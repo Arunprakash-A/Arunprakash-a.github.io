@@ -1,5 +1,5 @@
 ---
-title: "Interactive Science Visualizations — Learn by Exploring"
+title: "Building Interactive Simulations for My Daughter"
 date: 2026-06-15
 tags: education visualization physics ml
 key: "SciViz0615"
@@ -7,7 +7,7 @@ comment: true
 mathjax: false
 ---
 
-I built a small collection of browser-based interactive simulations for students — no installation, no login, just open and explore. Each one lets you manipulate the parameters and see the physics or math respond in real time.
+My 6-year-old daughter asked me about the phases of the moon. I tried explaining it using pen and paper, hand-waving in the air — she got a bit of it. Like every kid, she watches space cartoons and videos on YouTube. Suddenly I thought of building an interactive simulation like in PhET. I searched PhET, and I didn't find any app for explaining moon phases. Then I turned to Claude. As usual, it built beautiful applets with a few rounds of feedback. Just imagine the impact this can have on the education sector. Here are some of the applets.
 
 👉 **[Open Science Explorer](/apps/)** — the full hub with all four apps.
 
