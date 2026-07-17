@@ -3,8 +3,8 @@
 layout: page
 keywords: "Estimation, Jupyter notebook"
 title: "Linear Estimator for a Random Process"
-date: 2021-05-21
-tags: Estimator, Linearity, Probability, Jupyter-Notebook
+date: 2021-05-25
+tags: Probability Mathematics
 key: "LERP-2105"
 comment: true
 ---

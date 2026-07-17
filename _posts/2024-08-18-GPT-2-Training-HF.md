@@ -1,7 +1,7 @@
 ---
 title: "Pre-training GPT-2 from scratch"
 date: 2024-08-18
-tags: DL LLM Coding
+tags: LLM Deep-Learning PyTorch
 key: "PGMS1808" 
 pageview: true
 comment: true

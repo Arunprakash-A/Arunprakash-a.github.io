@@ -1,7 +1,7 @@
 ---
 title: "Representation Learning"
 date: 2023-09-20
-tags: ML
+tags: Machine-Learning Deep-Learning
 key: "RL0920" 
 comment: true
 mathjax: true

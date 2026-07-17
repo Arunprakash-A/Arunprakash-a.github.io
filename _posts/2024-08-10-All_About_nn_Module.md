@@ -1,7 +1,7 @@
 ---
 title: "All About nn.Modules in Pytorch"
 date: 2024-08-10
-tags: DL
+tags: PyTorch Deep-Learning
 key: "AAnP1008" 
 comment: true
 mathjax: true

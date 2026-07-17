@@ -3,7 +3,7 @@ layout: page
 keywords: "Deep-Learning, Gradient, Loss-Surface"
 title: "A Point in Parameter Space and Fitting A Line in sample space"
 date: 2021-12-20
-tags: ML Geogebra
+tags: Machine-Learning Optimization Geogebra
 key: "MPPS-2012"
 comment: true
 ---

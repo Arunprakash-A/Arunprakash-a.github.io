@@ -1,7 +1,7 @@
 ---
 title: "Model Training Strategies"
 date: 2024-07-19
-tags: LLM DL
+tags: LLM Deep-Learning
 key: "MTS0719" 
 comment: true
 mathjax: true

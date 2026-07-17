@@ -1,7 +1,7 @@
 ---
 title: "Experimental Settings of Famous Language Models"
 date: 2023-12-26
-tags: ML DL LLM
+tags: LLM Deep-Learning
 key: "ESFLM1226" 
 comment: true
 mathjax: true

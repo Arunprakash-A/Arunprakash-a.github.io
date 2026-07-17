@@ -1,7 +1,7 @@
 ---
 title: "Introduction to Large Language Models - Course"
 date: 2024-06-15
-tags: LLM
+tags: LLM Education
 key: "ILLM0615" 
 comment: true
 mathjax: true

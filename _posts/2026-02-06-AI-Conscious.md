@@ -1,7 +1,7 @@
 ---
 title: "Will Conscious AI Conquer or Be Content?"
 date: 2026-02-06
-tags: spiritual, AI
+tags: AI Spiritual
 key: "AC0206" 
 comment: true
 mathjax: true

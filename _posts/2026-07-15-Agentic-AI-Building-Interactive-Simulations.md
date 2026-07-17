@@ -1,7 +1,7 @@
 ---
 title: "Open Agents for Building Interactive Simulations"
 date: 2026-07-15
-tags: education visualization physics math llm agentic-ai
+tags: Agentic-AI LLM Visualization Education
 key: "AgenticSims0715"
 comment: true
 mathjax: false

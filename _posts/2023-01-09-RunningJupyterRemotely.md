@@ -1,8 +1,8 @@
 ---
 layout: page
 title: "Running Jupyter Notebook from a Remote Server"
-date: 2023-09-01
-tags: DL
+date: 2023-01-09
+tags: Tools Deep-Learning
 key: "RJNRS9801" 
 comment: true
 mathjax: true

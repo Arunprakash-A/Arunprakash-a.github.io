@@ -3,7 +3,7 @@ layout: page
 keywords: "Deep-Learning, Transformers"
 title: "Making Sense of Positional Encoding in Transformer"
 date: 2022-04-16
-tags: DL Transformers
+tags: Deep-Learning Transformers
 key: "MSPET-0416"
 comment: true
 ---

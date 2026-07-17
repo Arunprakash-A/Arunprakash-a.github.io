@@ -1,7 +1,7 @@
 ---
 title: "Maximum Likelihood Estimation"
 date: 2023-11-05
-tags: ML Math
+tags: Probability Mathematics Machine-Learning
 key: "EP0919" 
 comment: true
 mathjax: true

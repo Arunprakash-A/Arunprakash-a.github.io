@@ -1,3 +1,321 @@
 /* start custom scss snippet */
 
+/* ==========================================================================
+   Minimal / academic re-skin
+   Overrides the TeXt theme's default palette + type system with a quieter,
+   paper-and-ink look: warm off-white background, a serif for reading,
+   a single muted accent, and flat (non-rounded, non-shadowed) chrome.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600&display=swap');
+
+$ink:         #1c1a17;
+$ink-soft:    #37342c;
+$ink-faint:   #726c5e;
+$paper:       #faf8f4;
+$paper-alt:   #f2efe6;
+$rule:        #e2ddce;
+$accent:      #8a3324;
+$accent-soft: rgba(#8a3324, .08);
+
+$serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+$sans:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+
+/* -- base ---------------------------------------------------------------- */
+
+html, body {
+  background: $paper;
+}
+
+body {
+  font-family: $sans;
+  color: $ink-soft;
+
+  ::-moz-selection { background: $accent-soft; }
+  ::selection      { background: $accent-soft; }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: $serif;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: $ink;
+}
+
+a {
+  font-weight: 500;
+  color: $accent;
+  &:hover, &:focus {
+    color: $ink;
+  }
+}
+
+strong { color: $ink; }
+
+hr {
+  border: none;
+  border-top: 1px solid $rule;
+}
+
+/* flatten corners + shadows everywhere for a plainer, printed feel */
+* {
+  box-shadow: none !important;
+}
+.button, .button--rounded, .card, .card__image, .card__image > img,
+code, pre, .highlighter-rouge > .highlight > pre,
+figure.highlight > pre {
+  border-radius: 2px !important;
+}
+.author-profile__avatar {
+  border-radius: 50% !important;
+}
+
+/* -- header / footer: drop the colour block, use a hairline rule -------- */
+
+.header {
+  background: $paper !important;
+  border-bottom: 1px solid $rule;
+  a { color: $ink-soft; }
+}
+
+.header__brand {
+  & > svg { display: none; }
+  & > a {
+    font-family: $serif;
+    font-weight: 600;
+    color: $ink !important;
+    letter-spacing: -.01em;
+  }
+}
+
+.navigation__item {
+  a { color: $ink-faint; }
+}
+.navigation__item--active {
+  a { color: $ink !important; }
+  &::after { border-color: $accent !important; }
+}
+
+.footer {
+  background: $paper-alt !important;
+  border-top: 1px solid $rule;
+  color: $ink-faint;
+  a { color: $ink-faint; }
+}
+
+/* -- buttons -------------------------------------------------------------- */
+
+.button--primary {
+  background-color: $ink !important;
+  color: $paper !important;
+  &:hover { background-color: $accent !important; }
+}
+.button--secondary {
+  background-color: $paper-alt !important;
+  color: $ink-soft !important;
+  border: 1px solid $rule;
+}
+.button--outline-primary {
+  color: $accent !important;
+  border-color: $accent !important;
+  &:hover { background-color: $accent !important; color: $paper !important; }
+}
+.navigation__item--active a,
+.tag-button, .tag-button-1, .tag-button-2, .tag-button-3, .tag-button-4 {
+  font-family: $sans;
+}
+
+/* -- cards / article list -------------------------------------------------- */
+
+.card {
+  border: 1px solid $rule;
+  background: #fff;
+}
+.card__header, .card__header > a {
+  color: $ink;
+}
+.item__meta {
+  color: $ink-faint;
+}
+
+/* -- article content: serif reading column -------------------------------- */
+
+.article__content {
+  font-family: $serif;
+  font-size: 1.08rem;
+  color: $ink-soft;
+
+  code {
+    font-family: Menlo, Monaco, Consolas, monospace;
+    background-color: $paper-alt;
+  }
+  .highlighter-rouge > .highlight, figure.highlight {
+    & > pre { background-color: $paper-alt; }
+  }
+  blockquote {
+    color: $ink-faint;
+    border-left-color: $rule;
+  }
+  table {
+    th, td { border-color: $rule; }
+    thead, tfoot { background-color: $paper-alt; }
+  }
+}
+
+.article__header h1 {
+  font-weight: 700;
+}
+
+/* -- talks page ------------------------------------------------------------ */
+
+.talks-intro {
+  max-width: 40rem;
+  margin-top: -.5rem !important;
+  color: $ink-faint;
+  font-size: 1.08rem;
+}
+
+.talks {
+  margin-top: map-get($spacers, 4);
+
+  .talk {
+    padding: map-get($spacers, 5) 0;
+    border-bottom: 1px solid $rule;
+    &:first-child { padding-top: 0; }
+    &:last-child { padding-bottom: map-get($spacers, 3); border-bottom: none; }
+
+    h2 {
+      margin-top: map-get($spacers, 1) !important;
+      padding-bottom: map-get($spacers, 2);
+      border-color: $rule;
+    }
+
+    ul {
+      margin: map-get($spacers, 2) 0 0 0;
+      list-style: none;
+      font-family: $sans;
+      font-size: .95rem;
+      color: $ink-faint;
+      li {
+        position: relative;
+        padding-left: 1.15rem;
+        margin: map-get($spacers, 1) 0;
+        &::before {
+          content: "\2014";
+          position: absolute;
+          left: 0;
+          color: $accent;
+        }
+      }
+    }
+  }
+
+  .talk__kicker {
+    margin: 0 !important;
+    font-family: $sans;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: $accent;
+  }
+
+  .talk__video {
+    max-width: 640px;
+    margin: map-get($spacers, 3) 0 map-get($spacers, 1) 0;
+    border: 1px solid $rule;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .talk__link {
+    display: inline-block;
+    font-family: $sans;
+    font-size: .85rem;
+    font-weight: 600;
+  }
+}
+
+/* -- archive page ------------------------------------------------------------ */
+
+.layout--archive {
+  .site-tags {
+    margin-bottom: map-get($spacers, 4);
+    .menu {
+      flex-wrap: wrap;
+    }
+    .tag-button {
+      background-color: transparent !important;
+      color: $ink-faint !important;
+      border: 1px solid $rule;
+      border-radius: 2px !important;
+      font-family: $sans;
+      font-size: .8rem;
+      font-weight: 500;
+      &:hover {
+        color: $ink !important;
+        border-color: $ink-faint;
+      }
+      &.focus {
+        background-color: $ink !important;
+        color: $paper !important;
+        border-color: $ink;
+      }
+      .tag-button__count {
+        color: inherit;
+        opacity: .6;
+      }
+    }
+  }
+
+  .article-list__group-header {
+    padding-bottom: map-get($spacers, 2);
+    margin-top: map-get($spacers, 5) !important;
+    font-size: 1.6rem;
+    border-bottom: 1px solid $rule;
+  }
+
+  .items {
+    .item {
+      padding: map-get($spacers, 2) 0;
+      border-bottom: 1px solid $rule;
+      &:last-child { border-bottom: none; }
+    }
+    .item__content {
+      display: flex;
+      align-items: baseline;
+      gap: map-get($spacers, 3);
+      @include media-breakpoint-down(md) {
+        flex-direction: column;
+        gap: map-get($spacers, 1);
+      }
+    }
+    .item__meta {
+      flex: 0 0 6rem;
+      padding-right: 0;
+      font-family: $sans;
+      font-size: .8rem;
+      color: $ink-faint;
+    }
+    .item__header {
+      font-family: $serif;
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: $ink;
+      &:hover { color: $accent; }
+    }
+  }
+}
+
+/* -- author profile / tags -------------------------------------------------- */
+
+.author-profile {
+  background-color: $paper-alt;
+  border: 1px solid $rule;
+}
+.author-profile__name {
+  font-family: $serif;
+  a { color: $ink; }
+}
+
 /* end custom scss snippet */

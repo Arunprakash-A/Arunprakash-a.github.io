@@ -1,7 +1,7 @@
 ---
 title: "Building Interactive Simulations for My Daughter"
 date: 2026-06-15
-tags: education visualization physics ml
+tags: Education Visualization Physics
 key: "SciViz0615"
 comment: true
 mathjax: false

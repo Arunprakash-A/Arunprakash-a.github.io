@@ -2,7 +2,7 @@
 layout: page
 title: "Softmax and Its Derivative"
 date: 2023-06-25
-tags: ML DL Transformers
+tags: Deep-Learning Transformers Mathematics
 key: "SID0625"
 comment: true
 mathjax: true

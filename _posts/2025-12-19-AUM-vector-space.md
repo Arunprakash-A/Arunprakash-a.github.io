@@ -1,7 +1,7 @@
 ---
 title: "🕉️ (AUM) and the Vector Space"
 date: 2025-12-19
-tags: spiritual
+tags: Spiritual Mathematics
 key: "s1225" 
 comment: true
 mathjax: true
