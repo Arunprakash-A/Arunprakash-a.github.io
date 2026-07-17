@@ -105,6 +105,34 @@ figure.highlight > pre {
   border-radius: 50% !important;
 }
 
+/* -- guru portrait (circular, framed) used in glossary-style posts ------ */
+
+.guru-portrait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: map-get($spacers, 4) auto;
+  text-align: center;
+
+  img {
+    display: block;
+    width: 15rem;
+    height: 15rem;
+    margin: 0 auto;
+    object-fit: cover;
+    object-position: 10% 10%;
+    border-radius: 50%;
+    border: 1px solid var(--rule);
+  }
+
+  figcaption {
+    margin-top: map-get($spacers, 2);
+    font-family: $sans;
+    font-size: .85rem;
+    color: var(--ink-faint);
+  }
+}
+
 /* -- header / footer: drop the colour block, use a hairline rule -------- */
 
 .header {
@@ -232,6 +260,114 @@ a > .item__header, a.item__header, .item__header > a {
     font-size: .8rem;
     color: var(--ink-faint);
   }
+}
+
+/* -- topic cards (click-to-expand <details> grid, used in glossary-style
+   posts). Native <details>/<summary> so it works with zero JS and stays
+   keyboard/screen-reader accessible; the `name` attribute (set per-instance
+   in the post) groups them into an exclusive accordion on browsers that
+   support it, and degrades harmlessly to "many open at once" elsewhere. -- */
+
+.glossary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: map-get($spacers, 3);
+  margin: map-get($spacers, 4) 0;
+
+  details {
+    grid-column: span 1;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    background: var(--paper);
+    transition: border-color .2s ease, background-color .2s ease, transform .15s ease;
+
+    &:not([open]):hover {
+      border-color: var(--ink-faint);
+      background: var(--paper-alt);
+      transform: translateY(-1px);
+    }
+    &[open] {
+      grid-column: 1 / -1;
+      border-color: var(--accent);
+      background: var(--paper-alt);
+    }
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+    gap: map-get($spacers, 3);
+    padding: map-get($spacers, 3);
+    cursor: pointer;
+    list-style: none;
+    outline: none;
+    &::-webkit-details-marker { display: none; }
+    &::marker { content: ""; }
+  }
+
+  .g-card__icon {
+    flex: 0 0 auto;
+    width: 2.4rem;
+    height: 2.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 1rem;
+  }
+
+  .g-card__text {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .g-card__title {
+    display: block;
+    font-family: $serif;
+    font-weight: 600;
+    font-size: 1.02rem;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  .g-card__teaser {
+    display: block;
+    margin-top: .2rem;
+    font-family: $sans;
+    font-size: .78rem;
+    color: var(--ink-faint);
+  }
+
+  .g-card__chevron {
+    flex: 0 0 auto;
+    color: var(--ink-faint);
+    transition: transform .2s ease, color .2s ease;
+  }
+  details[open] .g-card__chevron {
+    transform: rotate(180deg);
+    color: var(--accent);
+  }
+
+  .g-card__body {
+    padding: map-get($spacers, 1) map-get($spacers, 3) map-get($spacers, 4);
+    border-top: 1px solid var(--rule);
+    font-family: $serif;
+    font-size: 1rem;
+    color: var(--ink-soft);
+    animation: g-card-in .3s ease;
+
+    p { margin-top: map-get($spacers, 3); }
+    strong { color: var(--ink); }
+    table { font-size: .9rem; }
+    blockquote { font-family: $serif; }
+  }
+}
+
+@keyframes g-card-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* -- article content: serif reading column -------------------------------- */
