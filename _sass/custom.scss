@@ -5,18 +5,39 @@
    Overrides the TeXt theme's default palette + type system with a quieter,
    paper-and-ink look: warm off-white background, a serif for reading,
    a single muted accent, and flat (non-rounded, non-shadowed) chrome.
+
+   Colors are CSS custom properties so the theme can be flipped at runtime
+   (see .js-theme-toggle in header.html + the init script in head/custom.html)
+   without a second stylesheet. --code-bg is intentionally NOT re-themed for
+   dark mode: the syntax-highlight token colors (skins/highlight/tomorrow)
+   are fixed dark-on-light, so code blocks stay on a light card in both
+   themes rather than becoming unreadable.
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600&display=swap');
 
-$ink:         #1c1a17;
-$ink-soft:    #37342c;
-$ink-faint:   #726c5e;
-$paper:       #faf8f4;
-$paper-alt:   #f2efe6;
-$rule:        #e2ddce;
-$accent:      #8a3324;
-$accent-soft: rgba(#8a3324, .08);
+:root {
+  --ink:         #1c1a17;
+  --ink-soft:    #37342c;
+  --ink-faint:   #726c5e;
+  --paper:       #faf8f4;
+  --paper-alt:   #f2efe6;
+  --code-bg:     #f2efe6;
+  --rule:        #e2ddce;
+  --accent:      #8a3324;
+  --accent-soft: rgba(138, 51, 36, .08);
+}
+
+:root[data-theme="dark"] {
+  --ink:         #f1ece0;
+  --ink-soft:    #d7d0c0;
+  --ink-faint:   #97907e;
+  --paper:       #1b1a17;
+  --paper-alt:   #262420;
+  --rule:        #3c382f;
+  --accent:      #dd8a68;
+  --accent-soft: rgba(221, 138, 104, .14);
+}
 
 $serif: "Source Serif 4", Georgia, "Times New Roman", serif;
 $sans:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -24,37 +45,51 @@ $sans:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial
 /* -- base ---------------------------------------------------------------- */
 
 html, body {
-  background: $paper;
+  background: var(--paper);
+}
+
+html {
+  transition: background-color .2s ease;
+}
+
+/* the theme hardcodes these two containers to $background-color (white) at
+   compile time; without this override the header/footer would flip to the
+   dark palette but the actual page body between them would stay white */
+.page__main-inner,
+.page__sidebar {
+  background-color: var(--paper) !important;
+  transition: background-color .2s ease;
 }
 
 body {
   font-family: $sans;
-  color: $ink-soft;
+  color: var(--ink-soft);
+  transition: background-color .2s ease, color .2s ease;
 
-  ::-moz-selection { background: $accent-soft; }
-  ::selection      { background: $accent-soft; }
+  ::-moz-selection { background: var(--accent-soft); }
+  ::selection      { background: var(--accent-soft); }
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: $serif;
   font-weight: 600;
   letter-spacing: -.01em;
-  color: $ink;
+  color: var(--ink);
 }
 
 a {
   font-weight: 500;
-  color: $accent;
+  color: var(--accent);
   &:hover, &:focus {
-    color: $ink;
+    color: var(--ink);
   }
 }
 
-strong { color: $ink; }
+strong { color: var(--ink); }
 
 hr {
   border: none;
-  border-top: 1px solid $rule;
+  border-top: 1px solid var(--rule);
 }
 
 /* flatten corners + shadows everywhere for a plainer, printed feel */
@@ -73,9 +108,10 @@ figure.highlight > pre {
 /* -- header / footer: drop the colour block, use a hairline rule -------- */
 
 .header {
-  background: $paper !important;
-  border-bottom: 1px solid $rule;
-  a { color: $ink-soft; }
+  background: var(--paper) !important;
+  border-bottom: 1px solid var(--rule);
+  transition: background-color .2s ease, border-color .2s ease;
+  a { color: var(--ink-soft); }
 }
 
 .header__brand {
@@ -83,42 +119,73 @@ figure.highlight > pre {
   & > a {
     font-family: $serif;
     font-weight: 600;
-    color: $ink !important;
+    color: var(--ink) !important;
     letter-spacing: -.01em;
   }
 }
 
 .navigation__item {
-  a { color: $ink-faint; }
+  /* !important needed: the theme's own `.header a:link, .header a:visited`
+     rule outranks a plain `.navigation__item a` on specificity, so without
+     this the inactive nav items fall back to its hardcoded #333 */
+  a { color: var(--ink-faint) !important; }
 }
 .navigation__item--active {
-  a { color: $ink !important; }
-  &::after { border-color: $accent !important; }
+  a { color: var(--ink) !important; }
+  &::after { border-color: var(--accent) !important; }
+}
+
+/* dark theme: swap the brand + nav text from ink to the warm accent instead
+   of a washed-out grey-on-black */
+:root[data-theme="dark"] {
+  .header__brand > a,
+  .navigation__item a,
+  .navigation__item--active a {
+    color: var(--accent) !important;
+  }
+  .navigation__item a {
+    opacity: .75;
+  }
+  .navigation__item--active a {
+    opacity: 1;
+  }
+}
+
+/* -- theme toggle ---------------------------------------------------------- */
+
+.theme-toggle {
+  margin-left: map-get($spacers, 2);
+  .icon-light { display: none; }
+}
+:root[data-theme="dark"] .theme-toggle {
+  .icon-dark  { display: none; }
+  .icon-light { display: inline-block; }
 }
 
 .footer {
-  background: $paper-alt !important;
-  border-top: 1px solid $rule;
-  color: $ink-faint;
-  a { color: $ink-faint; }
+  background: var(--paper-alt) !important;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-faint);
+  transition: background-color .2s ease, border-color .2s ease;
+  a { color: var(--ink-faint); }
 }
 
 /* -- buttons -------------------------------------------------------------- */
 
 .button--primary {
-  background-color: $ink !important;
-  color: $paper !important;
-  &:hover { background-color: $accent !important; }
+  background-color: var(--ink) !important;
+  color: var(--paper) !important;
+  &:hover { background-color: var(--accent) !important; }
 }
 .button--secondary {
-  background-color: $paper-alt !important;
-  color: $ink-soft !important;
-  border: 1px solid $rule;
+  background-color: var(--paper-alt) !important;
+  color: var(--ink-soft) !important;
+  border: 1px solid var(--rule);
 }
 .button--outline-primary {
-  color: $accent !important;
-  border-color: $accent !important;
-  &:hover { background-color: $accent !important; color: $paper !important; }
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  &:hover { background-color: var(--accent) !important; color: var(--paper) !important; }
 }
 .navigation__item--active a,
 .tag-button, .tag-button-1, .tag-button-2, .tag-button-3, .tag-button-4 {
@@ -128,14 +195,24 @@ figure.highlight > pre {
 /* -- cards / article list -------------------------------------------------- */
 
 .card {
-  border: 1px solid $rule;
-  background: #fff;
+  border: 1px solid var(--rule);
+  background: var(--paper);
 }
 .card__header, .card__header > a {
-  color: $ink;
+  color: var(--ink) !important;
+  &:hover, &:focus { color: var(--accent) !important; }
 }
 .item__meta {
-  color: $ink-faint;
+  color: var(--ink-faint);
+}
+
+/* post title links (home feed uses `.item__header` via the 'item' list
+   type; archive uses it via 'brief'). The theme hardcodes these to black
+   with a hover-only red via the link-colors mixin, whose compiled
+   `:link`/`:visited` selectors outrank a plain override, hence !important */
+a > .item__header, a.item__header, .item__header > a {
+  color: var(--ink) !important;
+  &:hover, &:focus { color: var(--accent) !important; }
 }
 
 /* -- article content: serif reading column -------------------------------- */
@@ -143,22 +220,23 @@ figure.highlight > pre {
 .article__content {
   font-family: $serif;
   font-size: 1.08rem;
-  color: $ink-soft;
+  color: var(--ink-soft);
 
   code {
     font-family: Menlo, Monaco, Consolas, monospace;
-    background-color: $paper-alt;
+    color: #37342c;
+    background-color: var(--code-bg);
   }
   .highlighter-rouge > .highlight, figure.highlight {
-    & > pre { background-color: $paper-alt; }
+    & > pre { background-color: var(--code-bg); }
   }
   blockquote {
-    color: $ink-faint;
-    border-left-color: $rule;
+    color: var(--ink-faint);
+    border-left-color: var(--rule);
   }
   table {
-    th, td { border-color: $rule; }
-    thead, tfoot { background-color: $paper-alt; }
+    th, td { border-color: var(--rule); }
+    thead, tfoot { background-color: var(--paper-alt); }
   }
 }
 
@@ -171,7 +249,7 @@ figure.highlight > pre {
 .talks-intro {
   max-width: 40rem;
   margin-top: -.5rem !important;
-  color: $ink-faint;
+  color: var(--ink-faint);
   font-size: 1.08rem;
 }
 
@@ -180,14 +258,14 @@ figure.highlight > pre {
 
   .talk {
     padding: map-get($spacers, 5) 0;
-    border-bottom: 1px solid $rule;
+    border-bottom: 1px solid var(--rule);
     &:first-child { padding-top: 0; }
     &:last-child { padding-bottom: map-get($spacers, 3); border-bottom: none; }
 
     h2 {
       margin-top: map-get($spacers, 1) !important;
       padding-bottom: map-get($spacers, 2);
-      border-color: $rule;
+      border-color: var(--rule);
     }
 
     ul {
@@ -195,7 +273,7 @@ figure.highlight > pre {
       list-style: none;
       font-family: $sans;
       font-size: .95rem;
-      color: $ink-faint;
+      color: var(--ink-faint);
       li {
         position: relative;
         padding-left: 1.15rem;
@@ -204,7 +282,7 @@ figure.highlight > pre {
           content: "\2014";
           position: absolute;
           left: 0;
-          color: $accent;
+          color: var(--accent);
         }
       }
     }
@@ -217,13 +295,13 @@ figure.highlight > pre {
     font-weight: 600;
     letter-spacing: .09em;
     text-transform: uppercase;
-    color: $accent;
+    color: var(--accent);
   }
 
   .talk__video {
     max-width: 640px;
     margin: map-get($spacers, 3) 0 map-get($spacers, 1) 0;
-    border: 1px solid $rule;
+    border: 1px solid var(--rule);
     border-radius: 2px;
     overflow: hidden;
   }
@@ -246,20 +324,20 @@ figure.highlight > pre {
     }
     .tag-button {
       background-color: transparent !important;
-      color: $ink-faint !important;
-      border: 1px solid $rule;
+      color: var(--ink-faint) !important;
+      border: 1px solid var(--rule);
       border-radius: 2px !important;
       font-family: $sans;
       font-size: .8rem;
       font-weight: 500;
       &:hover {
-        color: $ink !important;
-        border-color: $ink-faint;
+        color: var(--ink) !important;
+        border-color: var(--ink-faint);
       }
       &.focus {
-        background-color: $ink !important;
-        color: $paper !important;
-        border-color: $ink;
+        background-color: var(--ink) !important;
+        color: var(--paper) !important;
+        border-color: var(--ink);
       }
       .tag-button__count {
         color: inherit;
@@ -272,13 +350,13 @@ figure.highlight > pre {
     padding-bottom: map-get($spacers, 2);
     margin-top: map-get($spacers, 5) !important;
     font-size: 1.6rem;
-    border-bottom: 1px solid $rule;
+    border-bottom: 1px solid var(--rule);
   }
 
   .items {
     .item {
       padding: map-get($spacers, 2) 0;
-      border-bottom: 1px solid $rule;
+      border-bottom: 1px solid var(--rule);
       &:last-child { border-bottom: none; }
     }
     .item__content {
@@ -295,14 +373,12 @@ figure.highlight > pre {
       padding-right: 0;
       font-family: $sans;
       font-size: .8rem;
-      color: $ink-faint;
+      color: var(--ink-faint);
     }
     .item__header {
       font-family: $serif;
       font-size: 1.05rem;
       font-weight: 500;
-      color: $ink;
-      &:hover { color: $accent; }
     }
   }
 }
@@ -310,12 +386,12 @@ figure.highlight > pre {
 /* -- author profile / tags -------------------------------------------------- */
 
 .author-profile {
-  background-color: $paper-alt;
-  border: 1px solid $rule;
+  background-color: var(--paper-alt);
+  border: 1px solid var(--rule);
 }
 .author-profile__name {
   font-family: $serif;
-  a { color: $ink; }
+  a { color: var(--ink); }
 }
 
 /* end custom scss snippet */

@@ -18,6 +18,10 @@
         {%- if site.search.provider -%}
           <button class="button button--secondary button--circle search-button js-search-toggle"><i class="fas fa-search"></i></button>
         {%- endif -%}
+        <button type="button" class="button button--secondary button--circle theme-toggle js-theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+          <i class="fas fa-moon icon-dark"></i>
+          <i class="fas fa-sun icon-light"></i>
+        </button>
       </div>
       {%- if site.data.navigation.header -%}
       <nav class="navigation">
@@ -42,3 +46,15 @@
       {%- endif -%}
     </div>
   </header>
+<script>
+  (function () {
+    var toggle = document.querySelector('.js-theme-toggle');
+    if (!toggle) { return; }
+    toggle.addEventListener('click', function () {
+      var root = document.documentElement;
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+    });
+  })();
+</script>
