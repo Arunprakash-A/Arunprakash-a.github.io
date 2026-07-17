@@ -215,6 +215,25 @@ a > .item__header, a.item__header, .item__header > a {
   &:hover, &:focus { color: var(--accent) !important; }
 }
 
+/* -- inline essay figures (hand-drawn SVG diagrams in post bodies) -------- */
+
+.essay-figure {
+  max-width: 34rem;
+  margin: map-get($spacers, 4) auto;
+  text-align: center;
+  svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  figcaption {
+    margin-top: map-get($spacers, 2);
+    font-family: $sans;
+    font-size: .8rem;
+    color: var(--ink-faint);
+  }
+}
+
 /* -- article content: serif reading column -------------------------------- */
 
 .article__content {
