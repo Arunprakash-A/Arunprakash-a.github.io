@@ -1,8 +1,8 @@
 ---
 title: "வேதாந்தக் குறிப்புகள் — குருமுகமாகக் கேட்டறிந்தவை"
-date: 2026-07-17
+date: 2026-07-18
 tags: Spiritual Tamil
-key: "VG1707"
+key: "VG1807"
 comment: true
 aside:
   toc: false
