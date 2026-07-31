@@ -28,6 +28,26 @@ two runs is the one component under test.
 I'm keeping the "how" out of this post — that write-up is still in
 progress. What follows is just the training behavior, plotted plainly.
 
+### Model & training configuration
+
+| Setting | Value |
+|---|---|
+| Model | depth-6 ViT-Ti/16 (patch 16, 224×224 input, d_model = 192) |
+| Dataset | ImageNet-1K (ILSVRC-2012) — 1,271,167 train / 10,000 val / 50,000 test |
+| Optimizer | AdamW — lr 1e-3, weight decay 0.05, cosine schedule, 5-epoch warmup |
+| Batch size | 1024 |
+| Epochs | 100 (both runs) |
+| Precision | fp16 (mixed precision) |
+| Label smoothing | 0.1 |
+| Activation — GELU | fixed, no learnable parameters |
+| Activation — Proposed | learnable, +5 parameters total (network-wide) |
+| Trainable parameters | 3,048,232 (GELU) vs. 3,048,237 (Proposed) |
+
+Everything above is identical between the two runs except the activation
+row — same backbone, same optimizer, same data. The entire footprint of
+"Proposed" is five extra scalars shared across the whole network, not
+five per layer.
+
 ## Loss
 
 <img align="center" src="/images/Training-ImageNet1K-Standard-vs-Our-Approach/loss_curves.png">
