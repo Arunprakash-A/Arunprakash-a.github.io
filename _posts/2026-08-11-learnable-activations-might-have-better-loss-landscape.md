@@ -1,5 +1,5 @@
 ---
-title: "Five globally shared activation parameters substantially reshape the optimization geometry of the model."
+title: "Five Parameters, a Different Optimization Geometry"
 date: 2026-08-11
 tags: [Deep-Learning, Research]
 excerpt: "One learnable nonlinearity, shared by every layer, tested head-to-head against a standard fixed activation on real ImageNet-1K."
