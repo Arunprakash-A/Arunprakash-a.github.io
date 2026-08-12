@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Learnable Activations Might Generate a Smoother Loss Landscape — Add 5 Parameters, Get +2pp on ImageNet-1K"
+title: "Globally Learnable Activations Might Generate a Smoother Loss Landscape — Add 5 Parameters, Get +2pp on ImageNet-1K"
 date: 2026-08-11
 tags: [Deep-Learning, Research]
 excerpt: "One learnable nonlinearity, shared by every layer, tested head-to-head against a standard fixed activation on real ImageNet-1K."
