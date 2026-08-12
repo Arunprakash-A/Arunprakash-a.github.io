@@ -6,7 +6,7 @@ tags: [Deep-Learning, Research]
 excerpt: "One learnable nonlinearity, shared by every layer, tested head-to-head against a standard fixed activation on real ImageNet-1K."
 ---
 
-<img src="images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_hero.png" alt="Two curves for the same activation function: the fixed curve we default to, and the curve five learnable coefficients converged to after training" style="max-width:100%">
+<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_hero.png" alt="Two curves for the same activation function: the fixed curve we default to, and the curve five learnable coefficients converged to after training" style="max-width:100%">
 
 While building any neural network, one of the most consequential choices is
 which activation function to use. There are hundreds of activation functions
@@ -95,7 +95,7 @@ rather than widening it. Best-validation accuracy tells the same story:
 
 ### It's not just a better final number — it's ahead the entire time
 
-<img src="images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_curves.png" alt="Validation accuracy and training loss over 100 epochs, Fixed vs Learnable, mean of 5 seeds" style="max-width:100%">
+<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_curves.png" alt="Validation accuracy and training loss over 100 epochs, Fixed vs Learnable, mean of 5 seeds" style="max-width:100%">
 
 Learnable tracks above Fixed from very early in training and never falls
 back. It reaches Fixed's *entire 100-epoch* validation accuracy at epoch 83
@@ -104,7 +104,7 @@ table.
 
 ### The gap is negative at just 2 of 500 checkpoints — and recovers immediately
 
-<img src="images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_gap.png" alt="Learnable minus Fixed validation accuracy gap at every matched epoch, 5 seeds" style="max-width:100%">
+<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_gap.png" alt="Learnable minus Fixed validation accuracy gap at every matched epoch, 5 seeds" style="max-width:100%">
 
 Five seeds × 100 epochs = 500 matched comparison points. With four seeds this
 gap had never gone negative; the fifth seed breaks that streak, barely — seed
@@ -124,7 +124,7 @@ during training; the fourth and fifth seeds above confirm the accuracy gain
 but weren't checkpointed at that resolution, so this section and the next two
 stay 3-seed.
 
-<img src="images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_coeffs.png" alt="All five coefficients over training, mean of 3 seeds, band = min-max" style="max-width:100%">
+<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_coeffs.png" alt="All five coefficients over training, mean of 3 seeds, band = min-max" style="max-width:100%">
 
 The coefficients move a lot early — a sharp swing in the first ~5 epochs,
 then a slower drift for the rest of training — and they land in essentially
@@ -134,7 +134,7 @@ independently-initialized runs converge to the same curve. That's not
 noise; that's the training problem pulling on the activation the same way
 every time.
 
-<img src="images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_activation.png" alt="The learned activation curve at several epochs, compared to the fixed activation, weighted by where real pre-activations land" style="max-width:100%">
+<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_activation.png" alt="The learned activation curve at several epochs, compared to the fixed activation, weighted by where real pre-activations land" style="max-width:100%">
 
 Panel A is the part that matters: zoomed to the range where the network's
 actual pre-activations live (panel C shows that distribution directly), the
@@ -181,7 +181,7 @@ in any direction, i.e. a Lipschitz-constant proxy) and the **stable rank**
 (‖W‖²_F / ‖W‖²_2 — how spread the weight's energy is across directions, versus
 concentrated in one).
 
-<img src="images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_landscape_summary.png" alt="fc1 spectral norm and stable rank over training, standard vs Global FAct K=2, mean over 6 transformer blocks with min-max band" style="max-width:100%">
+<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_landscape_summary.png" alt="fc1 spectral norm and stable rank over training, standard vs Global FAct K=2, mean over 6 transformer blocks with min-max band" style="max-width:100%">
 
 For the up-projection (fc1), the pattern is completely consistent: at every
 checkpointed epoch, in **every one of the 6 blocks**, Learnable's weight
@@ -204,7 +204,7 @@ artifact, or does it hold under plain SGD too? That run (lr=0.05, momentum
 has reached epoch 42/100, fact_k2_global_sgd_seed1 epoch 26/100 — so this is
 an early look, not a finished comparison.
 
-<img src="images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_epochs_to_match_40ep.png" alt="AdamW vs SGD validation accuracy, both variants, first 40 epochs, seed 1 -- SGD runs marked incomplete" style="max-width:100%">
+<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_epochs_to_match_40ep.png" alt="AdamW vs SGD validation accuracy, both variants, first 40 epochs, seed 1 -- SGD runs marked incomplete" style="max-width:100%">
 
 Two things are visible in the partial data. First, SGD is converging much
 slower than AdamW for *both* variants under these hyperparameters — at the
