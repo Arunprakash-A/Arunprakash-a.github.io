@@ -168,7 +168,7 @@ computing.
   empty.** The curves diverge sharply past |t| ≈ 2, but essentially no real
   pre-activation ever lands there (0.013% outside ±π, none outside ±2π).
 
-## Is the loss landscape actually smoother?
+## Does FAct Reshape the Network’s Optimization Geometry?
 
 A direct answer would need the Hessian of the loss — we don't have that here.
 What we do have is the singular-value spectrum of every FFN weight matrix
