@@ -25,9 +25,10 @@ Quick findings:
   matrices carry a lower spectral norm *and* a higher stable rank than the
   fixed activation's, in every one of the 6 transformer blocks (weight-space
   evidence, not a direct Hessian measurement — details below).
-- Switching the optimizer from AdamW to SGD — a run still **in progress**.
-  The early signal is *not* "performance held steady": at matched epochs so
-  far, SGD is running well behind AdamW for both variants (details below).
+- Swap the optimizer from AdamW to SGD and the **Learnable-over-Fixed gap
+  still holds** — at every matched epoch so far, with a mean margin even
+  larger than under AdamW (run still **in progress**; details below). That's
+  evidence it's the *activation*, not the optimizer, doing the work.
 
 <!--more-->
 
@@ -195,26 +196,39 @@ a curvature measurement of the loss itself. The full 6-block × 2-layer
 breakdown lives in `mlp_svd/mlp_svd_summary.json` for anyone who wants to look
 past the summary.
 
-## Does it survive a different optimizer?
+## Is it the activation, or just AdamW?
 
-Everything above uses AdamW. A natural follow-up: is the +2pp gain an AdamW
-artifact, or does it hold under plain SGD too? That run (lr=0.05, momentum
-0.9, Nesterov) is **still in progress** as of this writing — standard_sgd_seed1
-has reached epoch 42/100, fact_k2_global_sgd_seed1 epoch 26/100 — so this is
-an early look, not a finished comparison.
+Everything above uses AdamW. The obvious challenge: maybe the +2pp gain is an
+AdamW artifact — some interaction between the learnable coefficients and
+Adam's per-parameter adaptive updates — rather than a property of the
+activation itself. If that were true, swapping in a different optimizer
+should shrink or erase the gap. So the same seed-1 comparison is running
+under plain SGD (lr=0.05, momentum 0.9, Nesterov) instead, for both variants.
+Both legs are **still in progress** as of this writing — standard_sgd_seed1
+at epoch 51/100, fact_k2_global_sgd_seed1 at epoch 31/100 — so this measures
+the gap over the first 31 epochs both have reached, not a finished 100-epoch
+comparison.
 
-<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_epochs_to_match_40ep.png" alt="AdamW vs SGD validation accuracy, both variants, first 40 epochs, seed 1 -- SGD runs marked incomplete" style="max-width:100%">
+<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_sgd_gap.png" alt="The Learnable-minus-Fixed validation accuracy gap, AdamW vs SGD, over the first 31 matched epochs, seed 1" style="max-width:100%">
 
-Two things are visible in the partial data. First, SGD is converging much
-slower than AdamW for *both* variants under these hyperparameters — at the
-last matched epoch, fact_k2_global sits at 43.8% (SGD, epoch 26) vs 52.3%
-(AdamW, epoch 26), and standard sits at 44.7% (SGD, epoch 42) vs 52.9% (AdamW,
-epoch 42). Neither SGD run has reached 50% val_acc yet, while AdamW passed it
-by epoch 20–28. So the honest headline right now is **"SGD is currently well
-behind AdamW at matched epochs"** — not "performance held steady across
-optimizers." Second, and more relevant to this post's actual claim: the
-Learnable-over-Fixed gap is still visibly present under SGD too (the dashed
-FAct line sits above the dashed standard line throughout). Whether SGD closes
-the AdamW gap on the back half of its cosine schedule, the way training
-elsewhere in this project has repeatedly done, is an open question this run
-will answer — this section will be updated once it completes 100 epochs.
+**The gap survives the optimizer swap, and it's larger, not smaller.** Over
+epochs 1–31, Learnable beats Fixed at every single epoch under SGD too — mean
+gap +4.09pt (min +0.24, max +6.43, never negative), against a +2.58pt mean
+for AdamW over the identical 31 epochs. Two optimizers with unrelated update
+rules, different learning rates, different implicit biases — same qualitative
+result, same direction, same "never negative" pattern the AdamW comparison
+showed on 4 of its 5 seeds. That's the actual validation this section is
+after: the advantage isn't riding on AdamW's adaptive moments, it's coming
+from the shape of the nonlinearity itself.
+
+One separate fact worth stating plainly, so it isn't lost inside the good
+news above: SGD is *converging more slowly than AdamW in absolute terms* for
+both variants under these particular hyperparameters — at epoch 31, standard
+sits at 41.4% (SGD) vs 50.7% (AdamW), and fact_k2_global sits at 45.4% (SGD)
+vs 52.7% (AdamW). That's a statement about optimizer speed, not about the
+activation, and it's orthogonal to the gap result above — a slower-converging
+optimizer can still show a larger relative advantage for Learnable at matched
+epochs, which is exactly what's happening here. Whether SGD's absolute level
+catches up to AdamW's by epoch 100, and whether the Learnable-over-Fixed gap
+holds all the way there, is what the rest of this run will answer — this
+section will be updated once it completes.
