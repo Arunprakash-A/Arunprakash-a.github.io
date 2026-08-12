@@ -1,5 +1,4 @@
 ---
-layout: post
 title: "Globally Learnable Activations Might Generate a Smoother Loss Landscape — Add 5 Parameters, Get +2pp on ImageNet-1K"
 date: 2026-08-11
 tags: [Deep-Learning, Research]
