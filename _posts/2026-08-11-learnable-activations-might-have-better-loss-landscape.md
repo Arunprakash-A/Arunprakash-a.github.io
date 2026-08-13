@@ -17,6 +17,15 @@ What if we make it learnable over the interval instead of fixing it? Will it
 converge faster? Will it deliver better performance? Here we study exactly
 that, and test it at ImageNet scale.
 
+**What this study is and isn't.** This isn't a run at the state of the art.
+The model here is a small ViT trained on a deliberately plain recipe, and its
+absolute accuracy is nowhere near the top of the ImageNet-1K leaderboard —
+that was never the target. The point is narrower and, I'd argue, more
+interesting: to isolate what happens when a single learnable activation is
+shared across an entire network, holding everything else fixed, and to
+measure that difference cleanly enough to trust it. Every comparison below is
+against a baseline identical in every respect but the activation.
+
 Quick findings:
 
 - It improves performance by **+2pp, at 498 of the 500 matched epoch
@@ -251,3 +260,46 @@ now has both halves answered: the Learnable-over-Fixed gap holds all the way
 to epoch 100, and SGD's absolute level does not close on AdamW's. These are
 single-seed results, unlike the five-seed AdamW comparison above, so they
 carry correspondingly less weight.
+
+## Limitations
+
+**The accuracy is bought with wall-clock time.** A fixed activation like GELU
+is one cheap elementwise op. The learnable one is a truncated Fourier series,
+so every activation site evaluates four transcendental functions — two sines
+and two cosines — instead. Standard FLOP counters miss this entirely: they
+tally matmuls and convolutions, so both variants score an identical 1.283
+GFLOPs forward and 3.791 GFLOPs forward+backward per image. The cost is real
+nonetheless, because sin/cos run on the GPU's special-function units, which
+have far less throughput than the tensor cores doing the matmuls.
+
+Measured back-to-back on an **idle A100-PCIE-40GB** (no other compute running;
+10 warmup + 50 timed iterations, AMP, batch 256 — the actual training
+configuration), averaged over two runs that agreed to within 1%:
+
+| | Fixed | Learnable | overhead |
+|---|---|---|---|
+| training step (batch 256) | 59.7 ms | 132.3 ms | **2.2×** |
+| training, per epoch (1.27M images) | 4.9 min | 11.0 min | **2.2×** |
+| training, full 100-epoch run | ~8.2 h | ~18.3 h | **2.2×** |
+| inference (batch 256) | 0.075 ms/img | 0.179 ms/img | **2.4×** |
+| inference, full 50K test set | ~3.8 s | ~9.0 s | **2.4×** |
+
+**The overhead is hardware-dependent, and strongly so.** The same benchmark on
+an H200 NVL put the training-step overhead at 1.3×, not 2.2×. Newer hardware
+evaluates the transcendentals proportionally faster, so treat 1.3–2.2× as the
+range rather than either endpoint as the number. Batch-1 latency is omitted
+above: it swung by 79% between identical runs, so it measures launch overhead
+and jitter rather than the model.
+
+This matters for how the epoch-83 crossover should be read. Matched *per
+epoch*, Learnable reaches Fixed's final accuracy with ~17% of the schedule
+unused. Matched on *wall-clock*, it does not: 83 epochs at 2.2× costs more
+than 100 epochs at 1×. So the honest summary is better final quality for more
+compute, not the same quality sooner. Whether the Fixed baseline would close
+some of the 1.93pt gap if simply given the extra compute instead is a control
+this study hasn't run, and it's the obvious next experiment.
+
+**Scope.** Everything here is one architecture (a depth-6 ViT-Ti/16) on one
+dataset, at a size and training budget well below what modern ImageNet results
+use. The five-seed evidence is solid at that scale; whether the gap survives
+at greater depth, width, or training length is genuinely untested.
