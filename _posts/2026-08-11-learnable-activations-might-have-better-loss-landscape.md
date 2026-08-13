@@ -67,6 +67,79 @@ good" — it's that *what shape the nonlinearity takes* is doing more work
 than we usually give it credit for, and handing that shape to gradient
 descent is cheap.
 
+## Related work — the idea is not new
+
+Before going further I should be plain about this: **learning the activation
+instead of fixing it is an old idea**, and it has been reinvented
+independently in several communities. Nothing below is a claim to have
+thought of it first.
+
+**Learning a knob inside a fixed shape.** The earliest and most widely
+adopted versions keep the curve and learn a parameter on it — PReLU learns
+the negative slope per channel, Swish learns a β inside x·σ(βx). [Adaptive
+Piecewise Linear units](https://arxiv.org/abs/1412.6830) (Agostinelli et
+al., 2015) go further, learning a sum of hinges per neuron.
+
+**Learning the whole shape from a basis.** A second line throws the shape
+away and learns coefficients over a parametric family.
+[Padé Activation Units](https://arxiv.org/abs/1907.06732) (Molina et al.,
+ICLR 2020) use a rational function P(x)/Q(x), *initialized to approximate a
+standard activation* and then trained end-to-end.
+[Rational neural networks](https://arxiv.org/abs/2004.01902) (Boullé,
+Nakatsukasa & Townsend, NeurIPS 2020) do the same and add approximation
+theory: rational activations match smooth functions with exponentially
+smaller depth than ReLU.
+[DeepLABNet](https://arxiv.org/abs/1911.09257) (Hryniowski & Wong, 2019)
+learns radial basis functions instead.
+[KANs](https://arxiv.org/abs/2404.19756) push it to the limit — every weight
+becomes a learnable spline.
+
+The recipe in this post — pick a basis, initialize its coefficients to a
+known-good activation, let backprop move them — is Padé's recipe with
+cosines swapped in for the rational function.
+
+**Sinusoids specifically.** [SIREN](https://arxiv.org/abs/2006.09661)
+(Sitzmann et al., 2020) made periodic activations respectable, though its
+sine is fixed. More recently [STAF](https://arxiv.org/abs/2502.00869) learns
+Fourier-like amplitudes, frequencies and phases, and [Fourier
+KANs](https://arxiv.org/abs/2409.09323) model the edge function as a Fourier
+series outright. The activation used here is a truncated version of the same
+object.
+
+**And "global" isn't new either.** This is the closest prior work and the one
+I'd point a skeptical reader at first. Jagtap, Kawaguchi & Karniadakis'
+[adaptive activation functions](https://arxiv.org/abs/1906.01170) (JCP 2020)
+introduce a single learnable scalar *defined for the entire network* — they
+call it a global adaptive activation function — and their headline claim is
+that it **accelerates convergence, especially in early training**. Their
+[follow-up](https://royalsocietypublishing.org/doi/abs/10.1098/rspa.2020.0334)
+(RSPA 2020) works out the layer-wise and neuron-wise variants. So both halves
+of "one activation for the whole network, and it converges faster" have been
+claimed before. The early-epoch result later in this post is consistent with
+theirs; treat it as corroboration, not discovery.
+
+**So what is this post actually testing?** Not the function family, and not
+the idea of sharing. Two narrower things:
+
+- **Scale and setting.** Most of the evidence above sits at small scale —
+  MNIST/CIFAR classifiers, PDE solvers, or a network fitting one signal.
+  Jagtap et al.'s global parameter scales a fixed shape inside a PINN;
+  whether a five-coefficient *shape*, shared network-wide, still buys
+  anything inside a transformer trained on 1.27M images for 100 epochs is a
+  separate empirical question. Methods that look good on CIFAR routinely stop
+  looking good at ImageNet scale — KANs, for instance, remain an open problem
+  on real vision datasets.
+- **A controlled measurement.** Five matched seeds, bit-identical
+  initialization, the gap tracked at all 500 epoch checkpoints rather than
+  just the final number, and a paired test across seeds. The activation is
+  the only thing that differs between arms.
+
+One thing this post explicitly does **not** establish: the comparison here is
+two-arm — fixed GELU versus one shared learnable curve. Padé, rational,
+spline and per-layer learnable activations are *not* run as arms. So nothing
+below says a Fourier basis is the right basis, or that sharing globally beats
+sharing per layer. Those are open, and they're the obvious next experiments.
+
 ## The setup
 
 | | |
