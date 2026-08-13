@@ -156,8 +156,20 @@ every layer, and transformer layers aren't doing the same job), and whether
 it holds under a controlled measurement (five matched seeds, bit-identical
 init, all 500 epoch checkpoints, a paired test). And one thing this post does
 **not** establish: it's a two-arm comparison against fixed GELU, with no
-Padé, spline or per-layer arm. The one alternative basis I did try —
-Chebyshev polynomials — failed the way the bullet above says a polynomial
+spline or per-layer arm.
+
+A Padé arm was started and abandoned. A degree-(5,4) rational activation,
+GELU-initialised, shared globally, same recipe — and it would not run under
+mixed precision at all: the division overflows fp16's range even in the
+pole-free form, where the denominator is 1 + Σ|·| and so can never reach
+zero. Forced to fp32, it cost **2,435 s/epoch against this study's 655**,
+which puts a matched 100-epoch run at roughly **68 hours**. It was stopped at
+epoch 3. So the comparison against a rational basis is missing not because it
+was uninteresting but because it was unaffordable — which is itself a fact
+about the basis, and one the bullets above predict.
+
+The other alternative basis I did try — Chebyshev
+polynomials — failed the way the bullet above says a polynomial
 basis should: pre-activations ran away (past ±550 in one run, against the
 Fourier runs' single digits) and the forward pass hit NaNs — which is where
 that runaway ends up. It was slow to train on top of that, and not worth
