@@ -29,7 +29,7 @@ against a baseline identical in every respect but the activation.
 Quick findings:
 
 - It improves performance by **+2pp, at 498 of the 500 matched epoch
-  checkpoints** — not just at the final one — now confirmed across
+  checkpoints** — not just at the final one — confirmed across
   **5 independent seeds**.
 - It **might reshape the network's landscape geometry**: the FFN's
   up-projection weight matrices carry a lower spectral norm *and* a higher
