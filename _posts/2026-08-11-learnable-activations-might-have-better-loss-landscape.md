@@ -96,8 +96,7 @@ already claims faster convergence especially early in training, so the
 early-epoch result later in this post corroborates theirs rather than
 discovering anything. What I could not find is the conjunction: **the whole
 shape, learned, shared by every layer, in a transformer, at ImageNet-1K
-scale, against a matched baseline over multiple seeds.** Read that as "I
-looked and didn't find it," not a flag planted — corrections welcome.
+scale, against a matched baseline over multiple seeds.** Corrections welcome.
 
 **Why a Fourier basis.** Five numbers serving an entire network have to be
 well-behaved, and that is mostly a property of the basis:
