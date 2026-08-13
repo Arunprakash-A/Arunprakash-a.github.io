@@ -43,7 +43,7 @@ Quick findings:
 
 <!--more-->
 
-## The idea, stripped to its core
+## The idea
 
 A standard network picks an activation function once and fixes it. This
 experiment instead gives the network **one activation module, shared by
@@ -67,7 +67,7 @@ good" — it's that *what shape the nonlinearity takes* is doing more work
 than we usually give it credit for, and handing that shape to gradient
 descent is cheap.
 
-## Related work — the idea is not new
+## Related work
 
 Learning the activation instead of fixing it is an old idea, reinvented
 independently in several communities. Nothing here is a claim to have thought
@@ -88,13 +88,15 @@ of it first — the map, in one table:
 
 *IN-1K = reports ImageNet-1K results; blank means not to my knowledge.*
 
-**How this differs.** Everything that learns the whole *shape* pays for it
-per layer, per unit or per edge: the activation budget grows with the
-network. The one method that shares network-wide, GAAF,
-shares a single scale inside a shape that never changes, on PINNs — and it
-already claims faster convergence especially early in training, so the
-early-epoch result later in this post corroborates theirs rather than
-discovering anything. What I could not find is the conjunction:
+## How this work differs
+
+Everything that learns the whole *shape* pays for it per layer, per unit or
+per edge: the activation budget grows with the network. The one method that
+shares network-wide, GAAF, shares a single scale inside a shape that never
+changes, on physics-informed neural networks (PINNs) — and it already claims
+faster convergence especially early in training, so the early-epoch result
+later in this post corroborates theirs. What I could not find is the
+conjunction:
 
 - the **whole shape**, learned — not a knob on a known one
 - **shared by every layer** — five numbers for the entire model
@@ -105,7 +107,20 @@ discovering anything. What I could not find is the conjunction:
 
 <img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_hero.png" alt="Two candidate shapes for the same activation function: the fixed curve, and the curve five learnable coefficients converged to" style="max-width:65%; height:auto; display:block; margin:0 auto">
 
-**Why a Fourier basis.** Five numbers serving an entire network have to be
+## Fourier approximation for the activation
+
+The shared curve is a truncated Fourier series in the pre-activation *t*:
+
+φ(t) = a₀ + Σ<sub>k=1..K</sub> [ a<sub>k</sub> cos(kωt) + b<sub>k</sub> sin(kωt) ]
+
+with K = 2 and ω = 1, so the learnable set is {a₀, a₁, a₂, b₁, b₂} — the
+five numbers. They are not fitted or randomly initialized: GELU's Fourier
+coefficients on [−π, π] are computed by numerically integrating the Euler
+formulas, giving a₀ = 0.7061, a = [−0.7049, 0.0261], b = [1.0000, −0.5000].
+Training starts from a curve that already *is* the activation it replaces,
+and every later shape is a departure the gradient chose to make.
+
+**Why a Fourier series.** Five numbers serving an entire network have to be
 well-behaved, and that is mostly a property of the basis:
 
 - **Bounded, nothing to divide by** — |φ| ≤ 2.43 at init, since sin and cos
@@ -122,9 +137,9 @@ well-behaved, and that is mostly a property of the basis:
 - **Orthogonal on [−π, π]** — the five parameters move along near-independent
   directions. Monomial bases are ill-conditioned by comparison; splines need
   a grid range to tune. There's no grid here.
-- **Graceful truncation, exact init** — coefficients of a smooth reference
-  decay fast, so K=2 already carries the shape, and GELU's true coefficients
-  are integrated directly rather than fitted.
+- **Graceful truncation** — the coefficients of a smooth reference decay
+  fast, which is why K=2 already carries the shape: at init the second
+  harmonic's amplitude is 0.50 against the first's 1.22.
 
 It holds up in practice too: independent seeds [land within 0.02 of each
 other](#questioning-common-assumptions-about-the-shape-of-the-activation).
