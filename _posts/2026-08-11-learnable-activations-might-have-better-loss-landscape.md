@@ -387,3 +387,58 @@ implementation that respected the memory hierarchy turned it from the thing
 you budget around into the thing you stop thinking about. There's no
 FlashAttention for learnable activations yet — we'd like there to be. 🙂
 
+## Appendix
+
+<details>
+<summary style="cursor:pointer; padding:10px 0"><b>A. How the prior work reports its results</b></summary>
+<div markdown="1" style="padding:4px 0 8px">
+
+Since this post leans on seeds, per-epoch tracking and wall-clock honesty, it
+seems only fair to ask how the work in the table above reports *its* results.
+Compiled in August 2026 by reading each paper and, where one exists, its
+repository — so it reflects those versions and may miss later updates.
+
+| Method | Code | Seeds | Wall-clock | Gain shown over training |
+|---|---|---|---|---|
+| [APL](https://arxiv.org/abs/1412.6830) | ✓ Caffe model/solver files | **55 runs**, mean ± std | ✗ | ✗ final numbers only |
+| [PAU](https://arxiv.org/abs/1907.06732) | ✓ (superseded; demos are MNIST/F-MNIST) | 5 seeds ± — **but not on ImageNet** | ✗ | ✓ curves, incl. ImageNet |
+| [Rational nets](https://arxiv.org/abs/2004.01902) | ✓ | ✗ | ✗ | ✓ validation-loss curves |
+| [ACON](https://arxiv.org/abs/2009.04759) | ✓ **full ImageNet pipeline + weights** | ✗ | FLOPs/params only | one appendix figure |
+| [KAN](https://arxiv.org/abs/2404.19756) | ✓ actively maintained | 3 seeds, some experiments | grid-size scaling only | mixed |
+| [GAAF / LAAF](https://arxiv.org/abs/1906.01170) | ✓ but a Burgers PINN demo, TF 1.14 | ✗ | ✗ | ✓ loss vs epoch |
+| [F-KAN](https://arxiv.org/abs/2409.09323) | ✗ | ± given, **n never stated** | ✗ | ✓ convergence curves |
+| [KAF](https://arxiv.org/abs/2502.06018) | "will release" post-review | ✗ | GPT-2 only, not vision | ✗ ImageNet = final table |
+| [STAF](https://arxiv.org/abs/2502.00869) | project page, no repo found | ✗ | appendix mention | ✓ PSNR trajectories |
+| [SIREN](https://arxiv.org/abs/2006.09661) | ✓ | ✗ | one anecdote | — |
+| [DeepLABNet](https://arxiv.org/abs/1911.09257) | ✗ none found | ✗ | ✗ | — |
+
+**Multiple seeds are rare, and rarest exactly where they matter.** PAU is
+explicit about it: *"In all experiments except for ImageNet, we report the
+mean of 5 runs initialized with different seeds."* They ran five seeds
+everywhere and dropped the protocol at ImageNet scale — understandably, since
+that's where the compute hurts. ACON and KAF are single-run too. Every
+ImageNet-scale learnable-activation result I checked is a single run.
+
+**Wall-clock overhead is essentially unreported — 0 of 11 give a training-time
+comparison against their own baseline.** KAF's GPT-2 timing is the only real
+number and it's off-task. That's a conspicuous gap for a family of methods
+whose defining feature is replacing a cheap elementwise op with something
+expensive: PAU divides, KAN evaluates splines, the Fourier line calls
+transcendentals. The 2.2× above is not a flattering number, but it appears to
+be one of the few published at all.
+
+**Two places this post is not ahead.** APL ran **55 initializations**, an
+order of magnitude past the five here — "unusually many seeds" is not a claim
+available to us in general, only at ImageNet scale. And plotting a
+convergence curve is common: PAU, rational nets, F-KAN, STAF and GAAF all do
+it. What I did not find anywhere is the gap *quantified at every matched
+checkpoint* with a paired test across seeds, which is the actual difference
+in kind.
+
+**Code release is common but shallow.** Seven of eleven ship something, yet
+most is the activation module rather than a pipeline; ACON is the only one
+with training code and pretrained weights for ImageNet.
+
+</div>
+</details>
+
