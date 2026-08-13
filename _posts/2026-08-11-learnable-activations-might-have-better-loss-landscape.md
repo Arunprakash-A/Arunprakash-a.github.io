@@ -103,6 +103,27 @@ Paired across all five seeds: t(4) = 10.02, p = 0.00056. Best-validation
 accuracy tells the same story: 64.98% → 67.03%, +2.06 ± 0.54 pt,
 t(4) = 8.45, p = 0.00108.
 
+### How many epochs does it save?
+
+Another way to read the same gain: how many epochs each variant needs to
+*first* reach a given validation accuracy, meaned over the five seeds.
+
+| val-acc threshold | Fixed | Learnable | epochs saved |
+|---|---|---|---|
+| 50% | 27.6 ± 1.0 (5/5) | 22.2 ± 1.7 (5/5) | 5.4 |
+| 55% | 49.6 ± 1.6 (5/5) | 42.4 ± 2.3 (5/5) | 7.2 |
+| 60% | 70.8 ± 1.3 (5/5) | 61.4 ± 1.9 (5/5) | 9.4 |
+| 65% | 98.5 ± 1.5 (2/5) | 82.8 ± 1.6 (5/5) | 16.5 (n=2) |
+
+The bracketed fraction is how many of the five seeds cleared that threshold
+at all inside 100 epochs. The saving widens as the bar rises — 5 epochs at
+50%, 9 at 60% — and by 65% it stops being a saving and turns into a
+difference in kind: all five Learnable runs get there, with a schedule to
+spare, while only two of five Fixed runs manage it at all, and those two only
+at epochs 97 and 100. The other three finish at 64.8%, 64.9% and 64.8%,
+short of the line. That's why the last row is an n=2 comparison and the
+weakest of the four.
+
 ### It's not just a better final number — it's ahead the entire time
 
 <img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_curves.png" alt="Validation accuracy and training loss over 100 epochs, Fixed vs Learnable, mean of 5 seeds" style="max-width:100%">
