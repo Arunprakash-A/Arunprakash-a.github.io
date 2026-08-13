@@ -100,7 +100,7 @@ scale, against a matched baseline over multiple seeds.** Corrections welcome.
 
 **And sharing has a second consequence: there is a single curve to look at.**
 
-<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_activation.png" alt="The learned activation curve at several epochs, compared to the fixed activation, weighted by where real pre-activations land" style="max-width:100%">
+<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_hero.png" alt="Two candidate shapes for the same activation function: the fixed curve, and the curve five learnable coefficients converged to" style="max-width:100%">
 
 **Why a Fourier basis.** Five numbers serving an entire network have to be
 well-behaved, and that is mostly a property of the basis:
