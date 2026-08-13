@@ -90,10 +90,8 @@ five independent seeds.**
 | seed 5 | 62.49% | 64.27% | +1.78 |
 | **mean ± s.d.** | 62.45 ± 0.13% | **64.38 ± 0.44%** | **+1.93 ± 0.43** |
 
-Paired across all five seeds: t(4) = 10.02, p = 0.00056 — the fifth seed
-landed close to the existing four-seed mean gap and tightened the estimate
-rather than widening it. Best-validation accuracy tells the same story:
-64.98% → 67.03%, +2.06 ± 0.54 pt, t(4) = 8.45, p = 0.00108.
+Best-validation accuracy tells the same story: 64.98% → 67.03%,
++2.06 ± 0.54 pt, t(4) = 8.45, p = 0.00108.
 
 ### It's not just a better final number — it's ahead the entire time
 
@@ -115,17 +113,13 @@ gap had never gone negative; the fifth seed breaks that streak, barely — seed
 training, both gone by the next logged epoch. Every other point, 498 of 500,
 favors Learnable. The gap is noisy epoch to epoch (a 10K validation split
 will do that), and at this sample size two brief dips read as noise, not a
-real regression — but "never negative" was the wrong claim to make on four
-seeds, and it's worth saying so plainly rather than quietly dropping the
-inconvenient seed.
+real regression.
 
 ### What did five numbers learn to do?
 
-The three seeds below had their weights checkpointed every epoch, which is
-what makes it possible to reconstruct exactly how the five coefficients moved
-during training; the fourth and fifth seeds above confirm the accuracy gain
-but weren't checkpointed at that resolution, so this section and the next two
-stay 3-seed.
+The three seeds below had their weights checkpointed every epoch; the fourth
+and fifth seeds above confirm the accuracy gain but weren't checkpointed at
+that resolution, so this section and the next two stay 3-seed.
 
 <img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_coeffs.png" alt="All five coefficients over training, mean of 3 seeds, band = min-max" style="max-width:100%">
 
@@ -136,6 +130,14 @@ seeds, in any of the five coefficients, at any epoch, is 0.033. Three
 independently-initialized runs converge to the same curve. That's not
 noise; that's the training problem pulling on the activation the same way
 every time.
+
+That early swing is also where the accuracy gain is widest. Averaged over the
+five seeds, Learnable's lead over Fixed is **+3.15pt across epochs 1–5** —
+peaking at +3.95pt at epoch 3 — against **+2.01pt over epochs 21–100**, once
+the coefficients have largely settled. The advantage is at its largest while
+the activation is still visibly changing shape, then narrows to a smaller
+margin that holds steady for the rest of training. Most of what the five
+parameters are worth, they appear to be worth early.
 
 <img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_activation.png" alt="The learned activation curve at several epochs, compared to the fixed activation, weighted by where real pre-activations land" style="max-width:100%">
 
@@ -196,9 +198,7 @@ training, not just at convergence. The down-projection (fc2) doesn't show the
 same clean separation — it's mixed across blocks, sometimes favoring one
 variant and sometimes the other — so this is presented as fc1-specific
 evidence, not a network-wide claim, and it's weight-space geometry rather than
-a curvature measurement of the loss itself. The full 6-block × 2-layer
-breakdown lives in `mlp_svd/mlp_svd_summary.json` for anyone who wants to look
-past the summary.
+a curvature measurement of the loss itself.
 
 ## Is it the activation, or just AdamW?
 
@@ -230,15 +230,23 @@ Under SGD the crossover is earlier, too. Learnable reaches Fixed's *entire
 100-epoch* best validation accuracy at **epoch 67** — a third of the schedule
 left over, against the epoch-83 crossover the AdamW runs showed.
 
-One separate fact worth stating plainly, so it isn't lost inside the good
-news above: SGD *converged more slowly than AdamW in absolute terms* for both
+All four runs on one pair of axes — both variants, both optimizers, the full
+100 epochs:
+
+<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_optimizer_compare.png" alt="Validation accuracy and validation loss over 100 epochs for all four runs: Fixed and Learnable, each under AdamW and SGD, seed 1" style="max-width:100%">
+
+Within each optimizer, Learnable sits above Fixed for the whole run — solid
+above solid, dashed above dashed. Between optimizers, the two AdamW curves sit
+well above the two SGD ones throughout.
+
+However, SGD *converged more slowly than AdamW in absolute terms* for both
 variants under these particular hyperparameters, and it never caught up.
 Final validation accuracy: Fixed 53.01% (SGD) vs 65.18% (AdamW), Learnable
 56.65% (SGD) vs 67.68% (AdamW). That's a statement about optimizer speed, not
 about the activation, and it's orthogonal to the gap result above — a
 slower-converging optimizer can still show a larger relative advantage for
-Learnable at matched epochs, which is exactly what happened. So the question
-this section used to leave open now has both halves answered: the
-Learnable-over-Fixed gap holds all the way to epoch 100, and SGD's absolute
-level does not close on AdamW's. These are single-seed results, unlike the
-five-seed AdamW comparison above, so they carry correspondingly less weight.
+Learnable at matched epochs. So the question this section used to leave open
+now has both halves answered: the Learnable-over-Fixed gap holds all the way
+to epoch 100, and SGD's absolute level does not close on AdamW's. These are
+single-seed results, unlike the five-seed AdamW comparison above, so they
+carry correspondingly less weight.
