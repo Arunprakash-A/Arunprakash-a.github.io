@@ -294,21 +294,17 @@ within 1% on the A100 and to within 0.05% on the V100:
 
 Two GPU generations apart, the *ratio* lands in the same place: **~2.2× to
 train, ~2.4× to run inference**, even though the absolute numbers differ by
-around 60%. The overhead looks like a property of the method, not of a
-particular machine.
+around 60%.
 
-One caveat on measurement, since it cuts the other way from what you might
-expect. An earlier version of this benchmark, run on an H200, reported only
-1.3× training overhead, and it was tempting to read that as newer hardware
-handling the transcendentals better. That number could not be reproduced:
-the H200 in question is a shared box, and re-checking it found another
-tenant's job holding it at 74–100% utilization, so it could not be
-re-measured cleanly. Contention inflates both arms of a comparison by a
-shared amount, which pulls any ratio *toward* 1 — so a busy machine will
-understate this overhead rather than overstate it. The two idle-GPU numbers
-above are the ones to trust. Batch-1 latency is omitted entirely: it swung by
-79% between identical runs, so it measures launch jitter rather than the
-model.
+Expect both to vary elsewhere, for two reasons. The ratio depends on how a
+given architecture provisions its special-function units relative to its
+matmul throughput — the more the silicon accelerates matmuls specifically,
+the more a fixed sin/cos cost stands out against them. It also depends on
+having the machine to yourself: contention slows both variants by a shared
+amount, which drags any measured ratio toward 1×, so a busy box reports a
+smaller overhead than the real one. Batch-1 latency is omitted entirely: it
+swung by 79% between identical runs, so it measures launch jitter rather than
+the model.
 
 This matters for how the epoch-83 crossover should be read. Matched *per
 epoch*, Learnable reaches Fixed's final accuracy with ~17% of the schedule
