@@ -83,7 +83,7 @@ independently in several communities. The map, in one table:
 | [SIREN](https://arxiv.org/abs/2006.09661) | nothing — ω₀ is a hyperparameter | — | 0 | |
 | [STAF](https://arxiv.org/abs/2502.00869) | amplitude, frequency, phase | neuron | 3 / harmonic / neuron | |
 | [GAAF](https://arxiv.org/abs/1906.01170), [LAAF](https://royalsocietypublishing.org/doi/abs/10.1098/rspa.2020.0334) | a *scale* inside a fixed shape | **whole network** / layer | **1 total** | |
-| **This post** | **whole shape, Fourier basis** | **whole network** | **5 total** | **✓** |
+| **This study** | **whole shape, Fourier basis** | **whole network** | **5 total** | **✓** |
 
 *IN-1K = reports ImageNet-1K results; blank means not to my knowledge.*
 
