@@ -153,7 +153,7 @@ That leaves two things under test — whether the global version survives real
 scale (sharing is where it's *most* likely to break: one curve now serves
 every layer, and transformer layers aren't doing the same job), and whether
 it holds under a controlled measurement (five matched seeds, bit-identical
-init, all 500 epoch checkpoints, a paired test). And one thing this post does
+init, all 500 epoch checkpoints, a paired test). And one thing this study does
 **not** establish: it's a two-arm comparison against fixed GELU, with no
 spline or per-layer arm.
 
@@ -425,7 +425,7 @@ FlashAttention for learnable activations yet — we'd like there to be. 🙂
 <summary style="cursor:pointer; padding:10px 0"><b>A. How the prior work reports its results</b></summary>
 <div markdown="1" style="padding:4px 0 8px">
 
-Since this post leans on seeds, per-epoch tracking and wall-clock honesty, it
+Since this study leans on seeds, per-epoch tracking and wall-clock honesty, it
 seems only fair to ask how the work in the table above reports *its* results.
 Compiled in August 2026 by reading each paper and, where one exists, its
 repository — so it reflects those versions and may miss later updates.
@@ -459,7 +459,7 @@ expensive: PAU divides, KAN evaluates splines, the Fourier line calls
 transcendentals. The 2.2× above is not a flattering number, but it appears to
 be one of the few published at all.
 
-**Two places this post is not ahead.** APL ran **55 initializations**, an
+**Two places this study is not ahead.** APL ran **55 initializations**, an
 order of magnitude past the five here — "unusually many seeds" is not a claim
 available to us in general, only at ImageNet scale. And plotting a
 convergence curve is common: PAU, rational nets, F-KAN, STAF and GAAF all do
