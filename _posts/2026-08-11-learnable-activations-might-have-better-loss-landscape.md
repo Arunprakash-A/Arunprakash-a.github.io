@@ -1,5 +1,5 @@
 ---
-title: "One Activation for the Whole Network"
+title: "One Activation for the Whole Network — at ImageNet-1K Scale"
 date: 2026-08-11
 tags: [Deep-Learning, Research]
 excerpt: "One learnable nonlinearity, shared by every layer, tested head-to-head against a standard fixed activation on real ImageNet-1K."
@@ -84,7 +84,8 @@ al., 2015) go further, learning a sum of hinges per neuron.
 away and learns coefficients over a parametric family.
 [Padé Activation Units](https://arxiv.org/abs/1907.06732) (Molina et al.,
 ICLR 2020) use a rational function P(x)/Q(x), *initialized to approximate a
-standard activation* and then trained end-to-end.
+standard activation* and then trained end-to-end — at a cost of roughly ten
+parameters **per layer**.
 [Rational neural networks](https://arxiv.org/abs/2004.01902) (Boullé,
 Nakatsukasa & Townsend, NeurIPS 2020) do the same and add approximation
 theory: rational activations match smooth functions with exponentially
@@ -103,8 +104,10 @@ cosines swapped in for the rational function.
 sine is fixed. More recently [STAF](https://arxiv.org/abs/2502.00869) learns
 Fourier-like amplitudes, frequencies and phases, and [Fourier
 KANs](https://arxiv.org/abs/2409.09323) model the edge function as a Fourier
-series outright. The activation used here is a truncated version of the same
-object.
+series outright — as do [Kolmogorov-Arnold Fourier
+Networks](https://arxiv.org/abs/2502.06018), which do report ImageNet-1K
+numbers. The activation used here is a truncated version of the same object,
+with the coefficients living on the *network* rather than on each edge.
 
 **And "global" isn't new either.** This is the closest prior work and the one
 I'd point a skeptical reader at first. Jagtap, Kawaguchi & Karniadakis'
@@ -118,17 +121,39 @@ of "one activation for the whole network, and it converges faster" have been
 claimed before. The early-epoch result later in this post is consistent with
 theirs; treat it as corroboration, not discovery.
 
-**So what is this post actually testing?** Not the function family, and not
-the idea of sharing. Two narrower things:
+**Nor is ImageNet scale by itself the gap**, and it's worth being precise
+rather than flattering. Learnable activations are not a small-data
+curiosity: PReLU was introduced *on* ImageNet, Swish's learnable β was
+evaluated there, [ACON](https://arxiv.org/abs/2009.04759) (CVPR 2021) reports
++6.7% top-1 on MobileNet-0.25, and PAU ran MobileNetV2, ResNet101 and
+DenseNet121 at that scale too. Anyone claiming "nobody has learned an
+activation on ImageNet" is wrong.
 
-- **Scale and setting.** Most of the evidence above sits at small scale —
-  MNIST/CIFAR classifiers, PDE solvers, or a network fitting one signal.
-  Jagtap et al.'s global parameter scales a fixed shape inside a PINN;
-  whether a five-coefficient *shape*, shared network-wide, still buys
-  anything inside a transformer trained on 1.27M images for 100 epochs is a
-  separate empirical question. Methods that look good on CIFAR routinely stop
-  looking good at ImageNet scale — KANs, for instance, remain an open problem
-  on real vision datasets.
+**What I could not find is the conjunction.** Every one of those keeps a
+per-unit or per-layer parameterization — PAU pays ~10 parameters per layer,
+ACON learns per channel, the Fourier-KAN family puts coefficients on every
+edge. The one line that genuinely shares network-wide, Jagtap et al.'s GAAF,
+shares a single *scale* inside a shape that stays fixed, and is demonstrated
+on PINNs. What I have not found in the literature is all of it at once:
+
+> the **entire activation shape** learned from a basis, with **one instance
+> shared by every layer** — five numbers for the whole model — inside a
+> **transformer**, at **ImageNet-1K scale**, measured **head-to-head against
+> an otherwise identical baseline over multiple matched seeds**.
+
+That is the narrow strip this post is standing on. A negative literature
+claim is the kind that ages badly, so read it as "I looked and didn't find
+it," not as a flag planted. If you know of prior work that hits all five,
+please send it — I'd rather be corrected than cited wrongly.
+
+Which leaves two things actually being tested:
+
+- **Whether the global version survives the move to real scale.** Methods
+  that look good on CIFAR routinely stop looking good on ImageNet — KANs, for
+  instance, remain an open problem on real vision datasets. Sharing is also
+  the setting where the idea is *most* likely to break: one curve now has to
+  serve every layer at once, and the layers of a transformer are not doing
+  the same job.
 - **A controlled measurement.** Five matched seeds, bit-identical
   initialization, the gap tracked at all 500 epoch checkpoints rather than
   just the final number, and a paired test across seeds. The activation is
