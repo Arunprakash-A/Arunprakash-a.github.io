@@ -269,8 +269,27 @@ so every activation site evaluates four transcendental functions — two sines
 and two cosines — instead. Standard FLOP counters miss this entirely: they
 tally matmuls and convolutions, so both variants score an identical 1.283
 GFLOPs forward and 3.791 GFLOPs forward+backward per image. The cost is real
-nonetheless, because sin/cos run on the GPU's special-function units, which
-have far less throughput than the tensor cores doing the matmuls.
+nonetheless, and the reason is worth stating plainly:
+
+> **`sin` and `cos` execute on the GPU's special-function units, which have far
+> less throughput than the tensor cores doing the matmuls.**
+
+The activation isn't competing for the same hardware the rest of the network
+runs on — it's queued for a much narrower lane.
+
+Worth adding that this is an *implementation* cost, not a mathematical one,
+and that what's measured above is the naive implementation. It builds a
+(batch × features × K) tensor of angles and calls `cos` and `sin` across all
+of it, so K=2 really does evaluate four transcendentals per activation and
+write three intermediates out to memory. Neither is necessary. The
+double-angle identities give cos 2t and sin 2t from a single sin/cos pair
+almost for free, and a fused kernel could keep the whole series in registers
+instead of round-tripping through memory.
+
+Attention was in this exact position once. The mathematics never changed; an
+implementation that respected the memory hierarchy turned it from the thing
+you budget around into the thing you stop thinking about. There's no
+FlashAttention for learnable activations yet — we'd like there to be. 🙂
 
 Measured back-to-back on two **idle** GPUs — nothing else running on either —
 with 10 warmup + 50 timed iterations, AMP, batch 256, the actual training
