@@ -19,16 +19,18 @@ that, and test it at ImageNet scale.
 
 Quick findings:
 
-- It improves performance by **+2pp, consistently across epochs** — not just
-  at the final checkpoint — now confirmed across **5 independent seeds**.
-- It **might generate** a smoother loss landscape: the FFN's up-projection weight
-  matrices carry a lower spectral norm *and* a higher stable rank than the
-  fixed activation's, in every one of the 6 transformer blocks (weight-space
-  evidence, not a direct Hessian measurement — details below).
+- It improves performance by **+2pp, at 498 of the 500 matched epoch
+  checkpoints** — not just at the final one — now confirmed across
+  **5 independent seeds**.
+- It **might reshape the network's landscape geometry**: the FFN's
+  up-projection weight matrices carry a lower spectral norm *and* a higher
+  stable rank than the fixed activation's, in every one of the 6 transformer
+  blocks (weight-space evidence, not a direct Hessian measurement — details
+  below).
 - Swap the optimizer from AdamW to SGD and the **Learnable-over-Fixed gap
-  still holds** — at **all 100 epochs**, with a mean margin even larger than
+  still holds** — at all 100 epochs, with a mean margin even larger than
   under AdamW (+3.78pt vs +2.57pt). That's evidence it's the *activation*,
-  not the optimizer, doing the work.
+  not the optimizer, doing the work — though on one seed, not five.
 
 <!--more-->
 
@@ -76,8 +78,8 @@ variants at matched seed, so the activation is the only thing that differs.
 ## Results
 
 **Fixed: 62.45% top-1. Learnable: 64.38% top-1. A +1.93 point gain, for five
-extra numbers, holding at every epoch checkpoint measured, across five
-independent seeds.**
+extra numbers, holding at 498 of the 500 matched epoch checkpoints, across
+five independent seeds.**
 
 | Test top-1 (official 50K val) | Fixed | Learnable | Δ |
 |---|---|---|---|
@@ -97,10 +99,11 @@ rather than widening it. Best-validation accuracy tells the same story:
 
 <img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_curves.png" alt="Validation accuracy and training loss over 100 epochs, Fixed vs Learnable, mean of 5 seeds" style="max-width:100%">
 
-Learnable tracks above Fixed from very early in training and never falls
-back. It reaches Fixed's *entire 100-epoch* validation accuracy at epoch 83
-— the same final quality, with ~17% of the training budget still on the
-table.
+Learnable tracks above Fixed from very early in training and stays there,
+with two brief exceptions covered in the next section. It reaches Fixed's
+*entire 100-epoch* validation accuracy at epoch 83 on average across the five
+seeds (individually: 80, 82, 87, 81, 84) — the same final quality, with ~17%
+of the training budget still on the table.
 
 ### The gap is negative at just 2 of 500 checkpoints — and recovers immediately
 
@@ -145,14 +148,14 @@ computing.
 
 ## Questioning common assumptions about the shape of the activation
 
-- **Monotonicity isn't load-bearing.** Local max at t ≈ −0.87, local min at
-  t ≈ +0.19 — two real, seed-independent inflections sitting right where the
-  network's own pre-activations actually live (mean |t| ≈ 0.33, 99% within
-  1.21), not off in some rarely-visited tail.
+- **Monotonicity isn't load-bearing here.** Local max at t ≈ −0.87, local min
+  at t ≈ +0.19 — two real, seed-independent inflections sitting right where
+  the network's own pre-activations actually live (mean |t| ≈ 0.33, 99%
+  within 1.21), not off in some rarely-visited tail.
 
 - **The slope at zero didn't shrink toward the fixed activation's — it
   crossed to the other side and stayed there.** +0.5 (fixed) → **−0.35**
-  (learned, epoch 100), reproducible to the third decimal across all three
+  (learned, epoch 100), landing within 0.02 of each other across all three
   seeds (−0.352, −0.356, −0.339).
 
 - **The one feature credited with the fixed activation's edge over ReLU
@@ -164,9 +167,10 @@ computing.
   smooth default will do."** Three independent seeds, under active weight
   decay, land on the same non-monotonic, sign-flipped curve.
 
-- **Getting the far field "wrong" costs nothing, because the far field is
-  empty.** The curves diverge sharply past |t| ≈ 2, but essentially no real
-  pre-activation ever lands there (0.013% outside ±π, none outside ±2π).
+- **Getting the far field "wrong" costs next to nothing, because the far
+  field is nearly empty.** The curves diverge sharply past |t| ≈ 2, but
+  almost no real pre-activation ever lands there (0.013% outside ±π, none
+  outside ±2π).
 
 ## Does FAct Reshape the Spectral Geometry of the Network?
 
