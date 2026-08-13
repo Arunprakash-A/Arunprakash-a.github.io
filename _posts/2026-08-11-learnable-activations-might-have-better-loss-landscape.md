@@ -272,30 +272,50 @@ GFLOPs forward and 3.791 GFLOPs forward+backward per image. The cost is real
 nonetheless, because sin/cos run on the GPU's special-function units, which
 have far less throughput than the tensor cores doing the matmuls.
 
-Measured back-to-back on an **idle A100-PCIE-40GB** (no other compute running;
-10 warmup + 50 timed iterations, AMP, batch 256 — the actual training
-configuration), averaged over two runs that agreed to within 1%:
+Measured back-to-back on two **idle** GPUs — nothing else running on either —
+with 10 warmup + 50 timed iterations, AMP, batch 256, the actual training
+configuration. Each machine was benchmarked twice; the repeat runs agreed to
+within 1% on the A100 and to within 0.05% on the V100:
 
 | | Fixed | Learnable | overhead |
 |---|---|---|---|
+| **A100-PCIE-40GB** | | | |
 | training step (batch 256) | 59.7 ms | 132.3 ms | **2.2×** |
 | training, per epoch (1.27M images) | 4.9 min | 11.0 min | **2.2×** |
 | training, full 100-epoch run | ~8.2 h | ~18.3 h | **2.2×** |
 | inference (batch 256) | 0.075 ms/img | 0.179 ms/img | **2.4×** |
 | inference, full 50K test set | ~3.8 s | ~9.0 s | **2.4×** |
+| **V100-PCIE-32GB** | | | |
+| training step (batch 256) | 95.0 ms | 209.4 ms | **2.2×** |
+| training, per epoch (1.27M images) | 7.9 min | 17.3 min | **2.2×** |
+| training, full 100-epoch run | ~13.1 h | ~28.9 h | **2.2×** |
+| inference (batch 256) | 0.112 ms/img | 0.272 ms/img | **2.4×** |
+| inference, full 50K test set | ~5.6 s | ~13.6 s | **2.4×** |
 
-**The overhead is hardware-dependent, and strongly so.** The same benchmark on
-an H200 NVL put the training-step overhead at 1.3×, not 2.2×. Newer hardware
-evaluates the transcendentals proportionally faster, so treat 1.3–2.2× as the
-range rather than either endpoint as the number. Batch-1 latency is omitted
-above: it swung by 79% between identical runs, so it measures launch overhead
-and jitter rather than the model.
+Two GPU generations apart, the *ratio* lands in the same place: **~2.2× to
+train, ~2.4× to run inference**, even though the absolute numbers differ by
+around 60%. The overhead looks like a property of the method, not of a
+particular machine.
+
+One caveat on measurement, since it cuts the other way from what you might
+expect. An earlier version of this benchmark, run on an H200, reported only
+1.3× training overhead, and it was tempting to read that as newer hardware
+handling the transcendentals better. That number could not be reproduced:
+the H200 in question is a shared box, and re-checking it found another
+tenant's job holding it at 74–100% utilization, so it could not be
+re-measured cleanly. Contention inflates both arms of a comparison by a
+shared amount, which pulls any ratio *toward* 1 — so a busy machine will
+understate this overhead rather than overstate it. The two idle-GPU numbers
+above are the ones to trust. Batch-1 latency is omitted entirely: it swung by
+79% between identical runs, so it measures launch jitter rather than the
+model.
 
 This matters for how the epoch-83 crossover should be read. Matched *per
 epoch*, Learnable reaches Fixed's final accuracy with ~17% of the schedule
-unused. Matched on *wall-clock*, it does not: 83 epochs at 2.2× costs more
-than 100 epochs at 1×. So the honest summary is better final quality for more
-compute, not the same quality sooner. Whether the Fixed baseline would close
+unused. Matched on *wall-clock*, it does not, and not narrowly: 83 epochs at
+2.2× is about 1.8× the wall-clock cost of the Fixed baseline's full 100. So
+the honest summary is better final quality for more compute, not the same
+quality sooner. Whether the Fixed baseline would close
 some of the 1.93pt gap if simply given the extra compute instead is a control
 this study hasn't run, and it's the obvious next experiment.
 
