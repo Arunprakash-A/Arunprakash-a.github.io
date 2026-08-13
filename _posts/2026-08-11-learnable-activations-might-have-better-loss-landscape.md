@@ -90,8 +90,9 @@ five independent seeds.**
 | seed 5 | 62.49% | 64.27% | +1.78 |
 | **mean ± s.d.** | 62.45 ± 0.13% | **64.38 ± 0.44%** | **+1.93 ± 0.43** |
 
-Best-validation accuracy tells the same story: 64.98% → 67.03%,
-+2.06 ± 0.54 pt, t(4) = 8.45, p = 0.00108.
+Paired across all five seeds: t(4) = 10.02, p = 0.00056. Best-validation
+accuracy tells the same story: 64.98% → 67.03%, +2.06 ± 0.54 pt,
+t(4) = 8.45, p = 0.00108.
 
 ### It's not just a better final number — it's ahead the entire time
 
