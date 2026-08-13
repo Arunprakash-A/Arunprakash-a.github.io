@@ -101,11 +101,22 @@ the 1.77M FFN weights. The activation here is **five numbers** — and it is
 still five numbers at ViT-L, because it does not scale with anything.
 
 The one method that shares network-wide, GAAF, shares a single scale inside
-a shape that never changes, on physics-informed neural networks
-(PINNs) — and it already claims
-faster convergence especially early in training, so the early-epoch result
-later in this post corroborates theirs. What I could not find is the
-conjunction:
+a shape that never changes, on physics-informed neural networks (PINNs) — and
+it already claims faster convergence especially early in training, so the
+early-epoch result later in this post corroborates theirs.
+
+Its evidence, though, comes from a different world. GAAF's experiments are
+function approximation and PDE solving end to end: 1-D and 2-D inputs, its
+largest network 6 hidden layers of 20 neurons — on the order of 2,000
+parameters — fitted to between 300 and 16,000 collocation points. No image
+benchmark appears in it at all. Against that, this experiment is a 3.05M
+parameter transformer on 150,528-dimensional inputs and 1.27M training
+images. The follow-up by the same authors does reach CIFAR-10/100 and SVHN
+with a PreActResNet18 over three trials — but that is the *layer-wise and
+neuron-wise* version, not the global one. The single-scale-for-everything
+scheme has, as far as I can tell, never been taken past a PINN.
+
+What I could not find is the conjunction:
 
 - the **whole shape**, learned — not a knob on a known one
 - **shared by every layer** — five numbers for the entire model
@@ -429,7 +440,7 @@ repository — so it reflects those versions and may miss later updates.
 | [Rational nets](https://arxiv.org/abs/2004.01902) | ✓ | ✗ | ✗ | ✓ validation-loss curves |
 | [ACON](https://arxiv.org/abs/2009.04759) | ✓ **full ImageNet pipeline + weights** | ✗ | FLOPs/params only | one appendix figure |
 | [KAN](https://arxiv.org/abs/2404.19756) | ✓ actively maintained | 3 seeds, some experiments | grid-size scaling only | mixed |
-| [GAAF / LAAF](https://arxiv.org/abs/1906.01170) | ✓ but a Burgers PINN demo, TF 1.14 | ✗ | ✗ | ✓ loss vs epoch |
+| [GAAF](https://arxiv.org/abs/1906.01170) / [LAAF](https://arxiv.org/abs/1909.12228) | ✓ but a Burgers PINN demo, TF 1.14 | ✗ GAAF; **3 trials** on LAAF's CIFAR/SVHN | ✗ | ✓ loss vs epoch |
 | [F-KAN](https://arxiv.org/abs/2409.09323) | ✗ | ± given, **n never stated** | ✗ | ✓ convergence curves |
 | [KAF](https://arxiv.org/abs/2502.06018) | "will release" post-review | ✗ | GPT-2 only, not vision | ✗ ImageNet = final table |
 | [STAF](https://arxiv.org/abs/2502.00869) | project page, no repo found | ✗ | appendix mention | ✓ PSNR trajectories |
