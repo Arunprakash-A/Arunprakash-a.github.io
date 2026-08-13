@@ -88,9 +88,9 @@ of it first — the map, in one table:
 
 *IN-1K = reports ImageNet-1K results; blank means not to my knowledge.*
 
-**How this differs — two cells, and only two.** Everything that learns the
-whole *shape* pays for it per layer, per unit or per edge: the activation
-budget grows with the network. The one method that shares network-wide, GAAF,
+**How this differs.** Everything that learns the whole *shape* pays for it
+per layer, per unit or per edge: the activation budget grows with the
+network. The one method that shares network-wide, GAAF,
 shares a single scale inside a shape that never changes, on PINNs — and it
 already claims faster convergence especially early in training, so the
 early-epoch result later in this post corroborates theirs rather than
