@@ -131,8 +131,9 @@ init, all 500 epoch checkpoints, a paired test). And one thing this post does
 Padé, spline or per-layer arm. The one alternative basis I did try —
 Chebyshev polynomials — failed the way the bullet above says a polynomial
 basis should: pre-activations ran away (past ±550 in one run, against the
-Fourier runs' single digits), training tipped into NaNs, and it was slow
-enough that it wasn't worth pushing further.
+Fourier runs' single digits) and the forward pass hit NaNs — which is where
+that runaway ends up. It was slow to train on top of that, and not worth
+pushing further.
 
 ## The setup
 
