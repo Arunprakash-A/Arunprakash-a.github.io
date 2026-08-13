@@ -70,8 +70,7 @@ descent is cheap.
 ## Related work
 
 Learning the activation instead of fixing it is an old idea, reinvented
-independently in several communities. Nothing here is a claim to have thought
-of it first — the map, in one table:
+independently in several communities. The map, in one table:
 
 | | What's learned | Shared across | Activation params | IN-1K |
 |---|---|---|---|---|
