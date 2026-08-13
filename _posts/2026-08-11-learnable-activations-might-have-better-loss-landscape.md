@@ -102,7 +102,7 @@ still five numbers at ViT-L, because it does not scale with anything.
 
 The only entry in the table that shares network-wide, GAAF, learns a single
 *scale* inside a shape that never changes — and has never been run on vision
-at all. What I could not find is the conjunction:
+at all. What we designed is the conjunction:
 
 - the **whole shape**, learned — not a knob on a known one
 - **shared by every layer** — five numbers for the entire model
