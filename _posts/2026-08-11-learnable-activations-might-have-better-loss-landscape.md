@@ -128,8 +128,11 @@ every layer, and transformer layers aren't doing the same job), and whether
 it holds under a controlled measurement (five matched seeds, bit-identical
 init, all 500 epoch checkpoints, a paired test). And one thing this post does
 **not** establish: it's a two-arm comparison against fixed GELU, with no
-Padé, spline or per-layer arm — so nothing here says Fourier is the right
-basis, or that global beats per-layer.
+Padé, spline or per-layer arm. The one alternative basis I did try —
+Chebyshev polynomials — failed the way the bullet above says a polynomial
+basis should: pre-activations ran away (past ±550 in one run, against the
+Fourier runs' single digits), training tipped into NaNs, and it was slow
+enough that it wasn't worth pushing further.
 
 ## The setup
 
