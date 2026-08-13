@@ -507,34 +507,5 @@ against `standard` (df=4, so |t| > 2.776 is p < 0.05):
 | CIFAR-100 | 60 | 37.63 ± 0.31 | 37.85 ± 0.65 <br>+0.22 (t=0.73) | 37.49 ± 0.82 <br>−0.14 (t=−0.47) | **46.41 ± 0.83** <br>**+8.78 (t=25.44)** |
 | Tiny-ImageNet | 80 | 30.51 ± 0.20 | 29.27 ± 0.43 <br>**−1.24 (t=−5.12)** | 30.37 ± 0.65 <br>−0.15 (t=−0.40) | **35.36 ± 0.59** <br>**+4.84 (t=16.17)** |
 
-**The one-parameter arms are the interesting part.** They share globally in
-exactly the same way, so they isolate *what* is learned from *how widely it
-is shared*. A single learnable slope or β buys nothing reliable: Swish never
-beats the baseline anywhere, and PReLU's one significant win on CIFAR-10
-(+1.73) is matched by a significant **loss** on Tiny-ImageNet (−1.24). Five
-coefficients that can move the whole curve win everywhere, by 1.8 to 8.8
-points. Whatever is happening, it is not "an extra learnable parameter helps."
-
-**The gain is not only at the end.** Comparing seed-mean validation accuracy
-at every matched epoch, FAct takes the lead at epoch 8–12 on all four
-datasets and never gives it back: **185 of 210** matched checkpoints. It does
-trail early — it starts as GELU and has to move first — which is a weaker
-picture than ImageNet's 498/500, and worth saying plainly.
-
-**The cost reproduces too.** Against its own baseline on the same host, FAct
-cost **2.4× / 2.4× / 2.2×** wall-clock on Fashion-MNIST, CIFAR-10 and
-CIFAR-100 — within noise of the 2.2× measured for the ViT on ImageNet, on a
-completely different architecture. Tiny-ImageNet is the outlier at 4.6×. The
-one-parameter arms cost 1.04–1.43×, so essentially all of the overhead is the
-transcendentals, not the sharing.
-
-**What this is not.** A 100K-parameter model is orders of magnitude below
-anything on these datasets' leaderboards, and none of these numbers should be
-read against published results — the comparison is strictly within a fixed
-budget, four arms differing only in their activation. Nor does it establish
-the efficiency claim: FAct at 100K beats standard at 100K, but a FAct model
-has never been shrunk until it merely *matches* a larger standard one, which
-is the experiment that claim would actually need.
-
 </div>
 </details>
