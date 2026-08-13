@@ -98,6 +98,18 @@ discovering anything. What I could not find is the conjunction: **the whole
 shape, learned, shared by every layer, in a transformer, at ImageNet-1K
 scale, against a matched baseline over multiple seeds.** Corrections welcome.
 
+**And sharing has a second consequence: there is a single curve to look at.**
+At ImageNet scale nobody has shown one, because nobody has had one to show.
+PAU does plot its learned shapes — from Fashion-MNIST on VGG-8; its ImageNet
+figures are accuracy and loss only. KAF shows no learned activation curves at
+all. ACON shows β *distributions* rather than shapes. DY-ReLU's ImageNet
+figure is the closest thing that exists, and it's a per-block scatter of
+input/output values over 50,000 validation images — a cloud, because the
+function changes with every input and every channel. Here the entire
+network's nonlinearity is five numbers in a fixed basis, so the curve is
+exact at every step of training and its whole history is a path in 5-D —
+[which is what the figures below plot](#what-did-five-numbers-learn-to-do).
+
 **Why a Fourier basis.** Five numbers serving an entire network have to be
 well-behaved, and that is mostly a property of the basis:
 
