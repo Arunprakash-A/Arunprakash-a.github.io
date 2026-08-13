@@ -94,11 +94,14 @@ network. The one method that shares network-wide, GAAF,
 shares a single scale inside a shape that never changes, on PINNs — and it
 already claims faster convergence especially early in training, so the
 early-epoch result later in this post corroborates theirs rather than
-discovering anything. What I could not find is the conjunction: **the whole
-shape, learned, shared by every layer, in a transformer, at ImageNet-1K
-scale, against a matched baseline over multiple seeds.** Corrections welcome.
+discovering anything. What I could not find is the conjunction:
 
-**And sharing has a second consequence: there is a single curve to look at.**
+- the **whole shape**, learned — not a knob on a known one
+- **shared by every layer** — five numbers for the entire model
+- inside a **transformer**
+- at **ImageNet-1K scale**
+- against a **matched baseline over multiple seeds**
+- and, as a consequence of the sharing, **a single curve to look at**
 
 <img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_hero.png" alt="Two candidate shapes for the same activation function: the fixed curve, and the curve five learnable coefficients converged to" style="max-width:65%; height:auto; display:block; margin:0 auto">
 
