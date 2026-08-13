@@ -69,72 +69,45 @@ descent is cheap.
 
 ## Related work — the idea is not new
 
-Before going further I should be plain about this: **learning the activation
-instead of fixing it is an old idea**, and it has been reinvented
-independently in several communities. Nothing below is a claim to have
-thought of it first.
+Learning the activation instead of fixing it is an old idea, reinvented
+independently in several communities. Nothing here is a claim to have thought
+of it first. A compressed map of what already exists:
 
-**Learning a knob inside a fixed shape.** The earliest and most widely
-adopted versions keep the curve and learn a parameter on it — PReLU learns
-the negative slope per channel, Swish learns a β inside x·σ(βx). [Adaptive
-Piecewise Linear units](https://arxiv.org/abs/1412.6830) (Agostinelli et
-al., 2015) go further, learning a sum of hinges per neuron.
+- **A learnable knob inside a fixed shape** — PReLU's per-channel slope,
+  Swish's β, [Adaptive Piecewise Linear
+  units](https://arxiv.org/abs/1412.6830).
+- **The whole shape learned from a basis** — [Padé Activation
+  Units](https://arxiv.org/abs/1907.06732) and [rational
+  networks](https://arxiv.org/abs/2004.01902) (rational functions),
+  [DeepLABNet](https://arxiv.org/abs/1911.09257) (radial basis functions),
+  [KANs](https://arxiv.org/abs/2404.19756) (splines, on every weight).
+- **Sinusoidal bases specifically** —
+  [SIREN](https://arxiv.org/abs/2006.09661) (fixed sine),
+  [STAF](https://arxiv.org/abs/2502.00869), [Fourier
+  KANs](https://arxiv.org/abs/2409.09323), [Kolmogorov-Arnold Fourier
+  Networks](https://arxiv.org/abs/2502.06018).
+- **Sharing one activation network-wide** — Jagtap, Kawaguchi & Karniadakis'
+  [global adaptive activation function](https://arxiv.org/abs/1906.01170)
+  (JCP 2020) and its [layer- and neuron-wise
+  follow-up](https://royalsocietypublishing.org/doi/abs/10.1098/rspa.2020.0334)
+  (RSPA 2020) — which already claims **faster convergence, especially early
+  in training**. The early-epoch result later in this post corroborates
+  theirs; it doesn't discover it.
+- **At ImageNet scale** — PReLU was *introduced* on ImageNet, Swish was
+  evaluated there, [ACON](https://arxiv.org/abs/2009.04759) reports +6.7%
+  top-1 on MobileNet-0.25, PAU ran MobileNetV2/ResNet101/DenseNet121, and the
+  Fourier-KAN line reports ImageNet-1K numbers. Anyone claiming "nobody has
+  learned an activation on ImageNet" is wrong.
 
-**Learning the whole shape from a basis.** A second line throws the shape
-away and learns coefficients over a parametric family.
-[Padé Activation Units](https://arxiv.org/abs/1907.06732) (Molina et al.,
-ICLR 2020) use a rational function P(x)/Q(x), *initialized to approximate a
-standard activation* and then trained end-to-end — at a cost of roughly ten
-parameters **per layer**.
-[Rational neural networks](https://arxiv.org/abs/2004.01902) (Boullé,
-Nakatsukasa & Townsend, NeurIPS 2020) do the same and add approximation
-theory: rational activations match smooth functions with exponentially
-smaller depth than ReLU.
-[DeepLABNet](https://arxiv.org/abs/1911.09257) (Hryniowski & Wong, 2019)
-learns radial basis functions instead.
-[KANs](https://arxiv.org/abs/2404.19756) push it to the limit — every weight
-becomes a learnable spline.
-
-The recipe in this post — pick a basis, initialize its coefficients to a
-known-good activation, let backprop move them — is Padé's recipe with
-cosines swapped in for the rational function.
-
-**Sinusoids specifically.** [SIREN](https://arxiv.org/abs/2006.09661)
-(Sitzmann et al., 2020) made periodic activations respectable, though its
-sine is fixed. More recently [STAF](https://arxiv.org/abs/2502.00869) learns
-Fourier-like amplitudes, frequencies and phases, and [Fourier
-KANs](https://arxiv.org/abs/2409.09323) model the edge function as a Fourier
-series outright — as do [Kolmogorov-Arnold Fourier
-Networks](https://arxiv.org/abs/2502.06018), which do report ImageNet-1K
-numbers. The activation used here is a truncated version of the same object,
-with the coefficients living on the *network* rather than on each edge.
-
-**And "global" isn't new either.** This is the closest prior work and the one
-I'd point a skeptical reader at first. Jagtap, Kawaguchi & Karniadakis'
-[adaptive activation functions](https://arxiv.org/abs/1906.01170) (JCP 2020)
-introduce a single learnable scalar *defined for the entire network* — they
-call it a global adaptive activation function — and their headline claim is
-that it **accelerates convergence, especially in early training**. Their
-[follow-up](https://royalsocietypublishing.org/doi/abs/10.1098/rspa.2020.0334)
-(RSPA 2020) works out the layer-wise and neuron-wise variants. So both halves
-of "one activation for the whole network, and it converges faster" have been
-claimed before. The early-epoch result later in this post is consistent with
-theirs; treat it as corroboration, not discovery.
-
-**Nor is ImageNet scale by itself the gap**, and it's worth being precise
-rather than flattering. Learnable activations are not a small-data
-curiosity: PReLU was introduced *on* ImageNet, Swish's learnable β was
-evaluated there, [ACON](https://arxiv.org/abs/2009.04759) (CVPR 2021) reports
-+6.7% top-1 on MobileNet-0.25, and PAU ran MobileNetV2, ResNet101 and
-DenseNet121 at that scale too. Anyone claiming "nobody has learned an
-activation on ImageNet" is wrong.
-
-**What I could not find is the conjunction.** Every one of those keeps a
-per-unit or per-layer parameterization — PAU pays ~10 parameters per layer,
-ACON learns per channel, the Fourier-KAN family puts coefficients on every
-edge. The one line that genuinely shares network-wide, Jagtap et al.'s GAAF,
-shares a single *scale* inside a shape that stays fixed, and is demonstrated
-on PINNs. What I have not found in the literature is all of it at once:
+**How this differs.** Not in the function family: *pick a basis, initialize
+its coefficients to a known-good activation, let backprop move them* is
+Padé's recipe with cosines swapped in. The difference is **where the
+parameters live**. PAU pays ~10 parameters per layer, ACON learns per
+channel, the Fourier-KAN family puts coefficients on every edge — all of them
+scale their activation parameters with the size of the network. The one line
+that truly shares network-wide, GAAF, shares a single *scale* inside a shape
+that stays fixed, and is demonstrated on PINNs. What I could not find
+anywhere is all of it at once:
 
 > the **entire activation shape** learned from a basis, with **one instance
 > shared by every layer** — five numbers for the whole model — inside a
@@ -145,6 +118,41 @@ That is the narrow strip this post is standing on. A negative literature
 claim is the kind that ages badly, so read it as "I looked and didn't find
 it," not as a flag planted. If you know of prior work that hits all five,
 please send it — I'd rather be corrected than cited wrongly.
+
+**Why a Fourier basis.** Sharing five numbers across an entire network only
+works if those five numbers are well-behaved, and that is mostly a property
+of the basis:
+
+- **Bounded, and nothing to divide by.** sin and cos live in [−1, 1], so the
+  curve is bounded by the sum of its coefficient magnitudes however large the
+  pre-activation gets — |φ| ≤ 2.43 at initialization. A rational function has
+  a denominator that can approach zero, which is why PAU needs a "safe"
+  variant to fence off the poles; a polynomial basis has the opposite failure
+  and diverges as |t| grows. A Fourier series does neither.
+- **No vanishing gradient in the tails.** φ′(t) = Σ k(−a_k sin kt + b_k
+  cos kt) is bounded — ≤ 2.23 at initialization — and, being periodic, it
+  does not *decay* with |t|. sigmoid and tanh flatten into saturated tails
+  that stop passing gradient; this curve keeps oscillating, so a
+  large-magnitude pre-activation isn't a dead one.
+- **The basis never amplifies the gradient reaching the coefficients.**
+  ∂φ/∂a_k = cos(kt) and ∂φ/∂b_k = sin(kt), both in [−1, 1] by construction,
+  for any input whatsoever. That bound matters far more here than it would
+  per-layer: these five parameters accumulate gradient from every activation
+  site in the network on every step.
+- **Orthogonal, so the coefficients don't fight each other.** The basis
+  functions are mutually orthogonal on [−π, π], so the five parameters move
+  along near-independent directions. Monomial bases are famously
+  ill-conditioned by comparison, and splines need a grid whose range is one
+  more thing to tune. There's no grid here.
+- **Truncation is graceful, and initialization is exact.** Coefficients of a
+  smooth reference decay quickly, so K=2 already carries the shape — and
+  because GELU's true Fourier coefficients can be integrated directly, the
+  starting point is computed rather than fitted.
+
+Whether that theory survives contact with training is an empirical question,
+and the coefficients [do turn out to be
+stable](#questioning-common-assumptions-about-the-shape-of-the-activation):
+independent seeds land within 0.02 of each other.
 
 Which leaves two things actually being tested:
 
