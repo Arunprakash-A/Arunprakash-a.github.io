@@ -71,107 +71,66 @@ descent is cheap.
 
 Learning the activation instead of fixing it is an old idea, reinvented
 independently in several communities. Nothing here is a claim to have thought
-of it first. A compressed map of what already exists:
+of it first — the map, in one table:
 
-- **A learnable knob inside a fixed shape** — PReLU's per-channel slope,
-  Swish's β, [Adaptive Piecewise Linear
-  units](https://arxiv.org/abs/1412.6830).
-- **The whole shape learned from a basis** — [Padé Activation
-  Units](https://arxiv.org/abs/1907.06732) and [rational
-  networks](https://arxiv.org/abs/2004.01902) (rational functions),
-  [DeepLABNet](https://arxiv.org/abs/1911.09257) (radial basis functions),
-  [KANs](https://arxiv.org/abs/2404.19756) (splines, on every weight).
-- **Sinusoidal bases specifically** —
-  [SIREN](https://arxiv.org/abs/2006.09661) (fixed sine),
-  [STAF](https://arxiv.org/abs/2502.00869), [Fourier
-  KANs](https://arxiv.org/abs/2409.09323), [Kolmogorov-Arnold Fourier
-  Networks](https://arxiv.org/abs/2502.06018).
-- **Sharing one activation network-wide** — Jagtap, Kawaguchi & Karniadakis'
-  [global adaptive activation function](https://arxiv.org/abs/1906.01170)
-  (JCP 2020) and its [layer- and neuron-wise
-  follow-up](https://royalsocietypublishing.org/doi/abs/10.1098/rspa.2020.0334)
-  (RSPA 2020) — which already claims **faster convergence, especially early
-  in training**. The early-epoch result later in this post corroborates
-  theirs; it doesn't discover it.
-- **At ImageNet scale** — PReLU was *introduced* on ImageNet, Swish was
-  evaluated there, [ACON](https://arxiv.org/abs/2009.04759) reports +6.7%
-  top-1 on MobileNet-0.25, PAU ran MobileNetV2/ResNet101/DenseNet121, and the
-  Fourier-KAN line reports ImageNet-1K numbers. Anyone claiming "nobody has
-  learned an activation on ImageNet" is wrong.
+| | What's learned | Shared across | Activation params | IN-1K |
+|---|---|---|---|---|
+| ReLU / GELU | nothing | — | 0 | ✓ |
+| [PReLU](https://arxiv.org/abs/1502.01852), Swish-β, [ACON](https://arxiv.org/abs/2009.04759) | a knob on a known shape | channel | ~1 / channel | ✓ |
+| [APL](https://arxiv.org/abs/1412.6830) | shape, from hinges | neuron | 2S / neuron | |
+| [PAU](https://arxiv.org/abs/1907.06732), [rational nets](https://arxiv.org/abs/2004.01902) | whole shape, rational basis | layer | ~10 / layer | ✓ |
+| [DeepLABNet](https://arxiv.org/abs/1911.09257) | whole shape, RBF basis | unit | per unit | |
+| [KAN](https://arxiv.org/abs/2404.19756), [F-KAN](https://arxiv.org/abs/2409.09323), [KAF](https://arxiv.org/abs/2502.06018) | whole shape, spline / Fourier | **every edge** | scales with weight count | ✓ |
+| [SIREN](https://arxiv.org/abs/2006.09661) | nothing — ω₀ is a hyperparameter | — | 0 | |
+| [STAF](https://arxiv.org/abs/2502.00869) | amplitude, frequency, phase | neuron | 3 / harmonic / neuron | |
+| [GAAF](https://arxiv.org/abs/1906.01170), [LAAF](https://royalsocietypublishing.org/doi/abs/10.1098/rspa.2020.0334) | a *scale* inside a fixed shape | **whole network** / layer | **1 total** | |
+| **This post** | **whole shape, Fourier basis** | **whole network** | **5 total** | **✓** |
 
-**How this differs.** Not in the function family: *pick a basis, initialize
-its coefficients to a known-good activation, let backprop move them* is
-Padé's recipe with cosines swapped in. The difference is **where the
-parameters live**. PAU pays ~10 parameters per layer, ACON learns per
-channel, the Fourier-KAN family puts coefficients on every edge — all of them
-scale their activation parameters with the size of the network. The one line
-that truly shares network-wide, GAAF, shares a single *scale* inside a shape
-that stays fixed, and is demonstrated on PINNs. What I could not find
-anywhere is all of it at once:
+*IN-1K = reports ImageNet-1K results; blank means not to my knowledge.*
 
-> the **entire activation shape** learned from a basis, with **one instance
-> shared by every layer** — five numbers for the whole model — inside a
-> **transformer**, at **ImageNet-1K scale**, measured **head-to-head against
-> an otherwise identical baseline over multiple matched seeds**.
+**How this differs — two cells, and only two.** Everything that learns the
+whole *shape* pays for it per layer, per unit or per edge: the activation
+budget grows with the network. The one method that shares network-wide, GAAF,
+shares a single scale inside a shape that never changes, on PINNs — and it
+already claims faster convergence especially early in training, so the
+early-epoch result later in this post corroborates theirs rather than
+discovering anything. What I could not find is the conjunction: **the whole
+shape, learned, shared by every layer, in a transformer, at ImageNet-1K
+scale, against a matched baseline over multiple seeds.** Read that as "I
+looked and didn't find it," not a flag planted — corrections welcome.
 
-That is the narrow strip this post is standing on. A negative literature
-claim is the kind that ages badly, so read it as "I looked and didn't find
-it," not as a flag planted. If you know of prior work that hits all five,
-please send it — I'd rather be corrected than cited wrongly.
+**Why a Fourier basis.** Five numbers serving an entire network have to be
+well-behaved, and that is mostly a property of the basis:
 
-**Why a Fourier basis.** Sharing five numbers across an entire network only
-works if those five numbers are well-behaved, and that is mostly a property
-of the basis:
+- **Bounded, nothing to divide by** — |φ| ≤ 2.43 at init, since sin and cos
+  live in [−1, 1]. Rational bases carry a denominator that can approach zero
+  (PAU needs a "safe" variant to fence off the poles); polynomial bases have
+  the opposite failure and diverge as |t| grows.
+- **No vanishing gradient in the tails** — |φ′| ≤ 2.23 at init, and being
+  periodic it does not *decay* with |t| the way sigmoid and tanh saturate. A
+  large pre-activation isn't a dead one.
+- **The basis never amplifies gradient to the coefficients** — ∂φ/∂a_k =
+  cos(kt) and ∂φ/∂b_k = sin(kt), in [−1, 1] for any input at all. That bound
+  matters more here than it would per-layer: these five accumulate gradient
+  from every activation site in the network, every step.
+- **Orthogonal on [−π, π]** — the five parameters move along near-independent
+  directions. Monomial bases are ill-conditioned by comparison; splines need
+  a grid range to tune. There's no grid here.
+- **Graceful truncation, exact init** — coefficients of a smooth reference
+  decay fast, so K=2 already carries the shape, and GELU's true coefficients
+  are integrated directly rather than fitted.
 
-- **Bounded, and nothing to divide by.** sin and cos live in [−1, 1], so the
-  curve is bounded by the sum of its coefficient magnitudes however large the
-  pre-activation gets — |φ| ≤ 2.43 at initialization. A rational function has
-  a denominator that can approach zero, which is why PAU needs a "safe"
-  variant to fence off the poles; a polynomial basis has the opposite failure
-  and diverges as |t| grows. A Fourier series does neither.
-- **No vanishing gradient in the tails.** φ′(t) = Σ k(−a_k sin kt + b_k
-  cos kt) is bounded — ≤ 2.23 at initialization — and, being periodic, it
-  does not *decay* with |t|. sigmoid and tanh flatten into saturated tails
-  that stop passing gradient; this curve keeps oscillating, so a
-  large-magnitude pre-activation isn't a dead one.
-- **The basis never amplifies the gradient reaching the coefficients.**
-  ∂φ/∂a_k = cos(kt) and ∂φ/∂b_k = sin(kt), both in [−1, 1] by construction,
-  for any input whatsoever. That bound matters far more here than it would
-  per-layer: these five parameters accumulate gradient from every activation
-  site in the network on every step.
-- **Orthogonal, so the coefficients don't fight each other.** The basis
-  functions are mutually orthogonal on [−π, π], so the five parameters move
-  along near-independent directions. Monomial bases are famously
-  ill-conditioned by comparison, and splines need a grid whose range is one
-  more thing to tune. There's no grid here.
-- **Truncation is graceful, and initialization is exact.** Coefficients of a
-  smooth reference decay quickly, so K=2 already carries the shape — and
-  because GELU's true Fourier coefficients can be integrated directly, the
-  starting point is computed rather than fitted.
+It holds up in practice too: independent seeds [land within 0.02 of each
+other](#questioning-common-assumptions-about-the-shape-of-the-activation).
 
-Whether that theory survives contact with training is an empirical question,
-and the coefficients [do turn out to be
-stable](#questioning-common-assumptions-about-the-shape-of-the-activation):
-independent seeds land within 0.02 of each other.
-
-Which leaves two things actually being tested:
-
-- **Whether the global version survives the move to real scale.** Methods
-  that look good on CIFAR routinely stop looking good on ImageNet — KANs, for
-  instance, remain an open problem on real vision datasets. Sharing is also
-  the setting where the idea is *most* likely to break: one curve now has to
-  serve every layer at once, and the layers of a transformer are not doing
-  the same job.
-- **A controlled measurement.** Five matched seeds, bit-identical
-  initialization, the gap tracked at all 500 epoch checkpoints rather than
-  just the final number, and a paired test across seeds. The activation is
-  the only thing that differs between arms.
-
-One thing this post explicitly does **not** establish: the comparison here is
-two-arm — fixed GELU versus one shared learnable curve. Padé, rational,
-spline and per-layer learnable activations are *not* run as arms. So nothing
-below says a Fourier basis is the right basis, or that sharing globally beats
-sharing per layer. Those are open, and they're the obvious next experiments.
+That leaves two things under test — whether the global version survives real
+scale (sharing is where it's *most* likely to break: one curve now serves
+every layer, and transformer layers aren't doing the same job), and whether
+it holds under a controlled measurement (five matched seeds, bit-identical
+init, all 500 epoch checkpoints, a paired test). And one thing this post does
+**not** establish: it's a two-arm comparison against fixed GELU, with no
+Padé, spline or per-layer arm — so nothing here says Fourier is the right
+basis, or that global beats per-layer.
 
 ## The setup
 
