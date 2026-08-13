@@ -91,9 +91,18 @@ of it first — the map, in one table:
 ## How this work differs
 
 Everything that learns the whole *shape* pays for it per layer, per unit or
-per edge: the activation budget grows with the network. The one method that
-shares network-wide, GAAF, shares a single scale inside a shape that never
-changes, on physics-informed neural networks (PINNs) — and it already claims
+per edge: **the activation budget grows with the network.**
+
+Put that on the model in this experiment — a depth-6 ViT-Ti/16 with 768
+hidden units per block, so **4,608 activation sites**. ACON-C learns three
+channel-wise numbers (p₁, p₂, β) at each one: **13,824 extra parameters**.
+A per-edge basis like KAN's would put a small learned function on each of
+the 1.77M FFN weights. The activation here is **five numbers** — and it is
+still five numbers at ViT-L, because it does not scale with anything.
+
+The one method that shares network-wide, GAAF, shares a single scale inside
+a shape that never changes, on physics-informed neural networks
+(PINNs) — and it already claims
 faster convergence especially early in training, so the early-epoch result
 later in this post corroborates theirs. What I could not find is the
 conjunction:
