@@ -100,23 +100,9 @@ A per-edge basis like KAN's would put a small learned function on each of
 the 1.77M FFN weights. The activation here is **five numbers** — and it is
 still five numbers at ViT-L, because it does not scale with anything.
 
-The one method that shares network-wide, GAAF, shares a single scale inside
-a shape that never changes, on physics-informed neural networks (PINNs) — and
-it already claims faster convergence especially early in training, so the
-early-epoch result later in this post corroborates theirs.
-
-Its evidence, though, comes from a different world. GAAF's experiments are
-function approximation and PDE solving end to end: 1-D and 2-D inputs, its
-largest network 6 hidden layers of 20 neurons — on the order of 2,000
-parameters — fitted to between 300 and 16,000 collocation points. No image
-benchmark appears in it at all. Against that, this experiment is a 3.05M
-parameter transformer on 150,528-dimensional inputs and 1.27M training
-images. The follow-up by the same authors does reach CIFAR-10/100 and SVHN
-with a PreActResNet18 over three trials — but that is the *layer-wise and
-neuron-wise* version, not the global one. The single-scale-for-everything
-scheme has, as far as I can tell, never been taken past a PINN.
-
-What I could not find is the conjunction:
+The only entry in the table that shares network-wide, GAAF, learns a single
+*scale* inside a shape that never changes — and has never been run on vision
+at all. What I could not find is the conjunction:
 
 - the **whole shape**, learned — not a knob on a known one
 - **shared by every layer** — five numbers for the entire model
