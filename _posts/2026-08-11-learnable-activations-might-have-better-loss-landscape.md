@@ -431,8 +431,7 @@ FlashAttention for learnable activations yet — we'd like there to be. 🙂
 
 Since this study leans on seeds, per-epoch tracking and wall-clock honesty, it
 seems only fair to ask how the work in the table above reports *its* results.
-Compiled in August 2026 by reading each paper and, where one exists, its
-repository — so it reflects those versions and may miss later updates.
+Compiled in August 2026.
 
 | Method | Code | Seeds | Wall-clock | Gain shown over training |
 |---|---|---|---|---|
