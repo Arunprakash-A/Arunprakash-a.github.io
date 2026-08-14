@@ -462,14 +462,6 @@ expensive: PAU divides, KAN evaluates splines, the Fourier line calls
 transcendentals. The 2.2× above is not a flattering number, but it appears to
 be one of the few published at all.
 
-**Two places this study is not ahead.** APL ran **55 initializations**, an
-order of magnitude past the five here — "unusually many seeds" is not a claim
-available to us in general, only at ImageNet scale. And plotting a
-convergence curve is common: PAU, rational nets, F-KAN, STAF and GAAF all do
-it. What I did not find anywhere is the gap *quantified at every matched
-checkpoint* with a paired test across seeds, which is the actual difference
-in kind.
-
 **Code release is common but shallow.** Seven of eleven ship something, yet
 most is the activation module rather than a pipeline; ACON is the only one
 with training code and pretrained weights for ImageNet.
