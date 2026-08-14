@@ -135,13 +135,16 @@ at all. What we designed is the conjunction:
 
 <img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_hero.png" alt="Two candidate shapes for the same activation function: the fixed curve, and the curve five learnable coefficients converged to" style="max-width:65%; height:auto; display:block; margin:0 auto">
 
-## Fourier approximation for the activation
+## Why Fourier Approximation of the activation
 
-**First, is a basis even needed?** ACON is the strongest member of the
-knob-on-a-known-shape family: it smoothly interpolates between max(p₁t, p₂t)
-and a linear map, recovering ReLU, Leaky ReLU, PReLU and Swish as special
-cases, for three numbers. So we shared those three numbers globally, exactly
-the way ours are shared, under a byte-identical recipe. We called it at 50
+**First, is a basis even needed? Why not just use ACON globally, which has
+only three parameters?**
+
+ACON is the strongest member of the knob-on-a-known-shape family: it smoothly
+interpolates between max(p₁t, p₂t) and a linear map, recovering ReLU, Leaky
+ReLU, PReLU and Swish as special cases, for three numbers. So we shared those
+three numbers globally, exactly the way ours are shared, under a
+byte-identical recipe. We called it at 50
 epochs: ahead of fixed GELU at only 37 of them, by +0.5 pt on average, and
 inside GELU's own five-seed noise band at roughly two thirds of them. Run
 ACON the way its paper prescribes instead — per channel, per layer, 13,824
