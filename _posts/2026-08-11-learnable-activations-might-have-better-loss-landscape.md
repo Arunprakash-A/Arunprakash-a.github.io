@@ -141,19 +141,27 @@ at all. What we designed is the conjunction:
 knob-on-a-known-shape family: it smoothly interpolates between max(p₁t, p₂t)
 and a linear map, recovering ReLU, Leaky ReLU, PReLU and Swish as special
 cases, for three numbers. So we shared those three numbers globally, exactly
-the way ours are shared, under a byte-identical recipe. ACON-global buys
-almost nothing. We called it at 50 epochs: ahead of fixed GELU at only 37 of them,
-by +0.5 pt on average, and inside GELU's own five-seed noise band at roughly
-two thirds of them. The gain also shrinks rather than compounds — worth
-+0.86 pt over the first 25 epochs and +0.15 pt over the next 25. The Fourier
-version is outside that noise band at every one of its 100 epochs, and its
-gap holds. Run ACON the way its paper prescribes instead — per channel, per
-layer, 13,824 parameters — and on this model it falls *below* the fixed
-baseline.
+the way ours are shared, under a byte-identical recipe. We called it at 50
+epochs: ahead of fixed GELU at only 37 of them, by +0.5 pt on average, and
+inside GELU's own five-seed noise band at roughly two thirds of them. Run
+ACON the way its paper prescribes instead — per channel, per layer, 13,824
+parameters — and on this model it falls *below* the fixed baseline.
 
-Three knobs on a fixed shape are not a shape. p₁ and p₂ set two slopes and β
-sets how sharply they meet; whatever those numbers do, the curve remains two
-lines joined by a knee. One curve serving an entire network appears to need
+| Activation | Params | Δ vs GELU, ep 1–25 | Δ vs GELU, ep 26–50 | Ahead of GELU | Inside GELU's ±2σ |
+|---|---|---|---|---|---|
+| **Fourier, shared** | **5 total** | **+2.64 pt** | **+2.32 pt** | **100 / 100 ep** | 0 / 50 ep |
+| ACON-global | 3 total | +0.86 pt | +0.15 pt | 37 / 50 ep | 32 / 50 ep |
+| ACON, per channel per layer | 13,824 | −1.18 pt | −2.53 pt | 1 / 42 ep | 11 / 42 ep |
+
+*Seed 1, identical recipe. Each window is cut to the run's own depth — the
+per-layer leg stopped at 42, ACON-global at 50, the Fourier leg ran all 100.
+±2σ is GELU's own five-seed spread at each epoch: a row sitting inside it is
+not distinguishable from changing the random seed.*
+
+**ACON-global buys almost nothing.** Three knobs on a fixed shape are not a
+shape. p₁ and p₂ set two slopes and β sets how sharply they meet; whatever
+those numbers do, the curve remains two lines joined by a knee. One curve
+serving an entire network appears to need
 something else: the freedom to change *shape* across the interval, smoothly.
 That is a property of the basis, not of the parameter count — which is why
 more parameters, spent per channel, made it worse rather than better.
