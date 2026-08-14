@@ -111,8 +111,9 @@ are modest: one number for PReLU, three for ACON, ten for PAU. But they are
 
 ## How this work differs
 
-Everything that learns the whole *shape* pays for it per layer, per unit or
-per edge: **the activation budget grows with the network.**
+We'd like to emphasize the same gap once more, because it is the whole point:
+everything that learns the whole *shape* pays for it per layer, per unit or
+per edge — **the activation budget grows with the network.**
 
 Put that on the model in this experiment — a depth-6 ViT-Ti/16 with 768
 hidden units per block, so **4,608 activation sites**. ACON-C learns three
