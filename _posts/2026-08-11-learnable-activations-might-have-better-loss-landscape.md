@@ -164,10 +164,9 @@ not distinguishable from changing the random seed.*
 **ACON-global buys almost nothing.** Three knobs on a fixed shape are not a
 shape. p₁ and p₂ set two slopes and β sets how sharply they meet; whatever
 those numbers do, the curve remains two lines joined by a knee. One curve
-serving an entire network appears to need
-something else: the freedom to change *shape* across the interval, smoothly.
-That is a property of the basis, not of the parameter count — which is why
-more parameters, spent per channel, made it worse rather than better.
+serving an entire network appears to need something else: the freedom to
+change *shape* across the interval, smoothly. That is a property of the
+basis, not of the parameter count.
 
 The Fourier basis has that property. {1, cos kt, sin kt} is complete in
 L²[−π, π], so the family can represent any square-integrable shape on the
