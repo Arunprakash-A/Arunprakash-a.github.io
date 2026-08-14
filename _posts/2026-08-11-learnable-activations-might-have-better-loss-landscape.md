@@ -168,9 +168,9 @@ serving an entire network appears to need something else: the freedom to
 change *shape* across the interval, smoothly. That is a property of the
 basis, not of the parameter count.
 
-The Fourier basis has that property. {1, cos kt, sin kt} is complete in
+**The Fourier basis has that property. {1, cos kt, sin kt} is complete in
 L²[−π, π], so the family can represent any square-integrable shape on the
-interval, and every truncation of it is infinitely differentiable. The
+interval, and every truncation of it is infinitely differentiable.** The
 completeness belongs to the family, not to the five numbers — K sets how much
 of the basis is actually in play, and K = 2 is a deliberate stop at low
 frequencies.
