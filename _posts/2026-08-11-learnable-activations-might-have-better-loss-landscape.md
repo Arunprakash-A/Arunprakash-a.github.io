@@ -84,12 +84,20 @@ descent is cheap.
 ## Related work
 
 Learning the activation instead of fixing it is an old idea, reinvented
-independently in several communities. The map, in one table:
+independently in several communities. What none of it shows — not to my
+knowledge — is a single activation shared by the *entire* network that
+outperforms either the fixed default or the learnable versions shared per
+channel or per layer. The map below is largely a map of sharing strategies:
+almost everything in it is shared across channels or across layers, and that
+is what makes the activation budget grow with the model — dozens to tens of
+thousands of extra parameters on the small ViT used here. Per site the counts
+are modest: one number for PReLU, three for ACON, ten for PAU. But they are
+*per site*. Ours is five, and five is also the total.
 
 | | What's learned | Shared across | Activation params | IN-1K |
 |---|---|---|---|---|
 | ReLU / GELU | nothing | — | 0 | ✓ |
-| [PReLU](https://arxiv.org/abs/1502.01852), Swish-β, [ACON](https://arxiv.org/abs/2009.04759) | a knob on a known shape | channel | ~1 / channel | ✓ |
+| [PReLU](https://arxiv.org/abs/1502.01852), Swish-β, [ACON](https://arxiv.org/abs/2009.04759) | a knob on a known shape | channel | 1–3 / channel | ✓ |
 | [APL](https://arxiv.org/abs/1412.6830) | shape, from hinges | neuron | 2S / neuron | |
 | [PAU](https://arxiv.org/abs/1907.06732), [rational nets](https://arxiv.org/abs/2004.01902) | whole shape, rational basis | layer | ~10 / layer | ✓ |
 | [DeepLABNet](https://arxiv.org/abs/1911.09257) | whole shape, RBF basis | unit | per unit | |
