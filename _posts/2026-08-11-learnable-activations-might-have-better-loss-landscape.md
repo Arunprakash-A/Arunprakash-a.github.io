@@ -12,8 +12,14 @@ which activation function to use. There are hundreds of activation functions
 in the literature, and a handful have become the default — ReLU, GELU, Swish,
 SiLU, and so on. Either way, we end up fixing the activation function ahead of
 time, hoping that whatever worked best in someone else's study will also work
-best for ours. But what if there's a better activation function out there?
-What if we make it learnable over the interval instead of fixing it? Will it
+best for ours. There have been many attempts to adapt the curve rather than
+inherit it — but with its shape pre-defined, learning only its curvature.
+PReLU learns the slope of the negative arm; Swish-β learns how sharply the
+curve bends; ACON generalizes both under a single form. Which family the
+curve belongs to is still a decision made in advance.
+
+But what if the family isn't fixed either? What if the whole shape is learned
+over the interval, instead of a knob on a curve someone else chose? Will it
 converge faster? Will it deliver better performance? Here we study exactly
 that, and test it at ImageNet scale.
 
