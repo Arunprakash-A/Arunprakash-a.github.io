@@ -6,6 +6,29 @@ mathjax: true
 excerpt: "One learnable nonlinearity, shared by every layer, tested head-to-head against a standard fixed activation on real ImageNet-1K."
 ---
 
+## A quiz before you dive deep
+
+<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_quiz_dataset.png" alt="A circularly separable toy dataset: an inner disk (one class) surrounded by an outer ring (the other class)" style="max-width:320px; height:auto; display:block; margin:0 auto">
+
+Here's a circularly separable dataset — an inner disk of one class, surrounded
+by an outer ring of the other. Suppose you build an MLP with a single hidden
+layer for it. What is the **minimum number of neurons** you need in that
+hidden layer for perfect classification?
+
+Think about it. If you want to confirm your answer, [Colah's blog on neural
+networks, manifolds and topology](https://colah.github.io/posts/2014-03-NN-Manifolds-Topology/)
+is a good place to look.
+
+If you're convinced the answer is three — congratulations! But…
+
+> **That is true only if the activation function is fixed.**
+
+Learnable activations bring that number down to two. Can every learnable
+activation do that? Good question — the answer is, obviously, no. Not every
+learnable activation can pull it off.
+
+Now let's dive into the study.
+
 <img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_hero.png" alt="Two curves for the same activation function: the fixed curve we default to, and the curve five learnable coefficients converged to after training" style="max-width:100%">
 
 While building any neural network, one of the most consequential choices is
@@ -531,7 +554,6 @@ with training code and pretrained weights for ImageNet.
 </div>
 </details>
 
-
 <details>
 <summary style="cursor:pointer; padding:10px 0"><b>B. The same question on small and medium datasets</b></summary>
 <div markdown="1" style="padding:4px 0 8px">
@@ -562,6 +584,17 @@ against `standard` (df = 4, so $|t| > 2.776$ is $p < 0.05$):
 | CIFAR-10 | 40 | 66.98 ± 0.49 | 68.71 ± 0.27 <br>+1.73 ($t=8.05$) | 66.43 ± 0.45 <br>−0.55 ($t=-5.04$) | **75.06 ± 1.29** <br>**+8.08 ($t=18.38$)** |
 | CIFAR-100 | 60 | 37.63 ± 0.31 | 37.85 ± 0.65 <br>+0.22 ($t=0.73$) | 37.49 ± 0.82 <br>−0.14 ($t=-0.47$) | **46.41 ± 0.83** <br>**+8.78 ($t=25.44$)** |
 | Tiny-ImageNet | 80 | 30.51 ± 0.20 | 29.27 ± 0.43 <br>**−1.24 ($t=-5.12$)** | 30.37 ± 0.65 <br>−0.15 ($t=-0.40$) | **35.36 ± 0.59** <br>**+4.84 ($t=16.17$)** |
+
+</div>
+</details>
+
+<details>
+<summary style="cursor:pointer; padding:10px 0"><b>C. Solution to the quiz</b></summary>
+<div markdown="1" style="padding:4px 0 8px">
+
+Got the answer? Congratulations!
+
+<img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_quiz_solution.png" alt="Learned decision boundary of a 2-hidden-neuron MLP on the circles dataset, for FAct, PAU/Pade, and the standard activation zoo, ranked by test accuracy" style="max-width:100%">
 
 </div>
 </details>
