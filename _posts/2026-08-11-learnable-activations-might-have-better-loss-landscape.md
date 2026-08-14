@@ -137,6 +137,34 @@ at all. What we designed is the conjunction:
 
 ## Fourier approximation for the activation
 
+**First, is a basis even needed?** ACON is the strongest member of the
+knob-on-a-known-shape family: it smoothly interpolates between max(p₁t, p₂t)
+and a linear map, recovering ReLU, Leaky ReLU, PReLU and Swish as special
+cases, for three numbers. So we shared those three numbers globally, exactly
+the way ours are shared, under a byte-identical recipe. ACON-global buys
+almost nothing. We called it at 50 epochs: ahead of fixed GELU at only 37 of them,
+by +0.5 pt on average, and inside GELU's own five-seed noise band at roughly
+two thirds of them. The gain also shrinks rather than compounds — worth
++0.86 pt over the first 25 epochs and +0.15 pt over the next 25. The Fourier
+version is outside that noise band at every one of its 100 epochs, and its
+gap holds. Run ACON the way its paper prescribes instead — per channel, per
+layer, 13,824 parameters — and on this model it falls *below* the fixed
+baseline.
+
+Three knobs on a fixed shape are not a shape. p₁ and p₂ set two slopes and β
+sets how sharply they meet; whatever those numbers do, the curve remains two
+lines joined by a knee. One curve serving an entire network appears to need
+something else: the freedom to change *shape* across the interval, smoothly.
+That is a property of the basis, not of the parameter count — which is why
+more parameters, spent per channel, made it worse rather than better.
+
+The Fourier basis has that property. {1, cos kt, sin kt} is complete in
+L²[−π, π], so the family can represent any square-integrable shape on the
+interval, and every truncation of it is infinitely differentiable. The
+completeness belongs to the family, not to the five numbers — K sets how much
+of the basis is actually in play, and K = 2 is a deliberate stop at low
+frequencies.
+
 The shared curve is a truncated Fourier series in the pre-activation *t*:
 
 φ(t) = a₀ + Σ<sub>k=1..K</sub> [ a<sub>k</sub> cos(kωt) + b<sub>k</sub> sin(kωt) ]
