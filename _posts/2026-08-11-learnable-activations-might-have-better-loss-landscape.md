@@ -1,5 +1,5 @@
 ---
-title: "One Activation for the Whole Network — at ImageNet-1K Scale"
+title: "One Learnable Activation, Shared Across the Whole Network — Outperforms Fixed GELU at ImageNet-1K Scale"
 date: 2026-08-11
 tags: [Deep-Learning, Research]
 mathjax: true
