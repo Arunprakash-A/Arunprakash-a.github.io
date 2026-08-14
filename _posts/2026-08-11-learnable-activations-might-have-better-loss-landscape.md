@@ -153,9 +153,7 @@ That leaves two things under test — whether the global version survives real
 scale (sharing is where it's *most* likely to break: one curve now serves
 every layer, and transformer layers aren't doing the same job), and whether
 it holds under a controlled measurement (five matched seeds, bit-identical
-init, all 500 epoch checkpoints, a paired test). And one thing this study does
-**not** establish: it's a two-arm comparison against fixed GELU, with no
-spline or per-layer arm.
+init, all 500 epoch checkpoints, a paired test).
 
 A Padé arm was started and abandoned. A degree-(5,4) rational activation,
 GELU-initialised, shared globally, same recipe — and it would not run under
