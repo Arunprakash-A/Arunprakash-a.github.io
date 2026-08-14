@@ -20,8 +20,16 @@ curve belongs to is still a decision made in advance.
 
 But what if the family isn't fixed either? What if the whole shape is learned
 over the interval, instead of a knob on a curve someone else chose? Will it
-converge faster? Will it deliver better performance? Here we study exactly
-that, and test it at ImageNet scale.
+converge faster? Will it deliver better performance?
+
+And there is a third question, the one that makes the *global* version worth
+doing rather than just another learnable activation: sharing a single curve
+across the entire network lets us see what the network wants. Give every
+channel or every layer its own curve and each is free to specialize, so you
+get hundreds of answers and no single one — a picture of local preferences,
+not of the network's. One curve for the whole network forces every layer to
+agree on one shape, and the shape they settle on is itself a measurement.
+Here we study exactly that, and test it at ImageNet scale.
 
 **What this study is and isn't.** This isn't a run at the state of the art.
 The model here is a small ViT trained on a deliberately plain recipe, and its
