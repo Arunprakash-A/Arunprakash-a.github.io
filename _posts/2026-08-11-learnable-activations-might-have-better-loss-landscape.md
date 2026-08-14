@@ -161,12 +161,19 @@ every layer, and transformer layers aren't doing the same job), and whether
 it holds under a controlled measurement (five matched seeds, bit-identical
 init, all 500 epoch checkpoints, a paired test).
 
-Other approximations are available — Padé and Chebyshev among them. Both were
-tried here and both failed: either on numerical grounds, hitting NaNs early
-under mixed-precision fp16, or on cost, at a compute time that doesn't scale
-realistically. Any basis other than Fourier is fair game, as long as it is
-numerically stable and trains in reasonable time. Fourier is what we go with
-because it satisfies both.
+Other bases are available, and two were tried. **Padé** — the real PAU, shared
+globally the same way — turned out to be a genuine contest: wherever it trains
+to completion, it holds its own against the Fourier version on accuracy. What
+separates them is stability and cost. Under mixed precision it diverged on the
+harder dataset, on every seed, where the Fourier runs never did. Forcing full
+precision fixes that, but makes it slow enough that carrying it to ImageNet
+was no longer affordable — that run was abandoned early. **Chebyshev** failed
+the way the polynomial bullet above predicts: pre-activations ran away and the
+forward pass went to NaN.
+
+So the finding isn't that the alternatives fail. It's that Fourier matches the
+best of them on accuracy while staying stable in half precision and cheap
+enough to run at scale, on fewer parameters.
 
 ## The setup
 
