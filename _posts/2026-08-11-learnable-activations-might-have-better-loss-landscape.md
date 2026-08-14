@@ -2,6 +2,7 @@
 title: "One Activation for the Whole Network — at ImageNet-1K Scale"
 date: 2026-08-11
 tags: [Deep-Learning, Research]
+mathjax: true
 excerpt: "One learnable nonlinearity, shared by every layer, tested head-to-head against a standard fixed activation on real ImageNet-1K."
 ---
 
@@ -14,7 +15,7 @@ SiLU, and so on. Either way, we end up fixing the activation function ahead of
 time, hoping that whatever worked best in someone else's study will also work
 best for ours. There have been many attempts to adapt the curve rather than
 inherit it — but with its shape pre-defined, learning only its curvature.
-PReLU learns the slope of the negative arm; Swish-β learns how sharply the
+PReLU learns the slope of the negative arm; Swish-$\beta$ learns how sharply the
 curve bends; ACON generalizes both under a single form. Which family the
 curve belongs to is still a decision made in advance.
 
@@ -97,12 +98,12 @@ are modest: one number for PReLU, three for ACON, ten for PAU. But they are
 | | What's learned | Shared across | Activation params | IN-1K |
 |---|---|---|---|---|
 | ReLU / GELU | nothing | — | 0 | ✓ |
-| [PReLU](https://arxiv.org/abs/1502.01852), Swish-β, [ACON](https://arxiv.org/abs/2009.04759) | a knob on a known shape | channel | 1–3 / channel | ✓ |
-| [APL](https://arxiv.org/abs/1412.6830) | shape, from hinges | neuron | 2S / neuron | |
+| [PReLU](https://arxiv.org/abs/1502.01852), Swish-$\beta$, [ACON](https://arxiv.org/abs/2009.04759) | a knob on a known shape | channel | 1–3 / channel | ✓ |
+| [APL](https://arxiv.org/abs/1412.6830) | shape, from hinges | neuron | $2S$ / neuron | |
 | [PAU](https://arxiv.org/abs/1907.06732), [rational nets](https://arxiv.org/abs/2004.01902) | whole shape, rational basis | layer | ~10 / layer | ✓ |
 | [DeepLABNet](https://arxiv.org/abs/1911.09257) | whole shape, RBF basis | unit | per unit | |
 | [KAN](https://arxiv.org/abs/2404.19756), [F-KAN](https://arxiv.org/abs/2409.09323), [KAF](https://arxiv.org/abs/2502.06018) | whole shape, spline / Fourier | **every edge** | scales with weight count | ✓ |
-| [SIREN](https://arxiv.org/abs/2006.09661) | nothing — ω₀ is a hyperparameter | — | 0 | |
+| [SIREN](https://arxiv.org/abs/2006.09661) | nothing — $\omega_0$ is a hyperparameter | — | 0 | |
 | [STAF](https://arxiv.org/abs/2502.00869) | amplitude, frequency, phase | neuron | 3 / harmonic / neuron | |
 | [GAAF](https://arxiv.org/abs/1906.01170), [LAAF](https://royalsocietypublishing.org/doi/abs/10.1098/rspa.2020.0334) | a *scale* inside a fixed shape | **whole network** / layer | **1 total** | |
 | **This study** | **whole shape, Fourier basis** | **whole network** | **5 total** | **✓** |
@@ -117,7 +118,8 @@ per edge — **the activation budget grows with the network.**
 
 Put that on the model in this experiment — a depth-6 ViT-Ti/16 with 768
 hidden units per block, so **4,608 activation sites**. ACON-C learns three
-channel-wise numbers (p₁, p₂, β) at each one: **13,824 extra parameters**.
+channel-wise numbers $(p_1, p_2, \beta)$ at each one: **13,824 extra
+parameters**.
 A per-edge basis like KAN's would put a small learned function on each of
 the 1.77M FFN weights. The activation here is **five numbers** — and it is
 still five numbers at ViT-L, because it does not scale with anything.
@@ -141,8 +143,9 @@ at all. What we designed is the conjunction:
 only three parameters?**
 
 ACON is the strongest member of the knob-on-a-known-shape family: it smoothly
-interpolates between max(p₁t, p₂t) and a linear map, recovering ReLU, Leaky
-ReLU, PReLU and Swish as special cases, for three numbers. So we shared those
+interpolates between $\max(p_1 t,\, p_2 t)$ and a linear map, recovering
+ReLU, Leaky ReLU, PReLU and Swish as special cases, for three numbers. So we
+shared those
 three numbers globally, exactly the way ours are shared, under a
 byte-identical recipe. We called it at 50
 epochs: ahead of fixed GELU at only 37 of them, by +0.5 pt on average, and
@@ -150,7 +153,7 @@ inside GELU's own five-seed noise band at roughly two thirds of them. Run
 ACON the way its paper prescribes instead — per channel, per layer, 13,824
 parameters — and on this model it falls *below* the fixed baseline.
 
-| Activation | Params | Δ vs GELU, ep 1–25 | Δ vs GELU, ep 26–50 | Ahead of GELU | Inside GELU's ±2σ |
+| Activation | Params | $\Delta$ vs GELU, ep 1–25 | $\Delta$ vs GELU, ep 26–50 | Ahead of GELU | Inside GELU's $\pm 2\sigma$ |
 |---|---|---|---|---|---|
 | **Fourier, shared** | **5 total** | **+2.64 pt** | **+2.32 pt** | **100 / 100 ep** | 0 / 50 ep |
 | ACON-global | 3 total | +0.86 pt | +0.15 pt | 37 / 50 ep | 32 / 50 ep |
@@ -158,53 +161,58 @@ parameters — and on this model it falls *below* the fixed baseline.
 
 *Seed 1, identical recipe. Each window is cut to the run's own depth — the
 per-layer leg stopped at 42, ACON-global at 50, the Fourier leg ran all 100.
-±2σ is GELU's own five-seed spread at each epoch: a row sitting inside it is
-not distinguishable from changing the random seed.*
+$\pm 2\sigma$ is GELU's own five-seed spread at each epoch: a row sitting
+inside it is not distinguishable from changing the random seed.*
 
 **ACON-global buys almost nothing.** Three knobs on a fixed shape are not a
-shape. p₁ and p₂ set two slopes and β sets how sharply they meet; whatever
-those numbers do, the curve remains two lines joined by a knee. One curve
+shape. $p_1$ and $p_2$ set two slopes and $\beta$ sets how sharply they meet;
+whatever those numbers do, the curve remains two lines joined by a knee. One
+curve
 serving an entire network appears to need something else: the freedom to
 change *shape* across the interval, smoothly. That is a property of the
 basis, not of the parameter count.
 
-**The Fourier basis has that property. {1, cos kt, sin kt} is complete in
-L²[−π, π], so the family can represent any square-integrable shape on the
-interval, and every truncation of it is infinitely differentiable.** The
-completeness belongs to the family, not to the five numbers — K sets how much
-of the basis is actually in play, and K = 2 is a deliberate stop at low
-frequencies.
+**The Fourier basis has that property. $\lbrace 1,\, \cos kt,\, \sin kt \rbrace$
+is complete in $L^2[-\pi, \pi]$, so the family can represent any
+square-integrable shape on the interval, and every truncation of it is
+infinitely differentiable.** The completeness belongs to the family, not to the
+five numbers — $K$ sets how much of the basis is actually in play, and $K = 2$
+is a deliberate stop at low frequencies.
 
-The shared curve is a truncated Fourier series in the pre-activation *t*:
+The shared curve is a truncated Fourier series in the pre-activation $t$:
 
-φ(t) = a₀ + Σ<sub>k=1..K</sub> [ a<sub>k</sub> cos(kωt) + b<sub>k</sub> sin(kωt) ]
+$$
+\varphi(t) \;=\; a_0 \;+\; \sum_{k=1}^{K} \left[\, a_k \cos(k\omega t) \;+\; b_k \sin(k\omega t) \,\right]
+$$
 
-with K = 2 and ω = 1, so the learnable set is {a₀, a₁, a₂, b₁, b₂} — the
-five numbers. They are not fitted or randomly initialized: GELU's Fourier
-coefficients on [−π, π] are computed by numerically integrating the Euler
-formulas, giving a₀ = 0.7061, a = [−0.7049, 0.0261], b = [1.0000, −0.5000].
+with $K = 2$ and $\omega = 1$, so the learnable set is
+$\lbrace a_0, a_1, a_2, b_1, b_2 \rbrace$ — the five numbers. They are not
+fitted or randomly initialized: GELU's Fourier coefficients on $[-\pi, \pi]$
+are computed by numerically integrating the Euler formulas, giving
+$a_0 = 0.7061$, $a = [-0.7049,\ 0.0261]$, $b = [1.0000,\ -0.5000]$.
 Training starts from a curve that already *is* the activation it replaces,
 and every later shape is a departure the gradient chose to make.
 
 **Why a Fourier series.** Five numbers serving an entire network have to be
 well-behaved, and that is mostly a property of the basis:
 
-- **Bounded, nothing to divide by** — |φ| ≤ 2.43 at init, since sin and cos
-  live in [−1, 1]. Rational bases carry a denominator that can approach zero
-  (PAU needs a "safe" variant to fence off the poles); polynomial bases have
-  the opposite failure and diverge as |t| grows.
-- **No vanishing gradient in the tails** — |φ′| ≤ 2.23 at init, and being
-  periodic it does not *decay* with |t| the way sigmoid and tanh saturate. A
-  large pre-activation isn't a dead one.
-- **The basis never amplifies gradient to the coefficients** — ∂φ/∂a_k =
-  cos(kt) and ∂φ/∂b_k = sin(kt), in [−1, 1] for any input at all. That bound
-  matters more here than it would per-layer: these five accumulate gradient
-  from every activation site in the network, every step.
-- **Orthogonal on [−π, π]** — the five parameters move along near-independent
-  directions. Monomial bases are ill-conditioned by comparison; splines need
-  a grid range to tune. There's no grid here.
+- **Bounded, nothing to divide by** — $|\varphi| \le 2.43$ at init, since
+  $\sin$ and $\cos$ live in $[-1, 1]$. Rational bases carry a denominator that
+  can approach zero (PAU needs a "safe" variant to fence off the poles);
+  polynomial bases have the opposite failure and diverge as $|t|$ grows.
+- **No vanishing gradient in the tails** — $|\varphi'| \le 2.23$ at init, and
+  being periodic it does not *decay* with $|t|$ the way sigmoid and tanh
+  saturate. A large pre-activation isn't a dead one.
+- **The basis never amplifies gradient to the coefficients** —
+  $\partial\varphi/\partial a_k = \cos(kt)$ and
+  $\partial\varphi/\partial b_k = \sin(kt)$, in $[-1, 1]$ for any input at
+  all. That bound matters more here than it would per-layer: these five
+  accumulate gradient from every activation site in the network, every step.
+- **Orthogonal on $[-\pi, \pi]$** — the five parameters move along
+  near-independent directions. Monomial bases are ill-conditioned by
+  comparison; splines need a grid range to tune. There's no grid here.
 - **Graceful truncation** — the coefficients of a smooth reference decay
-  fast, which is why K=2 already carries the shape: at init the second
+  fast, which is why $K=2$ already carries the shape: at init the second
   harmonic's amplitude is 0.50 against the first's 1.22.
 
 It holds up in practice too: independent seeds [land within 0.02 of each
@@ -234,7 +242,7 @@ enough to run at scale, on fewer parameters.
 
 | | |
 |---|---|
-| Model | depth-6 ViT-Ti/16 (patch 16, 224×224, d_model=192, 6 heads) |
+| Model | depth-6 ViT-Ti/16 (patch 16, $224\times224$, $d_{\text{model}}=192$, 6 heads) |
 | Dataset | ImageNet-1K — 1.27M train / 10K val / 50K official test |
 | Optimizer | AdamW, lr 1e-3, weight decay 0.05, cosine schedule, 5-epoch warmup |
 | Epochs | 100, both variants, 5 matched seeds |
@@ -253,7 +261,7 @@ variants at matched seed, so the activation is the only thing that differs.
 extra numbers, holding at 498 of the 500 matched epoch checkpoints, across
 five independent seeds.**
 
-| Test top-1 (official 50K val) | Fixed | Learnable | Δ |
+| Test top-1 (official 50K val) | Fixed | Learnable | $\Delta$ |
 |---|---|---|---|
 | seed 1 | 62.50% | 65.12% | +2.62 |
 | seed 2 | 62.56% | 64.33% | +1.77 |
@@ -262,9 +270,9 @@ five independent seeds.**
 | seed 5 | 62.49% | 64.27% | +1.78 |
 | **mean ± s.d.** | 62.45 ± 0.13% | **64.38 ± 0.44%** | **+1.93 ± 0.43** |
 
-Paired across all five seeds: t(4) = 10.02, p = 0.00056. Best-validation
+Paired across all five seeds: $t(4) = 10.02$, $p = 0.00056$. Best-validation
 accuracy tells the same story: 64.98% → 67.03%, +2.06 ± 0.54 pt,
-t(4) = 8.45, p = 0.00108.
+$t(4) = 8.45$, $p = 0.00108$.
 
 ### How many epochs does it save?
 
@@ -344,10 +352,11 @@ computing.
 
 ## Questioning common assumptions about the shape of the activation
 
-- **Monotonicity isn't load-bearing here.** Local max at t ≈ −0.87, local min
-  at t ≈ +0.19 — two real, seed-independent inflections sitting right where
-  the network's own pre-activations actually live (mean |t| ≈ 0.33, 99%
-  within 1.21), not off in some rarely-visited tail.
+- **Monotonicity isn't load-bearing here.** Local max at $t \approx -0.87$,
+  local min at $t \approx +0.19$ — two real, seed-independent inflections
+  sitting right where the network's own pre-activations actually live
+  (mean $|t| \approx 0.33$, 99% within 1.21), not off in some rarely-visited
+  tail.
 
 - **The slope at zero didn't shrink toward the fixed activation's — it
   crossed to the other side and stayed there.** +0.5 (fixed) → **−0.35**
@@ -355,18 +364,18 @@ computing.
   seeds (−0.352, −0.356, −0.339).
 
 - **The one feature credited with the fixed activation's edge over ReLU
-  relocated instead of disappearing.** Its dip sat at t ≈ −0.75; in the
-  learned curve that region is lifted to a small positive bump, and the dip
-  reappears just past zero, at t ≈ +0.19.
+  relocated instead of disappearing.** Its dip sat at $t \approx -0.75$; in
+  the learned curve that region is lifted to a small positive bump, and the dip
+  reappears just past zero, at $t \approx +0.19$.
 
 - **A shape this specific, reproduced this exactly, argues against "any
   smooth default will do."** Three independent seeds, under active weight
   decay, land on the same non-monotonic, sign-flipped curve.
 
 - **Getting the far field "wrong" costs next to nothing, because the far
-  field is nearly empty.** The curves diverge sharply past |t| ≈ 2, but
-  almost no real pre-activation ever lands there (0.013% outside ±π, none
-  outside ±2π).
+  field is nearly empty.** The curves diverge sharply past $|t| \approx 2$,
+  but almost no real pre-activation ever lands there (0.013% outside $\pm\pi$,
+  none outside $\pm 2\pi$).
 
 ## Does FAct Reshape the Spectral Geometry of the Network?
 
@@ -378,8 +387,8 @@ standard scalar summaries of that spectrum are a reasonable weight-space proxy
 for "how extreme a map this layer computes": the **spectral norm** (the top
 singular value — an upper bound on how much the layer can stretch its input
 in any direction, i.e. a Lipschitz-constant proxy) and the **stable rank**
-(‖W‖²_F / ‖W‖²_2 — how spread the weight's energy is across directions, versus
-concentrated in one).
+($\lVert W\rVert_F^2 / \lVert W\rVert_2^2$ — how spread the weight's energy is
+across directions, versus concentrated in one).
 
 <img src="/images/Learnable-Activations-Might-Have-Better-Loss-Landscape/fig_landscape_summary.png" alt="fc1 spectral norm and stable rank over training, standard vs Global FAct K=2, mean over 6 transformer blocks with min-max band" style="max-width:100%">
 
@@ -463,11 +472,12 @@ runs on — it's queued for a much narrower lane.
 
 Worth adding that this is an *implementation* cost, not a mathematical one,
 and that what's measured above is the naive implementation. It builds a
-(batch × features × K) tensor of angles and calls `cos` and `sin` across all
-of it, so K=2 really does evaluate four transcendentals per activation and
-write three intermediates out to memory. Neither is necessary. The
-double-angle identities give cos 2t and sin 2t from a single sin/cos pair
-almost for free, and a fused kernel could keep the whole series in registers
+$(\text{batch} \times \text{features} \times K)$ tensor of angles and calls
+`cos` and `sin` across all of it, so $K=2$ really does evaluate four
+transcendentals per activation and write three intermediates out to memory.
+Neither is necessary. The double-angle identities give $\cos 2t$ and
+$\sin 2t$ from a single sin/cos pair almost for free, and a fused kernel could
+keep the whole series in registers
 instead of round-tripping through memory.
 
 Attention was in this exact position once. The mathematics never changed; an
@@ -540,18 +550,18 @@ passed by reference, exactly as in the ViT. Four arms, five seeds each:
 |---|---|---|
 | `standard` | nothing (GELU) | 0 |
 | `prelu_global` | one negative slope | **1** |
-| `swish_global` | one β in x·σ(βx) | **1** |
+| `swish_global` | one $\beta$ in $x\cdot\sigma(\beta x)$ | **1** |
 | `fact_k2_global` | the whole shape | **5** |
 
-Test accuracy, mean ± std over 5 seeds, with a paired two-sided *t*-test
-against `standard` (df=4, so |t| > 2.776 is p < 0.05):
+Test accuracy, mean ± std over 5 seeds, with a paired two-sided $t$-test
+against `standard` (df = 4, so $|t| > 2.776$ is $p < 0.05$):
 
 | Dataset | Epochs | `standard` | `prelu_global` | `swish_global` | `fact_k2_global` |
 |---|---|---|---|---|---|
-| Fashion-MNIST | 30 | 87.22 ± 0.49 | 87.68 ± 0.30 <br>+0.45 (t=1.53) | 87.14 ± 0.95 <br>−0.08 (t=−0.17) | **89.00 ± 0.44** <br>**+1.78 (t=7.34)** |
-| CIFAR-10 | 40 | 66.98 ± 0.49 | 68.71 ± 0.27 <br>+1.73 (t=8.05) | 66.43 ± 0.45 <br>−0.55 (t=−5.04) | **75.06 ± 1.29** <br>**+8.08 (t=18.38)** |
-| CIFAR-100 | 60 | 37.63 ± 0.31 | 37.85 ± 0.65 <br>+0.22 (t=0.73) | 37.49 ± 0.82 <br>−0.14 (t=−0.47) | **46.41 ± 0.83** <br>**+8.78 (t=25.44)** |
-| Tiny-ImageNet | 80 | 30.51 ± 0.20 | 29.27 ± 0.43 <br>**−1.24 (t=−5.12)** | 30.37 ± 0.65 <br>−0.15 (t=−0.40) | **35.36 ± 0.59** <br>**+4.84 (t=16.17)** |
+| Fashion-MNIST | 30 | 87.22 ± 0.49 | 87.68 ± 0.30 <br>+0.45 ($t=1.53$) | 87.14 ± 0.95 <br>−0.08 ($t=-0.17$) | **89.00 ± 0.44** <br>**+1.78 ($t=7.34$)** |
+| CIFAR-10 | 40 | 66.98 ± 0.49 | 68.71 ± 0.27 <br>+1.73 ($t=8.05$) | 66.43 ± 0.45 <br>−0.55 ($t=-5.04$) | **75.06 ± 1.29** <br>**+8.08 ($t=18.38$)** |
+| CIFAR-100 | 60 | 37.63 ± 0.31 | 37.85 ± 0.65 <br>+0.22 ($t=0.73$) | 37.49 ± 0.82 <br>−0.14 ($t=-0.47$) | **46.41 ± 0.83** <br>**+8.78 ($t=25.44$)** |
+| Tiny-ImageNet | 80 | 30.51 ± 0.20 | 29.27 ± 0.43 <br>**−1.24 ($t=-5.12$)** | 30.37 ± 0.65 <br>−0.15 ($t=-0.40$) | **35.36 ± 0.59** <br>**+4.84 ($t=16.17$)** |
 
 </div>
 </details>
