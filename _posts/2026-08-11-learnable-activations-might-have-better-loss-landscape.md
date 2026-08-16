@@ -479,6 +479,11 @@ carry correspondingly less weight.
 
 ## Limitations
 
+Attention was in this exact position once. The mathematics never changed; an
+implementation that respected the memory hierarchy turned it from the thing
+you budget around into the thing you stop thinking about. There's no
+FlashAttention for learnable activations yet — we'd like there to be. 🙂
+
 **The accuracy is bought with wall-clock time.** A fixed activation like GELU
 is one cheap elementwise op. The learnable one is a truncated Fourier series,
 so every activation site evaluates four transcendental functions — two sines
@@ -503,10 +508,35 @@ $\sin 2t$ from a single sin/cos pair almost for free, and a fused kernel could
 keep the whole series in registers
 instead of round-tripping through memory.
 
-Attention was in this exact position once. The mathematics never changed; an
-implementation that respected the memory hierarchy turned it from the thing
-you budget around into the thing you stop thinking about. There's no
-FlashAttention for learnable activations yet — we'd like there to be. 🙂
+**Update (2026-08-16):** we went and wrote that fused kernel — a hand-written
+CUDA forward and analytic backward for the $K=2$ series ($\phi(t) = a_0 + a_1
+\cos(wt) + b_1 \sin(wt) + a_2 \cos(2wt) + b_2 \sin(2wt)$), one `sincos()` call
+per harmonic instead of separate `cos`/`sin` ops, the whole forward (and
+backward) fused into a single elementwise pass, with a block-level reduction
+before the coefficient gradients' atomics. Benchmarked forward+backward
+against both GELU and the naive PyTorch reference above, on an NVIDIA L4
+(23GB) and an H200 NVL (143GB):
+
+| GPU | shape (B, N, d_ff) | GELU | naive FAct | CUDA-kernel FAct | kernel vs. naive | kernel vs. GELU |
+|---|---|---|---|---|---|---|
+| L4 | (64, 197, 384) | 0.88 ms | 6.74 ms | 4.16 ms | 1.62x faster | 4.71x slower |
+| L4 | (256, 197, 384) | 1.66 ms | 28.91 ms | 16.47 ms | 1.76x faster | 9.94x slower |
+| L4 | (256, 197, 1536) | 6.64 ms | 114.83 ms | 65.73 ms | 1.75x faster | 9.90x slower |
+| H200 | (64, 197, 384) | 0.70 ms | 3.13 ms | 2.00 ms | 1.56x faster | 2.86x slower |
+| H200 | (256, 197, 384) | 1.07 ms | 9.05 ms | 1.86 ms | 4.87x faster | 1.74x slower |
+| H200 | (256, 197, 1536) | 1.30 ms | 34.62 ms | 7.13 ms | 4.86x faster | 5.49x slower |
+
+Progress, not parity. The kernel is 1.6–4.9x faster than the PyTorch-composed
+reference it replaces — on the H200, at the two larger shapes, it gets within
+2x of GELU — but across the shapes tried it's still 1.7–9.9x slower than GELU,
+not on par with it yet. Correctness (forward, `grad_input`, and every
+coefficient gradient) was checked against the reference to double-precision
+tolerance and passed `gradcheck`, so the speedup isn't coming from cut
+corners. There's headroom left — parameter-gradient reduction still
+round-trips `grad_output` and `input` through global memory rather than
+fusing with the forward pass, and $K=2$ is the only harmonic count this
+kernel hand-unrolls. Still no FlashAttention moment. But it's a first step
+toward one.
 
 ## Appendix
 
