@@ -532,7 +532,30 @@ reference it replaces — on the H200, at the two larger shapes, it gets within
 not on par with it yet. Correctness (forward, `grad_input`, and every
 coefficient gradient) was checked against the reference to double-precision
 tolerance and passed `gradcheck`, so the speedup isn't coming from cut
-corners. There's headroom left — parameter-gradient reduction still
+corners.
+
+The bigger surprise was memory, not speed. The naive reference materialises a
+$(\text{batch} \times \text{tokens} \times \text{features} \times K)$ tensor of
+angles, then separate `cos` and `sin` tensors of that same shape, and autograd
+keeps all of it alive for backward. The kernel's backward instead recomputes
+`sin`/`cos` per-thread from the raw input, so it only ever needs to keep the
+input itself (plus the five scalar coefficients) resident:
+
+| shape (B, N, d_ff) | naive FAct (MB) | CUDA-kernel FAct (MB) | reduction |
+|---|---|---|---|
+| (64, 197, 384) | 221.6 | 18.5 | 12.0x |
+| (256, 197, 384) | 888.0 | 74.0 | 12.0x |
+| (256, 197, 1536) | 3552.0 | 296.0 | 12.0x |
+
+A flat 12x at every shape, on an A100, an L4, and an H200 alike — which makes
+sense, since the multiple is fixed by how many `(batch × tokens × features ×
+K)`-sized tensors the naive path keeps around, not by anything
+architecture-specific. This is arguably the more practically important
+number of the two: it's the difference between a given batch size or `d_ff`
+width fitting on the GPU at all and hitting an OOM outright, which the naive
+reference did mid-benchmark on a contended GPU while the kernel kept running.
+
+There's headroom left — parameter-gradient reduction still
 round-trips `grad_output` and `input` through global memory rather than
 fusing with the forward pass, and $K=2$ is the only harmonic count this
 kernel hand-unrolls. Still no FlashAttention moment. But it's a first step
