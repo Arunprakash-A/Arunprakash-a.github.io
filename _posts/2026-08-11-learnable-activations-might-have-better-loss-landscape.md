@@ -479,11 +479,6 @@ carry correspondingly less weight.
 
 ## Limitations
 
-Attention was in this exact position once. The mathematics never changed; an
-implementation that respected the memory hierarchy turned it from the thing
-you budget around into the thing you stop thinking about. There's no
-FlashAttention for learnable activations yet — we'd like there to be. 🙂
-
 **The accuracy is bought with wall-clock time.** A fixed activation like GELU
 is one cheap elementwise op. The learnable one is a truncated Fourier series,
 so every activation site evaluates four transcendental functions — two sines
@@ -507,6 +502,11 @@ Neither is necessary. The double-angle identities give $\cos 2t$ and
 $\sin 2t$ from a single sin/cos pair almost for free, and a fused kernel could
 keep the whole series in registers
 instead of round-tripping through memory.
+
+Attention was in this exact position once. The mathematics never changed; an
+implementation that respected the memory hierarchy turned it from the thing
+you budget around into the thing you stop thinking about. There's no
+FlashAttention for learnable activations yet — we'd like there to be. 🙂
 
 **Update (2026-08-16):** we went and wrote that fused kernel — a hand-written
 CUDA forward and analytic backward for the $K=2$ series ($\phi(t) = a_0 + a_1
