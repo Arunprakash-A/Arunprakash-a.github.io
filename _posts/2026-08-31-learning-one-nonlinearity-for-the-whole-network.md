@@ -1,5 +1,5 @@
 ---
-title: "Learning One Nonlinearity for the Whole Network — and Transferring It"
+title: "We Can Not Only Learn Activations, But Also Transfer Them"
 date: 2026-08-31
 tags: [Deep-Learning, Research, Transformers]
 mathjax: true
