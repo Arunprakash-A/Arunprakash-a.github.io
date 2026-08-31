@@ -7,21 +7,24 @@ excerpt: "One shared activation, five numbers, learned on ImageNet-1K — then f
 ---
 
 Back in July I wrote a post about [thinking beyond localized
-activations](/2026/07/25/thinking-beyond-localized-activations.html) and
-deliberately refused to name the mechanism. The write-up is finished now, so
-here is the whole thing: what the mechanism is, what it buys, and where the
-evidence stops.
+activations](/2026/07/25/thinking-beyond-localized-activations.html), and in
+[August](/2026/08/11/learnable-activations-might-have-better-loss-landscape.html)
+I showed the gain that comes from sharing one *learnable* activation globally: a
+single nonlinearity, shared by every layer and learned alongside the weights,
+outperforms a fixed GELU at ImageNet-1K scale. This post picks up from there.
+Because the shared function is one object rather than a scatter of per-layer
+curves, it can be frozen after training and installed in a *different* network.
 
 <!--more-->
 
-The short version. A network's activation function is normally a fixed design
-choice — you pick GELU, bolt it after every layer, and gradient descent takes
-care of the rest. Instead, give the *entire* network **one** activation
-function, described by five numbers, and learn those five numbers along with
-the weights. On ImageNet-1K this is worth about two points of top-1 over GELU.
-Then freeze the five numbers, drop them into a completely different, much
-smaller network, and they keep working — beating ten conventional activation
-functions on four datasets.
+A network's activation function is normally a fixed design choice — you pick
+GELU, bolt it after every layer, and gradient descent takes care of the rest.
+Instead, give the *entire* network **one** activation function, described by
+five numbers, and learn those five numbers along with the weights. On
+ImageNet-1K this is worth about two points of top-1 over GELU. Then freeze the
+five numbers, drop them into a completely different, much smaller network, and
+they keep working — beating ten conventional activation functions on four
+datasets.
 
 We call it **FAct**, for Fourier Activation.
 
