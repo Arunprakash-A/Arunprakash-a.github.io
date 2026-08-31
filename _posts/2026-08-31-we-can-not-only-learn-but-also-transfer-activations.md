@@ -460,8 +460,17 @@ before training starts. Whether the same five numbers survive a jump to
 convolutional networks, to sequence models, or to a much larger scale is the
 obvious next question, and not one this work answers.
 
----
+## Citation
 
-*Full write-up: "Learning and Transferring a Nonlinearity Across Neural Networks,"
-Arun Prakash A and Mitesh M. Khapra, AI4Bharat, IIT Madras. Preprint link to
-follow.*
+The full write-up is *Learning and Transferring a Nonlinearity Across Neural
+Networks*, Arun Prakash A and Mitesh M. Khapra, AI4Bharat, IIT Madras. The
+preprint link will be added here once it is posted; until then, cite it as:
+
+```bibtex
+@article{fact2026,
+  title   = {Learning and Transferring a Nonlinearity Across Neural Networks},
+  author  = {A, Arun Prakash and Khapra, Mitesh M.},
+  journal = {arXiv preprint},
+  year    = {2026}
+}
+```
