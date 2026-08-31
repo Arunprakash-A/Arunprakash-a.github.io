@@ -17,6 +17,12 @@ curves, it can be frozen after training and installed in a *different* network.
 
 <!--more-->
 
+*Some of the evidence below is also available as an interactive page — hover a
+cell for its numbers, isolate a curve, switch datasets. Links sit in the sections
+they belong to; the first is the
+[hyperparameter search landscape](/visualizations/We-Can-Not-Only-Learn-But-Also-Transfer-Activations/grid-search-landscape.html) under
+"You just got lucky with the learning rate".*
+
 A network's activation function is normally a fixed design choice — you pick
 GELU, bolt it after every layer, and gradient descent takes care of the rest.
 Instead, give the *entire* network **one** activation function, described by
@@ -264,6 +270,11 @@ So the whole ViT-d2 comparison was rerun with learning rate and weight decay tun
 (lr ∈ {3·10⁻⁴, 10⁻³, 3·10⁻³, 10⁻², 3·10⁻²}, wd ∈ {0, 0.05, 0.2}), ranked with a
 30-epoch single-seed proxy, with the winning cell rerun for the full 100 epochs
 across five seeds. Fifteen cells for every activation — nobody gets more attempts.
+
+*Interactive: the [grid search landscape](/visualizations/We-Can-Not-Only-Learn-But-Also-Transfer-Activations/grid-search-landscape.html)
+shows all 720 proxy cells — every activation's own 5×3 heatmap on each of the four
+datasets, with the winning cell ringed — alongside the 30-epoch convergence traces
+and the 100-epoch × 5-seed confirmation runs the table below reports.*
 
 | Activation | Fashion-MNIST | CIFAR-10 | CIFAR-100 | Food-101 |
 |---|:--:|:--:|:--:|:--:|
