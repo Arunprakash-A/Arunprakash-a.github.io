@@ -74,7 +74,7 @@ Two names for the two settings, used throughout: **Learnable FAct** is the
 function being optimized jointly with the source network, **Frozen FAct** is
 that same function afterwards, held fixed inside a different network.
 
-<img src="/images/Learning-One-Nonlinearity-For-The-Whole-Network/pipeline.png"
+<img src="/images/We-Can-Not-Only-Learn-But-Also-Transfer-Activations/pipeline.png"
      alt="Learn, freeze, transfer: one shared five-coefficient activation is trained jointly with a depth-6 ViT, frozen, then installed in a smaller depth-2 ViT" style="max-width:100%; height:auto;">
 
 *Left, for contrast: conventional learnable activations attach parameters to
@@ -158,7 +158,7 @@ $$
 a_0 = 0.2182,\quad a_1 = 0.1193,\quad a_2 = -0.4237,\quad b_1 = 0.8315,\quad b_2 = -0.5918 .
 $$
 
-<img src="/images/Learning-One-Nonlinearity-For-The-Whole-Network/evolution.png"
+<img src="/images/We-Can-Not-Only-Learn-But-Also-Transfer-Activations/evolution.png"
      alt="The shared curve starts at a Fourier fit of GELU and evolves away from it over 100 epochs, ending non-monotonic with two critical points inside the pre-activation band" style="max-width:100%; height:auto;">
 
 *(a) GELU against the $K{=}2$ Fourier series used to initialize FAct. (b) The
@@ -203,7 +203,7 @@ top-1 over the run — a summary of the whole trajectory rather than its endpoin
 Seed-matched, the gain over GELU is **+1.93 ± 0.43 pp** ($t = 10.02$,
 $p = 5.6\times10^{-4}$, five seeds).
 
-<img src="/images/Learning-One-Nonlinearity-For-The-Whole-Network/imagenet.png"
+<img src="/images/We-Can-Not-Only-Learn-But-Also-Transfer-Activations/imagenet.png"
      alt="ImageNet-1K validation top-1 against epoch: the learnable shared activation stays above GELU at every epoch across five seeds" style="max-width:100%; height:auto;">
 
 *(a) Validation top-1 against epoch. FAct and GELU are 5-seed means with a ±1 s.d.
@@ -340,7 +340,7 @@ one-turn spiral** has a boundary that is periodic in the angle as well as curved
 Here is what that looks like at **two hidden units**, the tightest interesting
 budget on the circles:
 
-<img src="/images/Learning-One-Nonlinearity-For-The-Whole-Network/two-neuron-boundaries.png"
+<img src="/images/We-Can-Not-Only-Learn-But-Also-Transfer-Activations/two-neuron-boundaries.png"
      alt="Decision regions of two-hidden-unit networks on concentric circles: ReLU and GELU produce unbounded regions, PAU and FAct produce bounded ones" style="max-width:100%; height:auto;">
 
 *Top: decision regions of a two-hidden-unit network (seed 0) on the concentric
@@ -386,7 +386,7 @@ use Adam at full batch, learning rate 0.05, five seeds varying only the
 initialization stream; the circles are scored at the final epoch (500) and the
 spiral at its best-validation epoch (300 epochs). They are never pooled.</small>
 
-<img src="/images/Learning-One-Nonlinearity-For-The-Whole-Network/capacity.png"
+<img src="/images/We-Can-Not-Only-Learn-But-Also-Transfer-Activations/capacity.png"
      alt="Test accuracy against hidden width on concentric circles and a ten-class spiral, comparing the shared Fourier activation with GELU and ReLU" style="max-width:100%; height:auto;">
 
 **On the circles, FAct is perfect on every seed at two hidden units. GELU needs
