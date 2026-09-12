@@ -9,6 +9,8 @@ mathjax: false
 excerpt: "A catalog of 34 experiments from this project's lab notebook — wins, losses, null results, and a few outright breaking points — each with its own result page."
 ---
 
+> *This blog post is written by Claude as a single page summary of what I have been testing for the past 3 months.*
+
 Not every experiment becomes a paper section or its own post. Most don't. This is the rest of them:
 34 studies pulled from this project's running lab notebook, each one a real run (or a small series of
 runs) with a real result — kept here because "attempted" is most of what research actually is, and
