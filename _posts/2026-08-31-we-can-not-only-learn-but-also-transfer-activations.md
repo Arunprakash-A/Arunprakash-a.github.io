@@ -21,7 +21,10 @@ curves, it can be frozen after training and installed in a *different* network.
 cell for its numbers, isolate a curve, switch datasets. Links sit in the sections
 they belong to; the first is the
 [hyperparameter search landscape](/visualizations/We-Can-Not-Only-Learn-But-Also-Transfer-Activations/grid-search-landscape.html) under
-"You just got lucky with the learning rate".*
+"You just got lucky with the learning rate". There is also a
+[figure explorer for the whole paper](/visualizations/We-Can-Not-Only-Learn-But-Also-Transfer-Activations/interactive-figures.html)
+— every figure and table as a live chart, with sliders on the five coefficients,
+an epoch scrubber, per-seed toggles and zoom.*
 
 A network's activation function is normally a fixed design choice — you pick
 GELU, bolt it after every layer, and gradient descent takes care of the rest.
