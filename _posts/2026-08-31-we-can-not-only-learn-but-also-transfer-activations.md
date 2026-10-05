@@ -477,13 +477,13 @@ obvious next question, and not one this work answers.
 ## Citation
 
 The full write-up is *Learning and Transferring a Nonlinearity Across Neural
-Networks*, Arun Prakash A and Mitesh M. Khapra, AI4Bharat, IIT Madras. The
+Networks*, Arun Prakash A, AI4Bharat, IIT Madras. The
 preprint link will be added here once it is posted; until then, cite it as:
 
 ```bibtex
 @article{fact2026,
   title   = {Learning and Transferring a Nonlinearity Across Neural Networks},
-  author  = {A, Arun Prakash and Khapra, Mitesh M.},
+  author  = {A, Arun Prakash},
   journal = {arXiv preprint},
   year    = {2026}
 }
