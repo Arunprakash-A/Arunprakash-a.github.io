@@ -1267,6 +1267,8 @@ discourse continues.</p>
 .vs-wrap .vs-modal__body h2{font-size:1.15rem;margin:1.5em 0 .5em;padding-bottom:.25em;border-bottom:1px solid var(--vs-line)}
 .vs-wrap .vs-modal__body h3{font-size:1rem;margin:1.2em 0 .4em;color:var(--vs-accent)}
 .vs-wrap .vs-modal__body h4{font-size:.95rem;margin:1em 0 .3em}
+.vs-wrap .vs-modal__body strong,.vs-wrap .vs-modal__body b{color:var(--vs-fg)}
+.vs-wrap .vs-modal__body h3 strong,.vs-wrap .vs-modal__body h3 b{color:var(--vs-accent)}
 .vs-modal__body table{display:block;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.9rem}
 .vs-modal__body th,.vs-modal__body td{border:1px solid var(--vs-line);padding:7px 11px;text-align:left;vertical-align:top}
 .vs-modal__body th{background:var(--vs-accent-soft)}
