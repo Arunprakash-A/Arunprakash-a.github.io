@@ -1256,8 +1256,8 @@ discourse continues.</p>
   box-shadow:0 20px 60px rgba(0,0,0,.4);overflow:hidden}
 .vs-modal__head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
   padding:20px 24px;border-bottom:1px solid var(--vs-line)}
-.vs-modal__title{margin:0;font-size:1.25rem;line-height:1.35}
-.vs-modal__byline{margin:6px 0 0;font-size:.8rem;color:var(--vs-muted)}
+.vs-wrap .vs-modal__title{margin:0;font-size:1.25rem;line-height:1.35;color:var(--vs-fg)}
+.vs-wrap .vs-modal__byline{margin:6px 0 0;font-size:.8rem;color:var(--vs-muted)}
 .vs-modal__close{flex:none;background:none;border:none;color:var(--vs-muted);font-size:1.8rem;line-height:1;
   cursor:pointer;padding:0 4px}
 .vs-modal__close:hover{color:var(--vs-accent)}
