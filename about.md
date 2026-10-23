@@ -37,6 +37,8 @@ I am Arun Prakash, AI Research Scientist working at AI4Bharat, IIT Madras.
 
 I initially started this blog to share technical notes on <em>math, signal processing and machine learning</em>. I also started learning <em>Advaita Vedanta</em> in the traditional way, taught by <strong>Swami Sankarananda</strong>. Therefore, this blog also contains Vedanta discourse notes that you may find useful.
 
-I got inspired in science by <strong>Richard Feynman</strong> and <strong>Richard Hamming</strong>.
+I learned the right way to do science and engineering from <strong>Richard Feynman</strong> and <strong>Richard Hamming</strong>, and to learn the Veda from <strong>Swami Sankarananda</strong>.
+
+<p style="text-align:center; font-size:1.6rem; margin-top:1.5em;">ॐ</p>
             
 
