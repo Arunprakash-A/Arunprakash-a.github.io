@@ -82,6 +82,7 @@ discourse continues.</p>
 </div>
 
 <section class="vs-note vs-hidden" id="vs1" aria-hidden="true">
+<p class="vs-video"><a href="https://www.youtube.com/watch?v=GfxpqPUqPyw" target="_blank" rel="noopener">▶ இந்த வகுப்பை YouTube-ல் காண</a></p>
 <h2><strong>அறிமுகம் (0:00–5:00)</strong></h2>
 <p>வேதாந்த சாரம் வேதாந்தத்தின் "ரசத்தை" முழுமையாகத் தரும் சிறிய நூல்; இதை எழுதியவர் சதானந்தர்.</p>
 <ul>
@@ -345,6 +346,7 @@ discourse continues.</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vs2" aria-hidden="true">
+<p class="vs-video"><a href="https://www.youtube.com/watch?v=QOvQGQsyH7U" target="_blank" rel="noopener">▶ இந்த வகுப்பை YouTube-ல் காண</a></p>
 <h2><strong>அறிமுகம் (0:00–3:00)</strong></h2>
 <p>இந்த வகுப்பு அனுபந்த சதுஷ்டயத்திலிருந்து அதிகாரி லட்சணம் வரை, அதிகாரிக்குரிய கர்மங்கள் வரை செல்கிறது.</p>
 <ul>
@@ -623,6 +625,7 @@ discourse continues.</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vs3" aria-hidden="true">
+<p class="vs-video"><a href="https://www.youtube.com/watch?v=n1-QHkvhZNA" target="_blank" rel="noopener">▶ இந்த வகுப்பை YouTube-ல் காண</a></p>
 <h2>மீள்பார்வை: கர்மங்களும் வைராக்கியமும் (1:00–8:00)</h2>
 <p>கர்மங்களைத் தெரிந்தெடுத்துச் செய்வதன் நோக்கம்: மனம் பக்குவப்பட்டு வைராக்கியமும் விவேகமும் வருவது.</p>
 <ul>
@@ -833,6 +836,7 @@ discourse continues.</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vs4" aria-hidden="true">
+<p class="vs-video"><a href="https://www.youtube.com/watch?v=gRz7H37ljT4" target="_blank" rel="noopener">▶ இந்த வகுப்பை YouTube-ல் காண</a></p>
 <h2>நூலின் அமைப்பு (1:00–4:00)</h2>
 <p>வேதாந்த சாரம் 227 பகுதிகள் கொண்ட உரைநடை நூல் (முதல் இரண்டு மட்டும் ஸ்லோகங்கள்); சம்பிரதாய குருநாதர்கள் அதை ஆறு அத்தியாயங்களாகப் பிரித்துள்ளனர்.</p>
 <table>
@@ -1075,6 +1079,7 @@ discourse continues.</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vs5" aria-hidden="true">
+<p class="vs-video"><a href="https://www.youtube.com/watch?v=0gfLnBU7in4" target="_blank" rel="noopener">▶ இந்த வகுப்பை YouTube-ல் காண</a></p>
 <h2>மீள்பார்வை: விவேகம், வைராக்கியம் (0:50–10:30)</h2>
 <p>விவேகம் புத்தியில் வந்தாலும், உணர்வுமயமான மனம் அதை ஏற்க வைராக்கியம் வளர வேண்டும்.</p>
 <ul>
@@ -1267,6 +1272,11 @@ discourse continues.</p>
   background:var(--vs-accent-soft);color:var(--vs-fg);border-radius:0 8px 8px 0}
 .vs-modal__body li{margin:.3em 0;line-height:1.6}
 .vs-modal__body a{color:var(--vs-accent)}
+.vs-video{margin:0 0 1.2em}
+.vs-video a{display:inline-flex;align-items:center;gap:6px;font-size:.88rem;font-weight:600;
+  color:var(--vs-accent);background:var(--vs-accent-soft);border:1px solid var(--vs-line);
+  border-radius:999px;padding:6px 14px;text-decoration:none}
+.vs-video a:hover{border-color:var(--vs-accent)}
 body.vs-lock{overflow:hidden}
 @media (max-width:560px){.vs-grid{grid-template-columns:1fr}.vs-modal__panel{max-height:92vh}}
 </style>
