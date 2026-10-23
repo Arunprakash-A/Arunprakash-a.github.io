@@ -33,7 +33,7 @@ key: page-about
 <!-- ![Image](https://lh3.googleusercontent.com/d/1EqijJwh-eOJtBkHT0bQiJ0alVMMXpLua "ARUN"){:.circle width="136px" height="128px"} -->
 
 
- Thank you for coming here! Like you, I am also intrigued by problems in the field of<em> NLP, CV and Speech </em>. I work with the transformer architecture and its variations and all the concepts revolving around it! I build models using native <em> Pytorch </em> (for more customization) and <em> Hugging Face (with Pytorch backend)</em>.
+ Thank you for coming here! I am Arun Prakash, AI Research Scientist working at AI4Bharat, IIT Madras. Like you, I am also intrigued by problems in the field of<em> NLP, CV and Speech </em>. I work with the transformer architecture and its variations and all the concepts revolving around it! I build models using native <em> Pytorch </em> (for more customization) and <em> Hugging Face (with Pytorch backend)</em>.
 
  You can find the notebooks [here](https://github.com/Arunprakash-A/DL-Pytorch-Workshop) if you want to get started with Pytorch and HF.
 
