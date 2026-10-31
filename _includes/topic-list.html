@@ -1,0 +1,73 @@
+{%- comment -%}
+  Renders a consolidated, home-style list of posts for one topic.
+  Usage: {%- include topic-list.html topic='advaita' -%}  or  topic='ai'
+
+  Classification is driven purely by each post's existing `tags`
+  (no `categories`, so post permalinks are never affected):
+    - Spiritual tag set  = Tamil, Spiritual, Vedanta
+    - advaita list : posts carrying ANY spiritual tag
+    - ai list      : every other post (posts that are NOT exclusively spiritual)
+  A cross-over post (e.g. tagged "AI, Spiritual") appears in BOTH lists.
+{%- endcomment -%}
+
+{%- assign _spiritual = "Tamil,Spiritual,Vedanta" | split: "," -%}
+
+{%- include snippets/get-locale-string.html key='READMORE' -%}
+{%- assign _readmore = __return -%}
+
+{%- assign _count = 0 -%}
+<div class="layout--articles">
+  <div class="article-list items items--divided">
+  {%- for _article in site.posts -%}
+
+    {%- assign _is_spiritual = false -%}
+    {%- assign _has_other = false -%}
+    {%- for _t in _article.tags -%}
+      {%- if _spiritual contains _t -%}
+        {%- assign _is_spiritual = true -%}
+      {%- else -%}
+        {%- assign _has_other = true -%}
+      {%- endif -%}
+    {%- endfor -%}
+
+    {%- comment -%} advaita = any spiritual tag; ai = everything not exclusively spiritual {%- endcomment -%}
+    {%- assign _match = false -%}
+    {%- if include.topic == 'advaita' -%}
+      {%- if _is_spiritual -%}{%- assign _match = true -%}{%- endif -%}
+    {%- else -%}
+      {%- unless _is_spiritual and _has_other == false -%}{%- assign _match = true -%}{%- endunless -%}
+    {%- endif -%}
+
+    {%- if _match -%}
+      {%- assign _count = _count | plus: 1 -%}
+      {%- include snippets/prepend-baseurl.html path=_article.url -%}
+      {%- assign _article_url = __return -%}
+      <article class="item" itemscope itemtype="http://schema.org/BlogPosting">
+        {%- if _article.cover -%}
+          {%- include snippets/get-nav-url.html path=_article.cover -%}
+          {%- assign _article_cover = __return -%}
+          <div class="item__image">
+            <img class="image" src="{{ _article_cover }}" />
+          </div>
+        {%- endif -%}
+        <div class="item__content">
+          <header><a href="{{ _article_url }}"><h2 itemprop="headline" class="item__header">{{ _article.title }}</h2></a></header>
+          <div class="item__description">
+            {%- if _article.excerpt -%}
+              <div class="article__content" itemprop="description articleBody">
+                {{ _article.excerpt | strip_html | strip | truncate: 300 }}
+              </div>
+            {%- endif -%}
+            <p><a href="{{ _article_url }}">{{ _readmore }}</a></p>
+          </div>
+          {%- include article-info.html article=_article show_pageview=false -%}
+        </div>
+      </article>
+    {%- endif -%}
+  {%- endfor -%}
+  </div>
+
+  {%- if _count == 0 -%}
+    <p>No posts here yet.</p>
+  {%- endif -%}
+</div>

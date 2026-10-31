@@ -1,4 +1,10 @@
 header:
+  - title: "அத்வைதம் · Advaita"
+    url: /advaita.html
+    key: advaita
+  - title: "AI"
+    url: /ai.html
+    key: ai
   - titles:
       # @start locale config
       en      : &EN       Talks
