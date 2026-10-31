@@ -550,3 +550,252 @@ a > .item__header, a.item__header, .item__header > a {
 }
 
 /* end custom scss snippet */
+
+/* ==========================================================================
+   Home "bento" hub (_layouts/hub.html)
+   Everything fits in the first screen on desktop: intro strip + card grid.
+   ========================================================================== */
+
+.article__content {
+  /* undo TeXt .article__content heading/list styling inside the hub */
+  .hub h1, .hub h2, .hub h3 { border: 0; padding: 0; margin-top: 0; }
+  .hub p, .hub ol, .hub ul { margin-top: 0; }
+  .hub .anchor { display: none; }
+
+  .hub {
+    --hub-gap: 1rem;
+    --saffron-1: #f8ead0; --saffron-2: #eecb93; --saffron-ink: #3d2410;
+    --night-1: #10131c;   --night-2: #1c2640;   --night-ink: #e9e6dc; --cyan: #7fd3e8;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 1.25rem 1.5rem 1.5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* ---- intro strip ---- */
+  .hub__intro {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2.5rem;
+    align-items: end;
+    padding-bottom: 1rem;
+    margin-bottom: 1.1rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .hub__kicker, .hcard__kicker {
+    margin: 0 0 .35rem;
+    font-size: .72rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .hub__title {
+    margin: 0;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: clamp(2rem, 3.6vw, 3rem);
+    line-height: 1;
+    color: var(--ink);
+  }
+  .hub__lede p { margin: 0 0 .5rem; color: var(--ink-soft); font-size: .95rem; max-width: 46rem; }
+  .hub__stats { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+  .hub__stats li {
+    margin: 0; padding: .15rem .65rem;
+    border: 1px solid var(--rule); border-radius: 999px;
+    font-size: .78rem; color: var(--ink-faint);
+    b { color: var(--accent); font-weight: 600; }
+  }
+
+  /* ---- grid ---- */
+  .hub__grid {
+    display: grid;
+    grid-template-columns: 1.15fr 1.15fr .9fr;
+    grid-template-rows: repeat(3, 1fr);
+    gap: var(--hub-gap);
+    height: clamp(440px, calc(100vh - 15.5rem), 640px);
+  }
+  .hcard--advaita { grid-column: 1; grid-row: 1 / span 3; }
+  .hcard--ai      { grid-column: 2; grid-row: 1 / span 3; }
+
+  /* ---- card base ---- */
+  .hcard {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    padding: 1.35rem 1.5rem;
+    border: 1px solid var(--rule);
+    border-radius: 18px;
+    background: var(--paper-alt);
+    color: var(--ink);
+    isolation: isolate;
+    transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease, border-color .35s ease;
+    animation: hcard-in .7s cubic-bezier(.2,.8,.2,1) both;
+    animation-delay: calc(var(--i, 0) * 80ms);
+
+    /* cursor spotlight */
+    &::after {
+      content: "";
+      position: absolute; inset: 0; z-index: -1;
+      background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,.22), transparent 60%);
+      opacity: 0; transition: opacity .3s ease;
+      pointer-events: none;
+    }
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 40px -18px rgba(28, 26, 23, .35);
+      &::after { opacity: 1; }
+      .hcard__go { transform: translateX(4px); }
+    }
+    a { text-decoration: none; }
+  }
+  @keyframes hcard-in { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+
+  /* whole card is clickable via the title link; inner links sit above it */
+  .hcard__stretch::before { content: ""; position: absolute; inset: 0; z-index: 1; }
+  .hcard__list a, .hcard__sub { position: relative; z-index: 2; }
+
+  .hcard__title {
+    margin: 0 0 .4rem;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+    line-height: 1.1;
+    a { color: inherit; }
+    span { display: block; font-style: italic; font-weight: 400; opacity: .75; font-size: .62em; }
+  }
+  .hcard__title--sm { font-size: 1.15rem; line-height: 1.25; }
+  .hcard__desc { margin: 0; font-size: .86rem; line-height: 1.5; opacity: .85; }
+  .hcard__go { display: inline-block; font-weight: 600; font-size: .85rem; transition: transform .3s ease; }
+
+  .hcard__list {
+    flex: 1; min-height: 0;
+    margin: 1rem 0 .6rem; padding: 0;
+    list-style: none;
+    overflow: hidden;
+    li { margin: 0; border-top: 1px solid currentColor; border-color: rgba(127,127,127,.25); }
+    a {
+      display: flex; gap: .75rem; align-items: baseline;
+      padding: .55rem 0;
+      color: inherit; font-size: .9rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      transition: padding-left .25s ease, opacity .25s ease;
+      &:hover { padding-left: .4rem; }
+    }
+  }
+  .hcard__date { flex: none; width: 4.6rem; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; opacity: .6; }
+  .hcard__foot {
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 0; padding-top: .7rem;
+    border-top: 1px solid rgba(127,127,127,.3);
+    font-size: .8rem;
+  }
+
+  /* ---- Advaita: saffron paper with a giant Tamil "அ" ---- */
+  .hcard--advaita {
+    background: linear-gradient(155deg, var(--saffron-1) 0%, var(--saffron-2) 100%);
+    color: var(--saffron-ink);
+    border-color: transparent;
+    .hcard__kicker { color: inherit; opacity: .7; }
+  }
+  .hcard__glyph {
+    position: absolute; z-index: -1;
+    right: -.08em; bottom: -.32em;
+    font-size: clamp(14rem, 24vw, 22rem);
+    line-height: 1;
+    color: currentColor; opacity: .07;
+    pointer-events: none;
+    transition: transform 1.2s cubic-bezier(.2,.8,.2,1), opacity .6s ease;
+  }
+  .hcard--advaita:hover .hcard__glyph { transform: rotate(-6deg) scale(1.04); opacity: .11; }
+
+  /* ---- AI: night card with a small neural net ---- */
+  .hcard--ai {
+    background: radial-gradient(120% 90% at 100% 0%, var(--night-2), var(--night-1) 70%);
+    color: var(--night-ink);
+    border-color: transparent;
+    .hcard__kicker { color: var(--cyan); opacity: .85; }
+    .hcard__title span { color: var(--cyan); opacity: 1; }
+    &::after { background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(127,211,232,.16), transparent 60%); }
+  }
+  .hcard__net {
+    position: absolute; z-index: -1; top: 0; right: 0;
+    width: 62%; height: 46%;
+    opacity: .55;
+    line { stroke: var(--cyan); stroke-width: .6; opacity: .25; }
+    circle { fill: var(--cyan); animation: node-pulse 3.2s ease-in-out infinite; animation-delay: calc(var(--d) * 180ms); transform-box: fill-box; transform-origin: center; }
+  }
+  @keyframes node-pulse { 0%, 100% { opacity: .35; transform: scale(1); } 50% { opacity: 1; transform: scale(1.5); } }
+  .hcard--ai .hcard__head { margin-top: auto; }   /* push text below the net */
+  .hcard--ai .hcard__list { flex: 0 1 auto; }
+
+  /* ---- side cards ---- */
+  .hcard--latest {
+    justify-content: space-between;
+    border-left: 4px solid var(--accent);
+    background: var(--paper);
+    .hcard__go { color: var(--accent); }
+    .hcard__title--sm { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  }
+  .hcard__pulse {
+    display: inline-block; width: .5rem; height: .5rem; margin-right: .45rem;
+    border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 0 0 var(--accent);
+    animation: pulse-ring 2s infinite;
+  }
+  @keyframes pulse-ring { 70% { box-shadow: 0 0 0 .5rem transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+  .hcard--talks {
+    flex-direction: row; align-items: center; gap: 1rem;
+    background: var(--accent); color: #fbf3ea; border-color: transparent;
+    .hcard__kicker { color: inherit; opacity: .75; }
+  }
+  .hcard__icon {
+    flex: none; display: grid; place-items: center;
+    width: 3.2rem; height: 3.2rem; border-radius: 50%;
+    background: rgba(255,255,255,.16);
+    transition: transform .35s ease, background .35s ease;
+    svg { width: 1.4rem; fill: currentColor; margin-left: 3px; }
+  }
+  .hcard--talks:hover .hcard__icon { transform: scale(1.1); background: rgba(255,255,255,.26); }
+
+  .hcard--play { background: var(--paper); justify-content: flex-end; }
+  .hcard__sub { color: var(--accent); font-weight: 600; white-space: nowrap; }
+  .hcard__orbit {
+    position: absolute; z-index: -1; top: 1rem; right: 1.1rem;
+    width: 4.5rem; height: 4.5rem;
+    border: 1px dashed var(--rule); border-radius: 50%;
+    i {
+      position: absolute; top: 50%; left: 50%;
+      width: .55rem; height: .55rem; margin: -.275rem;
+      border-radius: 50%; background: var(--accent);
+      animation: orbit 6s linear infinite;
+    }
+    i:nth-child(2) { background: #c98a2b; animation-duration: 9s; animation-direction: reverse; width: .4rem; height: .4rem; margin: -.2rem; }
+    i:nth-child(3) { background: #3c6e8f; animation-duration: 4s; width: .35rem; height: .35rem; margin: -.175rem; }
+  }
+  @keyframes orbit { from { transform: rotate(0) translateX(2.25rem); } to { transform: rotate(360deg) translateX(2.25rem); } }
+
+
+  /* ---- smaller screens: let it flow, cards stay near the top ---- */
+  @media (max-width: 1023px) {
+    .hub__intro { grid-template-columns: 1fr; gap: .6rem; }
+    .hub__grid { height: auto; grid-template-columns: repeat(6, 1fr); grid-template-rows: auto; }
+    .hcard--advaita, .hcard--ai { grid-row: auto; grid-column: span 3; min-height: 24rem; }
+    .hcard--latest, .hcard--talks, .hcard--play { grid-column: span 2; min-height: 10rem; }
+  }
+  @media (max-width: 680px) {
+    .hub { padding: 1rem; }
+    .hub__grid { grid-template-columns: 1fr; }
+    .hcard--advaita, .hcard--ai, .hcard--latest, .hcard--talks, .hcard--play { grid-column: 1; min-height: 0; }
+    .hcard__list { flex: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hcard, .hcard *, .hcard::after { animation: none !important; transition: none !important; }
+  }
+}
+
+:root[data-theme="dark"] .article__content .hub {
+  --saffron-1: #3b2614; --saffron-2: #5c3816; --saffron-ink: #f6e3c4;
+}
+:root[data-theme="dark"] .article__content .hcard:hover { box-shadow: 0 18px 40px -18px rgba(0,0,0,.8); }
+:root[data-theme="dark"] .article__content .hcard--talks { color: #fff; }
