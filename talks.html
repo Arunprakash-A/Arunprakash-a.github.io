@@ -1,0 +1,108 @@
+---
+title: Talks
+layout: page
+---
+{%- comment -%}
+  Talks are listed in _data/talks.yml — add a talk there, not here.
+  Thumbnails link to YouTube; with JS on, they open an in-page player instead.
+{%- endcomment -%}
+{%- assign _talks = site.data.talks -%}
+{%- assign _topics = _talks | map: "topic" | uniq -%}
+{%- assign _tamil = _talks | where: "lang", "ta" -%}
+
+<div class="talks2">
+
+<p class="talks2__intro">Recorded lectures and guest talks — on large language models, deep learning, linear algebra, and the odd detour into signal processing.</p>
+
+<p class="talks2__meta">{{ _talks | size }} talks · {{ _topics | size }} topics · English &amp; தமிழ்</p>
+
+<div class="talks2__filters" role="toolbar" aria-label="Filter talks by topic">
+  <button class="tchip is-active" data-filter="all" aria-pressed="true">All <span>{{ _talks | size }}</span></button>
+  {%- for _t in _topics -%}
+  {%- assign _n = _talks | where: "topic", _t | size -%}
+  <button class="tchip" data-filter="{{ _t | slugify }}" aria-pressed="false">{{ _t }} <span>{{ _n }}</span></button>
+  {%- endfor -%}
+  {%- if _tamil.size > 0 -%}
+  <button class="tchip" data-filter="lang-ta" aria-pressed="false">தமிழ் <span>{{ _tamil | size }}</span></button>
+  {%- endif -%}
+</div>
+
+<div class="talks2__grid">
+{%- for t in _talks -%}
+  {%- capture _yt -%}https://youtu.be/{{ t.id }}{%- endcapture -%}
+  <article class="tcard{% if t.featured %} tcard--featured{% endif %}" data-topic="{{ t.topic | slugify }}" data-lang="lang-{{ t.lang }}">
+    <a class="tcard__thumb js-play" href="{{ _yt }}" data-id="{{ t.id }}" target="_blank" rel="noopener" aria-label="Play: {{ t.title | escape }}">
+      <img src="https://i.ytimg.com/vi/{{ t.id }}/hqdefault.jpg" alt="" loading="lazy" width="480" height="360">
+      <span class="tcard__play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>
+      {%- if t.featured -%}<span class="tcard__badge">Featured</span>{%- endif -%}
+    </a>
+    <div class="tcard__body">
+      <p class="tcard__kicker">
+        <span class="tcard__topic">{{ t.topic }}</span>
+        <span>{{ t.kind }}{% if t.venue %} · {{ t.venue }}{% endif %}</span>
+        {%- if t.lang == "ta" -%}<span class="tcard__lang">தமிழ்</span>{%- endif -%}
+      </p>
+      <h2 class="tcard__title">{{ t.title }}</h2>
+      <p class="tcard__summary">{{ t.summary | strip }}</p>
+      {%- if t.start -%}
+      <a class="tcard__skip js-play" href="{{ _yt }}?t={{ t.start }}" data-id="{{ t.id }}" data-start="{{ t.start }}" target="_blank" rel="noopener">⏩ {{ t.start_label }}</a>
+      {%- endif -%}
+      <p class="tcard__actions">
+        <a class="tcard__btn js-play" href="{{ _yt }}" data-id="{{ t.id }}" target="_blank" rel="noopener">▶ Play</a>
+        <a class="tcard__yt" href="{{ _yt }}" target="_blank" rel="noopener">YouTube ↗</a>
+      </p>
+    </div>
+  </article>
+{%- endfor -%}
+</div>
+
+<p class="talks2__empty" hidden>No talks in this topic yet.</p>
+
+</div>
+
+<dialog class="tplayer" aria-label="Video player">
+  <div class="tplayer__frame"></div>
+  <button class="tplayer__close" aria-label="Close video">×</button>
+</dialog>
+
+<script>
+(function () {
+  /* topic filter */
+  var chips = document.querySelectorAll('.tchip');
+  var cards = document.querySelectorAll('.tcard');
+  var empty = document.querySelector('.talks2__empty');
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var f = chip.dataset.filter, shown = 0;
+      chips.forEach(function (c) {
+        c.classList.toggle('is-active', c === chip);
+        c.setAttribute('aria-pressed', c === chip);
+      });
+      cards.forEach(function (card) {
+        var on = f === 'all' || card.dataset.topic === f || card.dataset.lang === f;
+        card.hidden = !on;
+        if (on) shown++;
+      });
+      empty.hidden = shown > 0;
+    });
+  });
+
+  /* in-page player (falls back to the YouTube link without <dialog>) */
+  var dlg = document.querySelector('.tplayer');
+  if (!dlg || typeof dlg.showModal !== 'function') return;
+  var frame = dlg.querySelector('.tplayer__frame');
+  function close() { dlg.close(); }
+  dlg.addEventListener('close', function () { frame.innerHTML = ''; });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) close(); });
+  dlg.querySelector('.tplayer__close').addEventListener('click', close);
+  document.querySelectorAll('.js-play').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      var src = 'https://www.youtube-nocookie.com/embed/' + a.dataset.id +
+                '?autoplay=1&rel=0' + (a.dataset.start ? '&start=' + a.dataset.start : '');
+      frame.innerHTML = '<iframe src="' + src + '" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
+      dlg.showModal();
+    });
+  });
+})();
+</script>

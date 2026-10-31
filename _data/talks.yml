@@ -1,0 +1,55 @@
+# Talks page data (talks.md). Newest / most important first.
+#   id      : YouTube video id
+#   topic   : used for the filter chips — keep to a small, fixed set
+#   lang    : en | ta
+#   start   : optional "skip to" point in seconds (shown as a chip)
+#   featured: true for the one talk shown large at the top
+
+- id: yQrcWhDSI4A
+  title: Challenges and Opportunities in Building and Evaluating Indic LLMs
+  kind: Guest lecture
+  venue: IIT Madras
+  topic: LLMs
+  lang: en
+  featured: true
+  summary: >
+    Guest lecture delivered at an online event hosted by IIT Madras, on
+    building and evaluating large language models for Indian languages.
+
+- id: VCf0piML1uw
+  title: Back Propagation Through Time (BPTT) for a simple RNN
+  kind: Lecture
+  topic: Deep Learning
+  lang: en
+  start: 87
+  start_label: Already know backprop on computational graphs? Skip to 1:27
+  summary: >
+    How gradients flow back through an unrolled recurrent network,
+    built up step by step from computational graphs.
+
+- id: SYFGwuf-v9k
+  title: Singular Value Decomposition (SVD) for Image Compression
+  kind: Lecture
+  topic: Linear Algebra
+  lang: en
+  summary: >
+    Treat an image as a matrix and keep only its top-k singular values —
+    a rank-k approximation that compresses the picture.
+
+- id: KOiaOx0NFxc
+  title: "Vector Space: Independence, Span, Projections"
+  kind: Lecture
+  topic: Linear Algebra
+  lang: ta
+  summary: >
+    A quick conceptual tour of the core ideas of linear algebra, in Tamil.
+    Prerequisites: matrices, vectors and the matrix–vector product.
+
+- id: QUSWKNQfLUU
+  title: "Approximation Is All You Need: the Fourier Transform"
+  kind: Lecture
+  topic: Mathematics
+  lang: en
+  summary: >
+    Engineers only approximate! An introduction to one of the most profound
+    transformations in mathematics — strictly speaking, the Fourier series.
