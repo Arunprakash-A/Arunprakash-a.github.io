@@ -1,0 +1,135 @@
+---
+layout: page
+full_width: true
+show_title: false
+---
+{%- comment -%}
+  Home page as a one-screen "bento" of cards.
+  Posts are split into the two streams with the same tag rule as
+  _includes/topic-list.html: any of Tamil/Spiritual/Vedanta -> Advaita;
+  anything not exclusively spiritual -> AI.
+{%- endcomment -%}
+
+{%- assign _spiritual = "Tamil,Spiritual,Vedanta" | split: "," -%}
+{%- assign _advaita = "" | split: "" -%}
+{%- assign _ai = "" | split: "" -%}
+{%- for _p in site.posts -%}
+  {%- assign _is_sp = false -%}
+  {%- assign _has_other = false -%}
+  {%- for _t in _p.tags -%}
+    {%- if _spiritual contains _t -%}{%- assign _is_sp = true -%}{%- else -%}{%- assign _has_other = true -%}{%- endif -%}
+  {%- endfor -%}
+  {%- if _is_sp -%}{%- assign _advaita = _advaita | push: _p -%}{%- endif -%}
+  {%- unless _is_sp and _has_other == false -%}{%- assign _ai = _ai | push: _p -%}{%- endunless -%}
+{%- endfor -%}
+{%- assign _latest = site.posts.first -%}
+{%- assign _first_year = site.posts.last.date | date: "%Y" -%}
+
+<div class="hub">
+
+  <header class="hub__intro">
+    <div>
+      <p class="hub__kicker">Two streams · one notebook</p>
+      <h1 class="hub__title">{{ page.hub.title | default: site.title }}</h1>
+    </div>
+    <div class="hub__lede">
+      <p>{{ page.hub.tagline }}</p>
+      <ul class="hub__stats">
+        <li><b>{{ site.posts | size }}</b> essays</li>
+        <li><b>{{ _advaita | size }}</b> in தமிழ்</li>
+        <li>since <b>{{ _first_year }}</b></li>
+      </ul>
+    </div>
+  </header>
+
+  <div class="hub__grid">
+
+    {%- comment -%} ---- Stream I: Advaita ---- {%- endcomment -%}
+    <article class="hcard hcard--advaita js-hcard" style="--i:0">
+      <span class="hcard__glyph" aria-hidden="true">அ</span>
+      <div class="hcard__head">
+        <p class="hcard__kicker">Stream I · தமிழ்</p>
+        <h2 class="hcard__title"><a class="hcard__stretch" href="{{ '/advaita.html' | relative_url }}">அத்வைதம் <span>Advaita</span></a></h2>
+        <p class="hcard__desc">அத்வைத வேதாந்தம் — வேதாந்த சாரம், சொற்பொழிவுக் குறிப்புகள், சொற்களஞ்சியம்.</p>
+      </div>
+      <ol class="hcard__list">
+        {%- for _p in _advaita limit: 4 -%}
+        <li><a href="{{ _p.url | relative_url }}"><span class="hcard__date">{{ _p.date | date: "%b %Y" }}</span>{{ _p.title }}</a></li>
+        {%- endfor -%}
+      </ol>
+      <p class="hcard__foot"><span>{{ _advaita | size }} கட்டுரைகள்</span><span class="hcard__go">படிக்க →</span></p>
+    </article>
+
+    {%- comment -%} ---- Stream II: AI ---- {%- endcomment -%}
+    <article class="hcard hcard--ai js-hcard" style="--i:1">
+      <svg class="hcard__net" viewBox="0 0 300 200" aria-hidden="true" preserveAspectRatio="xMaxYMin slice">
+        <g class="hcard__edges">
+          {%- for _a in (0..3) -%}{%- for _b in (0..4) -%}
+          <line x1="170" y1="{{ _a | times: 40 | plus: 40 }}" x2="220" y2="{{ _b | times: 36 | plus: 28 }}"/>
+          {%- endfor -%}{%- endfor -%}
+          {%- for _b in (0..4) -%}{%- for _c in (0..2) -%}
+          <line x1="220" y1="{{ _b | times: 36 | plus: 28 }}" x2="270" y2="{{ _c | times: 50 | plus: 50 }}"/>
+          {%- endfor -%}{%- endfor -%}
+        </g>
+        <g class="hcard__nodes">
+          {%- for _a in (0..3) -%}<circle cx="170" cy="{{ _a | times: 40 | plus: 40 }}" r="4" style="--d:{{ _a }}"/>{%- endfor -%}
+          {%- for _b in (0..4) -%}<circle cx="220" cy="{{ _b | times: 36 | plus: 28 }}" r="4" style="--d:{{ _b | plus: 4 }}"/>{%- endfor -%}
+          {%- for _c in (0..2) -%}<circle cx="270" cy="{{ _c | times: 50 | plus: 50 }}" r="4" style="--d:{{ _c | plus: 9 }}"/>{%- endfor -%}
+        </g>
+      </svg>
+      <div class="hcard__head">
+        <p class="hcard__kicker">Stream II · Machine learning</p>
+        <h2 class="hcard__title"><a class="hcard__stretch" href="{{ '/ai.html' | relative_url }}">Artificial <span>Intelligence</span></a></h2>
+        <p class="hcard__desc">Transformers, LLMs, PyTorch, optimisation — and the mathematics underneath.</p>
+      </div>
+      <ol class="hcard__list">
+        {%- for _p in _ai limit: 4 -%}
+        <li><a href="{{ _p.url | relative_url }}"><span class="hcard__date">{{ _p.date | date: "%b %Y" }}</span>{{ _p.title }}</a></li>
+        {%- endfor -%}
+      </ol>
+      <p class="hcard__foot"><span>{{ _ai | size }} essays</span><span class="hcard__go">Enter →</span></p>
+    </article>
+
+    {%- comment -%} ---- Side column ---- {%- endcomment -%}
+    <article class="hcard hcard--latest js-hcard" style="--i:2">
+      <p class="hcard__kicker"><span class="hcard__pulse"></span>Fresh ink · {{ _latest.date | date: "%d %b %Y" }}</p>
+      <h3 class="hcard__title hcard__title--sm"><a class="hcard__stretch" href="{{ _latest.url | relative_url }}">{{ _latest.title }}</a></h3>
+      <p class="hcard__go">Read the newest →</p>
+    </article>
+
+    <article class="hcard hcard--talks js-hcard" style="--i:3">
+      <span class="hcard__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></svg>
+      </span>
+      <div>
+        <p class="hcard__kicker">Watch</p>
+        <h3 class="hcard__title hcard__title--sm"><a class="hcard__stretch" href="{{ '/talks.html' | relative_url }}">Talks &amp; lectures</a></h3>
+        <p class="hcard__desc">LLMs, linear algebra, signal processing.</p>
+      </div>
+    </article>
+
+    <article class="hcard hcard--play js-hcard" style="--i:4">
+      <div class="hcard__orbit" aria-hidden="true"><i></i><i></i><i></i></div>
+      <p class="hcard__kicker">Play</p>
+      <h3 class="hcard__title hcard__title--sm"><a class="hcard__stretch" href="{{ '/llm-applets/' | relative_url }}">Interactive simulations</a></h3>
+      <p class="hcard__desc">Physics, maths and neural-net applets you can poke at. <a class="hcard__sub" href="{{ '/apps/' | relative_url }}">Science Explorer →</a></p>
+    </article>
+
+  </div>
+</div>
+
+<script>
+  /* Soft spotlight that follows the cursor inside each card. */
+  (function () {
+    if (window.matchMedia('(hover: none)').matches) return;
+    document.querySelectorAll('.js-hcard').forEach(function (card) {
+      card.addEventListener('pointermove', function (e) {
+        var r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+        card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+      });
+    });
+  })();
+</script>
+
+{{ content }}
