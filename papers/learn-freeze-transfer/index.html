@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Learn, Freeze, Transfer: Reusing a Shared Activation Across Networks</title>
+<meta name="description" content="A globally shared nonlinearity, learned jointly with one network, can be separated from its source weights, frozen, and reused across independently initialized architectures.">
+<meta name="author" content="Arun Prakash A">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Learn, Freeze, Transfer: Reusing a Shared Activation Across Networks">
+<meta property="og:description" content="A globally shared nonlinearity, learned jointly with one network, can be separated from its source weights, frozen, and reused across independently initialized architectures.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4F6F9;
+    --surface: #FFFFFF;
+    --surface-2: #ECF0F4;
+    --ink: #1A2129;
+    --ink-muted: #5C6773;
+    --ink-faint: #8996A3;
+    --border: #DEE3E9;
+    --border-soft: #E9ECF1;
+    --accent: #B8690F;
+    --accent-ink: #7A4508;
+    --accent-soft: #F4E3CE;
+    --rule: #1A2129;
+    --shadow: 0 1px 2px rgba(23,35,52,0.06), 0 8px 24px -12px rgba(23,35,52,0.18);
+    --sans: 'IBM Plex Sans', system-ui, sans-serif;
+    --serif: 'IBM Plex Serif', Georgia, 'Times New Roman', serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12161C; --surface: #191F27; --surface-2: #202832;
+      --ink: #E7ECF2; --ink-muted: #9BA8B6; --ink-faint: #6B7683;
+      --border: #2B333E; --border-soft: #232B35;
+      --accent: #E0973E; --accent-ink: #F3C889; --accent-soft: #3A2C18;
+      --rule: #8996A3;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12161C; --surface: #191F27; --surface-2: #202832;
+    --ink: #E7ECF2; --ink-muted: #9BA8B6; --ink-faint: #6B7683;
+    --border: #2B333E; --border-soft: #232B35;
+    --accent: #E0973E; --accent-ink: #F3C889; --accent-soft: #3A2C18;
+    --rule: #8996A3;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--serif); -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: var(--accent); }
+
+  .shell { max-width: 1180px; margin: 0 auto; padding: 0 18px 90px; }
+  @media (min-width: 1060px) {
+    .shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 54px;
+             padding: 0 28px 110px; }
+  }
+
+  /* ------------------------------------------------- sidebar / contents ----- */
+  .sidebar { font-family: var(--sans); }
+  @media (min-width: 1060px) {
+    .sidebar { position: sticky; top: 0; align-self: start; max-height: 100vh;
+               overflow-y: auto; padding: 42px 0 40px; }
+  }
+  .side-head {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 500;
+    margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  }
+  nav.toc { display: flex; flex-direction: column; gap: 1px; }
+  nav.toc a {
+    display: block; text-decoration: none; color: var(--ink-muted);
+    font-size: 13px; line-height: 1.35; padding: 5px 9px; border-radius: 6px;
+    border-left: 2px solid transparent;
+  }
+  nav.toc a span { color: var(--ink-faint); font-variant-numeric: tabular-nums;
+                   font-family: var(--mono); font-size: 11.5px; }
+  nav.toc a.toc-l3 { padding-left: 22px; font-size: 12.5px; }
+  nav.toc a:hover { background: var(--surface-2); color: var(--ink); }
+  nav.toc a.active {
+    color: var(--accent-ink); background: var(--accent-soft);
+    border-left-color: var(--accent); font-weight: 600;
+  }
+  nav.toc a.active span { color: var(--accent-ink); }
+  .side-foot { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border);
+               display: flex; flex-direction: column; gap: 8px; }
+  .side-foot a, .themebtn {
+    font-size: 12.5px; color: var(--ink-muted); text-decoration: none;
+    font-family: var(--sans);
+  }
+  .side-foot a:hover { color: var(--accent); }
+  .themebtn {
+    appearance: none; background: var(--surface); border: 1px solid var(--border);
+    color: var(--ink-muted); border-radius: 7px; padding: 6px 10px; cursor: pointer;
+    text-align: left;
+  }
+  .themebtn:hover { border-color: var(--accent); color: var(--ink); }
+  /* on narrow screens the contents collapse into a disclosure above the paper */
+  .toc-mobile { margin: 22px 0 6px; }
+  .toc-mobile summary { font-family: var(--sans); font-size: 13px; cursor: pointer;
+                        color: var(--ink-muted); }
+  @media (min-width: 1060px) { .toc-mobile { display: none; } }
+  @media (max-width: 1059px) { .sidebar { display: none; } }
+
+  /* ------------------------------------------------------------- header ----- */
+  header.paper-head {
+    padding: 48px 0 26px; margin-bottom: 30px; border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--accent-ink); font-weight: 500;
+    margin: 0 0 14px;
+  }
+  header.paper-head h1 {
+    font-family: var(--sans); font-size: clamp(27px, 3.6vw, 40px); font-weight: 700;
+    line-height: 1.16; letter-spacing: -0.02em; margin: 0 0 16px; max-width: 30ch;
+    text-wrap: balance;
+  }
+  .dek { font-size: 17px; line-height: 1.6; color: var(--ink-muted);
+         max-width: 62ch; margin: 0 0 24px; }
+  .byline { font-family: var(--sans); font-size: 14.5px; margin: 0 0 4px; font-weight: 600; }
+  .affil { font-family: var(--sans); font-size: 13.5px; color: var(--ink-muted); margin: 0; }
+  .stamp { font-family: var(--mono); font-size: 12px; color: var(--ink-faint);
+           margin: 16px 0 0; }
+
+  /* -------------------------------------------------------------- article --- */
+  article { max-width: 72ch; font-size: 17.5px; line-height: 1.72; }
+  article p { margin: 0 0 1.15em; }
+  article h2, article h3 { font-family: var(--sans); letter-spacing: -0.012em;
+                           scroll-margin-top: 24px; }
+  article h2 {
+    font-size: 25px; font-weight: 700; line-height: 1.25;
+    margin: 2.2em 0 0.75em; padding-top: 0.5em; border-top: 1px solid var(--border-soft);
+  }
+  article h3 { font-size: 18.5px; font-weight: 600; margin: 1.9em 0 0.6em; }
+  article h2 .secnum, article h3 .secnum {
+    font-family: var(--mono); font-weight: 500; color: var(--ink-faint);
+    font-size: 0.78em; margin-right: 0.45em;
+  }
+  article h2 .secnum:empty, article h3 .secnum:empty { display: none; }
+  article ol, article ul { padding-left: 1.4em; margin: 0 0 1.3em; }
+  article li { margin-bottom: 0.6em; }
+  article strong { font-weight: 600; }
+
+  /* the abstract, set apart as a card */
+  #abstract { border-top: none; margin-top: 0; font-size: 13px; font-weight: 600;
+              letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint);
+              font-family: var(--mono); padding-top: 0; }
+  #abstract + p {
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0; padding: 20px 24px; font-size: 16.5px; line-height: 1.65;
+    box-shadow: var(--shadow); margin-bottom: 2em;
+  }
+
+  /* citations */
+  sup.cite { font-family: var(--sans); font-size: 0.68em; line-height: 0;
+             white-space: nowrap; margin-left: 1px; }
+  sup.cite a { color: var(--accent-ink); text-decoration: none; font-weight: 600; }
+  sup.cite a:hover { text-decoration: underline; }
+
+  /* equations: MathML, centred, with the number flush right */
+  .eqn { display: flex; align-items: center; gap: 1em; margin: 1.5em 0;
+         scroll-margin-top: 24px; }
+  .eqn-body { flex: 1 1 auto; text-align: center; overflow-x: auto; min-width: 0;
+              padding: 2px 0; }
+  .eqn-num { flex: 0 0 auto; font-family: var(--mono); font-size: 13px;
+             color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  math { font-size: 1.04em; }
+  math[display="block"] { margin: 0 auto; }
+
+  /* figures */
+  figure { margin: 2em 0 2.4em; }
+  figure img { max-width: 100%; height: auto; display: block; margin: 0 auto;
+               background: #fff; border-radius: 10px; padding: 6px; }
+  figure iframe.figframe {
+    display: block; width: 100%; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--surface); box-shadow: var(--shadow);
+  }
+  figcaption, p.tbl-caption {
+    font-family: var(--sans); font-size: 13.5px; line-height: 1.55;
+    color: var(--ink-muted); margin-top: 0.85em; max-width: 68ch;
+  }
+  figcaption strong, p.tbl-caption strong { color: var(--ink); font-weight: 600; }
+  .open-standalone { white-space: nowrap; font-size: 0.95em; }
+  figure[id], p.tbl-caption[id] { scroll-margin-top: 24px; }
+
+  /* tables: booktabs rules, no verticals */
+  p.tbl-caption { margin: 2.2em 0 0.8em; }
+  .tbl-wrap { overflow-x: auto; margin: 0 0 2.4em; }
+  table {
+    border-collapse: collapse; width: 100%; font-family: var(--sans);
+    font-size: 13.5px; font-variant-numeric: tabular-nums;
+    border-top: 1.5px solid var(--rule); border-bottom: 1.5px solid var(--rule);
+  }
+  table thead tr:last-child th { border-bottom: 1px solid var(--rule); }
+  table th, table td { padding: 7px 12px; border: none; vertical-align: baseline;
+                       white-space: nowrap; }
+  table th { font-weight: 600; text-align: left; color: var(--ink); }
+  table td { color: var(--ink-muted); }
+  table td strong { color: var(--ink); font-weight: 600; }
+  table td u { text-decoration-color: var(--ink-faint); text-underline-offset: 2.5px; }
+  table td[colspan] { padding-top: 12px; color: var(--ink); }
+  table tbody tr:first-child td[colspan] { padding-top: 7px; }
+  table tbody tr:hover td { background: var(--surface-2); }
+
+  /* references */
+  ol.reflist { list-style: none; padding: 0; font-size: 14.5px; line-height: 1.55;
+               font-family: var(--sans); color: var(--ink-muted); }
+  ol.reflist li { display: grid; grid-template-columns: 2.6em 1fr; gap: 6px;
+                  margin-bottom: 0.85em; scroll-margin-top: 24px; }
+  ol.reflist li:target { background: var(--accent-soft); border-radius: 6px;
+                         padding: 4px 6px; margin-left: -6px; }
+  .refnum { font-family: var(--mono); font-size: 12.5px; color: var(--ink-faint);
+            padding-top: 1px; }
+
+  footer.paper-foot {
+    max-width: 72ch; margin-top: 56px; padding-top: 22px;
+    border-top: 1px solid var(--border); font-family: var(--sans);
+    font-size: 13px; line-height: 1.65; color: var(--ink-faint);
+  }
+  footer.paper-foot a { color: var(--ink-muted); }
+
+  @media print {
+    .sidebar, .toc-mobile, .themebtn { display: none; }
+    body { background: #fff; color: #000; }
+    .shell { display: block; max-width: none; }
+    article { max-width: none; font-size: 11pt; }
+    figure iframe.figframe { display: none; }
+    article h2 { page-break-after: avoid; }
+    .tbl-wrap, figure, .eqn { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <p class="side-head">Contents</p>
+    <nav class="toc" id="toc">
+<a class="toc-l2" href="#abstract">Abstract</a>
+<a class="toc-l2" href="#introduction"><span>1</span> Introduction</a>
+<a class="toc-l2" href="#background-and-related-work"><span>2</span> Background and Related Work</a>
+<a class="toc-l3" href="#learnable-and-globally-shared-activation-functions"><span>2.1</span> Learnable and Globally Shared Activation Functions</a>
+<a class="toc-l3" href="#transferability-of-learned-activation-functions"><span>2.2</span> Transferability of Learned Activation Functions</a>
+<a class="toc-l2" href="#fact-learning-and-transferring-a-shared-nonlinearity"><span>3</span> FAct: Learning and Transferring a Shared Nonlinearity</a>
+<a class="toc-l3" href="#global-activation-sharing"><span>3.1</span> Global Activation Sharing</a>
+<a class="toc-l3" href="#fourier-parameterization-and-initialization"><span>3.2</span> Fourier Parameterization and Initialization</a>
+<a class="toc-l3" href="#learn-freeze-transfer-protocol"><span>3.3</span> Learn-Freeze-Transfer Protocol</a>
+<a class="toc-l2" href="#experimental-evaluation"><span>4</span> Experimental Evaluation</a>
+<a class="toc-l3" href="#experimental-setup"><span>4.1</span> Experimental Setup</a>
+<a class="toc-l3" href="#evolution-of-the-source-learned-activation"><span>4.2</span> Evolution of the Source-Learned Activation</a>
+<a class="toc-l3" href="#same-task-transfer-at-source-scale"><span>4.3</span> Same-Task Transfer at Source Scale</a>
+<a class="toc-l3" href="#transfer-across-transformer-architectures"><span>4.4</span> Transfer Across Transformer Architectures</a>
+<a class="toc-l3" href="#transfer-to-an-mlp-mixer-architecture"><span>4.5</span> Transfer to an MLP-Mixer Architecture</a>
+<a class="toc-l2" href="#conclusion"><span>5</span> Conclusion</a>
+<a class="toc-l2" href="#appendix-a-experimental-configuration">Appendix A: Experimental Configuration</a>
+<a class="toc-l3" href="#models-and-datasets"><span>A.1</span> Models and datasets</a>
+<a class="toc-l3" href="#training-configuration"><span>A.2</span> Training configuration</a>
+<a class="toc-l3" href="#preprocessing-and-evaluation"><span>A.3</span> Preprocessing and evaluation</a>
+<a class="toc-l2" href="#appendix-b-activation-specific-hyperparameter-tuning">Appendix B: Activation-Specific Hyperparameter Tuning</a>
+<a class="toc-l2" href="#appendix-c-transfer-with-a-shared-rational-activation">Appendix C: Transfer with a Shared Rational Activation</a>
+<a class="toc-l2" href="#appendix-d-depth-sensitivity-and-the-effect-of-gelu-based-initialization">Appendix D: Depth Sensitivity and the Effect of GELU-Based Initialization</a>
+<a class="toc-l3" href="#experimental-design"><span>D.1</span> Experimental Design</a>
+<a class="toc-l3" href="#results"><span>D.2</span> Results</a>
+<a class="toc-l2" href="#references">References</a>
+    </nav>
+    <div class="side-foot">
+      <button class="themebtn" id="themebtn" type="button">Theme: auto</button>
+      <a href="/">&#8592; arunprakash-a.github.io</a>
+    </div>
+  </aside>
+
+  <main>
+    <header class="paper-head">
+      <p class="eyebrow">Preprint &middot; Reading edition</p>
+      <h1>Learn, Freeze, Transfer: Reusing a Shared Activation Across Networks</h1>
+      <p class="dek">A globally shared nonlinearity, learned jointly with one network, can be separated from its source weights, frozen, and reused across independently initialized architectures.</p>
+      <p class="byline">Arun Prakash A</p>
+      <p class="affil">Nilekani Centre at AI4Bharat, Indian Institute of Technology Madras &middot; <a href="mailto:a.arun283@gmail.com">a.arun283@gmail.com</a></p>
+      <p class="stamp">November 2026 &middot; figures in this edition are interactive</p>
+    </header>
+
+    <details class="toc-mobile">
+      <summary>Contents</summary>
+      <nav class="toc">
+<a class="toc-l2" href="#abstract">Abstract</a>
+<a class="toc-l2" href="#introduction"><span>1</span> Introduction</a>
+<a class="toc-l2" href="#background-and-related-work"><span>2</span> Background and Related Work</a>
+<a class="toc-l3" href="#learnable-and-globally-shared-activation-functions"><span>2.1</span> Learnable and Globally Shared Activation Functions</a>
+<a class="toc-l3" href="#transferability-of-learned-activation-functions"><span>2.2</span> Transferability of Learned Activation Functions</a>
+<a class="toc-l2" href="#fact-learning-and-transferring-a-shared-nonlinearity"><span>3</span> FAct: Learning and Transferring a Shared Nonlinearity</a>
+<a class="toc-l3" href="#global-activation-sharing"><span>3.1</span> Global Activation Sharing</a>
+<a class="toc-l3" href="#fourier-parameterization-and-initialization"><span>3.2</span> Fourier Parameterization and Initialization</a>
+<a class="toc-l3" href="#learn-freeze-transfer-protocol"><span>3.3</span> Learn-Freeze-Transfer Protocol</a>
+<a class="toc-l2" href="#experimental-evaluation"><span>4</span> Experimental Evaluation</a>
+<a class="toc-l3" href="#experimental-setup"><span>4.1</span> Experimental Setup</a>
+<a class="toc-l3" href="#evolution-of-the-source-learned-activation"><span>4.2</span> Evolution of the Source-Learned Activation</a>
+<a class="toc-l3" href="#same-task-transfer-at-source-scale"><span>4.3</span> Same-Task Transfer at Source Scale</a>
+<a class="toc-l3" href="#transfer-across-transformer-architectures"><span>4.4</span> Transfer Across Transformer Architectures</a>
+<a class="toc-l3" href="#transfer-to-an-mlp-mixer-architecture"><span>4.5</span> Transfer to an MLP-Mixer Architecture</a>
+<a class="toc-l2" href="#conclusion"><span>5</span> Conclusion</a>
+<a class="toc-l2" href="#appendix-a-experimental-configuration">Appendix A: Experimental Configuration</a>
+<a class="toc-l3" href="#models-and-datasets"><span>A.1</span> Models and datasets</a>
+<a class="toc-l3" href="#training-configuration"><span>A.2</span> Training configuration</a>
+<a class="toc-l3" href="#preprocessing-and-evaluation"><span>A.3</span> Preprocessing and evaluation</a>
+<a class="toc-l2" href="#appendix-b-activation-specific-hyperparameter-tuning">Appendix B: Activation-Specific Hyperparameter Tuning</a>
+<a class="toc-l2" href="#appendix-c-transfer-with-a-shared-rational-activation">Appendix C: Transfer with a Shared Rational Activation</a>
+<a class="toc-l2" href="#appendix-d-depth-sensitivity-and-the-effect-of-gelu-based-initialization">Appendix D: Depth Sensitivity and the Effect of GELU-Based Initialization</a>
+<a class="toc-l3" href="#experimental-design"><span>D.1</span> Experimental Design</a>
+<a class="toc-l3" href="#results"><span>D.2</span> Results</a>
+<a class="toc-l2" href="#references">References</a>
+      </nav>
+    </details>
+
+    <article id="paper">
+<h2 id="abstract">Abstract</h2>
+<p>We investigate whether a learned nonlinearity can be reused independently of the network in which it was optimized. We introduce a learn–freeze–transfer framework in which a globally shared activation is learned jointly with a source network, frozen after training, and transferred to independently initialized target networks without transferring the source-network weights. We instantiate this framework with FAct, a five-parameter activation represented by a two-harmonic truncated Fourier series and initialized using a Fourier approximation of GELU. FAct is learned in a Vision Transformer trained on ImageNet-1K, and its learned coefficients are transferred to four independently initialized architectures: a standard Vision Transformer, a Swin Transformer, a Vision Transformer with linear attention, and an MLP-Mixer. The target networks are evaluated on Fashion-MNIST, CIFAR-10, CIFAR-100, and Food-101. We compare Frozen FAct with ten conventional activation functions. Under a common training configuration, Frozen FAct achieves the highest mean test accuracy among the eleven activation choices in 15 of the 16 architecture–dataset combinations. These findings provide empirical evidence that a globally shared nonlinearity learned within one network can be reused across independently initialized networks without transferring the source-network weights.</p>
+<h2 id="introduction"><span class="secnum">1</span> Introduction</h2>
+<p>Activation functions determine how intermediate representations are transformed in neural networks and can influence both optimization and predictive performance. Conventional choices such as ReLU<sup class="cite">[<a href="#ref-1">1</a>]</sup>, GELU<sup class="cite">[<a href="#ref-2">2</a>]</sup>, and SiLU<sup class="cite">[<a href="#ref-3">3</a>]</sup> impose predefined nonlinear transformations, whereas learnable activation functions allow the nonlinearity to adapt jointly with network parameters<sup class="cite">[<a href="#ref-4">4</a>,&thinsp;<a href="#ref-5">5</a>,&thinsp;<a href="#ref-6">6</a>]</sup>. However, these approaches are generally evaluated within the networks in which their activation parameters are learned. This raises a related question: can a learned activation retain its usefulness when separated from the network weights with which it was optimized?</p>
+<p>The transferability of a learned activation depends in part on how its parameters are represented and shared within a network. Existing approaches may assign activation parameters to individual neurons, channels, or layers, allowing the nonlinear transformation to adapt at different network locations<sup class="cite">[<a href="#ref-4">4</a>,&thinsp;<a href="#ref-5">5</a>,&thinsp;<a href="#ref-7">7</a>,&thinsp;<a href="#ref-8">8</a>,&thinsp;<a href="#ref-9">9</a>]</sup>. Global parameter sharing instead uses a common set of parameters across multiple layers, defining a single activation function throughout the network. Prior work has explored this approach using globally shared adaptive slopes<sup class="cite">[<a href="#ref-10">10</a>]</sup> and shared rational parameterizations<sup class="cite">[<a href="#ref-11">11</a>]</sup>. However, sharing an activation within a network and transferring it independently of that network are distinct properties. The former establishes a common nonlinearity, whereas the latter examines whether the learned function remains useful after the source network is discarded.</p>
+<p>Recent work has also investigated learned activation functions as reusable components. Teney et al.<sup class="cite">[<a href="#ref-12">12</a>]</sup> employ bilevel meta-learning to discover activation functions suited to different task distributions and examine their transfer across related tasks. We investigate a complementary setting in which a globally shared activation is learned jointly with a single source network through conventional end-to-end training, rather than meta-learned across multiple task episodes. After source training, the learned activation is frozen and transferred to independently initialized target networks without reusing the source-network weights (<a href="#figure-1">Figure 1</a>). This setting allows us to examine whether a nonlinearity learned within one network remains useful across different architectures and target tasks.</p>
+<p>To investigate this setting, we use FAct (Fourier Activation), a globally shared learnable nonlinearity parameterized by a truncated Fourier series with two harmonics and five learnable coefficients. A single set of coefficients is shared across all MLP blocks of the source network, making the number of activation parameters independent of network depth and width. The coefficients are initialized using a two-harmonic Fourier approximation of GELU and optimized jointly with the source-network weights. This initialization provides a reference shape while allowing the activation function to adapt during source training.</p>
+<figure class="l-body" id="figure-1">
+  <img src="assets/img/submission/fig_pipeline.svg" style="width:100%;height:auto" alt="The learn-freeze-transfer framework: a depth-6 ViT learns one shared five-coefficient activation on ImageNet-1K; the coefficients are frozen; the frozen activation is used in a freshly initialized ViT-d6 on ImageNet-1K and in ViT-d2, Swin-d2, LinViT-d2 and MLP-Mixer targets on four datasets.">
+  <figcaption><strong>Figure 1. Overview of the learn–freeze–transfer framework.</strong> (a) A five-parameter FAct activation, shared across all MLP blocks, is learned jointly with a depth-6 ViT on ImageNet-1K. (b) The learned activation coefficients are frozen after source training. (c) Only these coefficients, not the source-network weights, are transferred to independently initialized target networks. Evaluation includes same-task transfer to a fresh ViT-d6 and cross-architecture transfer to ViT-d2, Swin-d2, LinViT-d2, and MLP-Mixer, with the activation coefficients fixed throughout target training.</figcaption>
+</figure>
+
+<p>We evaluate the transferability of FAct in two settings. First, we examine same-task transfer by using the source-learned activation in a freshly initialized Vision Transformer<sup class="cite">[<a href="#ref-13">13</a>]</sup> of the same depth, trained on ImageNet-1K<sup class="cite">[<a href="#ref-14">14</a>]</sup>. We then investigate cross-architecture transfer by transferring the same five frozen coefficients to four independently initialized target architectures: a depth-2 Vision Transformer with global self-attention, a Swin Transformer with shifted-window self-attention<sup class="cite">[<a href="#ref-15">15</a>]</sup>, a Vision Transformer with linear attention<sup class="cite">[<a href="#ref-16">16</a>]</sup>, and an attention-free MLP-Mixer<sup class="cite">[<a href="#ref-17">17</a>]</sup>. In all cases, the target-network weights are trained from scratch, while the transferred activation coefficients remain fixed. The cross-architecture experiments are conducted on four datasets: Fashion-MNIST<sup class="cite">[<a href="#ref-18">18</a>]</sup>, CIFAR-10, CIFAR-100<sup class="cite">[<a href="#ref-19">19</a>]</sup>, and Food-101<sup class="cite">[<a href="#ref-20">20</a>]</sup>. This evaluation examines whether the source-learned nonlinearity remains useful across different network architectures, attention mechanisms, and target tasks.</p>
+<p>Under a common target-training configuration, Frozen FAct achieves the highest mean test accuracy among eleven activation choices in 15 of the 16 architecture–dataset combinations. To examine whether this result depends on the use of common hyperparameters, we further evaluate all activation functions using activation-specific learning-rate and weight-decay tuning under an identical search budget. Following this tuning, Frozen FAct ranks first in 11 combinations, second in four, and fourth in the one remaining combination. These results provide empirical evidence that a globally shared nonlinearity learned within a source network can remain useful across independently initialized architectures and tasks, even when activation-specific hyperparameter optimization is considered.</p>
+<p>This work makes three contributions:</p>
+<ol>
+<li><strong>A learn–freeze–transfer framework for shared activations.</strong> We formulate a framework in which a globally shared nonlinearity is learned jointly with a source network and subsequently transferred to independently initialized target networks without transferring source-network weights or updating the activation parameters.</li>
+<li><strong>A compact Fourier-based activation parameterization.</strong> We introduce FAct, a five-parameter activation represented by a two-harmonic truncated Fourier series and shared across the MLP blocks of a network. Its parameter count remains independent of network depth and width.</li>
+<li><strong>An empirical evaluation of activation transferability.</strong> We evaluate the proposed approach through same-task and cross-architecture transfer experiments, using three transformer architectures and an attention-free MLP-Mixer across four image-classification datasets. We compare Frozen FAct against ten conventional activation functions under both common and activation-specific hyperparameter configurations.</li>
+</ol>
+<h2 id="background-and-related-work"><span class="secnum">2</span> Background and Related Work</h2>
+<h3 id="learnable-and-globally-shared-activation-functions"><span class="secnum">2.1</span> Learnable and Globally Shared Activation Functions</h3>
+<p>Learnable activation functions introduce parameterized nonlinear transformations whose parameters are optimized jointly with network weights. Existing approaches differ in both their functional representations and the flexibility they provide. PReLU learns the slope of the negative input region<sup class="cite">[<a href="#ref-4">4</a>]</sup>, while ACON introduces a more flexible parametric activation formulation<sup class="cite">[<a href="#ref-8">8</a>]</sup>. Padé activation units represent nonlinear transformations using ratios of polynomials<sup class="cite">[<a href="#ref-5">5</a>]</sup>, whereas other approaches employ adaptive piecewise-linear functions and kernel-based representations to provide greater functional flexibility<sup class="cite">[<a href="#ref-6">6</a>,&thinsp;<a href="#ref-7">7</a>]</sup>.</p>
+<p>Beyond the choice of functional representation, activation parameters can also differ in their sharing granularity. They may be assigned locally to individual neurons or layers, or shared across multiple layers. Jagtap et al.<sup class="cite">[<a href="#ref-10">10</a>]</sup> introduced globally adaptive activation functions using a shared trainable scaling parameter that adjusts the activation slope across the network. More recently, Delfosse et al.<sup class="cite">[<a href="#ref-11">11</a>]</sup> proposed joint-rational activations, sharing a common set of rational-function parameters across layers to regulate activation plasticity in deep reinforcement learning. These approaches demonstrate the utility of sharing activation parameters within a network. However, sharing alone does not establish whether a learned nonlinear function can be separated from its source network and reused in an independently initialized model.</p>
+<h3 id="transferability-of-learned-activation-functions"><span class="secnum">2.2</span> Transferability of Learned Activation Functions</h3>
+<p>The transferability of learned activation functions has been investigated by Teney et al.<sup class="cite">[<a href="#ref-12">12</a>]</sup>, who proposed a bilevel meta-learning approach to discover activation functions that induce task-appropriate inductive biases. Their method employs episodic training to optimize activation functions for generalization across different task instances. They demonstrate positive transfer across 22 algorithmic tasks and investigate the reuse of learned activations across networks of different widths. This work establishes that learned nonlinearities can serve as reusable components rather than being restricted to the networks in which they are initially learned.</p>
+<p>The present study investigates a different learning and transfer regime. Rather than meta-learning activation functions across multiple task episodes, we learn a single globally shared activation jointly with a source Vision Transformer through conventional end-to-end training on ImageNet-1K. After source training, the learned activation is frozen and transferred, without modification, to independently initialized target networks. No source-network weights are reused, and the activation parameters are not updated during target training. We evaluate this approach across transformer architectures with different attention mechanisms and an attention-free MLP-Mixer, using four image-classification datasets. Thus, our focus is on whether an activation learned through conventional source-network training can retain its usefulness when separated from the source weights and reused across independently trained architectures and tasks.</p>
+<h2 id="fact-learning-and-transferring-a-shared-nonlinearity"><span class="secnum">3</span> FAct: Learning and Transferring a Shared Nonlinearity</h2>
+<h3 id="global-activation-sharing"><span class="secnum">3.1</span> Global Activation Sharing</h3>
+<p>Let <math data-tex="z_\ell" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>z</mi><mi>&#x02113;</mi></msub></mrow></math> denote the pre-activation at the <math data-tex="\ell" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x02113;</mi></mrow></math>-th activation site in a network, and let <math data-tex="\phi(z;\theta)" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003D5;</mi><mo stretchy="false">&#x00028;</mo><mi>z</mi><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo></mrow></math> denote a parameterized activation function. In FAct, a single parameter vector <math data-tex="\theta" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi></mrow></math> is shared across all MLP blocks of the network:</p>
+<div class="eqn" id="eq-1">
+  <span class="eqn-body"><math data-tex="h_\ell = \phi(z_\ell;\theta), \qquad \ell=1,\ldots,L," xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mstyle displaystyle="true"><mrow><msub><mi>h</mi><mi>&#x02113;</mi></msub><mo>&#x0003D;</mo><mi>&#x003D5;</mi><mo stretchy="false">&#x00028;</mo><msub><mi>z</mi><mi>&#x02113;</mi></msub><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo><mspace width="2em" /><mi>&#x02113;</mi><mo>&#x0003D;</mo><mn>1</mn><mo>&#x0002C;</mo><mi>&#x02026;</mi><mo>&#x0002C;</mo><mi>L</mi><mo>&#x0002C;</mo></mrow></mstyle></math></span>
+  <span class="eqn-num">(1)</span>
+</div>
+
+<p>where <math data-tex="L" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>L</mi></mrow></math> denotes the number of activation sites and <math data-tex="h_\ell" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>h</mi><mi>&#x02113;</mi></msub></mrow></math> is the corresponding activation output. The same parameter vector is used at every site, without replication across layers or hidden units.</p>
+<p>Because the activation parameters are shared, their gradients aggregate contributions from all activation sites during training:</p>
+<div class="eqn" id="eq-2">
+  <span class="eqn-body"><math data-tex="\frac{\partial \mathcal{J}}{\partial \theta}
+=
+\sum_{\ell=1}^{L}
+\frac{\partial \mathcal{J}}{\partial h_\ell}\,
+\frac{\partial \phi(z_\ell;\theta)}{\partial \theta}," xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mstyle displaystyle="true"><mrow><mfrac><mrow><mo>&#x02202;</mo><mi>&#x1D4A5;</mi></mrow><mrow><mo>&#x02202;</mo><mi>&#x003B8;</mi></mrow></mfrac><mo>&#x0003D;</mo><munderover><mo>&#x02211;</mo><mrow><mi>&#x02113;</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><mi>L</mi></mrow></munderover><mfrac><mrow><mo>&#x02202;</mo><mi>&#x1D4A5;</mi></mrow><mrow><mo>&#x02202;</mo><msub><mi>h</mi><mi>&#x02113;</mi></msub></mrow></mfrac><mspace width="0.167em" /><mfrac><mrow><mo>&#x02202;</mo><mi>&#x003D5;</mi><mo stretchy="false">&#x00028;</mo><msub><mi>z</mi><mi>&#x02113;</mi></msub><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo></mrow><mrow><mo>&#x02202;</mo><mi>&#x003B8;</mi></mrow></mfrac><mo>&#x0002C;</mo></mrow></mstyle></math></span>
+  <span class="eqn-num">(2)</span>
+</div>
+
+<p>where <math data-tex="\mathcal{J}" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x1D4A5;</mi></mrow></math> denotes the network training objective. Each term represents the gradient contribution propagated through an individual activation site. Consequently, the shared activation parameters are optimized using signals from all MLP blocks rather than through independently learned, layer-specific parameter sets.</p>
+<p>Global sharing defines a single parameterized nonlinear function that can be retained independently of the source-network weights. We refer to FAct while its parameters are jointly optimized with the source-network weights as <strong>Learnable FAct</strong>. After source training, the parameters are frozen, and the resulting activation is referred to as <strong>Frozen FAct</strong>.</p>
+<h3 id="fourier-parameterization-and-initialization"><span class="secnum">3.2</span> Fourier Parameterization and Initialization</h3>
+<p>We parameterize FAct using a truncated Fourier series:</p>
+<div class="eqn" id="eq-3">
+  <span class="eqn-body"><math data-tex="\phi(z;\theta)=a_0+\sum_{k=1}^{K}
+\left[a_k\cos(k\omega z)+b_k\sin(k\omega z)\right]," xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mstyle displaystyle="true"><mrow><mi>&#x003D5;</mi><mo stretchy="false">&#x00028;</mo><mi>z</mi><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><msub><mi>a</mi><mn>0</mn></msub><mo>&#x0002B;</mo><munderover><mo>&#x02211;</mo><mrow><mi>k</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><mi>K</mi></mrow></munderover><mrow><mo stretchy="true" fence="true" form="prefix">[</mo><msub><mi>a</mi><mi>k</mi></msub><mi>cos</mi><mo stretchy="false">&#x00028;</mo><mi>k</mi><mi>&#x003C9;</mi><mi>z</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><msub><mi>b</mi><mi>k</mi></msub><mi>sin</mi><mo stretchy="false">&#x00028;</mo><mi>k</mi><mi>&#x003C9;</mi><mi>z</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="true" fence="true" form="postfix">]</mo></mrow><mo>&#x0002C;</mo></mrow></mstyle></math></span>
+  <span class="eqn-num">(3)</span>
+</div>
+
+<p>where <math data-tex="a_0" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>a</mi><mn>0</mn></msub></mrow></math>, <math data-tex="a_k" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>a</mi><mi>k</mi></msub></mrow></math>, and <math data-tex="b_k" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>b</mi><mi>k</mi></msub></mrow></math> are learnable coefficients, and <math data-tex="K" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>K</mi></mrow></math> denotes the number of harmonics. We fix the angular frequency to <math data-tex="\omega=1" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C9;</mi><mo>&#x0003D;</mo><mn>1</mn></mrow></math>, giving the activation a period of <math data-tex="2\pi" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>2</mn><mi>&#x003C0;</mi></mrow></math>. The parameter vector is defined as</p>
+<div class="eqn" id="eq-4">
+  <span class="eqn-body"><math data-tex="\theta=(a_0,a_1,\ldots,a_K,b_1,\ldots,b_K)," xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mstyle displaystyle="true"><mrow><mi>&#x003B8;</mi><mo>&#x0003D;</mo><mo stretchy="false">&#x00028;</mo><msub><mi>a</mi><mn>0</mn></msub><mo>&#x0002C;</mo><msub><mi>a</mi><mn>1</mn></msub><mo>&#x0002C;</mo><mi>&#x02026;</mi><mo>&#x0002C;</mo><msub><mi>a</mi><mi>K</mi></msub><mo>&#x0002C;</mo><msub><mi>b</mi><mn>1</mn></msub><mo>&#x0002C;</mo><mi>&#x02026;</mi><mo>&#x0002C;</mo><msub><mi>b</mi><mi>K</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo></mrow></mstyle></math></span>
+  <span class="eqn-num">(4)</span>
+</div>
+
+<p>containing <math data-tex="2K+1" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>2</mn><mi>K</mi><mo>&#x0002B;</mo><mn>1</mn></mrow></math> coefficients. In the main experiments, we set <math data-tex="K=2" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>K</mi><mo>&#x0003D;</mo><mn>2</mn></mrow></math>, resulting in five learnable parameters shared across the entire network. Consequently, the number of activation parameters is independent of network depth and width.</p>
+<p>The Fourier representation provides a compact and smooth parameterization whose shape can adapt during training. Depending on the learned coefficients, the resulting function can exhibit monotonic or non-monotonic behaviour over the input range of interest. Furthermore, its output is bounded for any finite coefficient values:</p>
+<div class="eqn" id="eq-5">
+  <span class="eqn-body"><math data-tex="|\phi(z;\theta)|\leq |a_0|+\sum_{k=1}^{K}\bigl(|a_k|+|b_k|\bigr)." xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mstyle displaystyle="true"><mrow><mo stretchy="false">&#x0007C;</mo><mi>&#x003D5;</mi><mo stretchy="false">&#x00028;</mo><mi>z</mi><mi>;</mi><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo stretchy="false">&#x0007C;</mo><mo>&#x02264;</mo><mo stretchy="false">&#x0007C;</mo><msub><mi>a</mi><mn>0</mn></msub><mo stretchy="false">&#x0007C;</mo><mo>&#x0002B;</mo><munderover><mo>&#x02211;</mo><mrow><mi>k</mi><mo>&#x0003D;</mo><mn>1</mn></mrow><mrow><mi>K</mi></mrow></munderover><mo stretchy="false">&#x00028;</mo><mo stretchy="false">&#x0007C;</mo><msub><mi>a</mi><mi>k</mi></msub><mo stretchy="false">&#x0007C;</mo><mo>&#x0002B;</mo><mo stretchy="false">&#x0007C;</mo><msub><mi>b</mi><mi>k</mi></msub><mo stretchy="false">&#x0007C;</mo><mo stretchy="false">&#x00029;</mo><mo>&#x0002E;</mo></mrow></mstyle></math></span>
+  <span class="eqn-num">(5)</span>
+</div>
+
+<p>This bound follows from the bounded magnitudes of the sine and cosine functions.</p>
+<figure class="l-body" id="interactive-eq-3">
+  <iframe class="figframe" src="assets/html/submission/fourier-coefficients.html"
+          width="100%" height="560"
+          style="display:block; width:100%; height:560px; border:1px solid rgba(0,0,0,0.1); border-radius:12px; background:#f4f6f9;"
+          title="Interactive view of Equation 3: the five FAct coefficients"></iframe>
+  <figcaption><strong>Interactive exploration of the Fourier parameterization in Equation (3).</strong> FAct is displayed with <math data-tex="K{=}2" xmlns="http://www.w3.org/1998/Math/MathML"><mi>K</mi><mrow data-mjx-texclass="ORD"><mo>=</mo></mrow><mn>2</mn></math> and <math data-tex="\omega{=}1" xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x3C9;</mi><mrow data-mjx-texclass="ORD"><mo>=</mo></mrow><mn>1</mn></math> over one period, <math data-tex="z\in[-\pi,\pi]" xmlns="http://www.w3.org/1998/Math/MathML"><mi>z</mi><mo>&#x2208;</mo><mo stretchy="false">[</mo><mo>&#x2212;</mo><mi>&#x3C0;</mi><mo>,</mo><mi>&#x3C0;</mi><mo stretchy="false">]</mo></math>. The five sliders control the complete parameter vector <math data-tex="\theta" xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x3B8;</mi></math> in Equation (4). Presets load the GELU-based initialization (<a href="#eq-7">Equation 7</a>), the coefficients learned by the source ViT on ImageNet-1K, or zero coefficients. GELU is displayed as a non-periodic reference. The dotted lines indicate the coefficient-dependent output bound derived in Equation (5). The <em>Show Fourier components</em> option decomposes the activation into its constant, first-harmonic, and second-harmonic terms. <span class="open-standalone">[<a href="assets/html/submission/fourier-coefficients.html" target="_blank" rel="noopener">open this figure in its own tab</a>]</span></figcaption>
+</figure>
+
+<p>We initialize FAct using a two-harmonic Fourier approximation of GELU<sup class="cite">[<a href="#ref-2">2</a>]</sup>. For a reference activation function <math data-tex="\sigma" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C3;</mi></mrow></math>, the Fourier coefficients are obtained by projection over one period, <math data-tex="[-\pi,\pi]" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">[</mo><mo>&#x02212;</mo><mi>&#x003C0;</mi><mo>&#x0002C;</mo><mi>&#x003C0;</mi><mo stretchy="false">]</mo></mrow></math>:</p>
+<div class="eqn" id="eq-6a">
+  <span class="eqn-body"><math data-tex="a_0=\frac{1}{2\pi}\int_{-\pi}^{\pi}\sigma(z)\,dz," xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mstyle displaystyle="true"><mrow><msub><mi>a</mi><mn>0</mn></msub><mo>&#x0003D;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mn>2</mn><mi>&#x003C0;</mi></mrow></mfrac><msubsup><mo>&#x0222B;</mo><mrow><mo>&#x02212;</mo><mi>&#x003C0;</mi></mrow><mrow><mi>&#x003C0;</mi></mrow></msubsup><mi>&#x003C3;</mi><mo stretchy="false">&#x00028;</mo><mi>z</mi><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><mi>d</mi><mi>z</mi><mo>&#x0002C;</mo></mrow></mstyle></math></span>
+  <span class="eqn-num">(6a)</span>
+</div>
+
+<div class="eqn" id="eq-6b">
+  <span class="eqn-body"><math data-tex="a_k=\frac{1}{\pi}\int_{-\pi}^{\pi}\sigma(z)\cos(k\omega z)\,dz, \quad k=1,\ldots,K," xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mstyle displaystyle="true"><mrow><msub><mi>a</mi><mi>k</mi></msub><mo>&#x0003D;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mi>&#x003C0;</mi></mrow></mfrac><msubsup><mo>&#x0222B;</mo><mrow><mo>&#x02212;</mo><mi>&#x003C0;</mi></mrow><mrow><mi>&#x003C0;</mi></mrow></msubsup><mi>&#x003C3;</mi><mo stretchy="false">&#x00028;</mo><mi>z</mi><mo stretchy="false">&#x00029;</mo><mi>cos</mi><mo stretchy="false">&#x00028;</mo><mi>k</mi><mi>&#x003C9;</mi><mi>z</mi><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><mi>d</mi><mi>z</mi><mo>&#x0002C;</mo><mspace width="1em" /><mi>k</mi><mo>&#x0003D;</mo><mn>1</mn><mo>&#x0002C;</mo><mi>&#x02026;</mi><mo>&#x0002C;</mo><mi>K</mi><mo>&#x0002C;</mo></mrow></mstyle></math></span>
+  <span class="eqn-num">(6b)</span>
+</div>
+
+<div class="eqn" id="eq-6c">
+  <span class="eqn-body"><math data-tex="b_k=\frac{1}{\pi}\int_{-\pi}^{\pi}\sigma(z)\sin(k\omega z)\,dz, \quad k=1,\ldots,K." xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mstyle displaystyle="true"><mrow><msub><mi>b</mi><mi>k</mi></msub><mo>&#x0003D;</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mi>&#x003C0;</mi></mrow></mfrac><msubsup><mo>&#x0222B;</mo><mrow><mo>&#x02212;</mo><mi>&#x003C0;</mi></mrow><mrow><mi>&#x003C0;</mi></mrow></msubsup><mi>&#x003C3;</mi><mo stretchy="false">&#x00028;</mo><mi>z</mi><mo stretchy="false">&#x00029;</mo><mi>sin</mi><mo stretchy="false">&#x00028;</mo><mi>k</mi><mi>&#x003C9;</mi><mi>z</mi><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><mi>d</mi><mi>z</mi><mo>&#x0002C;</mo><mspace width="1em" /><mi>k</mi><mo>&#x0003D;</mo><mn>1</mn><mo>&#x0002C;</mo><mi>&#x02026;</mi><mo>&#x0002C;</mo><mi>K</mi><mo>&#x0002E;</mo></mrow></mstyle></math></span>
+  <span class="eqn-num">(6c)</span>
+</div>
+
+<p>For <math data-tex="\sigma=\mathrm{GELU}" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C3;</mi><mo>&#x0003D;</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">E</mi><mi mathvariant="normal">L</mi><mi mathvariant="normal">U</mi></mrow></mrow></math>, <math data-tex="K=2" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>K</mi><mo>&#x0003D;</mo><mn>2</mn></mrow></math>, and <math data-tex="\omega=1" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003C9;</mi><mo>&#x0003D;</mo><mn>1</mn></mrow></math>, the resulting initialization is</p>
+<div class="eqn" id="eq-7">
+  <span class="eqn-body"><math data-tex="\theta_0=(0.7061,\,{-0.7049},\,0.0261,\,1.0000,\,{-0.5000})." xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mstyle displaystyle="true"><mrow><msub><mi>&#x003B8;</mi><mn>0</mn></msub><mo>&#x0003D;</mo><mo stretchy="false">&#x00028;</mo><mn>0.7061</mn><mo>&#x0002C;</mo><mspace width="0.167em" /><mrow><mo>&#x02212;</mo><mn>0.7049</mn></mrow><mo>&#x0002C;</mo><mspace width="0.167em" /><mn>0.0261</mn><mo>&#x0002C;</mo><mspace width="0.167em" /><mn>1.0000</mn><mo>&#x0002C;</mo><mspace width="0.167em" /><mrow><mo>&#x02212;</mo><mn>0.5000</mn></mrow><mo stretchy="false">&#x00029;</mo><mo>&#x0002E;</mo></mrow></mstyle></math></span>
+  <span class="eqn-num">(7)</span>
+</div>
+
+<p>This initialization provides a reference nonlinear transformation while allowing all five coefficients to adapt during source-network training.</p>
+<h3 id="learn-freeze-transfer-protocol"><span class="secnum">3.3</span> Learn-Freeze-Transfer Protocol</h3>
+<p>The globally shared parameterization allows the learned activation to be separated from the source network and reused independently. During source training, the source-network weights and shared activation parameters are jointly optimized:</p>
+<div class="eqn" id="eq-8">
+  <span class="eqn-body"><math data-tex="(W_s^*,\theta^*)
+=
+\arg\min_{W_s,\theta}
+\mathcal{J}_{\mathrm{src}}(W_s,\theta)," xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mstyle displaystyle="true"><mrow><mo stretchy="false">&#x00028;</mo><msubsup><mi>W</mi><mi>s</mi><mo>&#x0002A;</mo></msubsup><mo>&#x0002C;</mo><msup><mi>&#x003B8;</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><munder><mrow><mrow><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">g</mi><mspace width="0.167em" /><mi mathvariant="normal">m</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">n</mi></mrow></mrow><mrow><msub><mi>W</mi><mi>s</mi></msub><mo>&#x0002C;</mo><mi>&#x003B8;</mi></mrow></munder><mspace width="0.167em" /><msub><mi>&#x1D4A5;</mi><mrow><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">c</mi></mrow></mrow></msub><mo stretchy="false">&#x00028;</mo><msub><mi>W</mi><mi>s</mi></msub><mo>&#x0002C;</mo><mi>&#x003B8;</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo></mrow></mstyle></math></span>
+  <span class="eqn-num">(8)</span>
+</div>
+
+<p>where <math data-tex="W_s" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>W</mi><mi>s</mi></msub></mrow></math> denotes the source-network weights, <math data-tex="\theta" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B8;</mi></mrow></math> represents the shared activation parameters, and <math data-tex="\mathcal{J}_{\mathrm{src}}" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x1D4A5;</mi><mrow><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">c</mi></mrow></mrow></msub></mrow></math> is the source-task training objective. The resulting activation is</p>
+<div class="eqn" id="eq-9">
+  <span class="eqn-body"><math data-tex="\phi^*(z)=\phi(z;\theta^*)." xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mstyle displaystyle="true"><mrow><msup><mi>&#x003D5;</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00028;</mo><mi>z</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>&#x003D5;</mi><mo stretchy="false">&#x00028;</mo><mi>z</mi><mi>;</mi><msup><mi>&#x003B8;</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00029;</mo><mo>&#x0002E;</mo></mrow></mstyle></math></span>
+  <span class="eqn-num">(9)</span>
+</div>
+
+<p>After source training, the learned activation parameters <math data-tex="\theta^*" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mi>&#x003B8;</mi><mo>&#x0002A;</mo></msup></mrow></math> are frozen. Only these parameters are transferred to a target network; the source-network weights <math data-tex="W_s^*" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msubsup><mi>W</mi><mi>s</mi><mo>&#x0002A;</mo></msubsup></mrow></math> are not transferred. Let <math data-tex="W_t" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>W</mi><mi>t</mi></msub></mrow></math> denote the weights of an independently initialized target network, and let <math data-tex="\mathcal{J}_{\mathrm{tgt}}" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>&#x1D4A5;</mi><mrow><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">g</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub></mrow></math> denote its training objective. Target training then optimizes</p>
+<div class="eqn" id="eq-10">
+  <span class="eqn-body"><math data-tex="W_t^*
+=
+\arg\min_{W_t}
+\mathcal{J}_{\mathrm{tgt}}\bigl(W_t;\theta^*\bigr),
+\qquad
+\theta^* \text{ fixed}." xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mstyle displaystyle="true"><mrow><msubsup><mi>W</mi><mi>t</mi><mo>&#x0002A;</mo></msubsup><mo>&#x0003D;</mo><munder><mrow><mrow><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">g</mi><mspace width="0.167em" /><mi mathvariant="normal">m</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">n</mi></mrow></mrow><mrow><msub><mi>W</mi><mi>t</mi></msub></mrow></munder><mspace width="0.167em" /><msub><mi>&#x1D4A5;</mi><mrow><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">g</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo stretchy="false">&#x00028;</mo><msub><mi>W</mi><mi>t</mi></msub><mi>;</mi><msup><mi>&#x003B8;</mi><mo>&#x0002A;</mo></msup><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo><mspace width="2em" /><msup><mi>&#x003B8;</mi><mo>&#x0002A;</mo></msup><mtext>&#x000A0;fixed</mtext><mo>&#x0002E;</mo></mrow></mstyle></math></span>
+  <span class="eqn-num">(10)</span>
+</div>
+
+<p>Thus, the target-network weights are optimized for the target task while the transferred activation parameters remain unchanged throughout training. No source-network weights are used to initialize the target model, and target-task gradients do not update the transferred activation.</p>
+<p>This protocol isolates the reuse of the learned nonlinearity from the transfer of network weights. It therefore enables us to examine whether an activation learned jointly with one source network remains useful when incorporated into independently initialized networks, without further adaptation of the activation itself. <a href="#figure-1">Figure 1</a> illustrates the three stages of this process.</p>
+<h2 id="experimental-evaluation"><span class="secnum">4</span> Experimental Evaluation</h2>
+<p>This section evaluates whether a globally shared activation learned jointly with a source network remains useful when transferred to independently initialized target networks. We first describe the source and target architectures, datasets, and training protocol. We then examine the evolution of the source-learned activation, its transfer to a network with the same architecture and task, and its transfer across four target architectures with different attention and token-mixing mechanisms. Frozen FAct is compared with ten conventional activation functions to assess its performance under a common training configuration.</p>
+<h3 id="experimental-setup"><span class="secnum">4.1</span> Experimental Setup</h3>
+<p><strong>Source and target networks.</strong> We learn FAct in a depth-6 Vision Transformer (ViT-d6) trained on ImageNet-1K<sup class="cite">[<a href="#ref-14">14</a>]</sup>. The source network contains <math data-tex="3{,}048{,}232" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>3</mn><mo>&#x0002C;</mo><mn>048</mn><mo>&#x0002C;</mo><mn>232</mn></mrow></math> parameters, and learning FAct adds five trainable activation coefficients, resulting in <math data-tex="3{,}048{,}237" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>3</mn><mo>&#x0002C;</mo><mn>048</mn><mo>&#x0002C;</mo><mn>237</mn></mrow></math> trainable parameters. The same five coefficients are shared across all MLP blocks of the source network.</p>
+<p>After source training, the learned activation is transferred to four independently initialized target architectures: a depth-2 Vision Transformer (ViT-d2) with global self-attention, a depth-2 Swin Transformer (Swin-d2) with shifted-window self-attention<sup class="cite">[<a href="#ref-15">15</a>]</sup>, a depth-2 Vision Transformer with linear attention (LinViT-d2)<sup class="cite">[<a href="#ref-16">16</a>]</sup>, and a depth-2 MLP-Mixer<sup class="cite">[<a href="#ref-17">17</a>]</sup>. These target networks contain approximately 100K parameters, with their exact configurations provided in <a href="#appendix-a-experimental-configuration">Appendix A</a>. No source-network weights are transferred, and the activation coefficients remain fixed throughout target training.</p>
+<p><strong>Datasets and transferred activation.</strong> Each target architecture is evaluated on Fashion-MNIST<sup class="cite">[<a href="#ref-18">18</a>]</sup>, CIFAR-10, CIFAR-100<sup class="cite">[<a href="#ref-19">19</a>]</sup>, and Food-101<sup class="cite">[<a href="#ref-20">20</a>]</sup>. All target experiments use the same frozen activation coefficients obtained from the seed-1 source checkpoint: <math data-tex="a_0=0.2182" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>a</mi><mn>0</mn></msub><mo>&#x0003D;</mo><mn>0.2182</mn></mrow></math>, <math data-tex="a_1=0.1193" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>a</mi><mn>1</mn></msub><mo>&#x0003D;</mo><mn>0.1193</mn></mrow></math>, <math data-tex="a_2=-0.4237" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>a</mi><mn>2</mn></msub><mo>&#x0003D;</mo><mo>&#x02212;</mo><mn>0.4237</mn></mrow></math>, <math data-tex="b_1=0.8315" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>b</mi><mn>1</mn></msub><mo>&#x0003D;</mo><mn>0.8315</mn></mrow></math>, and <math data-tex="b_2=-0.5918" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msub><mi>b</mi><mn>2</mn></msub><mo>&#x0003D;</mo><mo>&#x02212;</mo><mn>0.5918</mn></mrow></math>. Thus, the same source-learned activation is used across all target architectures and datasets.</p>
+<p><strong>Training and evaluation protocol.</strong> All target experiments use five random seeds, with the same seed configurations across architectures, datasets, and activation choices. Models are trained for 100 epochs using AdamW, with a learning rate of <math data-tex="10^{-3}" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>3</mn></mrow></msup></mrow></math>, weight decay of <math data-tex="0.05" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.05</mn></mrow></math>, and a batch size of 256. The learning-rate schedule consists of five epochs of linear warm-up followed by cosine decay. Label smoothing and dropout are both set to <math data-tex="0.1" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.1</mn></mrow></math>. All activation choices use identical dataset-specific preprocessing and augmentation, without test-time augmentation. The complete preprocessing and augmentation procedures are provided in <a href="#appendix-a-experimental-configuration">Appendix A</a>.</p>
+<p>Frozen FAct is compared with ten conventional activation functions: ReLU<sup class="cite">[<a href="#ref-1">1</a>]</sup>, LeakyReLU<sup class="cite">[<a href="#ref-21">21</a>]</sup>, GELU<sup class="cite">[<a href="#ref-2">2</a>]</sup>, SiLU<sup class="cite">[<a href="#ref-3">3</a>]</sup>, Mish<sup class="cite">[<a href="#ref-22">22</a>]</sup>, HardSwish<sup class="cite">[<a href="#ref-23">23</a>]</sup>, Softplus<sup class="cite">[<a href="#ref-24">24</a>]</sup>, ELU<sup class="cite">[<a href="#ref-25">25</a>]</sup>, SELU<sup class="cite">[<a href="#ref-26">26</a>]</sup>, and Tanh<sup class="cite">[<a href="#ref-27">27</a>]</sup>. For each run, the checkpoint with the highest validation accuracy is selected and evaluated once on the held-out test set. Results are reported as mean and sample standard deviation across five seeds. Activation-specific learning-rate and weight-decay tuning results are provided in <a href="#appendix-b-activation-specific-hyperparameter-tuning">Appendix B</a>.</p>
+<h3 id="evolution-of-the-source-learned-activation"><span class="secnum">4.2</span> Evolution of the Source-Learned Activation</h3>
+<p>FAct is initialized using a two-harmonic Fourier approximation of GELU, with all five coefficients subsequently optimized jointly with the source-network weights. <a href="#figure-2">Figure 2</a> illustrates the evolution of the shared activation during ImageNet-1K training. The activation progressively departs from its initial GELU approximation and develops a non-monotonic shape over the course of training. The final learned function, obtained after 100 epochs, differs substantially from its initialization and is the activation frozen and transferred to all target networks in the subsequent experiments.</p>
+<figure class="l-body" id="figure-2">
+  <img src="assets/img/submission/fig_evolution.svg" style="width:100%;height:auto" alt="Three panels over one Fourier period: GELU and its two-harmonic Fourier approximation; the shared activation at epochs 1, 5, 10, 25, 50 and 100 of source training; the final learned FAct against GELU, with the central 98% pre-activation band shaded.">
+  <figcaption><strong>Figure 2. Evolution of the FAct activation during source-network training.</strong> (a) GELU and its two-harmonic Fourier approximation used to initialize FAct. (b) Evolution of FAct at selected training epochs. (c) Final learned activation after 100 epochs compared with GELU. The final curve corresponds to the seed-1 source checkpoint used in all transfer experiments. The shaded region indicates the central <math data-tex="98\%" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>98</mn><mi>&#x00025;</mi></mrow></math> of source-network pre-activations, pooled across all six MLP blocks on 512 ImageNet-1K validation images.</figcaption>
+</figure>
+
+<figure class="l-body" id="interactive-fig-v2-evolution">
+  <iframe class="figframe" src="assets/html/submission/fig-v2-evolution.html" loading="lazy"
+          width="100%" height="860"
+          style="display:block; width:100%; height:860px; border:1px solid rgba(0,0,0,0.1); border-radius:12px; background:#f4f6f9;"
+          title="Interactive view of Figure 2"></iframe>
+  <figcaption><strong>Interactive extension of Figure 2: Evolution of the source-learned FAct activation.</strong> The applet visualizes the shared activation learned by the seed-1 source ViT across 100 ImageNet-1K training epochs. The upper panel displays the activation at the selected epoch alongside conventional activation functions. The middle panel shows the trajectories of the five Fourier coefficients, with a vertical marker indicating the selected epoch and dashed references indicating their GELU-based initialization. The lower panel shows the empirical distribution of source-network pre-activations, pooled across all six MLP blocks on 512 ImageNet-1K validation images. The shaded interval denotes the central 98% of pre-activations, <math data-tex="[-1.02,1.04]" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">[</mo><mo>&#x02212;</mo><mn>1.02</mn><mo>,</mo><mn>1.04</mn><mo stretchy="false">]</mo></mrow></math>. The transferred activation corresponds to the final source-trained coefficients. <span class="open-standalone">[<a href="assets/html/submission/fig-v2-evolution.html" target="_blank" rel="noopener">open this figure in its own tab</a>]</span></figcaption>
+</figure>
+
+<h3 id="same-task-transfer-at-source-scale"><span class="secnum">4.3</span> Same-Task Transfer at Source Scale</h3>
+<p>To examine whether the learned activation remains useful when transferred to a network with the same architecture and task, we train a freshly initialized ViT-d6 on ImageNet-1K using the frozen FAct activation learned by the source network. The five activation coefficients are obtained from the seed-1 source checkpoint and remain fixed throughout target training. No source-network weights are transferred. We conduct five independent target runs, all using the same frozen activation, so the reported variation reflects differences in target initialization and training rather than variability across independently learned activations.</p>
+<p class="tbl-caption" id="table-1"><strong>Table 1. Same-task transfer on ImageNet-1K using a freshly initialized ViT-d6.</strong> Results report top-1 accuracy (%) on the ILSVRC validation set as mean <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> sample standard deviation across five target runs. Frozen FAct uses the activation coefficients learned by the source network; source-network weights are not transferred, and activation coefficients remain fixed. <math data-tex="\Delta" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x00394;</mi></mrow></math> denotes the difference in mean accuracy relative to GELU, in percentage points.</p>
+
+<div class="tbl-wrap">
+<table>
+<thead>
+<tr><th style="text-align:left">Activation</th><th style="text-align:center">Top-1 accuracy (%)</th><th style="text-align:center"><math data-tex="\Delta" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x00394;</mi></mrow></math> vs GELU (pp)</th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align:left">GELU</td><td style="text-align:center">62.45 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.13</td><td style="text-align:center">—</td></tr>
+<tr><td style="text-align:left">Frozen FAct</td><td style="text-align:center">63.91 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.15</td><td style="text-align:center"><math data-tex="+1.46" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>1.46</mn></mrow></math></td></tr>
+</tbody>
+</table>
+</div>
+
+<p><a href="#table-1">Table 1</a> compares Frozen FAct with GELU under the same architecture and training configuration. Frozen FAct achieves a mean top-1 accuracy of <math data-tex="63.91\%\pm0.15" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>63.91</mn><mi>&#x00025;</mi><mi>&#x000B1;</mi><mn>0.15</mn></mrow></math>, compared with <math data-tex="62.45\%\pm0.13" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>62.45</mn><mi>&#x00025;</mi><mi>&#x000B1;</mi><mn>0.13</mn></mrow></math> for GELU, an improvement of <math data-tex="1.46" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1.46</mn></mrow></math> percentage points. This result provides evidence that the source-learned activation retains useful properties even when separated from its original network weights and reused in an independently initialized network performing the same task.</p>
+<h3 id="transfer-across-transformer-architectures"><span class="secnum">4.4</span> Transfer Across Transformer Architectures</h3>
+<p>Tables <a href="#table-2">2</a>–<a href="#table-4">4</a> report the test accuracy of the eleven activation choices on ViT-d2, Swin-d2, and LinViT-d2, respectively, under the common training configuration. <a href="#table-5">Table 5</a> summarizes the performance difference between Frozen FAct and the best-performing conventional activation for each target–dataset combination, while <a href="#figure-3">Figure 3</a> illustrates the corresponding accuracy margins.</p>
+<p class="tbl-caption" id="table-2"><strong>Table 2. Transfer performance on ViT-d2 with global self-attention under the common training configuration.</strong> Results are mean test accuracy (%) <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> sample standard deviation across five seeds. Bold and underlining indicate the highest and second-highest mean accuracies, respectively.</p>
+
+<div class="tbl-wrap">
+<table>
+<thead>
+<tr><th style="text-align:left">Activation</th><th style="text-align:center">Fashion-MNIST</th><th style="text-align:center">CIFAR-10</th><th style="text-align:center">CIFAR-100</th><th style="text-align:center">Food-101</th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align:left">Frozen FAct</td><td style="text-align:center"><strong>90.94 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.10</strong></td><td style="text-align:center"><strong>75.56 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.35</strong></td><td style="text-align:center"><strong>47.67 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.48</strong></td><td style="text-align:center"><strong>35.83 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.36</strong></td></tr>
+<tr style="border-top:1px solid currentColor"><td style="text-align:left">ReLU</td><td style="text-align:center"><u>90.40 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.46</u></td><td style="text-align:center">74.50 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.46</td><td style="text-align:center"><u>46.95 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.63</u></td><td style="text-align:center">34.07 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.22</td></tr>
+<tr><td style="text-align:left">LeakyReLU</td><td style="text-align:center">90.27 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.27</td><td style="text-align:center"><u>74.51 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.26</u></td><td style="text-align:center">46.80 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.21</td><td style="text-align:center"><u>34.12 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.21</u></td></tr>
+<tr><td style="text-align:left;padding-top:9px">GELU</td><td style="text-align:center;padding-top:9px">89.09 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.24</td><td style="text-align:center;padding-top:9px">72.46 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.29</td><td style="text-align:center;padding-top:9px">46.30 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.24</td><td style="text-align:center;padding-top:9px">34.10 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.39</td></tr>
+<tr><td style="text-align:left">SiLU</td><td style="text-align:center">87.96 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.57</td><td style="text-align:center">70.47 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.39</td><td style="text-align:center">44.60 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.34</td><td style="text-align:center">32.51 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.54</td></tr>
+<tr><td style="text-align:left">Mish</td><td style="text-align:center">87.91 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.35</td><td style="text-align:center">70.62 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.49</td><td style="text-align:center">44.85 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.31</td><td style="text-align:center">32.69 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.32</td></tr>
+<tr><td style="text-align:left">HardSwish</td><td style="text-align:center">87.53 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.58</td><td style="text-align:center">68.01 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.15</td><td style="text-align:center">42.13 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.33</td><td style="text-align:center">31.10 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.72</td></tr>
+<tr><td style="text-align:left;padding-top:9px">Softplus</td><td style="text-align:center;padding-top:9px">86.27 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.37</td><td style="text-align:center;padding-top:9px">68.51 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.41</td><td style="text-align:center;padding-top:9px">40.44 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.80</td><td style="text-align:center;padding-top:9px">31.84 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.22</td></tr>
+<tr><td style="text-align:left">ELU</td><td style="text-align:center">86.32 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.09</td><td style="text-align:center">66.25 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.19</td><td style="text-align:center">38.44 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.68</td><td style="text-align:center">29.36 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.57</td></tr>
+<tr><td style="text-align:left">SELU</td><td style="text-align:center">86.24 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.51</td><td style="text-align:center">65.29 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.50</td><td style="text-align:center">37.12 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.26</td><td style="text-align:center">28.71 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.24</td></tr>
+<tr><td style="text-align:left">Tanh</td><td style="text-align:center">86.61 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.20</td><td style="text-align:center">65.14 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.32</td><td style="text-align:center">37.24 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.20</td><td style="text-align:center">28.67 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.40</td></tr>
+</tbody>
+</table>
+</div>
+
+<p class="tbl-caption" id="table-3"><strong>Table 3. Transfer performance on Swin-d2 with shifted-window self-attention under the common training configuration.</strong> Results are mean test accuracy (%) <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> sample standard deviation across five seeds. Bold and underlining indicate the highest and second-highest mean accuracies, respectively.</p>
+
+<div class="tbl-wrap">
+<table>
+<thead>
+<tr><th style="text-align:left">Activation</th><th style="text-align:center">Fashion-MNIST</th><th style="text-align:center">CIFAR-10</th><th style="text-align:center">CIFAR-100</th><th style="text-align:center">Food-101</th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align:left">Frozen FAct</td><td style="text-align:center"><strong>89.33 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.11</strong></td><td style="text-align:center"><strong>69.47 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.31</strong></td><td style="text-align:center"><strong>38.34 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.34</strong></td><td style="text-align:center"><strong>41.32 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.26</strong></td></tr>
+<tr style="border-top:1px solid currentColor"><td style="text-align:left">ReLU</td><td style="text-align:center">88.28 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.28</td><td style="text-align:center">67.31 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.33</td><td style="text-align:center">36.87 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.44</td><td style="text-align:center">39.20 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.55</td></tr>
+<tr><td style="text-align:left">LeakyReLU</td><td style="text-align:center">88.27 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.15</td><td style="text-align:center">67.56 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.41</td><td style="text-align:center">36.85 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.31</td><td style="text-align:center">39.20 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.37</td></tr>
+<tr><td style="text-align:left;padding-top:9px">GELU</td><td style="text-align:center;padding-top:9px"><u>88.29 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.22</u></td><td style="text-align:center;padding-top:9px"><u>67.82 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.31</u></td><td style="text-align:center;padding-top:9px"><u>37.25 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.27</u></td><td style="text-align:center;padding-top:9px"><u>40.43 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.38</u></td></tr>
+<tr><td style="text-align:left">SiLU</td><td style="text-align:center">87.69 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.18</td><td style="text-align:center">66.21 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.35</td><td style="text-align:center">36.48 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.44</td><td style="text-align:center">39.01 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.54</td></tr>
+<tr><td style="text-align:left">Mish</td><td style="text-align:center">87.60 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.09</td><td style="text-align:center">66.44 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.32</td><td style="text-align:center">36.97 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.68</td><td style="text-align:center">39.34 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.32</td></tr>
+<tr><td style="text-align:left">HardSwish</td><td style="text-align:center">87.33 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.24</td><td style="text-align:center">65.60 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.27</td><td style="text-align:center">36.14 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.32</td><td style="text-align:center">38.17 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.75</td></tr>
+<tr><td style="text-align:left;padding-top:9px">Softplus</td><td style="text-align:center;padding-top:9px">85.73 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.27</td><td style="text-align:center;padding-top:9px">62.61 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.26</td><td style="text-align:center;padding-top:9px">32.39 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.40</td><td style="text-align:center;padding-top:9px">35.67 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.82</td></tr>
+<tr><td style="text-align:left">ELU</td><td style="text-align:center">85.55 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.39</td><td style="text-align:center">61.03 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.65</td><td style="text-align:center">31.55 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.35</td><td style="text-align:center">32.66 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.58</td></tr>
+<tr><td style="text-align:left">SELU</td><td style="text-align:center">83.27 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.40</td><td style="text-align:center">54.81 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.68</td><td style="text-align:center">25.71 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.29</td><td style="text-align:center">28.75 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.43</td></tr>
+<tr><td style="text-align:left">Tanh</td><td style="text-align:center">85.69 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.37</td><td style="text-align:center">57.63 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.90</td><td style="text-align:center">28.06 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.41</td><td style="text-align:center">30.35 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.43</td></tr>
+</tbody>
+</table>
+</div>
+
+<p class="tbl-caption" id="table-4"><strong>Table 4. Transfer performance on LinViT-d2 with linear attention under the common training configuration.</strong> Results are mean test accuracy (%) <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> sample standard deviation across five seeds. Bold and underlining indicate the highest and second-highest mean accuracies, respectively.</p>
+
+<div class="tbl-wrap">
+<table>
+<thead>
+<tr><th style="text-align:left">Activation</th><th style="text-align:center">Fashion-MNIST</th><th style="text-align:center">CIFAR-10</th><th style="text-align:center">CIFAR-100</th><th style="text-align:center">Food-101</th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align:left">Frozen FAct</td><td style="text-align:center"><strong>90.67 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.24</strong></td><td style="text-align:center"><strong>75.15 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.38</strong></td><td style="text-align:center"><strong>48.05 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.19</strong></td><td style="text-align:center"><strong>36.12 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.34</strong></td></tr>
+<tr style="border-top:1px solid currentColor"><td style="text-align:left">ReLU</td><td style="text-align:center"><u>90.29 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.16</u></td><td style="text-align:center"><u>73.94 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.48</u></td><td style="text-align:center"><u>46.57 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.36</u></td><td style="text-align:center">34.40 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.27</td></tr>
+<tr><td style="text-align:left">LeakyReLU</td><td style="text-align:center">90.18 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.23</td><td style="text-align:center">73.89 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.30</td><td style="text-align:center">46.35 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.29</td><td style="text-align:center"><u>34.50 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.29</u></td></tr>
+<tr><td style="text-align:left;padding-top:9px">GELU</td><td style="text-align:center;padding-top:9px">89.07 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.22</td><td style="text-align:center;padding-top:9px">72.13 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.31</td><td style="text-align:center;padding-top:9px">45.47 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.32</td><td style="text-align:center;padding-top:9px">33.88 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.63</td></tr>
+<tr><td style="text-align:left">SiLU</td><td style="text-align:center">87.89 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.52</td><td style="text-align:center">70.05 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.31</td><td style="text-align:center">43.29 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.46</td><td style="text-align:center">32.49 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.13</td></tr>
+<tr><td style="text-align:left">Mish</td><td style="text-align:center">88.06 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.25</td><td style="text-align:center">70.23 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.28</td><td style="text-align:center">43.66 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.63</td><td style="text-align:center">32.70 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.17</td></tr>
+<tr><td style="text-align:left">HardSwish</td><td style="text-align:center">87.15 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.40</td><td style="text-align:center">68.35 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.47</td><td style="text-align:center">41.16 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.62</td><td style="text-align:center">31.35 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.31</td></tr>
+<tr><td style="text-align:left;padding-top:9px">Softplus</td><td style="text-align:center;padding-top:9px">85.48 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.26</td><td style="text-align:center;padding-top:9px">64.30 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.98</td><td style="text-align:center;padding-top:9px">38.58 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.48</td><td style="text-align:center;padding-top:9px">31.47 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.28</td></tr>
+<tr><td style="text-align:left">ELU</td><td style="text-align:center">86.02 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.24</td><td style="text-align:center">65.63 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.87</td><td style="text-align:center">37.09 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.24</td><td style="text-align:center">29.24 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.34</td></tr>
+<tr><td style="text-align:left">SELU</td><td style="text-align:center">85.95 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.43</td><td style="text-align:center">65.07 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.62</td><td style="text-align:center">35.56 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.55</td><td style="text-align:center">27.91 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.38</td></tr>
+<tr><td style="text-align:left">Tanh</td><td style="text-align:center">86.28 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.50</td><td style="text-align:center">64.85 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.88</td><td style="text-align:center">35.57 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.51</td><td style="text-align:center">28.04 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.11</td></tr>
+</tbody>
+</table>
+</div>
+
+<figure class="l-body" id="interactive-fig-v2-explorer">
+  <iframe class="figframe" src="assets/html/submission/fig-v2-explorer.html" loading="lazy"
+          width="100%" height="1850"
+          style="display:block; width:100%; height:1850px; border:1px solid rgba(0,0,0,0.1); border-radius:12px; background:#f4f6f9;"
+          title="Interactive results explorer for Tables 2 to 6"></iframe>
+  <figcaption><strong>Interactive explorer of activation performance and training dynamics corresponding to Tables 2&ndash;4 and 6.</strong> The heatmap summarizes the mean test accuracy of eleven activation functions across four datasets for the selected target architecture under the common training configuration. Users can switch between accuracy, within-dataset ranking, and accuracy difference relative to Frozen FAct. Selecting an architecture, dataset, or activation updates the detailed comparison and training-trajectory views. The dot-and-whisker plot displays individual seed results, mean test accuracy, and &plusmn;1 sample standard deviation. The training-trajectory plot shows mean validation accuracy across five seeds, with shaded regions indicating &plusmn;1 sample standard deviation. Hovering over data points provides the corresponding numerical values, while the expandable table provides the complete results. <span class="open-standalone">[<a href="assets/html/submission/fig-v2-explorer.html" target="_blank" rel="noopener">open this figure in its own tab</a>]</span></figcaption>
+</figure>
+
+<p class="tbl-caption" id="table-5"><strong>Table 5. Frozen FAct compared with the best-performing conventional activation across the twelve transformer architecture–dataset combinations under the common training configuration.</strong> The best conventional activation is selected from the ten baseline functions, excluding Frozen FAct. Accuracy values are mean test accuracy (%). <math data-tex="\Delta" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x00394;</mi></mrow></math> denotes the seed-matched mean accuracy difference between Frozen FAct and the selected conventional activation, in percentage points, across five seeds.</p>
+
+<div class="tbl-wrap">
+<table>
+<thead>
+<tr><th style="text-align:left">Target</th><th style="text-align:left">Dataset</th><th style="text-align:center">Frozen FAct</th><th style="text-align:left">Best-performing<br>conventional activation</th><th style="text-align:center"><math data-tex="\Delta" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x00394;</mi></mrow></math> (pp)</th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align:left">ViT-d2</td><td style="text-align:left">Fashion-MNIST</td><td style="text-align:center">90.94</td><td style="text-align:left">ReLU (90.40)</td><td style="text-align:center"><math data-tex="+0.53" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>0.53</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-10</td><td style="text-align:center">75.56</td><td style="text-align:left">LeakyReLU (74.51)</td><td style="text-align:center"><math data-tex="+1.04" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>1.04</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-100</td><td style="text-align:center">47.67</td><td style="text-align:left">ReLU (46.95)</td><td style="text-align:center"><math data-tex="+0.72" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>0.72</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">Food-101</td><td style="text-align:center">35.83</td><td style="text-align:left">LeakyReLU (34.12)</td><td style="text-align:center"><math data-tex="+1.71" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>1.71</mn></mrow></math></td></tr>
+<tr><td style="text-align:left;padding-top:9px">Swin-d2</td><td style="text-align:left;padding-top:9px">Fashion-MNIST</td><td style="text-align:center;padding-top:9px">89.33</td><td style="text-align:left;padding-top:9px">GELU (88.29)</td><td style="text-align:center;padding-top:9px"><math data-tex="+1.05" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>1.05</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-10</td><td style="text-align:center">69.47</td><td style="text-align:left">GELU (67.82)</td><td style="text-align:center"><math data-tex="+1.65" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>1.65</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-100</td><td style="text-align:center">38.34</td><td style="text-align:left">GELU (37.25)</td><td style="text-align:center"><math data-tex="+1.09" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>1.09</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">Food-101</td><td style="text-align:center">41.32</td><td style="text-align:left">GELU (40.43)</td><td style="text-align:center"><math data-tex="+0.88" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>0.88</mn></mrow></math></td></tr>
+<tr><td style="text-align:left;padding-top:9px">LinViT-d2</td><td style="text-align:left;padding-top:9px">Fashion-MNIST</td><td style="text-align:center;padding-top:9px">90.67</td><td style="text-align:left;padding-top:9px">ReLU (90.29)</td><td style="text-align:center;padding-top:9px"><math data-tex="+0.38" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>0.38</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-10</td><td style="text-align:center">75.15</td><td style="text-align:left">ReLU (73.94)</td><td style="text-align:center"><math data-tex="+1.21" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>1.21</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-100</td><td style="text-align:center">48.05</td><td style="text-align:left">ReLU (46.57)</td><td style="text-align:center"><math data-tex="+1.48" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>1.48</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">Food-101</td><td style="text-align:center">36.12</td><td style="text-align:left">LeakyReLU (34.50)</td><td style="text-align:center"><math data-tex="+1.62" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>1.62</mn></mrow></math></td></tr>
+</tbody>
+</table>
+</div>
+
+<figure class="l-body" id="figure-3">
+  <img src="assets/img/submission/fig_transfer_margins.png" style="width:100%;height:auto" alt="Accuracy margin of Frozen FAct over the best conventional activation for each of twelve target-dataset combinations, all positive, with one-standard-deviation error bars.">
+  <figcaption><strong>Figure 3. Accuracy margin of Frozen FAct over the best-performing conventional activation across the twelve target–dataset combinations.</strong> Each point represents the mean seed-matched difference in test accuracy (percentage points) across five seeds. Error bars represent one sample standard deviation of the paired differences. The conventional activation selected for each comparison is indicated below the corresponding dataset (LReLU denotes LeakyReLU).</figcaption>
+</figure>
+
+<figure class="l-body" id="interactive-fig-v2-margin">
+  <iframe class="figframe" src="assets/html/submission/fig-v2-margin.html" loading="lazy"
+          width="100%" height="620"
+          style="display:block; width:100%; height:620px; border:1px solid rgba(0,0,0,0.1); border-radius:12px; background:#f4f6f9;"
+          title="Interactive view of Figure 3"></iframe>
+  <figcaption><strong>Interactive exploration of Figure 3: Accuracy margins of Frozen FAct over the best-performing conventional activation.</strong> The visualization presents the seed-matched mean accuracy differences across the twelve transformer architecture&ndash;dataset combinations under the common training configuration. Users can filter the results by target architecture and dataset. Positive values indicate higher mean accuracy for Frozen FAct, whereas negative values favour the selected conventional activation. Whiskers represent &plusmn;1 sample standard deviation of the paired differences across five seeds. Hovering over or selecting a comparison reveals the selected baseline activation, mean accuracies, paired difference, variability, and seed-level results. The expandable table provides the corresponding numerical values. <span class="open-standalone">[<a href="assets/html/submission/fig-v2-margin.html" target="_blank" rel="noopener">open this figure in its own tab</a>]</span></figcaption>
+</figure>
+
+<p>Across the three transformer architectures and four datasets, Frozen FAct achieves the highest mean test accuracy in all twelve architecture–dataset combinations. Its improvement over the best-performing conventional activation ranges from <math data-tex="0.38" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.38</mn></mrow></math> percentage points on LinViT-d2 with Fashion-MNIST to <math data-tex="1.71" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1.71</mn></mrow></math> percentage points on ViT-d2 with Food-101. The strongest conventional baseline varies across architectures: ReLU or LeakyReLU provides the highest mean accuracy among conventional activations for ViT-d2 and LinViT-d2, whereas GELU performs best across all four Swin-d2 datasets. Importantly, the same five activation coefficients learned by the source ViT-d6 are used in all target experiments, without transferring source-network weights or updating the activation during target training. These results provide empirical evidence that a globally shared nonlinearity learned within one network can retain its usefulness across independently initialized transformer architectures with different attention configurations and target tasks.</p>
+<p>Additional analyses examine transfer using a globally shared Padé activation (<a href="#appendix-c-transfer-with-a-shared-rational-activation">Appendix C</a>) and investigate the effect of the GELU-based initialization and of target-network depth in Swin targets (<a href="#appendix-d-depth-sensitivity-and-the-effect-of-gelu-based-initialization">Appendix D</a>).</p>
+<h3 id="transfer-to-an-mlp-mixer-architecture"><span class="secnum">4.5</span> Transfer to an MLP-Mixer Architecture</h3>
+<p>To examine whether the learned activation transfers beyond attention-based architectures, we evaluate Frozen FAct in an independently initialized depth-2 MLP-Mixer<sup class="cite">[<a href="#ref-17">17</a>]</sup>. Unlike the transformer architectures, MLP-Mixer uses separate MLPs for token mixing and channel mixing, without self-attention. We transfer the same five source-learned activation coefficients to both types of MLP blocks and keep them fixed throughout target training. The comparison includes the same ten conventional activation functions under the common training configuration.</p>
+<p class="tbl-caption" id="table-6"><strong>Table 6. Transfer performance on MLP-Mixer</strong> under the common training configuration. Mean test accuracy (%) <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> sample s.d. across five seeds. Bold indicates the highest mean test accuracy for each dataset, and underlining indicates the second-highest. The comparison includes Frozen FAct and the same ten conventional activation functions as Tables <a href="#table-2">2</a>–<a href="#table-4">4</a>.</p>
+
+<div class="tbl-wrap">
+<table>
+<thead>
+<tr><th style="text-align:left">Activation</th><th style="text-align:center">Fashion-MNIST</th><th style="text-align:center">CIFAR-10</th><th style="text-align:center">CIFAR-100</th><th style="text-align:center">Food-101</th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align:left">Frozen FAct</td><td style="text-align:center"><strong>91.42 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.18</strong></td><td style="text-align:center"><strong>75.99 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.16</strong></td><td style="text-align:center"><strong>47.49 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.38</strong></td><td style="text-align:center">35.09 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.22</td></tr>
+<tr style="border-top:1px solid currentColor"><td style="text-align:left">ReLU</td><td style="text-align:center"><u>90.80 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.22</u></td><td style="text-align:center">75.47 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.35</td><td style="text-align:center">47.08 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.46</td><td style="text-align:center">34.92 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.35</td></tr>
+<tr><td style="text-align:left">LeakyReLU</td><td style="text-align:center">90.64 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.39</td><td style="text-align:center"><u>75.51 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.13</u></td><td style="text-align:center"><u>47.20 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.48</u></td><td style="text-align:center">34.94 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.40</td></tr>
+<tr><td style="text-align:left;padding-top:9px">GELU</td><td style="text-align:center;padding-top:9px">89.84 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.13</td><td style="text-align:center;padding-top:9px">75.32 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.48</td><td style="text-align:center;padding-top:9px">45.99 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.60</td><td style="text-align:center;padding-top:9px"><strong>36.15 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.47</strong></td></tr>
+<tr><td style="text-align:left">SiLU</td><td style="text-align:center">88.90 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.29</td><td style="text-align:center">73.75 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.30</td><td style="text-align:center">45.07 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.83</td><td style="text-align:center">35.15 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.30</td></tr>
+<tr><td style="text-align:left">Mish</td><td style="text-align:center">88.94 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.25</td><td style="text-align:center">74.03 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.30</td><td style="text-align:center">45.17 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.58</td><td style="text-align:center"><u>35.25 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.25</u></td></tr>
+<tr><td style="text-align:left">HardSwish</td><td style="text-align:center">87.81 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.41</td><td style="text-align:center">72.78 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.42</td><td style="text-align:center">44.05 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.78</td><td style="text-align:center">34.39 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.26</td></tr>
+<tr><td style="text-align:left;padding-top:9px">Softplus</td><td style="text-align:center;padding-top:9px">86.98 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.42</td><td style="text-align:center;padding-top:9px">68.26 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 1.06</td><td style="text-align:center;padding-top:9px">35.33 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 1.84</td><td style="text-align:center;padding-top:9px">32.70 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.12</td></tr>
+<tr><td style="text-align:left">ELU</td><td style="text-align:center">86.52 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.22</td><td style="text-align:center">70.19 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.56</td><td style="text-align:center">41.27 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.78</td><td style="text-align:center">30.82 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.38</td></tr>
+<tr><td style="text-align:left">SELU</td><td style="text-align:center">86.02 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.22</td><td style="text-align:center">64.97 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.22</td><td style="text-align:center">36.07 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.46</td><td style="text-align:center">24.90 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.25</td></tr>
+<tr><td style="text-align:left">Tanh</td><td style="text-align:center">86.53 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.18</td><td style="text-align:center">65.42 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.56</td><td style="text-align:center">36.19 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.43</td><td style="text-align:center">29.97 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.29</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Frozen FAct achieves the highest mean test accuracy on Fashion-MNIST, CIFAR-10, and CIFAR-100, outperforming the best-performing conventional activation by <math data-tex="0.62" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.62</mn></mrow></math>, <math data-tex="0.48" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.48</mn></mrow></math>, and <math data-tex="0.29" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.29</mn></mrow></math> percentage points, respectively (<a href="#table-6">Table 6</a>). On Food-101, GELU performs better by approximately <math data-tex="1.05" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1.05</mn></mrow></math> percentage points. These results provide evidence that a source-learned activation can also be reused in an attention-free architecture without transferring source-network weights or updating its coefficients, although its performance advantage varies across datasets. After activation-specific hyperparameter tuning, Frozen FAct retains its advantage on Fashion-MNIST and CIFAR-10, whereas HardSwish performs better on CIFAR-100 and Food-101.</p>
+<h2 id="conclusion"><span class="secnum">5</span> Conclusion</h2>
+<p>This work investigated whether a globally shared activation learned jointly with a source network can be reused independently of the network weights with which it was optimized. We introduced a learn–freeze–transfer framework and instantiated it using FAct, a five-parameter activation represented by a two-harmonic truncated Fourier series. Initialized using a Fourier approximation of GELU, its coefficients are optimized jointly with a source Vision Transformer and subsequently frozen for transfer to independently initialized target networks.</p>
+<p>We evaluated the proposed approach through same-task and cross-architecture transfer experiments. In the same-task setting, Frozen FAct improved ImageNet-1K top-1 accuracy by <math data-tex="1.46" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1.46</mn></mrow></math> percentage points over GELU when used in a freshly initialized ViT-d6. Across four target architectures and four image-classification datasets, Frozen FAct achieved the highest mean test accuracy among eleven activation choices in 15 of the 16 architecture–dataset combinations under a common training configuration. This included all twelve combinations involving the three transformer architectures and three of four MLP-Mixer combinations. Following activation-specific hyperparameter tuning, Frozen FAct ranked first in eleven combinations, second in four, and fourth in the remaining combination. Throughout these experiments, only the five learned activation coefficients were transferred; source-network weights were not reused, and the activation remained fixed during target training.</p>
+<p>These findings provide empirical evidence that a globally shared nonlinearity learned within one network can retain its usefulness when transferred to independently initialized networks with different architectures and target tasks. However, the evaluation uses a single source-learned activation obtained from one Vision Transformer trained on ImageNet-1K, and the cross-architecture experiments are restricted to relatively small target networks and image-classification tasks. Further investigation is needed to establish how activation transferability varies across source architectures, source training datasets, model scales, and target tasks. Extending this evaluation to convolutional and other network architectures would help determine the broader applicability of transferable learned nonlinearities.</p>
+<h2 id="appendix-a-experimental-configuration">Appendix A: Experimental Configuration</h2>
+<h3 id="models-and-datasets"><span class="secnum">A.1</span> Models and datasets</h3>
+<p>The source model is a depth-6 Vision Transformer (ViT-d6) trained on ImageNet-1K, with FAct shared across its six MLP blocks. The target models comprise three depth-2 transformer architectures and a depth-2 MLP-Mixer. ViT-d2 uses global softmax self-attention, Swin-d2 employs shifted-window self-attention with a window size of four, and LinViT-d2 replaces softmax attention with linear attention using <math data-tex="\operatorname{elu}(x)+1" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>elu</mo><mo stretchy="false">&#x00028;</mo><mi>x</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mn>1</mn></mrow></math>. The MLP-Mixer consists of two blocks, each containing a pre-normalized residual token-mixing MLP (hidden width 38) followed by a pre-normalized residual channel-mixing MLP (hidden width 304), with an embedding width of 76. It does not use attention, a class token, or positional embeddings, and classification is performed using globally average-pooled tokens.</p>
+<p>All MLPs use the same Linear–activation–dropout–Linear structure, with a single activation module shared across the MLPs within each network. <a href="#table-7">Table 7</a> summarizes the architectural configurations and parameter counts.</p>
+<p>The target models are trained on Fashion-MNIST (<math data-tex="28\times28" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>28</mn><mo>&#x000D7;</mo><mn>28</mn></mrow></math>), CIFAR-10 and CIFAR-100 (<math data-tex="32\times32" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>32</mn><mo>&#x000D7;</mo><mn>32</mn></mrow></math>), and Food-101 (resized to <math data-tex="64\times64" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>64</mn><mo>&#x000D7;</mo><mn>64</mn></mrow></math>). For each dataset, <math data-tex="5{,}000" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>5</mn><mo>&#x0002C;</mo><mn>000</mn></mrow></math> training images are held out once using a fixed random seed to form a validation split shared across all runs. The official test sets, comprising <math data-tex="10{,}000" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>10</mn><mo>&#x0002C;</mo><mn>000</mn></mrow></math> images for Fashion-MNIST and the CIFAR datasets and <math data-tex="25{,}250" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>25</mn><mo>&#x0002C;</mo><mn>250</mn></mrow></math> images for Food-101, are reserved for final evaluation.</p>
+<h3 id="training-configuration"><span class="secnum">A.2</span> Training configuration</h3>
+<p>All target networks are trained for 100 epochs with AdamW, a batch size of 256, a five-epoch linear warm-up followed by cosine decay, label smoothing of <math data-tex="0.1" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.1</mn></mrow></math> and dropout of <math data-tex="0.1" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.1</mn></mrow></math>. The common configuration uses a learning rate of <math data-tex="10^{-3}" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>3</mn></mrow></msup></mrow></math> and weight decay of <math data-tex="0.05" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.05</mn></mrow></math> for every activation; activation-specific tuning is described in <a href="#appendix-b-activation-specific-hyperparameter-tuning">Appendix B</a>. The source model uses the same optimizer, schedule and regularization. The transferred coefficients are those of the seed-1 source run (<a href="#experimental-setup">Section 4.1</a> and <a href="#figure-2">Figure 2</a>).</p>
+<h3 id="preprocessing-and-evaluation"><span class="secnum">A.3</span> Preprocessing and evaluation</h3>
+<p>Inputs are normalized per channel with the training-split mean and standard deviation. During training, each image is zero-padded by 2 pixels (Fashion-MNIST) or 4 pixels (other datasets), randomly cropped back to its original size and flipped horizontally with probability <math data-tex="0.5" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.5</mn></mrow></math>; validation and test images are only normalized. For each run, the checkpoint with the highest validation accuracy is evaluated once on the test set. Each result is the mean and sample standard deviation over five seeds, using the same seeds for every activation.</p>
+<p class="tbl-caption" id="table-7"><strong>Table 7. Architectural and training configurations of the source and target networks.</strong> Parameter ranges reflect differences across the four target datasets.</p>
+
+<div class="tbl-wrap">
+<table>
+<thead>
+<tr><th style="text-align:left"></th><th style="text-align:left">Source</th><th colspan="4" style="text-align:center">Targets</th></tr>
+<tr><th style="text-align:left"></th><th style="text-align:left">ViT-d6</th><th style="text-align:left">ViT-d2</th><th style="text-align:left">Swin-d2</th><th style="text-align:left">LinViT-d2</th><th style="text-align:left">MLP-Mixer</th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align:left">Token mixing</td><td style="text-align:left">global softmax</td><td style="text-align:left">global softmax</td><td style="text-align:left">shifted window (4)</td><td style="text-align:left">linear, <math data-tex="\mathrm{elu}{+}1" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><mi mathvariant="normal">e</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">u</mi></mrow><mrow><mo>&#x0002B;</mo></mrow><mn>1</mn></mrow></math></td><td style="text-align:left">MLP</td></tr>
+<tr><td style="text-align:left">Depth / width / heads</td><td style="text-align:left">6 / 192 / 6</td><td style="text-align:left">2 / 64 / 4</td><td style="text-align:left">2 / 64 / 4</td><td style="text-align:left">2 / 64 / 4</td><td style="text-align:left">2 / 76 / –</td></tr>
+<tr><td style="text-align:left">MLP hidden width</td><td style="text-align:left">768</td><td style="text-align:left">256</td><td style="text-align:left">256</td><td style="text-align:left">256</td><td style="text-align:left">38 token / 304 channel</td></tr>
+<tr><td style="text-align:left">Patch size</td><td style="text-align:left">16</td><td style="text-align:left">4 (Food-101: 8)</td><td style="text-align:left">4</td><td style="text-align:left">4 (Food-101: 8)</td><td style="text-align:left">4 (Food-101: 8)</td></tr>
+<tr><td style="text-align:left">Parameters</td><td style="text-align:left">3,048,232</td><td style="text-align:left">105,098–123,237</td><td style="text-align:left">102,354–110,317</td><td style="text-align:left">105,098–123,237</td><td style="text-align:left">103,620–126,313</td></tr>
+<tr><td style="text-align:left">Activation coefficients</td><td style="text-align:left">5, learned</td><td colspan="4" style="text-align:left">5, frozen (not updated)</td></tr>
+<tr><td style="text-align:left;padding-top:9px">Data</td><td style="text-align:left;padding-top:9px">ImageNet-1K, <math data-tex="224^2" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mn>224</mn><mn>2</mn></msup></mrow></math></td><td colspan="4" style="text-align:left;padding-top:9px">Fashion-MNIST <math data-tex="28^2" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mn>28</mn><mn>2</mn></msup></mrow></math>, CIFAR-10/100 <math data-tex="32^2" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mn>32</mn><mn>2</mn></msup></mrow></math>, Food-101 <math data-tex="64^2" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mn>64</mn><mn>2</mn></msup></mrow></math></td></tr>
+<tr><td style="text-align:left">Validation split</td><td style="text-align:left">10,000 train images</td><td colspan="4" style="text-align:left">5,000 train images per dataset, fixed</td></tr>
+<tr><td style="text-align:left">Test split</td><td style="text-align:left">ILSVRC val (50,000)</td><td colspan="4" style="text-align:left">official test set</td></tr>
+<tr><td style="text-align:left">Seeds</td><td style="text-align:left">1 learns FAct; 5 in <a href="#same-task-transfer-at-source-scale">Section 4.3</a></td><td colspan="4" style="text-align:left">5 per activation</td></tr>
+<tr style="border-top:1px solid currentColor"><td style="text-align:left">Optimizer / batch / epochs</td><td colspan="5" style="text-align:left">AdamW / 256 / 100</td></tr>
+<tr><td style="text-align:left">Learning rate / weight decay</td><td colspan="5" style="text-align:left"><math data-tex="10^{-3}" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>3</mn></mrow></msup></mrow></math> / <math data-tex="0.05" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.05</mn></mrow></math> (common configuration; per-activation in <a href="#appendix-b-activation-specific-hyperparameter-tuning">Appendix B</a>)</td></tr>
+<tr><td style="text-align:left">Schedule</td><td colspan="5" style="text-align:left">5-epoch linear warm-up, then cosine decay</td></tr>
+<tr><td style="text-align:left">Label smoothing / dropout</td><td colspan="5" style="text-align:left"><math data-tex="0.1" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.1</mn></mrow></math> / <math data-tex="0.1" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.1</mn></mrow></math></td></tr>
+<tr><td style="text-align:left">Checkpoint</td><td colspan="5" style="text-align:left">best validation accuracy, evaluated once on the test set</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="appendix-b-activation-specific-hyperparameter-tuning">Appendix B: Activation-Specific Hyperparameter Tuning</h2>
+<p>The main experiments use a common learning rate and weight decay for all activation functions. To examine whether this configuration favours Frozen FAct, we perform activation-specific hyperparameter tuning using an identical search budget. The learning rate and weight decay are selected independently for each activation–architecture–dataset combination. The search considers five learning rates (<math data-tex="3\times10^{-4}" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>3</mn><mo>&#x000D7;</mo><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>4</mn></mrow></msup></mrow></math>, <math data-tex="10^{-3}" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>3</mn></mrow></msup></mrow></math>, <math data-tex="3\times10^{-3}" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>3</mn><mo>&#x000D7;</mo><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>3</mn></mrow></msup></mrow></math>, <math data-tex="10^{-2}" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>2</mn></mrow></msup></mrow></math>, and <math data-tex="3\times10^{-2}" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>3</mn><mo>&#x000D7;</mo><msup><mn>10</mn><mrow><mo>&#x02212;</mo><mn>2</mn></mrow></msup></mrow></math>) and three weight-decay values (<math data-tex="0" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0</mn></mrow></math>, <math data-tex="0.05" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.05</mn></mrow></math>, and <math data-tex="0.2" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.2</mn></mrow></math>), resulting in fifteen configurations per combination. Each configuration is evaluated using a 30-epoch, single-seed proxy experiment. The selected configuration is subsequently trained for 100 epochs across five random seeds. This procedure is applied to all eleven activation choices across the four target architectures and four datasets.</p>
+<p class="tbl-caption" id="table-8"><strong>Table 8. Frozen FAct compared with the best-performing conventional activation under activation-specific hyperparameter tuning.</strong> Results are mean test accuracy (%) <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> sample standard deviation across five seeds for both Frozen FAct and the best-performing conventional activation. <math data-tex="\Delta" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x00394;</mi></mrow></math> denotes the difference in mean accuracy between Frozen FAct and the selected conventional activation, in percentage points.</p>
+
+<div class="tbl-wrap">
+<table>
+<thead>
+<tr><th style="text-align:left"></th><th style="text-align:left"></th><th style="text-align:center"></th><th colspan="2" style="text-align:center">Best-performing conventional</th><th style="text-align:center"></th></tr>
+<tr><th style="text-align:left">Target</th><th style="text-align:left">Dataset</th><th style="text-align:center">Frozen FAct</th><th style="text-align:left">Activation</th><th style="text-align:center">Accuracy</th><th style="text-align:center"><math data-tex="\Delta" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x00394;</mi></mrow></math> (pp)</th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align:left">ViT-d2</td><td style="text-align:left">Fashion-MNIST</td><td style="text-align:center">91.17 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.17</td><td style="text-align:left">LeakyReLU</td><td style="text-align:center">90.69 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.31</td><td style="text-align:center"><math data-tex="+0.48" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>0.48</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-10</td><td style="text-align:center">76.34 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.69</td><td style="text-align:left">GELU</td><td style="text-align:center">74.91 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.13</td><td style="text-align:center"><math data-tex="+1.43" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>1.43</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-100</td><td style="text-align:center">48.33 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.48</td><td style="text-align:left">GELU</td><td style="text-align:center">47.06 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.30</td><td style="text-align:center"><math data-tex="+1.27" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>1.27</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">Food-101</td><td style="text-align:center">39.15 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.49</td><td style="text-align:left">GELU</td><td style="text-align:center">37.13 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.41</td><td style="text-align:center"><math data-tex="+2.01" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>2.01</mn></mrow></math></td></tr>
+<tr><td style="text-align:left;padding-top:9px">Swin-d2</td><td style="text-align:left;padding-top:9px">Fashion-MNIST</td><td style="text-align:center;padding-top:9px">90.51 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.23</td><td style="text-align:left;padding-top:9px">GELU</td><td style="text-align:center;padding-top:9px">90.13 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.17</td><td style="text-align:center;padding-top:9px"><math data-tex="+0.37" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>0.37</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-10</td><td style="text-align:center">72.57 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.57</td><td style="text-align:left">GELU</td><td style="text-align:center">73.07 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.22</td><td style="text-align:center"><math data-tex="{-}0.50" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><mo>&#x02212;</mo></mrow><mn>0.50</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-100</td><td style="text-align:center">44.13 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.54</td><td style="text-align:left">LeakyReLU</td><td style="text-align:center">42.18 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.59</td><td style="text-align:center"><math data-tex="+1.95" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>1.95</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">Food-101</td><td style="text-align:center">46.51 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.40</td><td style="text-align:left">GELU</td><td style="text-align:center">46.60 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.86</td><td style="text-align:center"><math data-tex="{-}0.09" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><mo>&#x02212;</mo></mrow><mn>0.09</mn></mrow></math></td></tr>
+<tr><td style="text-align:left;padding-top:9px">LinViT-d2</td><td style="text-align:left;padding-top:9px">Fashion-MNIST</td><td style="text-align:center;padding-top:9px">91.39 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.15</td><td style="text-align:left;padding-top:9px">ReLU</td><td style="text-align:center;padding-top:9px">90.76 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.27</td><td style="text-align:center;padding-top:9px"><math data-tex="+0.63" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>0.63</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-10</td><td style="text-align:center">76.38 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.45</td><td style="text-align:left">GELU</td><td style="text-align:center">74.44 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.44</td><td style="text-align:center"><math data-tex="+1.95" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>1.95</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-100</td><td style="text-align:center">48.51 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.41</td><td style="text-align:left">GELU</td><td style="text-align:center">48.18 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.36</td><td style="text-align:center"><math data-tex="+0.33" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>0.33</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">Food-101</td><td style="text-align:center">38.34 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.25</td><td style="text-align:left">GELU</td><td style="text-align:center">38.70 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.64</td><td style="text-align:center"><math data-tex="{-}0.36" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><mo>&#x02212;</mo></mrow><mn>0.36</mn></mrow></math></td></tr>
+<tr><td style="text-align:left;padding-top:9px">MLP-Mixer</td><td style="text-align:left;padding-top:9px">Fashion-MNIST</td><td style="text-align:center;padding-top:9px">91.69 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.15</td><td style="text-align:left;padding-top:9px">GELU</td><td style="text-align:center;padding-top:9px">90.93 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.29</td><td style="text-align:center;padding-top:9px"><math data-tex="+0.76" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>0.76</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-10</td><td style="text-align:center">77.89 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.66</td><td style="text-align:left">SiLU</td><td style="text-align:center">77.70 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.44</td><td style="text-align:center"><math data-tex="+0.19" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>0.19</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">CIFAR-100</td><td style="text-align:center">49.01 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.56</td><td style="text-align:left">HardSwish</td><td style="text-align:center">51.48 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.91</td><td style="text-align:center"><math data-tex="{-}2.47" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><mo>&#x02212;</mo></mrow><mn>2.47</mn></mrow></math></td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:left">Food-101</td><td style="text-align:center">42.48 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.10</td><td style="text-align:left">HardSwish</td><td style="text-align:center">43.27 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 1.21</td><td style="text-align:center"><math data-tex="{-}0.79" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><mo>&#x02212;</mo></mrow><mn>0.79</mn></mrow></math></td></tr>
+</tbody>
+</table>
+</div>
+
+<p><a href="#table-8">Table 8</a> summarizes the comparison between Frozen FAct and the best-performing conventional activation after activation-specific hyperparameter tuning. Frozen FAct retains the highest mean accuracy in eleven of the sixteen architecture–dataset combinations, ranks second in four, and ranks fourth in the remaining combination.</p>
+<p>Across the transformer architectures, Frozen FAct ranks first in nine of the twelve combinations. GELU achieves the highest mean accuracy in the remaining three, displacing Frozen FAct to second place. For the MLP-Mixer, Frozen FAct retains the highest rank on Fashion-MNIST and CIFAR-10, whereas HardSwish performs better on CIFAR-100 and Food-101. <a href="#figure-4">Figure 4</a> illustrates the changes in activation rankings between the common and tuned configurations.</p>
+<p>These results show that the relative performance of activation functions depends partly on target architecture and dataset. Nevertheless, Frozen FAct retains the highest mean accuracy in most evaluated combinations, even when conventional activation functions receive activation-specific hyperparameter optimization.</p>
+<figure class="l-body" id="figure-4">
+  <img src="assets/img/submission/fig_tuning_ranks.png" style="width:100%;height:auto" alt="Slope charts of activation rank under the common configuration and after activation-specific tuning, for four targets and four datasets, with Frozen FAct and GELU highlighted.">
+  <figcaption><strong>Figure 4. Activation rankings before and after activation-specific hyperparameter tuning.</strong> Each panel shows the ranking of eleven activation choices based on mean test accuracy across five seeds. The left and right positions represent rankings under the common and tuned configurations, respectively (rank 1 = highest accuracy). Lines connect the rankings of the same activation across the two configurations. Frozen FAct and GELU are highlighted; the remaining nine conventional activations are shown in grey.</figcaption>
+</figure>
+
+<figure class="l-body" id="interactive-fig-v2-tuning">
+  <iframe class="figframe" src="assets/html/submission/fig-v2-tuning.html" loading="lazy"
+          width="100%" height="600"
+          style="display:block; width:100%; height:600px; border:1px solid rgba(0,0,0,0.1); border-radius:12px; background:#f4f6f9;"
+          title="Interactive view of Table 8 and Figure 4"></iframe>
+  <figcaption><strong>Interactive view of Table 8 and Figure 4.</strong> Mean test accuracy of each activation under the common configuration (left) and after activation-specific tuning (right), five seeds each. <em>Interactive:</em> choose the target (ViT-d2, Swin-d2, LinViT-d2 or MLP-Mixer) and dataset; hovering a line gives the selected learning rate and weight decay and the change in accuracy. <span class="open-standalone">[<a href="assets/html/submission/fig-v2-tuning.html" target="_blank" rel="noopener">open this figure in its own tab</a>]</span></figcaption>
+</figure>
+
+<h2 id="appendix-c-transfer-with-a-shared-rational-activation">Appendix C: Transfer with a Shared Rational Activation</h2>
+<p>To examine whether activation transfer is specific to the Fourier parameterization, we use a globally shared Padé Activation Unit (PAU)<sup class="cite">[<a href="#ref-5">5</a>]</sup>, represented by a degree-<math data-tex="(5,4)" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo stretchy="false">&#x00028;</mo><mn>5</mn><mo>&#x0002C;</mo><mn>4</mn><mo stretchy="false">&#x00029;</mo></mrow></math> rational function <math data-tex="\phi(t)=P(t)/Q(t)" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003D5;</mi><mo stretchy="false">&#x00028;</mo><mi>t</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0003D;</mo><mi>P</mi><mo stretchy="false">&#x00028;</mo><mi>t</mi><mo stretchy="false">&#x00029;</mo><mo>&#x0002F;</mo><mi>Q</mi><mo stretchy="false">&#x00028;</mo><mi>t</mi><mo stretchy="false">&#x00029;</mo></mrow></math> with ten learnable coefficients shared across the six MLP blocks of ViT-d6. After source training on ImageNet-1K, the learned coefficients are frozen and transferred to an independently initialized ViT-d2 using the same transfer protocol as Frozen FAct. Only the activation coefficients are transferred; no source-network weights are reused.</p>
+<p class="tbl-caption" id="table-9"><strong>Table 9. Transfer performance of a globally shared Padé activation on ViT-d2 under the common training configuration.</strong> Results are mean test accuracy (%) <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> sample standard deviation across six seeds. Frozen PAU, Frozen FAct, and GELU are evaluated in separate matched comparisons, with all three conditions for each dataset run on the same hardware. Values for Frozen FAct and GELU may therefore differ slightly from those reported in <a href="#table-2">Table 2</a>. Bold indicates the highest mean accuracy for each dataset.</p>
+
+<div class="tbl-wrap">
+<table>
+<thead>
+<tr><th style="text-align:left">Dataset</th><th style="text-align:center">Frozen PAU</th><th style="text-align:center">Frozen FAct</th><th style="text-align:center">GELU</th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align:left">Fashion-MNIST</td><td style="text-align:center"><strong>91.05</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.28</td><td style="text-align:center">90.89 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.14</td><td style="text-align:center">89.03 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.48</td></tr>
+<tr><td style="text-align:left">CIFAR-10</td><td style="text-align:center"><strong>76.03</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.45</td><td style="text-align:center">75.65 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.46</td><td style="text-align:center">72.67 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.51</td></tr>
+<tr><td style="text-align:left">CIFAR-100</td><td style="text-align:center"><strong>48.21</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.39</td><td style="text-align:center">47.79 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.52</td><td style="text-align:center">46.35 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.25</td></tr>
+<tr><td style="text-align:left">Food-101</td><td style="text-align:center"><strong>36.67</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.23</td><td style="text-align:center">35.80 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.40</td><td style="text-align:center">34.00 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.32</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Both globally shared learned parameterizations achieve higher mean accuracy than GELU across all four datasets (<a href="#table-9">Table 9</a>). Frozen PAU also achieves higher mean accuracy than Frozen FAct, with improvements ranging from <math data-tex="0.15" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.15</mn></mrow></math> to <math data-tex="0.87" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.87</mn></mrow></math> percentage points. These results provide supplementary evidence that activation transfer is not restricted to the Fourier representation. However, this comparison is limited to one target architecture and does not establish equivalent transfer performance across other architectures.</p>
+<h2 id="appendix-d-depth-sensitivity-and-the-effect-of-gelu-based-initialization">Appendix D: Depth Sensitivity and the Effect of GELU-Based Initialization</h2>
+<p>We conduct an additional experiment to investigate two aspects of activation transfer: the effect of using a fixed Fourier approximation of GELU instead of the conventional GELU activation, and the sensitivity of transfer performance to target-network depth. For this analysis, we use Swin Transformer targets because GELU is the highest-performing conventional activation on all four datasets in the main Swin experiments (<a href="#table-3">Table 3</a>). This provides a single, consistent reference for evaluating the two frozen Fourier-based activations across datasets. The conclusions of this appendix therefore apply to the evaluated Swin targets and are not claimed for all architectures.</p>
+<h3 id="experimental-design"><span class="secnum">D.1</span> Experimental Design</h3>
+<p>We vary the depth of the target Swin Transformer from one to six blocks while keeping the remaining architectural and training configurations fixed. All blocks belong to a single stage with embedding dimension 64, four attention heads, MLP ratio 4, patch size 4 and window size 4. Blocks alternate between regular-window and shifted-window attention, beginning with a regular-window block followed by a shifted-window block with a shift of two tokens, so the depth-one model contains only a regular-window block. No patch merging is applied, so the token grid is identical at every depth and only the number of blocks, and hence the number of activation call sites, changes.</p>
+<p>Three activation configurations are compared: (1) GELU, used as the conventional reference; (2) Frozen GELU-init, the two-harmonic Fourier approximation of GELU initialized as described in Eq. <a href="#eq-7">7</a>, with its coefficients kept fixed throughout target training; and (3) Frozen FAct, which uses the coefficients learned by the ImageNet-1K source ViT and transferred without further updates. In both frozen configurations, no source-network weights are transferred. All target networks are independently initialized and trained with five seeds using the common training configuration described in <a href="#appendix-a-experimental-configuration">Appendix A</a>. For each dataset and depth, all three configurations were trained on the same GPU type.</p>
+<p class="tbl-caption" id="table-10"><strong>Table 10. Test accuracy across Swin Transformer target depths.</strong> Results are mean accuracy (%) <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> sample standard deviation across five seeds. The three configurations are GELU, Frozen GELU-init and Frozen FAct. Bold indicates the highest mean accuracy at each dataset–depth combination.</p>
+
+<div class="tbl-wrap">
+<table>
+<thead>
+<tr><th style="text-align:left">Dataset</th><th style="text-align:center">Depth</th><th style="text-align:center">GELU</th><th style="text-align:center">Frozen GELU-init</th><th style="text-align:center">Frozen FAct</th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align:left">Fashion-MNIST</td><td style="text-align:center">1</td><td style="text-align:center">83.93 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.35</td><td style="text-align:center">84.10 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.32</td><td style="text-align:center"><strong>85.03</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.30</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">2</td><td style="text-align:center">88.28 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.18</td><td style="text-align:center">88.41 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.20</td><td style="text-align:center"><strong>89.30</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.06</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">3</td><td style="text-align:center">89.65 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.26</td><td style="text-align:center">90.07 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.24</td><td style="text-align:center"><strong>90.71</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.13</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">4</td><td style="text-align:center">90.06 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.06</td><td style="text-align:center">90.49 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.18</td><td style="text-align:center"><strong>90.98</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.26</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">5</td><td style="text-align:center">90.71 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.24</td><td style="text-align:center">91.11 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.07</td><td style="text-align:center"><strong>91.83</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.23</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">6</td><td style="text-align:center">90.66 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.33</td><td style="text-align:center">91.15 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.13</td><td style="text-align:center"><strong>91.92</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.13</td></tr>
+<tr><td style="text-align:left;padding-top:9px">CIFAR-10</td><td style="text-align:center;padding-top:9px">1</td><td style="text-align:center;padding-top:9px">61.19 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.67</td><td style="text-align:center;padding-top:9px">61.27 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.39</td><td style="text-align:center;padding-top:9px"><strong>62.96</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.35</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">2</td><td style="text-align:center">67.83 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.19</td><td style="text-align:center">67.47 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.35</td><td style="text-align:center"><strong>69.31</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.34</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">3</td><td style="text-align:center">73.01 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.62</td><td style="text-align:center">72.30 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.52</td><td style="text-align:center"><strong>74.98</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.28</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">4</td><td style="text-align:center">74.05 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.39</td><td style="text-align:center">73.53 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.62</td><td style="text-align:center"><strong>75.82</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.47</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">5</td><td style="text-align:center">75.94 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.28</td><td style="text-align:center">76.43 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.38</td><td style="text-align:center"><strong>78.89</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.48</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">6</td><td style="text-align:center">75.53 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.62</td><td style="text-align:center">76.68 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.25</td><td style="text-align:center"><strong>78.60</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.34</td></tr>
+<tr><td style="text-align:left;padding-top:9px">CIFAR-100</td><td style="text-align:center;padding-top:9px">1</td><td style="text-align:center;padding-top:9px">30.72 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.42</td><td style="text-align:center;padding-top:9px">30.71 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.18</td><td style="text-align:center;padding-top:9px"><strong>30.80</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.48</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">2</td><td style="text-align:center">37.61 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.35</td><td style="text-align:center">37.00 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.17</td><td style="text-align:center"><strong>38.78</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.40</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">3</td><td style="text-align:center">44.09 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.37</td><td style="text-align:center">43.31 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.31</td><td style="text-align:center"><strong>44.87</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.19</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">4</td><td style="text-align:center">44.63 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.21</td><td style="text-align:center">43.91 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.29</td><td style="text-align:center"><strong>45.94</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.31</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">5</td><td style="text-align:center">47.64 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.27</td><td style="text-align:center">46.96 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.51</td><td style="text-align:center"><strong>49.58</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.36</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">6</td><td style="text-align:center">47.78 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.47</td><td style="text-align:center">47.54 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.42</td><td style="text-align:center"><strong>49.25</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.40</td></tr>
+<tr><td style="text-align:left;padding-top:9px">Food-101</td><td style="text-align:center;padding-top:9px">1</td><td style="text-align:center;padding-top:9px"><strong>31.93</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.24</td><td style="text-align:center;padding-top:9px">30.43 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.51</td><td style="text-align:center;padding-top:9px">31.74 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.33</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">2</td><td style="text-align:center">40.79 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.34</td><td style="text-align:center">39.35 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.35</td><td style="text-align:center"><strong>41.41</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.34</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">3</td><td style="text-align:center">46.85 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.16</td><td style="text-align:center">45.20 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.14</td><td style="text-align:center"><strong>47.95</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.55</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">4</td><td style="text-align:center">49.57 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.39</td><td style="text-align:center">48.16 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.44</td><td style="text-align:center"><strong>51.03</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.43</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">5</td><td style="text-align:center">51.26 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.30</td><td style="text-align:center">49.85 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.44</td><td style="text-align:center"><strong>53.63</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.39</td></tr>
+<tr><td style="text-align:left"></td><td style="text-align:center">6</td><td style="text-align:center">52.27 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.41</td><td style="text-align:center">50.98 <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.26</td><td style="text-align:center"><strong>54.92</strong> <math data-tex="\pm" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x000B1;</mi></mrow></math> 0.19</td></tr>
+</tbody>
+</table>
+</div>
+
+<figure class="l-body" id="figure-5">
+  <img src="assets/img/submission/fig_depth_swin.png" style="width:100%;height:auto" alt="Four panels of test accuracy against Swin Transformer target depth from one to six blocks, for Fashion-MNIST, CIFAR-10, CIFAR-100 and Food-101, comparing GELU, Frozen GELU-init and Frozen FAct, with one-standard-deviation error bars.">
+  <figcaption><strong>Figure 5. Effect of target-network depth on activation performance.</strong> Test accuracy of GELU, Frozen GELU-init and Frozen FAct across Swin Transformer target depths from one to six blocks on Fashion-MNIST, CIFAR-10, CIFAR-100 and Food-101. Points represent mean test accuracy across five seeds, and error bars indicate one sample standard deviation. All target networks are independently initialized and trained with their respective activation configurations.</figcaption>
+</figure>
+
+<figure class="l-body" id="interactive-fig-v2-depth">
+  <iframe class="figframe" src="assets/html/submission/fig-v2-depth.html" loading="lazy"
+          width="100%" height="640"
+          style="display:block; width:100%; height:640px; border:1px solid rgba(0,0,0,0.1); border-radius:12px; background:#f4f6f9;"
+          title="Interactive view of Figure 5 and Table 10"></iframe>
+  <figcaption><strong>Interactive view of Figure 5 and Table 10.</strong> GELU, Frozen GELU-init and Frozen FAct across Swin target depths one to six, five seeds each. <em>Interactive:</em> switch datasets, or switch to a &ldquo;&Delta;&rdquo; view to read the Frozen FAct advantage over either baseline against depth with a zero parity line; hover any depth for all three means with their s.d. and both differences. <span class="open-standalone">[<a href="assets/html/submission/fig-v2-depth.html" target="_blank" rel="noopener">open this figure in its own tab</a>]</span></figcaption>
+</figure>
+
+<h3 id="results"><span class="secnum">D.2</span> Results</h3>
+<h4>Effect of the GELU-Based Fourier Initialization</h4>
+<p>We first compare Frozen GELU-init with GELU to examine the effect of replacing the conventional activation with its fixed two-harmonic Fourier approximation (<a href="#table-10">Table 10</a>). This approximation does not provide a consistent advantage over GELU across datasets and target depths. On Fashion-MNIST, Frozen GELU-init achieves higher mean accuracy than GELU at all six depths, by <math data-tex="0.13" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.13</mn></mrow></math> to <math data-tex="0.49\pp" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.49</mn><mspace width="0.167em" /><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">p</mi></mrow></mrow></math>. On CIFAR-10, it performs better at depths one, five and six, and worse at depths two to four. On CIFAR-100, it is at or below GELU at every depth, and on Food-101 GELU achieves higher mean accuracy at every depth. The performance of the fixed Fourier approximation therefore depends on the target dataset and depth rather than providing a uniform improvement over GELU.</p>
+<h4>Sensitivity to Target-Network Depth</h4>
+<p>We next examine how the performance of the transferred activation changes with target-network depth (<a href="#table-10">Table 10</a> and <a href="#figure-5">Figure 5</a>). Frozen FAct achieves the highest mean accuracy among the three configurations at every depth on Fashion-MNIST, CIFAR-10 and CIFAR-100, and at five of six depths on Food-101. On Fashion-MNIST and CIFAR-10 it outperforms GELU at every depth, by <math data-tex="0.92" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.92</mn></mrow></math> to <math data-tex="1.26\pp" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1.26</mn><mspace width="0.167em" /><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">p</mi></mrow></mrow></math> and <math data-tex="1.48" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1.48</mn></mrow></math> to <math data-tex="3.07\pp" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>3.07</mn><mspace width="0.167em" /><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">p</mi></mrow></mrow></math> respectively, and is ahead in all five seed-matched runs in each case. On CIFAR-100 and Food-101 the difference is negligible at depth one (<math data-tex="+0.08" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0002B;</mo><mn>0.08</mn></mrow></math> and <math data-tex="-0.19\pp" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x02212;</mo><mn>0.19</mn><mspace width="0.167em" /><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">p</mi></mrow></mrow></math>), but Frozen FAct is ahead from depth two onwards, reaching <math data-tex="1.94\pp" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1.94</mn><mspace width="0.167em" /><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">p</mi></mrow></mrow></math> on CIFAR-100 and <math data-tex="2.64\pp" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>2.64</mn><mspace width="0.167em" /><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">p</mi></mrow></mrow></math> on Food-101, with Frozen FAct ahead in all five seed-matched runs at every depth from two to six. On CIFAR-10, CIFAR-100 and Food-101 the advantage over GELU tends to increase with depth.</p>
+<p>Importantly, Frozen FAct also outperforms Frozen GELU-init in all 24 dataset–depth combinations, by <math data-tex="0.09" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>0.09</mn></mrow></math> to <math data-tex="3.94\pp" xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>3.94</mn><mspace width="0.167em" /><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">p</mi></mrow></mrow></math>. Together with the previous comparison, this indicates that the advantage of Frozen FAct is not explained by replacing GELU with a fixed Fourier representation: the source-learned coefficients provide an additional benefit beyond the GELU-based initialization under the evaluated settings. Overall, the transferred activation remains useful across a range of Swin target depths, although the magnitude of its advantage depends on the dataset and depth.</p>
+<h2 id="references"><span class="secnum"></span>References</h2>
+<ol class="reflist">
+<li id="ref-1"><span class="refnum">[1]</span><span class="refbody">V. Nair and G. E. Hinton. Rectified Linear Units Improve Restricted Boltzmann Machines. <em>International Conference on Machine Learning (ICML)</em>, pp. 807–814, 2010.</span></li>
+<li id="ref-2"><span class="refnum">[2]</span><span class="refbody">D. Hendrycks and K. Gimpel. Gaussian Error Linear Units (GELUs). <em>arXiv:1606.08415</em>, 2016.</span></li>
+<li id="ref-3"><span class="refnum">[3]</span><span class="refbody">S. Elfwing, E. Uchibe and K. Doya. Sigmoid-Weighted Linear Units for Neural Network Function Approximation in Reinforcement Learning. <em>Neural Networks</em>, 107, pp. 3–11, 2018.</span></li>
+<li id="ref-4"><span class="refnum">[4]</span><span class="refbody">K. He, X. Zhang, S. Ren and J. Sun. Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification. <em>IEEE International Conference on Computer Vision (ICCV)</em>, pp. 1026–1034, 2015.</span></li>
+<li id="ref-5"><span class="refnum">[5]</span><span class="refbody">A. Molina, P. Schramowski and K. Kersting. Padé Activation Units: End-to-End Learning of Flexible Activation Functions in Deep Networks. <em>International Conference on Learning Representations (ICLR)</em>, 2020.</span></li>
+<li id="ref-6"><span class="refnum">[6]</span><span class="refbody">S. Scardapane, S. Van Vaerenbergh, S. Totaro and A. Uncini. Kafnets: Kernel-Based Non-Parametric Activation Functions for Neural Networks. <em>Neural Networks</em>, 110, pp. 19–32, 2019.</span></li>
+<li id="ref-7"><span class="refnum">[7]</span><span class="refbody">F. Agostinelli, M. Hoffman, P. Sadowski and P. Baldi. Learning Activation Functions to Improve Deep Neural Networks. <em>ICLR Workshop</em>, 2015.</span></li>
+<li id="ref-8"><span class="refnum">[8]</span><span class="refbody">N. Ma, X. Zhang, M. Liu and J. Sun. Activate or Not: Learning Customized Activation. <em>IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</em>, pp. 8032–8042, 2021.</span></li>
+<li id="ref-9"><span class="refnum">[9]</span><span class="refbody">A. D. Jagtap, K. Kawaguchi and G. E. Karniadakis. Locally Adaptive Activation Functions with Slope Recovery for Deep and Physics-Informed Neural Networks. <em>Proceedings of the Royal Society A</em>, 476(2239), pp. 20200334, 2020.</span></li>
+<li id="ref-10"><span class="refnum">[10]</span><span class="refbody">A. D. Jagtap, K. Kawaguchi and G. E. Karniadakis. Adaptive Activation Functions Accelerate Convergence in Deep and Physics-Informed Neural Networks. <em>Journal of Computational Physics</em>, 404, pp. 109136, 2020.</span></li>
+<li id="ref-11"><span class="refnum">[11]</span><span class="refbody">Q. Delfosse, P. Schramowski, M. Mundt, A. Molina and K. Kersting. Adaptive Rational Activations to Boost Deep Reinforcement Learning. <em>International Conference on Learning Representations (ICLR)</em>, Earlier version: Recurrent Rational Networks, arXiv:2102.09407, 2024.</span></li>
+<li id="ref-12"><span class="refnum">[12]</span><span class="refbody">D. Teney, L. Jiang, F. Gogianu and E. Abbasnejad. Do We Always Need the Simplicity Bias? Looking for Optimal Inductive Biases in the Wild. <em>Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</em>, 2025.</span></li>
+<li id="ref-13"><span class="refnum">[13]</span><span class="refbody">A. Dosovitskiy et al. An Image Is Worth 16x16 Words: Transformers for Image Recognition at Scale. <em>International Conference on Learning Representations (ICLR)</em>, 2021.</span></li>
+<li id="ref-14"><span class="refnum">[14]</span><span class="refbody">J. Deng, W. Dong, R. Socher, L. Li, K. Li and L. Fei-Fei. ImageNet: A Large-Scale Hierarchical Image Database. <em>IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</em>, pp. 248–255, 2009.</span></li>
+<li id="ref-15"><span class="refnum">[15]</span><span class="refbody">Z. Liu et al. Swin Transformer: Hierarchical Vision Transformer using Shifted Windows. <em>IEEE/CVF International Conference on Computer Vision (ICCV)</em>, pp. 10012–10022, 2021.</span></li>
+<li id="ref-16"><span class="refnum">[16]</span><span class="refbody">A. Katharopoulos, A. Vyas, N. Pappas and F. Fleuret. Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention. <em>Proceedings of the 37th International Conference on Machine Learning</em>, 119, pp. 5156–5165, 2020.</span></li>
+<li id="ref-17"><span class="refnum">[17]</span><span class="refbody">I. Tolstikhin et al. MLP-Mixer: An all-MLP Architecture for Vision. <em>Advances in Neural Information Processing Systems</em>, 34, pp. 24261–24272, 2021.</span></li>
+<li id="ref-18"><span class="refnum">[18]</span><span class="refbody">H. Xiao, K. Rasul and R. Vollgraf. Fashion-MNIST: A Novel Image Dataset for Benchmarking Machine Learning Algorithms. <em>arXiv:1708.07747</em>, 2017.</span></li>
+<li id="ref-19"><span class="refnum">[19]</span><span class="refbody">A. Krizhevsky. Learning Multiple Layers of Features from Tiny Images. <em>University of Toronto</em>, 2009.</span></li>
+<li id="ref-20"><span class="refnum">[20]</span><span class="refbody">L. Bossard, M. Guillaumin and L. Van Gool. Food-101 – Mining Discriminative Components with Random Forests. <em>European Conference on Computer Vision (ECCV)</em>, pp. 446–461, 2014.</span></li>
+<li id="ref-21"><span class="refnum">[21]</span><span class="refbody">A. L. Maas, A. Y. Hannun and A. Y. Ng. Rectifier Nonlinearities Improve Neural Network Acoustic Models. <em>ICML Workshop on Deep Learning for Audio, Speech and Language Processing</em>, 2013.</span></li>
+<li id="ref-22"><span class="refnum">[22]</span><span class="refbody">D. Misra. Mish: A Self Regularized Non-Monotonic Activation Function. <em>British Machine Vision Conference (BMVC)</em>, arXiv:1908.08681, 2020.</span></li>
+<li id="ref-23"><span class="refnum">[23]</span><span class="refbody">A. Howard et al. Searching for MobileNetV3. <em>IEEE/CVF International Conference on Computer Vision (ICCV)</em>, pp. 1314–1324, 2019.</span></li>
+<li id="ref-24"><span class="refnum">[24]</span><span class="refbody">C. Dugas, Y. Bengio, F. Bélisle, C. Nadeau and R. Garcia. Incorporating Second-Order Functional Knowledge for Better Option Pricing. <em>Advances in Neural Information Processing Systems (NIPS)</em>, pp. 472–478, 2001.</span></li>
+<li id="ref-25"><span class="refnum">[25]</span><span class="refbody">D. Clevert, T. Unterthiner and S. Hochreiter. Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs). <em>International Conference on Learning Representations (ICLR)</em>, 2016.</span></li>
+<li id="ref-26"><span class="refnum">[26]</span><span class="refbody">G. Klambauer, T. Unterthiner, A. Mayr and S. Hochreiter. Self-Normalizing Neural Networks. <em>Advances in Neural Information Processing Systems (NeurIPS)</em>, 2017.</span></li>
+<li id="ref-27"><span class="refnum">[27]</span><span class="refbody">Y. LeCun, L. Bottou, G. B. Orr and K. Müller. Efficient BackProp. <em>Neural Networks: Tricks of the Trade</em>, 1524, pp. 9–50, 1998.</span></li>
+</ol>
+
+    </article>
+
+    <footer class="paper-foot">
+      <p>This is the HTML reading edition of the paper: the same text, figures and
+      tables as the manuscript, re-set for the screen. The interactive figures are
+      self-contained and can each be opened in their own tab.</p>
+      <p>&copy; 2026 Arun Prakash A.</p>
+    </footer>
+  </main>
+</div>
+
+<script>
+/* ---- theme: auto / light / dark, remembered across visits ---- */
+(function () {
+  var btn = document.getElementById("themebtn");
+  var modes = ["auto", "light", "dark"], i = 0;
+  try { i = Math.max(0, modes.indexOf(localStorage.getItem("leftPaperTheme") || "auto")); }
+  catch (e) { i = 0; }
+  function apply() {
+    var m = modes[i];
+    if (m === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", m);
+    btn.textContent = "Theme: " + m;
+    try { localStorage.setItem("leftPaperTheme", m); } catch (e) {}
+  }
+  btn.addEventListener("click", function () { i = (i + 1) % modes.length; apply(); });
+  apply();
+})();
+
+/* ---- interactive figures report their rendered height; size the iframe to match,
+        so no figure is clipped or padded whatever the column width ---- */
+window.addEventListener("message", function (e) {
+  var d = e.data;
+  if (!d || typeof d.tmlrFigHeight !== "number") return;
+  var frames = document.querySelectorAll("iframe.figframe");
+  for (var i = 0; i < frames.length; i++) {
+    if (frames[i].contentWindow === e.source) {
+      var cs = getComputedStyle(frames[i]), extra = 0;
+      if (cs.boxSizing === "border-box")
+        extra = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth) +
+                parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      frames[i].style.height = Math.ceil(d.tmlrFigHeight + extra) + "px";
+      frames[i].setAttribute("scrolling", "no");
+      return;
+    }
+  }
+});
+
+/* ---- highlight the section being read in the contents ---- */
+(function () {
+  var links = {}, side = document.getElementById("toc");
+  if (!side) return;
+  var all = document.querySelectorAll("nav.toc a");
+  for (var i = 0; i < all.length; i++) {
+    var id = all[i].getAttribute("href").slice(1);
+    (links[id] = links[id] || []).push(all[i]);
+  }
+  var heads = document.querySelectorAll("article h2[id], article h3[id]");
+  var current = null;
+  function mark(id) {
+    if (id === current) return;
+    var j, l;
+    if (current && links[current]) for (j = 0; j < links[current].length; j++)
+      links[current][j].classList.remove("active");
+    current = id;
+    if (links[id]) for (j = 0; j < links[id].length; j++) {
+      l = links[id][j];
+      l.classList.add("active");
+      if (l.parentNode === side && side.scrollHeight > side.clientHeight) {
+        var top = l.offsetTop - side.clientHeight / 2;
+        side.scrollTo({ top: top, behavior: "smooth" });
+      }
+    }
+  }
+  function onScroll() {
+    var best = null, y = window.scrollY + 120;
+    for (var i = 0; i < heads.length; i++) {
+      if (heads[i].getBoundingClientRect().top + window.scrollY <= y) best = heads[i];
+    }
+    if (best) mark(best.id);
+  }
+  var queued = false;
+  window.addEventListener("scroll", function () {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(function () { queued = false; onScroll(); });
+  }, { passive: true });
+  onScroll();
+})();
+</script>
+</body>
+</html>
