@@ -4,13 +4,13 @@
 
   Classification is driven purely by each post's existing `tags`
   (no `categories`, so post permalinks are never affected):
-    - Spiritual tag set  = Tamil, Spiritual, Vedanta
+    - Spiritual tag set  = Tamil, Spiritual, Vedanta, Bhagavatam
     - advaita list : posts carrying ANY spiritual tag
     - ai list      : every other post (posts that are NOT exclusively spiritual)
   A cross-over post (e.g. tagged "AI, Spiritual") appears in BOTH lists.
 {%- endcomment -%}
 
-{%- assign _spiritual = "Tamil,Spiritual,Vedanta" | split: "," -%}
+{%- assign _spiritual = "Tamil,Spiritual,Vedanta,Bhagavatam" | split: "," -%}
 
 {%- include snippets/get-locale-string.html key='READMORE' -%}
 {%- assign _readmore = __return -%}

@@ -6,11 +6,11 @@ show_title: false
 {%- comment -%}
   Home page as a one-screen "bento" of cards.
   Posts are split into the two streams with the same tag rule as
-  _includes/topic-list.html: any of Tamil/Spiritual/Vedanta -> Advaita;
+  _includes/topic-list.html: any of Tamil/Spiritual/Vedanta/Bhagavatam -> Advaita;
   anything not exclusively spiritual -> AI.
 {%- endcomment -%}
 
-{%- assign _spiritual = "Tamil,Spiritual,Vedanta" | split: "," -%}
+{%- assign _spiritual = "Tamil,Spiritual,Vedanta,Bhagavatam" | split: "," -%}
 {%- assign _advaita = "" | split: "" -%}
 {%- assign _ai = "" | split: "" -%}
 {%- for _p in site.posts -%}
