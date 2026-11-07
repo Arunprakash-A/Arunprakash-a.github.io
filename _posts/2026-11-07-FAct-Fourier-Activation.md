@@ -82,7 +82,10 @@ table respond.
 window.addEventListener("message", function (e) {
   var h = e && e.data && e.data.factAppletHeight;
   var f = document.getElementById("fact-applet");
-  if (f && typeof h === "number" && h > 400 && h < 4000) { f.style.height = (h + 8) + "px"; }
+  if (!f || typeof h !== "number" || h < 400 || h > 4000) { return; }
+  var want = h + 4;
+  if (Math.abs(parseInt(f.style.height, 10) - want) < 6) { return; }
+  f.style.height = want + "px";
 });
 </script>
 

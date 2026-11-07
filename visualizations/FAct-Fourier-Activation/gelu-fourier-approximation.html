@@ -430,8 +430,9 @@
   function postHeight() {
     try {
       if (window.parent && window.parent !== window) {
-        window.parent.postMessage(
-          { factAppletHeight: document.documentElement.scrollHeight }, "*");
+        var body = document.body;
+        var h = Math.ceil(Math.max(body.scrollHeight, body.getBoundingClientRect().height));
+        window.parent.postMessage({ factAppletHeight: h }, "*");
       }
     } catch (e) { /* cross-origin parent: fall back to the iframe's own height */ }
   }
