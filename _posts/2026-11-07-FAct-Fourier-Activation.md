@@ -319,15 +319,16 @@ trend.
 
 ## Citation
 
-The full write-up is *Learning and Transferring a Nonlinearity Across Neural
-Networks*, Arun Prakash A, AI4Bharat, IIT Madras. Until the preprint is posted, kindly
-cite it as:
+This post is part of an ongoing study of **FAct**, the shared Fourier activation. If
+you refer to the experiments or the learned coefficients reported here, kindly cite the
+work as:
 
 ```bibtex
-@article{fact2026,
-  title   = {Learning and Transferring a Nonlinearity Across Neural Networks},
-  author  = {A, Arun Prakash},
-  journal = {arXiv preprint},
-  year    = {2026}
+@misc{fact2026,
+  title        = {FAct: A Globally Shared Fourier Activation for Vision Transformers},
+  author       = {A, Arun Prakash},
+  year         = {2026},
+  howpublished = {\url{https://arunprakash-a.github.io/2026/11/07/FAct-Fourier-Activation.html}},
+  note         = {Preprint in preparation}
 }
 ```
