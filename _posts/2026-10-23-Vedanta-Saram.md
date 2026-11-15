@@ -19,7 +19,7 @@ discourse by <strong>Swami Sankarananda</strong> of
 Each card below is one class; tap it to open that class's full notes. This set grows as the
 discourse continues.</p>
 
-<details class="vs-gloss" open>
+<details class="vs-gloss">
   <summary class="vs-gloss__head">சொல்லடைவு — 92 சொற்கள் <span class="vs-gloss__hint">(ஒரு சொல்லைத் தட்டினால் சுவாமி அளித்த விளக்கம் தோன்றும்)</span></summary>
   <div class="vs-gloss__grid">
     <button class="vs-term" type="button" data-note="vsterm0"
