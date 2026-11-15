@@ -20,157 +20,191 @@ Each card below is one class; tap it to open that class's full notes. This set g
 discourse continues.</p>
 
 <details class="vs-gloss" open>
-  <summary class="vs-gloss__head">சொல்லடைவு — 75 சொற்கள் <span class="vs-gloss__hint">(ஒரு சொல்லைத் தட்டினால் சுவாமி அளித்த விளக்கம் தோன்றும்)</span></summary>
+  <summary class="vs-gloss__head">சொல்லடைவு — 92 சொற்கள் <span class="vs-gloss__hint">(ஒரு சொல்லைத் தட்டினால் சுவாமி அளித்த விளக்கம் தோன்றும்)</span></summary>
   <div class="vs-gloss__grid">
     <button class="vs-term" type="button" data-note="vsterm0"
-      data-title="அகண்டம்" data-byline="வகுப்பு 1">அகண்டம்</button>
+      data-title="&#x27;அஹமஜ்ஞ:&#x27; — அனுபவம்" data-byline="வகுப்பு 12">&#x27;அஹமஜ்ஞ:&#x27; — அனுபவம்</button>
     <button class="vs-term" type="button" data-note="vsterm1"
-      data-title="அகிலாதாரம்" data-byline="வகுப்பு 1">அகிலாதாரம்</button>
+      data-title="&#x27;த்வா ஸுபர்ணா&#x27; (முண்டகம், ச்வேதாச்வதரம்)" data-byline="வகுப்பு 13">&#x27;த்வா ஸுபர்ணா&#x27; (முண்டகம், ச்வேதாச்வதரம்)</button>
     <button class="vs-term" type="button" data-note="vsterm2"
-      data-title="அதீத த்வைத பானதஃ" data-byline="வகுப்பு 1">அதீத த்வைத பானதஃ</button>
+      data-title="&#x27;ய: ஸர்வஜ்ஞ: ஸர்வவித்&#x27; (முண்டகம்)" data-byline="வகுப்பு 13">&#x27;ய: ஸர்வஜ்ஞ: ஸர்வவித்&#x27; (முண்டகம்)</button>
     <button class="vs-term" type="button" data-note="vsterm3"
-      data-title="அனல ஸந்தப்த:" data-byline="வகுப்பு 9">அனல ஸந்தப்த:</button>
+      data-title="அகண்டம்" data-byline="வகுப்பு 1">அகண்டம்</button>
     <button class="vs-term" type="button" data-note="vsterm4"
-      data-title="அனுகதாய" data-byline="வகுப்பு 8">அனுகதாய</button>
+      data-title="அகிலாதாரம்" data-byline="வகுப்பு 1">அகிலாதாரம்</button>
     <button class="vs-term" type="button" data-note="vsterm5"
-      data-title="அனுபந்தம்" data-byline="வகுப்பு 2">அனுபந்தம்</button>
+      data-title="அதீத த்வைத பானதஃ" data-byline="வகுப்பு 1">அதீத த்வைத பானதஃ</button>
     <button class="vs-term" type="button" data-note="vsterm6"
-      data-title="அபீஷ்ட ஸித்தயே" data-byline="வகுப்பு 1">அபீஷ்ட ஸித்தயே</button>
+      data-title="அந்தர்யாமீ" data-byline="வகுப்பு 13">அந்தர்யாமீ</button>
     <button class="vs-term" type="button" data-note="vsterm7"
-      data-title="அப்ரதிகாரபூர்வகம் ஸஹிஷ்ணுத்வம்" data-byline="வகுப்பு 6">அப்ரதிகாரபூர்வகம் ஸஹிஷ்ணுத்வம்</button>
+      data-title="அனல ஸந்தப்த:" data-byline="வகுப்பு 9">அனல ஸந்தப்த:</button>
     <button class="vs-term" type="button" data-note="vsterm8"
-      data-title="அமுத்ர (மறுமை)" data-byline="வகுப்பு 4">அமுத்ர (மறுமை)</button>
+      data-title="அனுகதாய" data-byline="வகுப்பு 8">அனுகதாய</button>
     <button class="vs-term" type="button" data-note="vsterm9"
-      data-title="அர்த்ததோபி" data-byline="வகுப்பு 1">அர்த்ததோபி</button>
+      data-title="அனுபந்தம்" data-byline="வகுப்பு 2">அனுபந்தம்</button>
     <button class="vs-term" type="button" data-note="vsterm10"
-      data-title="அவாங்மனஸகோசரம்" data-byline="வகுப்பு 1">அவாங்மனஸகோசரம்</button>
+      data-title="அபீஷ்ட ஸித்தயே" data-byline="வகுப்பு 1">அபீஷ்ட ஸித்தயே</button>
     <button class="vs-term" type="button" data-note="vsterm11"
-      data-title="ஆசார்யவான் புருஷோ வேத (சாந்தோக்யம்)" data-byline="வகுப்பு 10">ஆசார்யவான் புருஷோ வேத (சாந்தோக்யம்)</button>
+      data-title="அப்ரதிகாரபூர்வகம் ஸஹிஷ்ணுத்வம்" data-byline="வகுப்பு 6">அப்ரதிகாரபூர்வகம் ஸஹிஷ்ணுத்வம்</button>
     <button class="vs-term" type="button" data-note="vsterm12"
-      data-title="ஆதி&quot;" data-byline="வகுப்பு 6">ஆதி&quot;</button>
+      data-title="அமுத்ர (மறுமை)" data-byline="வகுப்பு 4">அமுத்ர (மறுமை)</button>
     <button class="vs-term" type="button" data-note="vsterm13"
-      data-title="ஆதீனம்" data-byline="வகுப்பு 5">ஆதீனம்</button>
+      data-title="அர்த்ததோபி" data-byline="வகுப்பு 1">அர்த்ததோபி</button>
     <button class="vs-term" type="button" data-note="vsterm14"
-      data-title="ஆத்மானம்" data-byline="வகுப்பு 1">ஆத்மானம்</button>
+      data-title="அவாங்மனஸகோசரம்" data-byline="வகுப்பு 1">அவாங்மனஸகோசரம்</button>
     <button class="vs-term" type="button" data-note="vsterm15"
-      data-title="ஆனந்தம் / அனந்தம்" data-byline="வகுப்பு 1">ஆனந்தம் / அனந்தம்</button>
+      data-title="அவ்யக்தம்" data-byline="வகுப்பு 13">அவ்யக்தம்</button>
     <button class="vs-term" type="button" data-note="vsterm16"
-      data-title="இதம் ப்ரஹ்ம" data-byline="வகுப்பு 3">இதம் ப்ரஹ்ம</button>
+      data-title="ஆசார்யவான் புருஷோ வேத (சாந்தோக்யம்)" data-byline="வகுப்பு 10">ஆசார்யவான் புருஷோ வேத (சாந்தோக்யம்)</button>
     <button class="vs-term" type="button" data-note="vsterm17"
-      data-title="இஹ (இவ்வுலகம்)" data-byline="வகுப்பு 4">இஹ (இவ்வுலகம்)</button>
+      data-title="ஆதி&quot;" data-byline="வகுப்பு 6">ஆதி&quot;</button>
     <button class="vs-term" type="button" data-note="vsterm18"
-      data-title="உத்தாலகர்-ச்வேதகேது" data-byline="வகுப்பு 11">உத்தாலகர்-ச்வேதகேது</button>
+      data-title="ஆதீனம்" data-byline="வகுப்பு 5">ஆதீனம்</button>
     <button class="vs-term" type="button" data-note="vsterm19"
-      data-title="உப" data-byline="வகுப்பு 1">உப</button>
+      data-title="ஆத்மானம்" data-byline="வகுப்பு 1">ஆத்மானம்</button>
     <button class="vs-term" type="button" data-note="vsterm20"
-      data-title="உபஸ்ருத்ய தமனுஸரதி" data-byline="வகுப்பு 9">உபஸ்ருத்ய தமனுஸரதி</button>
+      data-title="ஆனந்தம் / அனந்தம்" data-byline="வகுப்பு 1">ஆனந்தம் / அனந்தம்</button>
     <button class="vs-term" type="button" data-note="vsterm21"
-      data-title="உபஹாரபாணி:" data-byline="வகுப்பு 9">உபஹாரபாணி:</button>
+      data-title="ஆழ்ந்த உறக்கம்" data-byline="வகுப்பு 13">ஆழ்ந்த உறக்கம்</button>
     <button class="vs-term" type="button" data-note="vsterm22"
-      data-title="ஏகாக்ர புத்தி (மன ஒருமுகப்பாடு)" data-byline="வகுப்பு 2">ஏகாக்ர புத்தி (மன ஒருமுகப்பாடு)</button>
+      data-title="இதம் ப்ரஹ்ம" data-byline="வகுப்பு 3">இதம் ப்ரஹ்ம</button>
     <button class="vs-term" type="button" data-note="vsterm23"
-      data-title="ஏவம்பூத" data-byline="வகுப்பு 8">ஏவம்பூத</button>
+      data-title="இஹ (இவ்வுலகம்)" data-byline="வகுப்பு 4">இஹ (இவ்வுலகம்)</button>
     <button class="vs-term" type="button" data-note="vsterm24"
-      data-title="கயிறு-பாம்பு (அத்யாசம்)" data-byline="வகுப்பு 3">கயிறு-பாம்பு (அத்யாசம்)</button>
+      data-title="உத்தாலகர்-ச்வேதகேது" data-byline="வகுப்பு 11">உத்தாலகர்-ச்வேதகேது</button>
     <button class="vs-term" type="button" data-note="vsterm25"
-      data-title="கர்மயோகம்" data-byline="வகுப்பு 6">கர்மயோகம்</button>
+      data-title="உப" data-byline="வகுப்பு 1">உப</button>
     <button class="vs-term" type="button" data-note="vsterm26"
-      data-title="கலு" data-byline="வகுப்பு 3">கலு</button>
+      data-title="உபஸ்ருத்ய தமனுஸரதி" data-byline="வகுப்பு 9">உபஸ்ருத்ய தமனுஸரதி</button>
     <button class="vs-term" type="button" data-note="vsterm27"
-      data-title="குணான்விதாய" data-byline="வகுப்பு 8">குணான்விதாய</button>
+      data-title="உபஹாரபாணி:" data-byline="வகுப்பு 9">உபஹாரபாணி:</button>
     <button class="vs-term" type="button" data-note="vsterm28"
-      data-title="சங்கரர் (பிருஹதாரண்யக பாஷ்யம்)" data-byline="வகுப்பு 11">சங்கரர் (பிருஹதாரண்யக பாஷ்யம்)</button>
+      data-title="ஏகாக்ர புத்தி (மன ஒருமுகப்பாடு)" data-byline="வகுப்பு 2">ஏகாக்ர புத்தி (மன ஒருமுகப்பாடு)</button>
     <button class="vs-term" type="button" data-note="vsterm29"
-      data-title="சச்சிதானந்தம்" data-byline="வகுப்பு 1">சச்சிதானந்தம்</button>
+      data-title="ஏவம்பூத" data-byline="வகுப்பு 8">ஏவம்பூத</button>
     <button class="vs-term" type="button" data-note="vsterm30"
-      data-title="சத் (இருத்தல்)" data-byline="வகுப்பு 1">சத் (இருத்தல்)</button>
+      data-title="ஒன்றாக — &#x27;அஜாமேகாம் லோஹிதசுக்லக்ருஷ்ணாம்&#x27; (ச்வேதாச்வதரம்)" data-byline="வகுப்பு 13">ஒன்றாக — &#x27;அஜாமேகாம் லோஹிதசுக்லக்ருஷ்ணாம்&#x27; (ச்வேதாச்வதரம்)</button>
     <button class="vs-term" type="button" data-note="vsterm31"
-      data-title="சத்திய லோகம்" data-byline="வகுப்பு 4">சத்திய லோகம்</button>
+      data-title="கயிறு-பாம்பு (அத்யாசம்)" data-byline="வகுப்பு 3">கயிறு-பாம்பு (அத்யாசம்)</button>
     <button class="vs-term" type="button" data-note="vsterm32"
-      data-title="சப்த பிரமாணம்" data-byline="வகுப்பு 2">சப்த பிரமாணம்</button>
+      data-title="கர்மயோகம்" data-byline="வகுப்பு 6">கர்மயோகம்</button>
     <button class="vs-term" type="button" data-note="vsterm33"
-      data-title="சித் (அறிவுணர்வு)" data-byline="வகுப்பு 1">சித் (அறிவுணர்வு)</button>
+      data-title="கலு" data-byline="வகுப்பு 3">கலு</button>
     <button class="vs-term" type="button" data-note="vsterm34"
-      data-title="சித்த சுத்தி (மனத்தூய்மை)" data-byline="வகுப்பு 2">சித்த சுத்தி (மனத்தூய்மை)</button>
+      data-title="குணான்விதாய" data-byline="வகுப்பு 8">குணான்விதாய</button>
     <button class="vs-term" type="button" data-note="vsterm35"
-      data-title="சித்த நைஶ்சல்யம்" data-byline="வகுப்பு 4">சித்த நைஶ்சல்யம்</button>
+      data-title="சங்கரர் (பிருஹதாரண்யக பாஷ்யம்)" data-byline="வகுப்பு 11">சங்கரர் (பிருஹதாரண்யக பாஷ்யம்)</button>
     <button class="vs-term" type="button" data-note="vsterm36"
-      data-title="சுரேஸ்வராச்சார்யர் (நைஷ்கர்ம்ய ஸித்தி)" data-byline="வகுப்பு 11">சுரேஸ்வராச்சார்யர் (நைஷ்கர்ம்ய ஸித்தி)</button>
+      data-title="சச்சிதானந்தம்" data-byline="வகுப்பு 1">சச்சிதானந்தம்</button>
     <button class="vs-term" type="button" data-note="vsterm37"
-      data-title="ஜனனமரணாதி ஸம்ஸாரம்" data-byline="வகுப்பு 9">ஜனனமரணாதி ஸம்ஸாரம்</button>
+      data-title="சத் (இருத்தல்)" data-byline="வகுப்பு 1">சத் (இருத்தல்)</button>
     <button class="vs-term" type="button" data-note="vsterm38"
-      data-title="ஜிதேந்த்ரியாய" data-byline="வகுப்பு 8">ஜிதேந்த்ரியாய</button>
+      data-title="சத்திய லோகம்" data-byline="வகுப்பு 4">சத்திய லோகம்</button>
     <button class="vs-term" type="button" data-note="vsterm39"
-      data-title="தஜ்ஜ (தத் + ஜ)" data-byline="வகுப்பு 3">தஜ்ஜ (தத் + ஜ)</button>
+      data-title="சப்த பிரமாணம்" data-byline="வகுப்பு 2">சப்த பிரமாணம்</button>
     <button class="vs-term" type="button" data-note="vsterm40"
-      data-title="தஜ்ஜலான்" data-byline="வகுப்பு 3">தஜ்ஜலான்</button>
+      data-title="சித் (அறிவுணர்வு)" data-byline="வகுப்பு 1">சித் (அறிவுணர்வு)</button>
     <button class="vs-term" type="button" data-note="vsterm41"
-      data-title="தடஸ்த லக்ஷணம்" data-byline="வகுப்பு 8">தடஸ்த லக்ஷணம்</button>
+      data-title="சித்த சுத்தி (மனத்தூய்மை)" data-byline="வகுப்பு 2">சித்த சுத்தி (மனத்தூய்மை)</button>
     <button class="vs-term" type="button" data-note="vsterm42"
-      data-title="ததன (தத் + அன)" data-byline="வகுப்பு 3">ததன (தத் + அன)</button>
+      data-title="சித்த நைஶ்சல்யம்" data-byline="வகுப்பு 4">சித்த நைஶ்சல்யம்</button>
     <button class="vs-term" type="button" data-note="vsterm43"
-      data-title="தத்விஜ்ஞானார்த்தம்" data-byline="வகுப்பு 10">தத்விஜ்ஞானார்த்தம்</button>
+      data-title="சுரேஸ்வராச்சார்யர் (நைஷ்கர்ம்ய ஸித்தி)" data-byline="வகுப்பு 11">சுரேஸ்வராச்சார்யர் (நைஷ்கர்ம்ய ஸித்தி)</button>
     <button class="vs-term" type="button" data-note="vsterm44"
-      data-title="தல்ல (தத் + ல)" data-byline="வகுப்பு 3">தல்ல (தத் + ல)</button>
+      data-title="ச்ருதி" data-byline="வகுப்பு 12">ச்ருதி</button>
     <button class="vs-term" type="button" data-note="vsterm45"
-      data-title="தீப்தசிரா ஜலராசிமிவ" data-byline="வகுப்பு 9">தீப்தசிரா ஜலராசிமிவ</button>
+      data-title="ஜகத்காரணம்" data-byline="வகுப்பு 13">ஜகத்காரணம்</button>
     <button class="vs-term" type="button" data-note="vsterm46"
-      data-title="நி" data-byline="வகுப்பு 1">நி</button>
+      data-title="ஜனனமரணாதி ஸம்ஸாரம்" data-byline="வகுப்பு 9">ஜனனமரணாதி ஸம்ஸாரம்</button>
     <button class="vs-term" type="button" data-note="vsterm47"
-      data-title="பிரமாணம்" data-byline="வகுப்பு 1">பிரமாணம்</button>
+      data-title="ஜிதேந்த்ரியாய" data-byline="வகுப்பு 8">ஜிதேந்த்ரியாய</button>
     <button class="vs-term" type="button" data-note="vsterm48"
-      data-title="பிரமாதா" data-byline="வகுப்பு 1">பிரமாதா</button>
+      data-title="ஜ்ஞானவிரோதி" data-byline="வகுப்பு 12">ஜ்ஞானவிரோதி</button>
     <button class="vs-term" type="button" data-note="vsterm49"
-      data-title="பிரமேயம்" data-byline="வகுப்பு 1">பிரமேயம்</button>
+      data-title="தஜ்ஜ (தத் + ஜ)" data-byline="வகுப்பு 3">தஜ்ஜ (தத் + ஜ)</button>
     <button class="vs-term" type="button" data-note="vsterm50"
-      data-title="புத்தியின் மாசு – மோகம்" data-byline="வகுப்பு 4">புத்தியின் மாசு – மோகம்</button>
+      data-title="தஜ்ஜலான்" data-byline="வகுப்பு 3">தஜ்ஜலான்</button>
     <button class="vs-term" type="button" data-note="vsterm51"
-      data-title="ப்ரசாந்தசித்தாய" data-byline="வகுப்பு 8">ப்ரசாந்தசித்தாய</button>
+      data-title="தடஸ்த லக்ஷணம்" data-byline="வகுப்பு 8">தடஸ்த லக்ஷணம்</button>
     <button class="vs-term" type="button" data-note="vsterm52"
-      data-title="ப்ரமாதா" data-byline="வகுப்பு 8">ப்ரமாதா</button>
+      data-title="ததன (தத் + அன)" data-byline="வகுப்பு 3">ததன (தத் + அன)</button>
     <button class="vs-term" type="button" data-note="vsterm53"
-      data-title="ப்ரஹீணதோஷாய" data-byline="வகுப்பு 8">ப்ரஹீணதோஷாய</button>
+      data-title="தத்விஜ்ஞானார்த்தம்" data-byline="வகுப்பு 10">தத்விஜ்ஞானார்த்தம்</button>
     <button class="vs-term" type="button" data-note="vsterm54"
-      data-title="ப்ரஹ்மநிஷ்டம்" data-byline="வகுப்பு 9">ப்ரஹ்மநிஷ்டம்</button>
+      data-title="தல்ல (தத் + ல)" data-byline="வகுப்பு 3">தல்ல (தத் + ல)</button>
     <button class="vs-term" type="button" data-note="vsterm55"
-      data-title="மனத் தொற்று" data-byline="வகுப்பு 3">மனத் தொற்று</button>
+      data-title="தீப்தசிரா ஜலராசிமிவ" data-byline="வகுப்பு 9">தீப்தசிரா ஜலராசிமிவ</button>
     <button class="vs-term" type="button" data-note="vsterm56"
-      data-title="மானச வ்யாபாரம்" data-byline="வகுப்பு 3">மானச வ்யாபாரம்</button>
+      data-title="நி" data-byline="வகுப்பு 1">நி</button>
     <button class="vs-term" type="button" data-note="vsterm57"
-      data-title="யதாவாக் ததாகாரி" data-byline="வகுப்பு 7">யதாவாக் ததாகாரி</button>
+      data-title="நியாய முறை" data-byline="வகுப்பு 12">நியாய முறை</button>
     <button class="vs-term" type="button" data-note="vsterm58"
-      data-title="யதோக்தகாரிணே" data-byline="வகுப்பு 8">யதோக்தகாரிணே</button>
+      data-title="பலவாக — &#x27;இந்த்ரோ மாயாபி: புருரூப ஈயதே&#x27; (ரிக் வேதம்)" data-byline="வகுப்பு 13">பலவாக — &#x27;இந்த்ரோ மாயாபி: புருரூப ஈயதே&#x27; (ரிக் வேதம்)</button>
     <button class="vs-term" type="button" data-note="vsterm59"
-      data-title="ரிக்தபாணிர் ந ஸேவேத" data-byline="வகுப்பு 10">ரிக்தபாணிர் ந ஸேவேத</button>
+      data-title="பாவரூபம்" data-byline="வகுப்பு 12">பாவரூபம்</button>
     <button class="vs-term" type="button" data-note="vsterm60"
-      data-title="விஜ்ஞானம் ஆனந்தம் ப்ரஹ்ம (பிருஹதாரண்யகம்)" data-byline="வகுப்பு 11">விஜ்ஞானம் ஆனந்தம் ப்ரஹ்ம (பிருஹதாரண்யகம்)</button>
+      data-title="பிரமாணம்" data-byline="வகுப்பு 1">பிரமாணம்</button>
     <button class="vs-term" type="button" data-note="vsterm61"
-      data-title="விஞ்ஞானம்" data-byline="வகுப்பு 4">விஞ்ஞானம்</button>
+      data-title="பிரமாதா" data-byline="வகுப்பு 1">பிரமாதா</button>
     <button class="vs-term" type="button" data-note="vsterm62"
-      data-title="வித்யாக்கள்" data-byline="வகுப்பு 3">வித்யாக்கள்</button>
+      data-title="பிரமேயம்" data-byline="வகுப்பு 1">பிரமேயம்</button>
     <button class="vs-term" type="button" data-note="vsterm63"
-      data-title="விவேகம்" data-byline="வகுப்பு 3, 5">விவேகம்</button>
+      data-title="புத்தியின் மாசு – மோகம்" data-byline="வகுப்பு 4">புத்தியின் மாசு – மோகம்</button>
     <button class="vs-term" type="button" data-note="vsterm64"
-      data-title="வைராக்கியம்" data-byline="வகுப்பு 5">வைராக்கியம்</button>
+      data-title="ப்ரசாந்தசித்தாய" data-byline="வகுப்பு 8">ப்ரசாந்தசித்தாய</button>
     <button class="vs-term" type="button" data-note="vsterm65"
-      data-title="ஶாந்த உபாஸீத" data-byline="வகுப்பு 3">ஶாந்த உபாஸீத</button>
+      data-title="ப்ரமாதா" data-byline="வகுப்பு 8">ப்ரமாதா</button>
     <button class="vs-term" type="button" data-note="vsterm66"
-      data-title="ஷத்" data-byline="வகுப்பு 1">ஷத்</button>
+      data-title="ப்ரஹீணதோஷாய" data-byline="வகுப்பு 8">ப்ரஹீணதோஷாய</button>
     <button class="vs-term" type="button" data-note="vsterm67"
-      data-title="ஸச்சிதானந்தம்" data-byline="வகுப்பு 10">ஸச்சிதானந்தம்</button>
+      data-title="ப்ரஹ்மநிஷ்டம்" data-byline="வகுப்பு 9">ப்ரஹ்மநிஷ்டம்</button>
     <button class="vs-term" type="button" data-note="vsterm68"
-      data-title="ஸர்வஜ்ஞாத்ம முனிவர் (ஸங்க்ஷேப சாரீரகம்)" data-byline="வகுப்பு 10">ஸர்வஜ்ஞாத்ம முனிவர் (ஸங்க்ஷேப சாரீரகம்)</button>
+      data-title="மனத் தொற்று" data-byline="வகுப்பு 3">மனத் தொற்று</button>
     <button class="vs-term" type="button" data-note="vsterm69"
-      data-title="ஸர்வதா ப்ரதேயம்" data-byline="வகுப்பு 8">ஸர்வதா ப்ரதேயம்</button>
+      data-title="மானச வ்யாபாரம்" data-byline="வகுப்பு 3">மானச வ்யாபாரம்</button>
     <button class="vs-term" type="button" data-note="vsterm70"
-      data-title="ஸர்வம்" data-byline="வகுப்பு 3">ஸர்வம்</button>
+      data-title="யசோதை (பாகவதம்)" data-byline="வகுப்பு 13">யசோதை (பாகவதம்)</button>
     <button class="vs-term" type="button" data-note="vsterm71"
-      data-title="ஸர்வம் கல்விதம் ப்ரஹ்ம தஜ்ஜலான்" data-byline="வகுப்பு 10">ஸர்வம் கல்விதம் ப்ரஹ்ம தஜ்ஜலான்</button>
+      data-title="யதாவாக் ததாகாரி" data-byline="வகுப்பு 7">யதாவாக் ததாகாரி</button>
     <button class="vs-term" type="button" data-note="vsterm72"
-      data-title="ஸ்ரீவித்யா / ஆதார சக்கர தியானம்" data-byline="வகுப்பு 3">ஸ்ரீவித்யா / ஆதார சக்கர தியானம்</button>
+      data-title="யதோக்தகாரிணே" data-byline="வகுப்பு 8">யதோக்தகாரிணே</button>
     <button class="vs-term" type="button" data-note="vsterm73"
-      data-title="ஸ்ரோத்ரியம்" data-byline="வகுப்பு 9">ஸ்ரோத்ரியம்</button>
+      data-title="ரிக்தபாணிர் ந ஸேவேத" data-byline="வகுப்பு 10">ரிக்தபாணிர் ந ஸேவேத</button>
     <button class="vs-term" type="button" data-note="vsterm74"
+      data-title="விஜ்ஞானம் ஆனந்தம் ப்ரஹ்ம (பிருஹதாரண்யகம்)" data-byline="வகுப்பு 11">விஜ்ஞானம் ஆனந்தம் ப்ரஹ்ம (பிருஹதாரண்யகம்)</button>
+    <button class="vs-term" type="button" data-note="vsterm75"
+      data-title="விஞ்ஞானம்" data-byline="வகுப்பு 4">விஞ்ஞானம்</button>
+    <button class="vs-term" type="button" data-note="vsterm76"
+      data-title="வித்யாக்கள்" data-byline="வகுப்பு 3">வித்யாக்கள்</button>
+    <button class="vs-term" type="button" data-note="vsterm77"
+      data-title="விவேகம்" data-byline="வகுப்பு 3, 5">விவேகம்</button>
+    <button class="vs-term" type="button" data-note="vsterm78"
+      data-title="வைராக்கியம்" data-byline="வகுப்பு 5">வைராக்கியம்</button>
+    <button class="vs-term" type="button" data-note="vsterm79"
+      data-title="ஶாந்த உபாஸீத" data-byline="வகுப்பு 3">ஶாந்த உபாஸீத</button>
+    <button class="vs-term" type="button" data-note="vsterm80"
+      data-title="ஷத்" data-byline="வகுப்பு 1">ஷத்</button>
+    <button class="vs-term" type="button" data-note="vsterm81"
+      data-title="ஸச்சிதானந்தம்" data-byline="வகுப்பு 10">ஸச்சிதானந்தம்</button>
+    <button class="vs-term" type="button" data-note="vsterm82"
+      data-title="ஸர்வஜ்ஞத்வம்" data-byline="வகுப்பு 13">ஸர்வஜ்ஞத்வம்</button>
+    <button class="vs-term" type="button" data-note="vsterm83"
+      data-title="ஸர்வஜ்ஞாத்ம முனிவர் (ஸங்க்ஷேப சாரீரகம்)" data-byline="வகுப்பு 10">ஸர்வஜ்ஞாத்ம முனிவர் (ஸங்க்ஷேப சாரீரகம்)</button>
+    <button class="vs-term" type="button" data-note="vsterm84"
+      data-title="ஸர்வதா ப்ரதேயம்" data-byline="வகுப்பு 8">ஸர்வதா ப்ரதேயம்</button>
+    <button class="vs-term" type="button" data-note="vsterm85"
+      data-title="ஸர்வநியந்த்ருத்வம்" data-byline="வகுப்பு 13">ஸர்வநியந்த்ருத்வம்</button>
+    <button class="vs-term" type="button" data-note="vsterm86"
+      data-title="ஸர்வம்" data-byline="வகுப்பு 3">ஸர்வம்</button>
+    <button class="vs-term" type="button" data-note="vsterm87"
+      data-title="ஸர்வம் கல்விதம் ப்ரஹ்ம தஜ்ஜலான்" data-byline="வகுப்பு 10">ஸர்வம் கல்விதம் ப்ரஹ்ம தஜ்ஜலான்</button>
+    <button class="vs-term" type="button" data-note="vsterm88"
+      data-title="ஸர்வேச்வரத்வம்" data-byline="வகுப்பு 13">ஸர்வேச்வரத்வம்</button>
+    <button class="vs-term" type="button" data-note="vsterm89"
+      data-title="ஸ்ரீவித்யா / ஆதார சக்கர தியானம்" data-byline="வகுப்பு 3">ஸ்ரீவித்யா / ஆதார சக்கர தியானம்</button>
+    <button class="vs-term" type="button" data-note="vsterm90"
+      data-title="ஸ்ரோத்ரியம்" data-byline="வகுப்பு 9">ஸ்ரோத்ரியம்</button>
+    <button class="vs-term" type="button" data-note="vsterm91"
       data-title="ஸ்ரோத்ரியர்" data-byline="வகுப்பு 10">ஸ்ரோத்ரியர்</button>
   </div>
 </details>
@@ -273,6 +307,33 @@ discourse continues.</p>
     <span class="vs-card__date">Nov 6, 2026</span>
     <span class="vs-card__summary">இந்த வகுப்பில் வஸ்துவுக்கான உபநிஷத் பிரமாணங்கள், வஸ்து-அவஸ்துவைப் புரிந்துகொள்ள ஒரு உவமை, அவஸ்துவாகிய அஜ்ஞானத்தின் இலக்கணம் (பகுதி 34), பாகவதம் சொல்லும் அஜ்ஞானத்தின் ஐந்து விருத்திகள் ஆகியவை விளக்கப்பட்டன.</span>
     <span class="vs-card__chips"><span class="vs-chip">1. வஸ்துவுக்கான பிரமாணங்கள்</span><span class="vs-chip">2. உவமை: கண்ணாடிச் சுவரில் வழியும் அருவி</span><span class="vs-chip">3. அவஸ்து = அஜ்ஞானம்</span><span class="vs-chip">4. உறக்கத்தில் அஜ்ஞானமும் ஆனந்தமும்</span><span class="vs-chip">5. பாகவதம்: சிருஷ்டி அஜ்ஞானத்திலிருந்தே தொடங்குகிறது</span><span class="vs-chip vs-chip--more">+1</span></span>
+    <span class="vs-card__cta">படிக்க →</span>
+  </button>
+  <button class="vs-card" type="button" data-note="vs12"
+    data-title="வேதாந்த சாரம் – வகுப்பு 12 குறிப்புகள்"
+    data-byline="சுவாமி சங்கரானந்தா · ஆத்ம வித்யாலயம் · Nov 10, 2026 · குறிப்பு: @Arun">
+    <span class="vs-card__badge">வகுப்பு 12</span>
+    <span class="vs-card__date">Nov 10, 2026</span>
+    <span class="vs-card__summary">இந்த வகுப்பில் அவஸ்துவாகிய அஜ்ஞானத்தின் இலக்கணம் (பகுதி 34) விரிவாக விளக்கப்பட்டது; ஹோலோகிராம் உவமையும் பாகவதச் சிருஷ்டிக் கதையும் இணைத்துக் காட்டப்பட்டன; இறுதியில் சமஷ்டி-வ்யஷ்டி அஜ்ஞானம் (பகுதி 35) தொடங்கப்பட்டது.</span>
+    <span class="vs-card__chips"><span class="vs-chip">1. அஜ்ஞானம்: ஞானாபாவம் அல்ல, மித்யா</span><span class="vs-chip">2. த்ரிகுணாத்மகம்: மூன்று குணங்கள்</span><span class="vs-chip">3. ஜ்ஞானவிரோதி, பாவரூபம், அனுபவம்</span><span class="vs-chip">4. ஹோலோகிராம்: உளதும் இலதுமான பொருளுக்கு உதாரணம்</span><span class="vs-chip">5. பாகவதம்: பாற்கடல் = பிரபஞ்சத்தின் ஹோலோகிராம்</span><span class="vs-chip vs-chip--more">+4</span></span>
+    <span class="vs-card__cta">படிக்க →</span>
+  </button>
+  <button class="vs-card" type="button" data-note="vs13"
+    data-title="வேதாந்த சாரம் – வகுப்பு 13 குறிப்புகள்"
+    data-byline="சுவாமி சங்கரானந்தா · ஆத்ம வித்யாலயம் · Nov 12, 2026 · குறிப்பு: @Arun">
+    <span class="vs-card__badge">வகுப்பு 13</span>
+    <span class="vs-card__date">Nov 12, 2026</span>
+    <span class="vs-card__summary">இந்த வகுப்பில் அஜ்ஞானத்தை &#x27;மறைக்கப்பட்ட அறிவுணர்வு&#x27; என்றும் &#x27;உபாதி&#x27; என்றும் விளக்கி, சமஷ்டி-வ்யஷ்டி அஜ்ஞானம் (பகுதிகள் 35–37) மற்றும் சமஷ்டி உபாதியுடன் கூடிய ஈஸ்வரன் (பகுதி 38) விளக்கப்பட்டன.</span>
+    <span class="vs-card__chips"><span class="vs-chip">1. அவித்யை: மறைக்கப்பட்ட அறிவுணர்வு</span><span class="vs-chip">2. உபாதி: ஸ்படிகமும் ஆரஞ்சு துணியும்</span><span class="vs-chip">3. சமஷ்டி, வ்யஷ்டி: மொத்தமும் சில்லறையும்</span><span class="vs-chip">4. சமஷ்டி அஜ்ஞானம் = உத்க்ருஷ்ட உபாதி</span><span class="vs-chip">5. உத்க்ருஷ்டம், நிக்ருஷ்டம்: காவல்துறை உதாரணம்</span><span class="vs-chip vs-chip--more">+3</span></span>
+    <span class="vs-card__cta">படிக்க →</span>
+  </button>
+  <button class="vs-card" type="button" data-note="vs14"
+    data-title="வேதாந்த சாரம் – வகுப்பு 14 குறிப்புகள்"
+    data-byline="சுவாமி சங்கரானந்தா · ஆத்ம வித்யாலயம் · Nov 13, 2026 · குறிப்பு: @Arun">
+    <span class="vs-card__badge">வகுப்பு 14</span>
+    <span class="vs-card__date">Nov 13, 2026</span>
+    <span class="vs-card__summary">இந்த வகுப்பில் வேதாந்த ஸாரத்துக்குள் நுழையும் முன் சுவாமி மூன்று அடிப்படைத் தலைப்புகளை விளக்கினார்: (1) அஞ்ஞானம் என்றால் உண்மையில் என்ன, (2) தகவல்–வடிவம் (நாம–ரூபம்), (3) எண்ணங்களே தன்னை மறைக்கும் அஞ்ஞானம். &#x27;இந்த மூன்றையும் தெளிவாகப் புரிந்துகொண்டால் ஒட்டுமொத்த வேதாந்தமும் எளிதாகும்&#x27; என்றார்.</span>
+    <span class="vs-card__chips"><span class="vs-chip">1. முந்தைய வகுப்பின் நினைவூட்டல்: மொத்தமும் சில்லறையும்</span><span class="vs-chip">2. அஞ்ஞானம்: &#x27;இன்மை&#x27; அல்ல, &#x27;மறைப்பு&#x27;</span><span class="vs-chip">3. மொத்த அஞ்ஞானம் → ஈஸ்வரன், சில்லறை → ஜீவன்</span><span class="vs-chip">4. தகவல் (Information) → வடிவம் (Formation): நாம–ரூபம்</span><span class="vs-chip">5. மூன்றாவது தலைப்பு: எண்ணங்களே அஞ்ஞானம்</span><span class="vs-chip vs-chip--more">+4</span></span>
     <span class="vs-card__cta">படிக்க →</span>
   </button>
 </div>
@@ -2646,305 +2707,1122 @@ discourse continues.</p>
 <p>காணொளி: <a href="https://www.youtube.com/watch?v=6V3Yjelr7dI">11 வேதாந்த ஸாரம் – சுவாமி சங்கரானந்தா – வஸ்து-அவஸ்து விவேகம் (6-11-2026)</a></p>
 </section>
 
+<section class="vs-note vs-hidden" id="vs12" aria-hidden="true">
+<p class="vs-video"><a href="https://www.youtube.com/watch?v=qXrUg0d8d78" target="_blank" rel="noopener">▶ இந்த வகுப்பை YouTube-ல் காண</a></p>
+<p>இந்த வகுப்பில் அவஸ்துவாகிய அஜ்ஞானத்தின் இலக்கணம் (பகுதி 34) விரிவாக விளக்கப்பட்டது; ஹோலோகிராம் உவமையும் பாகவதச் சிருஷ்டிக் கதையும் இணைத்துக் காட்டப்பட்டன; இறுதியில் சமஷ்டி-வ்யஷ்டி அஜ்ஞானம் (பகுதி 35) தொடங்கப்பட்டது.</p>
+<h2>1. அஜ்ஞானம்: ஞானாபாவம் அல்ல, மித்யா</h2>
+<ul>
+<li>மீள்பார்வை: வஸ்து = இருப்பது (ஸத்); அவஸ்து = இருப்பது போல் தோன்றினாலும் தனக்கென வஸ்துத்தன்மை இல்லாதது — 'மண் இல்லாத பானை' என்று ஒன்று இருக்க முடியாதது போல.</li>
+<li><strong>நியாய முறை:</strong> ஒவ்வொரு பொருளுக்கும் எதிர்ப்பொருள் உண்டு (அனுயோகி-ப்ரதியோகி என்று சுவாமி விளக்கினார்): கடம் அஸ்தி / கடம் நாஸ்தி (கடாபாவம்). இந்த முறையில் அஜ்ஞானம் = ஞானாபாவம் (முற்றின்மை) ஆகிவிடும்.</li>
+<li>வேதாந்தம்: அஜ்ஞானம் சூன்யம் அல்ல; அதுவும் ஒரு வகை (தவறான) அறிவு. அதை ஸத் என்றோ (எப்போதும் இருப்பது) அஸத் என்றோ (முற்றின்மை) சொல்ல முடியாது — அனிர்வசனீயம்.</li>
+<li><strong>தர்க்கம் பற்றிய எச்சரிக்கை:</strong> தர்க்கச் சொற்களை அளவோடு பயன்படுத்த வேண்டும்; அவை உண்மையை நெருங்குவதைவிட விலகுவதற்கே அதிக வாய்ப்பு. சாக்ரடீஸ் முதல் ஹெகல், மார்க்ஸ், எங்கெல்ஸ் வரையிலான இயங்கியல் (dialectics) மரபு இறுதியில் ஆத்மாவை மறுத்த பொருள்முதல்வாதத்தில் முடிந்தது என்றார் சுவாமி.</li>
+</ul>
+<h2>2. த்ரிகுணாத்மகம்: மூன்று குணங்கள்</h2>
+<table>
+<thead>
+<tr>
+<th>குணம்</th>
+<th>இயல்பு</th>
+<th>கார் உவமை</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ஸத்துவம்</td>
+<td>விளக்கம் (ஞானசக்தி)</td>
+<td>இயங்கிக்கொண்டிருக்கும் என்ஜின்</td>
+</tr>
+<tr>
+<td>ரஜஸ்</td>
+<td>இயக்கம் (கிரியாசக்தி)</td>
+<td>முடுக்கிவிடும் ஆக்ஸிலரேட்டர்</td>
+</tr>
+<tr>
+<td>தமஸ்</td>
+<td>முதலிரண்டையும் மட்டுப்படுத்துவது; தனக்கென குணமில்லை</td>
+<td>இரண்டையும் நிறுத்தும் பிரேக்</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>பட்டாசுடன் குழந்தை:</strong> திரி பற்றி ஒளிவிடுவதை விளங்கிக்கொள்வது ஸத்துவம்; கைகால் சும்மா இருக்காமல் விளையாடுவது ரஜஸ்; அம்மா 'வைத்துவிடு' என்றாலோ தூக்கம் வந்தாலோ இரண்டும் குறைவது தமஸ்.</li>
+<li>தமஸ் ஏற ஏற விளக்கம் குறைந்து மயக்கமும் கொட்டாவியும் வரும், செயலும் குறைந்து தூக்கம் வரும். அணு உலையின் மாடரேட்டர் அணுக்கரு பிளவை அளவுக்குள் வைப்பது போல.</li>
+</ul>
+<h2>3. ஜ்ஞானவிரோதி, பாவரூபம், அனுபவம்</h2>
+<ul>
+<li><strong>ஜ்ஞானவிரோதி:</strong> ஒளி வந்ததும் இருட்டு மறைவதுபோல் ஞானம் வந்ததும் சுவடே இல்லாமல் அழிகிறது; மற்ற பொருள்கள் நீங்கினால் வாசனை எஞ்சலாம்.</li>
+<li><strong>பாவரூபம்:</strong> அது இருக்கிறது என்று சொன்னால்தான் அதைப் போக்கும் அக்கறை வரும்; ஞானாபாவம் என்றால் அதைப் பற்றிப் பேச்சே இல்லை என்றார் சுவாமி.</li>
+<li><strong>'அஹமஜ்ஞ:' — அனுபவம்:</strong> 'எனக்குத் தெரியாது' என்ற உணர்வே அஜ்ஞானம் இருப்பதற்குச் சாட்சி.</li>
+<li><strong>பிறந்த குழந்தை:</strong> முழுவதும் அஜ்ஞானம்; ஆனால் அஜ்ஞானம் இருக்க இடமாக அறிவும் இருக்கிறது — அது ஜடம் அல்ல. தன்னைப் பற்றிய அறியாமை நீங்கினால் மெய்ஞ்ஞானி; உலகைப் பற்றிய அறியாமை நீங்கினால் விஞ்ஞானி.</li>
+<li><strong>அறிவின்மை, உணர்வின்மை:</strong> 'நான் பிரம்மம் என்று அறிந்தேன், ஆனால் இன்னும் தன்னைக் காப்பாற்றிக்கொள்ளும் ஜீவனாகவே வாழ்கிறேன்' — அறிவின்மை போனாலும் பிரம்ம உணர்வின்மை தொடரலாம். அதனால்தான் சுவாமி 'நான்' என்பதை 'அறிவுணர்வு' என்று சொல்கிறார்.</li>
+<li><strong>ச்ருதி:</strong> தேவாத்மசக்திம் ஸ்வகுணைர்நிகூடாம் (ச்வேதாச்வதரம் 1.3) — பிரம்மத்தின் சக்தியின் குணத்தாலேயே பிரம்மம் மூடப்பட்டுள்ளது.</li>
+</ul>
+<h2>4. ஹோலோகிராம்: உளதும் இலதுமான பொருளுக்கு உதாரணம்</h2>
+<p>சுமார் 1976-ல் சென்னைப் பல்கலைக்கழகத்தின் நூற்றாண்டு மண்டபத்தில் நடந்த அமெரிக்க தொழில்நுட்பக் கண்காட்சியில், ஆராய்ச்சி மாணவராக இருந்த சுவாமி லேசர் நகலெடுக்கும் இயந்திரத்தையும் ஹோலோகிராமையும் முதன்முதலில் கண்டார்.</p>
+<ul>
+<li>மேசைக்கு மேல் சங்கிலியில் தொங்கும் கடிகாரம் முப்பரிமாணத்தில் தெரிந்தது; சுற்றிவந்து பின்புறமும் பார்க்கலாம். ஆனால் கை நீட்டினால் அங்கு எதுவுமில்லை.</li>
+<li>கண்ணுக்கு உளது, கைக்கு இலது — இரண்டு பிரமாணங்கள் இரண்டு தகவல்கள். இதுவே <strong>ஸதஸத்ப்யாம் அனிர்வசனீயம்</strong>. அஜ்ஞானமும் ஹோலோகிராமும் ஒரே மாதிரி.</li>
+</ul>
+<h3>ஹோலோகிராம் எப்படி உருவாகிறது</h3>
+<ol>
+<li>ஒரே லேசர் கற்றை இரண்டாகப் பிரிக்கப்படுகிறது (A, B).</li>
+<li>A பொருளின் மீது பட்டுத் திரும்புகிறது; B அதைக் குறுக்கிடுகிறது (interference).</li>
+<li>குறுக்கீட்டு வடிவம் ஒரு படலத்தில் (எக்ஸ்ரே ஷீட் போன்றது) பதிகிறது — அதில் கடிகாரத்தின் பிம்பம் எங்கும் கண்ணுக்குத் தெரியாது.</li>
+<li>அந்தப் படலம் வழியே மீண்டும் லேசர் அனுப்பினால் கடிகாரம் தத்ரூபமாக மிதக்கும்.</li>
+</ol>
+<ul>
+<li><strong>ஒவ்வொரு துண்டிலும் முழுமை:</strong> ஹோலோகிராமை இரண்டாக வெட்டினால் இரண்டு முழுப் பிம்பங்கள்; நூறு துண்டுகளாக உடைத்தாலும் ஒவ்வொரு துண்டிலும் முழுக் கடிகாரம். துண்டு சிறிதாக சிறிதாகத் தெளிவு மங்கும், ஆனால் முழுமை இருக்கும்.</li>
+<li>முழு ஹோலோகிராம் = முழுமையான அறிவு; உடைந்த துண்டு = அறிவு இருக்கிறது, முழுமையாக இல்லை. (சமஷ்டி-வ்யஷ்டியைப் புரிந்துகொள்ள இந்த மாதிரியைத் தொடர்ந்து பயன்படுத்தவுள்ளார்.)</li>
+</ul>
+<h2>5. பாகவதம்: பாற்கடல் = பிரபஞ்சத்தின் ஹோலோகிராம் (சுவாமியின் விளக்கம்)</h2>
+<ul>
+<li>அனந்தசயனத்தில் இருக்கும் நாராயணனின் பாற்கடல் = முந்தைய பிரபஞ்சத்தின் தகவல் சேமிப்பு. ஒவ்வொரு துளியிலும் முழுப் பிரபஞ்சத்தின் மங்கலான பிம்பம்; முழுக் கடலில் தெளிவான பிம்பம்.</li>
+<li>விஞ்ஞானிகள் தொடக்க காலப் பிரபஞ்சத்தை 'குவார்க் சூப்' என்கிறார்கள்; நாம் 'பாற்கடல்' என்றால் கேலி செய்கிறார்கள் என்றார். இல்லாதது தோன்றாது (ஆற்றல் மாறாக் கோட்பாடு); மறைந்திருந்தது வெளிப்படுகிறது.</li>
+<li>நாபிக் கமலத்தில் தோன்றிய பிரம்மாவுக்கும் முதலில் அறியாமை — ஞானத்திலிருந்து பிறந்ததும் ஸத்துவ-ரஜஸ்ஸுடன் தமஸும் இருந்தது. 'நான் யார்?' என்று தாமரைத் தண்டு வழியே உள்நோக்கிச் சென்றார் — ரமணர் சொல்வதும் இதுவே. தன்னை சுத்த சைதன்யம் என்று அறிந்து, சிருஷ்டியே தன் கடமை என்று அறிந்தார்.</li>
+<li>ஹோலோகிராம் வழியே லேசர் பாய்ச்சுவது போல, பாற்கடலின் மீது தன் சைதன்யத்தைப் பாய்ச்ச ஜகத்து வெளிப்படுகிறது. (பாற்கடல் கடைந்த கதையும் இதைச் சுட்டுகிறது என்றார்.)</li>
+</ul>
+<h3>பரமாணுவும் பரமாணு காலமும் (பாகவதம் 3.11)</h3>
+<ul>
+<li>விஞ்ஞானிகள் மிகச் சிறிய தொலைவையும் காலத்தையும் மேக்ஸ் பிளாங்க் பெயரால் (Planck length, Planck time) குறிக்கிறார்கள்.</li>
+<li>விதுரருக்கு மைத்ரேயர்: பரமாணு என்பது உலகம் முதலிய காரிய வடிவங்களின் மிக நுண்ணிய இறுதி வடிவம்; அதை மேலும் பிரிக்க முடியாது. அதைக் கடக்கும் நேரமே பரமாணு காலம்.</li>
+<li>சுவாமியின் உவமை: புத்தகத்தின் ஒவ்வொரு எழுத்தும் (அக்ஷரம் — மேலும் உடைக்கமுடியாதது) ஒரு பரமாணு; எழுத்துகள் சேர்ந்து தகவல் ஆவதுபோல் பரமாணுக்கள் சேர்ந்து முழு பிரபஞ்சம். பரமாணு = 'the fundamental bit of information'.</li>
+</ul>
+<h2>6. படைப்பு ஏன் அஜ்ஞானத்திலிருந்து தொடங்க வேண்டும்?</h2>
+<ul>
+<li>பிரம்மா 'நானும் நாராயணனும் வேறல்ல' என்று அறிந்தார் — நாராயணன் ஞான ஸ்வரூபம், தாம் சிருஷ்டிச் சக்தியோடு கூடியவர்.</li>
+<li>ஞானம் ஞானத்தைப் படைத்தால் அது படைப்பே அல்ல: ஒரே காபியை இரண்டு டம்ளர்களில் ஊற்றினால் புதுக் காபி என்று சொல்ல மாட்டோம். உணர்வுரூபமான பிரம்மம் படைப்பது 'உணரப்படுவதாக'த்தான் இருக்க வேண்டும் — அதனால் அஜ்ஞானம்.</li>
+<li>முதலில் பிறந்த சனகாதிகள் தம்மைப் போலவே ஞானிகள்; பிரவிருத்தியில் இறங்கவில்லை. வித்யாதரர், யக்ஷர், கந்தர்வர், அப்ஸரஸ், ருத்ரர் எனப் பலரைப் படைத்தும் திருப்தியில்லை. எதிரும் புதிருமான (ஆண்-பெண்) கூட்டணியால்தான் சிருஷ்டி என்று உணர்ந்து ஸ்வாயம்புவ மனுவைப் படைத்தார்.</li>
+<li>பாகவதம் சொல்வது உபநிஷத் உண்மையைத்தான்; எளிதாகப் புரிய கதை வடிவில். 'கற்பனை கலந்த உண்மை; இதில் பொய் இல்லை' என்றார் சுவாமி.</li>
+</ul>
+<h2>7. அஜ்ஞானத்தின் ஐந்து விருத்திகள் = ஐந்து பயங்கள்</h2>
+<p>ஜீவத்துவம் தர வேண்டுமானால் முதலில் பயம் தர வேண்டும்; பயமில்லாவிட்டால் உயிர் கல்லாகவே இருந்துவிடும். பாகவதம் சொல்லும் ஐந்து விருத்திகளுக்கு சுவாமியின் விளக்கம் (முந்தைய வகுப்பின் தொடர்ச்சி):</p>
+<table>
+<thead>
+<tr>
+<th>விருத்தி</th>
+<th>பயம்</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>தமஸ் / மாயை</td>
+<td>உடல் மீதான பயம் — உடலைக் காப்பாற்ற வேண்டும்</td>
+</tr>
+<tr>
+<td>தாமிஸ்ரம்</td>
+<td>பேத உணர்வு — இன்னொரு உடல் (ஆண்/பெண், மிருகம்/மனிதன்) என்னைத் துன்புறுத்துமோ</td>
+</tr>
+<tr>
+<td>அந்ததாமிஸ்ரம்</td>
+<td>கால பயம் — பிறந்ததிலிருந்தே கவுண்ட்டவுன்; இந்த உடல் எப்போது அழியுமோ</td>
+</tr>
+<tr>
+<td>மோகம்</td>
+<td>இந்த உடலே உயர்ந்தது என்ற பற்று; உடல்சுகத் தேடல்</td>
+</tr>
+<tr>
+<td>மகாமோகம்</td>
+<td>உள்ளத்தை இன்பமாக வைத்துக்கொள்ள வேண்டும் என்ற பயம்</td>
+</tr>
+</tbody>
+</table>
+<h3>ராக-பய-க்ரோதம்; அகங்காரம் → அகம்</h3>
+<ul>
+<li>பயம் என்ற பள்ளத்தை நிரப்ப ராகமும் (வழி தேடல்), கிடைக்காதபோது க்ரோதமும் மேடுகளாக எழுகின்றன; மேடு எழ எழ பயம் அதிகரிக்கிறது. ராக-பய-க்ரோதம் இல்லாதவனே ஞானி என்று கீதை சொல்கிறது.</li>
+<li>சுவாமியின் சொல்லாடல்: 'அகங்காரம்' என்பதில் 'காரம்' = ராக-பய-க்ரோதம். அதை நீக்கினால் எஞ்சுவது 'அகம்' — அதுவே ஆத்மா, பரமாத்மா.</li>
+<li>எனவே பரமாத்ம ஸ்வரூபத்தை அடைவது என்றால் முதலில் பயத்தை விடுவது. ஞானம் வந்ததும் அத்தனை பயமும் நீங்கி அபயம் — இதனால்தான் அஜ்ஞானம் 'ஜ்ஞானவிரோதி'.</li>
+</ul>
+<h2>8. சமஷ்டி, வ்யஷ்டி (பகுதி 35)</h2>
+<p><strong>வேதாந்த ஸார வாக்கியம்:</strong> இதமஜ்ஞானம் ஸமஷ்டிவ்யஷ்ட்யபிப்ராயேண ஏகமனேகமிதி ச வ்யவஹ்ரியதே — இந்த அஜ்ஞானம் மொத்தமாகப் பார்த்தால் (சமஷ்டி) ஒன்று, தனித்தனியாகப் பார்த்தால் (வ்யஷ்டி) பல என்று வழங்கப்படுகிறது.</p>
+<ul>
+<li>ஞானம் ஒரே சொல்லில் முடியும்; ஆனால் அஜ்ஞானத்தின் ஆயிரம் சுற்றுகளை நீக்க அதன் தன்மையை அறிய வேண்டும். இதுவே அத்யாரோபம்; அஜ்ஞானம் ஒன்றுமே இல்லை என்று தெரிந்தால் அபவாதம்.</li>
+<li><strong>தூக்க உவமை:</strong> ஒரு கூடத்தில் 20 மனிதர்களும் நாய், பூனை, பாம்பும் தூங்குகின்றன. வெளியிலிருந்து பார்ப்பவனுக்கு பல தூக்கங்கள்; தூக்கத்தின் தன்மையில் பாம்பின், நரியின், மனிதனின் தூக்கத்திற்கு வேறுபாடில்லை — ஒன்றே.</li>
+</ul>
+<p><strong>அடுத்த வகுப்பில்:</strong> சமஷ்டி அஜ்ஞானம் (ஒரே தூக்கம்) மூலம் ஈஸ்வரன், வ்யஷ்டி அஜ்ஞானம் (பல தூக்கங்கள்) மூலம் ஜீவன் என்ற விளக்கம்; அதற்கு ஹோலோகிராம் மாதிரியைத் தொடர்ந்து பயன்படுத்துவார்.</p>
+<h2>மேற்கோள்கள்</h2>
+<table>
+<thead>
+<tr>
+<th>குறிப்பு</th>
+<th>மூலம்</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>அஜ்ஞான லக்ஷணம் (பகுதி 34); சமஷ்டி-வ்யஷ்டி (பகுதி 35)</td>
+<td>ஸதானந்த யோகீந்திரரின் வேதாந்த ஸாரம் (சுவாமி கூறிய எண்ணிடல்)</td>
+</tr>
+<tr>
+<td>தேவாத்மசக்திம் ஸ்வகுணைர்நிகூடாம்</td>
+<td>ச்வேதாச்வதர உபநிஷத் 1.3</td>
+</tr>
+<tr>
+<td>வீதராகபயக்ரோத: (ஞானியின் இலக்கணம்)</td>
+<td>பகவத் கீதை 2.56</td>
+</tr>
+<tr>
+<td>அஜ்ஞானத்தின் ஐந்து விருத்திகள்; சனகாதிகள்; ஸ்வாயம்புவ மனு</td>
+<td>ஸ்ரீமத் பாகவதம் 3.12. ஐந்து விருத்திகளுக்கான 'பய' விளக்கம் சுவாமியின் சொந்த விளக்கம்</td>
+</tr>
+<tr>
+<td>பரமாணு, பரமாணு காலம் (மைத்ரேயர்-விதுரர்)</td>
+<td>ஸ்ரீமத் பாகவதம் 3.11.1–4</td>
+</tr>
+<tr>
+<td>பாற்கடல் கடைதல்</td>
+<td>ஸ்ரீமத் பாகவதம், ஸ்கந்தம் 8</td>
+</tr>
+<tr>
+<td>ஹோலோகிராபி</td>
+<td>டெனிஸ் காபோர் கண்டுபிடித்தது (1947; நோபல் 1971). ஒவ்வொரு துண்டிலும் முழுப் பிம்பம், தெளிவு குறைவு — இது ஹோலோகிராமின் அறியப்பட்ட இயல்பு</td>
+</tr>
+<tr>
+<td>பிளாங்க் நீளம், பிளாங்க் நேரம்</td>
+<td>சுமார் 1.6×10⁻³⁵ மீ, 5.4×10⁻⁴⁴ வினாடி. (வகுப்பில் சுவாமி சொன்ன எண்கள் இவறிலிருந்து சற்று வேறுபடுகின்றன.)</td>
+</tr>
+<tr>
+<td>இயங்கியல் (dialectics)</td>
+<td>ஹெகலின் இயங்கியல்; மார்க்ஸ்-எங்கெல்ஸின் இயங்கியல் பொருள்முதல்வாதம் (dialectical materialism)</td>
+</tr>
+<tr>
+<td>அனுயோகி-ப்ரதியோகி</td>
+<td>நியாய சாஸ்திர சொற்கள்; முந்தைய வகுப்பின் குறிப்பைப் பார்க்க</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p><em>இக்குறிப்புகள் YouTube தானியங்கித் தமிழ் வசனங்களிலிருந்து தயாரிக்கப்பட்டவை; சமஸ்கிருத சொற்களின் எழுத்துக்களில் சிறு மாறுபாடுகள் இருக்கலாம்.</em></p>
+<p>காணொளி: <a href="https://www.youtube.com/watch?v=qXrUg0d8d78">12 வேதாந்த ஸாரம் – சுவாமி சங்கரானந்தா (10-11-2026)</a></p>
+</section>
+
+<section class="vs-note vs-hidden" id="vs13" aria-hidden="true">
+<p class="vs-video"><a href="https://www.youtube.com/watch?v=dLQEHr79SEI" target="_blank" rel="noopener">▶ இந்த வகுப்பை YouTube-ல் காண</a></p>
+<p>இந்த வகுப்பில் அஜ்ஞானத்தை 'மறைக்கப்பட்ட அறிவுணர்வு' என்றும் 'உபாதி' என்றும் விளக்கி, சமஷ்டி-வ்யஷ்டி அஜ்ஞானம் (பகுதிகள் 35–37) மற்றும் சமஷ்டி உபாதியுடன் கூடிய ஈஸ்வரன் (பகுதி 38) விளக்கப்பட்டன.</p>
+<h2>1. அவித்யை: மறைக்கப்பட்ட அறிவுணர்வு</h2>
+<ul>
+<li>வஸ்து ஒன்றே இருக்கிறது. ஞானம் வரும் வரை வஸ்து-அவஸ்து என இரண்டு இருப்பதாகச் சொல்வது அத்யாரோபம்; விசாரித்து அவஸ்து இல்லை என்று அறிவது அபவாதம். அந்த வஸ்துவே 'நான்' என்ற உணர்வு.</li>
+<li><strong>அவித்யை</strong> = வித்தை (அறிவு) வந்தால் நாசமாவது. 'அறிவின்மை' என்றால் நியாயப்படி முற்றின்மை ஆகிவிடும்; அதனால்தான் பாவரூபம் என்று சொல்கிறோம்.</li>
+<li><strong>ஆழ்ந்த உறக்கம்:</strong> நான் இருந்தேன், ஆனால் அறிவதற்கு இரண்டாவது ஒன்றுமில்லை — நிர்விஷய ஞானமாத்ரம். அறிவு இல்லாமல் போகவில்லை, <strong>மறைக்கப்பட்டிருக்கிறது</strong> — இதுவே அஜ்ஞானம்.</li>
+<li>மூர்ச்சை, சமாதி, இன்று மயக்க மருந்து, தூக்க மாத்திரை — இவற்றிலும் இந்த மறைப்பை அனுபவிக்கிறோம். (சங்கரர் காலத்தில் உறக்கம், மூர்ச்சை, சமாதி மட்டுமே அறியப்பட்டன என்றார் சுவாமி.)</li>
+</ul>
+<h3>அஜ்ஞானம் ஒரு பொருளா?</h3>
+<ul>
+<li>ரத்தினத்தை மறைக்க வஸ்திரம், அகல் விளக்கை மறைக்கப் பானை — மறைப்பது மறைக்கப்படுவதைவிடப் பெரிதாக இருக்க வேண்டும். அஜ்ஞானம் ஒரு வஸ்து என்றால் இரண்டு நித்ய வஸ்துக்கள் ஆகிவிடும்; ஞானத்தைவிடப் பெரிய ஒன்று இறைவனை மறைத்தது போலாகும்.</li>
+<li>எனவே அது அனுபவத்தில் இருக்கிறது, விசாரித்தால் இல்லை — 'அனிர்வசனீயம்' என்ற பெட்டியில் வைக்கிறோம்.</li>
+<li><strong>பிறந்த குழந்தை:</strong> அறிவுணர்வு உண்டு, ஆனால் எதையும் அறியவில்லை. முழு அறிவுடன் இருந்தால் அது ஏன் பிறக்க வேண்டும்? பிறவாத ஒன்று சரீரத்துக்குள் வந்ததற்குக் காரணம் அஜ்ஞானம்.</li>
+</ul>
+<h2>2. உபாதி: ஸ்படிகமும் ஆரஞ்சு துணியும்</h2>
+<ul>
+<li>தெளிவான ஸ்படிகத்தின் அருகில் ஆரஞ்சுத் துணி வைத்தால் அது ஆரஞ்சு நிறமாகத் தெரிகிறது; எடுத்தால் மீண்டும் நிறமற்றது. நிறம் தெரியும்போதும் அது நிறமற்றதே என்ற தெளிவே விவேகம்.</li>
+<li>அதுபோல் ஆத்மா ஒரு உபாதியால் மறைக்கப்பட்டது போல் தோன்றுகிறது; அதனால் அறிவையும் உணர்வையும் வெளிப்படுத்த, வளர்க்க, பெருக்க எல்லா ஜீவர்களும் தேடிக்கொண்டே இருக்கின்றன — சாவியைத் தொலைத்தவன் தேடுவது போல.</li>
+<li>ஸ்படிகத்தின் துணியைக் கையால் எடுக்கலாம்; அறிவின் மீதுள்ள உபாதி அறியாமை; அதை அறிவால்தான் நீக்க முடியும்.</li>
+</ul>
+<h3>வீடும் வீட்டுக்குச் செல்லும் வழியும்</h3>
+<p>கண்ணைக் கட்டி வீட்டில் விட்டால், வெளியே வந்தால் மீண்டும் வழி தெரியாது. குரு வீட்டையும் (ஞானத்தை) வழியையும் (அத்யாரோப-அபவாதம்) காட்டுகிறார் — ஞானம் நழுவினால் மீண்டும் பிடிக்கவும், மற்றவருக்குக் காட்டவும்.</p>
+<h3>சிறுமையும் பெருமையும்</h3>
+<ul>
+<li>அளவற்ற அறிவுணர்வு சரீரத்துக்குள் அடங்கியதாக உணர்வதே <strong>சிறுமை</strong> (ஜீவத்துவம்). குழந்தை 'நான் இரண்டடி, அப்பா ஆறடி' என்கிறது. இந்தச் சிறுமையைப் பெருமைப்படுத்திக்கொள்ளும் போராட்டமே சம்சாரம்.</li>
+<li>உண்மையான <strong>பெருமை</strong> = பிரம்மம் (மிகப் பெரியது, பூமா). 'சுவகுணைர்நிகூடாம்' — தன் குணத்தாலேயே மறைவு: அந்தக் குணம் 'நான் சிறியவன், உடலுக்குள் அடங்கியவன், புலன்களால் மட்டும் அறியும்வன்' என்ற எண்ணம்.</li>
+<li>உடல், அந்தக்கரணம், இந்திரியங்கள் உபாதிகள்; அவற்றின் அருகில் இருப்பதால் அளவற்ற நீ அளவுள்ளவனாகத் தோன்றுகிறாய் — ஸ்படிகம் நிறம் உடையது போல் தெரிவது போல.</li>
+</ul>
+<h2>3. சமஷ்டி, வ்யஷ்டி: மொத்தமும் சில்லறையும் (பகுதிகள் 35–36)</h2>
+<p>வேறுபாடு பொருளில் இல்லை, பார்க்கும் அபிப்ராயத்தில் மட்டுமே.</p>
+<table>
+<thead>
+<tr>
+<th>உதாரணம்</th>
+<th>வ்யஷ்டி (சில்லறை)</th>
+<th>சமஷ்டி (மொத்தம்)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>சுவாமியின் உதாரணம்</td>
+<td>சில புளியங்கொட்டைகள்</td>
+<td>புளியங்கொட்டை மூட்டை</td>
+</tr>
+<tr>
+<td>வேதாந்த ஸாரம்</td>
+<td>வ்ருக்ஷம் (மரம்)</td>
+<td>வனம் (காடு)</td>
+</tr>
+<tr>
+<td>வேதாந்த ஸாரம்</td>
+<td>ஜலம் (நீர்த்துளி)</td>
+<td>ஜலாசயம் (குளம், ஏரி)</td>
+</tr>
+<tr>
+<td>அஜ்ஞானம்</td>
+<td>தனித்தனி ஜீவரின் அஜ்ஞானம் → <strong>ஜீவன்</strong></td>
+<td>ஒட்டுமொத்த அஜ்ஞானம் → <strong>ஈஸ்வரன்</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>தூக்க உதாரணம்:</strong> ஒரு அறையில் 100 பேர் தூங்குகிறார்கள். 'எல்லோரும் தூங்குகிறார்கள்' — மொத்தமாக; 'தேவதத்தன் தூங்குகிறான்' — தனியாக.</li>
+<li>சுவாமி: ஒரே சைதன்யம், மொத்த அஜ்ஞானத்தோடு இறைவன், தனி அஜ்ஞானத்தோடு ஜீவன் — இது வேதாந்த ஸாரத்தின் சாதுரியமான கற்பித்தல் முறை.</li>
+</ul>
+<h3>ச்ருதி பிரமாணங்கள்</h3>
+<ul>
+<li><strong>ஒன்றாக — 'அஜாமேகாம் லோஹிதசுக்லக்ருஷ்ணாம்' (ச்வேதாச்வதரம்):</strong> சிவப்பு, வெள்ளை, கருப்பு நிறமுள்ள ஒரு 'அஜா' (பெண் ஆடு / பிறவாதது) — மூன்று நிறங்கள் = ரஜஸ், ஸத்துவம், தமஸ். ஒரு ஆண் ஆடு அதனுடன் கூடி குட்டிகளைப் பெறுகிறது (ஜீவன், பிறப்பு-இறப்பு); மற்றொன்று அதை அனுபவித்துவிட்டு துறக்கிறது (ஞானி).</li>
+<li><strong>'த்வா ஸுபர்ணா' (முண்டகம், ச்வேதாச்வதரம்):</strong> இரண்டு பறவைகள் — ஒன்று பழம் தின்னுகிறது, மற்றது தின்னாமல் பார்த்துக்கொண்டு பிரகாசிக்கிறது.</li>
+<li><strong>பலவாக — 'இந்த்ரோ மாயாபி: புருரூப ஈயதே' (ரிக் வேதம்):</strong> இந்திரன் (ஆத்மா) மாயையால் பல உருவங்களாகத் தோன்றுகிறான். ('இதம்-த்ர' → 'இந்த்ர' என்ற சொல்லாடலையும் சுவாமி குறிப்பிட்டார்.)</li>
+</ul>
+<h2>4. சமஷ்டி அஜ்ஞானம் = உத்க்ருஷ்ட உபாதி (பகுதி 37)</h2>
+<p><strong>வேதாந்த ஸார வாக்கியம்:</strong> இயம் ஸமஷ்டிருத்க்ருஷ்டோபாதிதயா விசுத்தஸத்த்வப்ரதானா — இந்த மொத்த அஜ்ஞானம் மேலான உபாதியாக, தூய ஸத்துவம் மேலோங்கியதாக உள்ளது.</p>
+<ul>
+<li><strong>அவ்யக்தம்:</strong> சிருஷ்டிக்கு முன் ஜகத்து வெளிப்படாமல் மறைந்திருந்தது. சிருஷ்டி = மீட்டுருவாக்கம் (லயத்தில் கலைந்ததை மீண்டும் ஒன்றுசேர்ப்பது) — எனவே 'முன்பே இருந்தது' (அக்ர ஆஸீத்).</li>
+<li>அந்த அஜ்ஞானம் பிரம்மத்தில் எப்படி? அது அஜம் (பிறவாதது) — யாரும் படைக்கவில்லை; எப்போது வந்தது என்று சொல்ல முடியாது, போனது மட்டுமே தெரியும். 'கேட்கும் உனக்காகவே அவர் வைத்திருக்கிறார்; நீ கேட்பதை நிறுத்தினால் அது இல்லை என்று நீயே சொல்வாய்' என்றார் சுவாமி.</li>
+<li>சமஷ்டி அஜ்ஞானம் இறைவனின் வசத்தில் உள்ளது; அதன் வசத்தில் இறைவன் இல்லை. அது அவரைச் சிறுமைப்படுத்தாமல் பெருமைப்படுத்துகிறது — 'என் யோகத்தைப் பார்' என்று கண்ணன் அர்ஜுனனிடம் பெருமையாகச் சொல்வதுபோல். நமக்கு அஜ்ஞானம் அவருக்குச் சர்வஜ்ஞத்துவம்.</li>
+</ul>
+<h3>அஜ்ஞானத்தின் இரண்டு சக்திகள் (முன்னோட்டம்)</h3>
+<table>
+<thead>
+<tr>
+<th>சக்தி</th>
+<th>செயல்</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ஆவரணம்</td>
+<td>உன்னை உன்னிடம் மறைத்துச் சிறுமைப்படுத்துவது</td>
+</tr>
+<tr>
+<td>விக்ஷேபம்</td>
+<td>சிறுமையைப் பெருமைப்படுத்திக்கொள்ள உலகில் ஓடவைப்பது — முதலாளி, தொழிலாளி, கல்யாணம் எங்கும் இந்தப் போட்டியே சம்சாரம்</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>ஈஸ்வரனுக்கு சமஷ்டி அஜ்ஞானம் விக்ஷேபத்தை (சிருஷ்டியை) மட்டுமே தருகிறது, ஆவரணத்தை அல்ல. 'நானே சிறுமைப்பட்டு நானே பெருமைப்படுவேன்; இரண்டையும் அறிபவனும் நானே' — இதுவே இறைவனின் விளையாட்டு, ஞானியின் வாழ்க்கையும் இதுவே.</li>
+</ul>
+<h2>5. உத்க்ருஷ்டம், நிக்ருஷ்டம்: காவல்துறை உதாரணம்</h2>
+<ul>
+<li>ஒரு அமைச்சரைச் சுற்றியும் காவலர்கள்; ஒரு குற்றவாளியைச் சுற்றியும் காவலர்கள். அமைச்சருக்கு அது பெருமை (உத்க்ருஷ்ட உபாதி); குற்றவாளிக்கு அது கட்டு (நிக்ருஷ்ட உபாதி).</li>
+<li>அதுபோல அதே அஜ்ஞானம் ஈஸ்வரனுக்கு அவர் ஆளும் கருவி; ஜீவனுக்கு அவனைக் கட்டும் கயிறு. வேறுபாடு அஜ்ஞானத்தில் இல்லை, அதன் மீது யாருக்கு ஆட்சி என்பதில்தான்.</li>
+</ul>
+<h2>6. ஈச்வரனின் லக்ஷணங்கள் (பகுதி 38)</h2>
+<p><strong>வேதாந்த ஸார வாக்கியம்:</strong> ஏதது உபஹிதம் சைதன்யம் ஸர்வஜ்ஞத்வ-ஸர்வேச்வரத்வ-ஸர்வநியந்த்ருத்வாதி குணகம் அவ்யக்தம் அந்தர்யாமீ ஜகத்காரணம் ஈச்வர இதி ச வ்யபதிச்யதே.</p>
+<table>
+<thead>
+<tr>
+<th>சொல்</th>
+<th>பொருள்</th>
+<th>சுவாமியின் விளக்கம்</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ஸர்வஜ்ஞத்வம்</td>
+<td>அனைத்தையும் அறிவது</td>
+<td>கருவில் குழந்தை எப்படி வளர்கிறது என்று தாய்க்குத் தெரியாது; ஆனால் அது சரியாக வளர்கிறது — அதை அறிந்து நடத்தும் அறிவே இறைவன்.</td>
+</tr>
+<tr>
+<td>ஸர்வேச்வரத்வம்</td>
+<td>அனைத்துக்கும் தலைவன்</td>
+<td>எல்லாம் அவர் ஆட்சிக்கு உட்பட்டது.</td>
+</tr>
+<tr>
+<td>ஸர்வநியந்த்ருத்வம்</td>
+<td>அனைத்தையும் கட்டுப்படுத்துபவர்</td>
+<td>நெருப்பு சுடுகிறது, பனி குளிர்கிறது, தங்கம் தங்கமாகவும் வெள்ளி வெள்ளியாகவும் இருக்கிறது — ஒவ்வொன்றும் தன் எல்லையை (மரியாதை) மீறுவதில்லை. அந்த ஒழுங்கே நியந்தா.</td>
+</tr>
+<tr>
+<td>அவ்யக்தம்</td>
+<td>புலன்களுக்கு வெளிப்படாதவர்</td>
+<td>கீழே காண்க.</td>
+</tr>
+<tr>
+<td>அந்தர்யாமீ</td>
+<td>உள்ளிருந்து இயக்குபவர்</td>
+<td>பானை உருவான பின்னும் மண் அதை விட்டுப் போவதில்லை; அதுபோல படைத்த பின்னும் இறைவன் படைப்பின் உள்ளேயே இருக்கிறார்.</td>
+</tr>
+<tr>
+<td>ஜகத்காரணம்</td>
+<td>உலகின் காரணம்</td>
+<td>படைப்பு, காப்பு, லயம் மூன்றுக்கும் அவரே காரணம்.</td>
+</tr>
+</tbody>
+</table>
+<h3>அவ்யக்தம்: கண்டும் காணாதது</h3>
+<ul>
+<li><strong>யசோதை (பாகவதம்):</strong> கண்ணனின் வாயில் முழு பிரபஞ்சத்தையும் கண்டாள்; ஆனால் அடுத்த கணமே மாயையால் அதை மறந்து, மீண்டும் தாயாகவே பார்த்தாள்.</li>
+<li><strong>அர்ஜுனன் (கீதை 11):</strong> விச்வரூபத்தைக் கண்டு பயந்து, பழைய உருவத்தைக் காட்டும்படி வேண்டினான்.</li>
+<li><strong>க்ரிப்டோ நாணயம்:</strong> கையில் தொட முடியாது, கண்ணால் பார்க்க முடியாது; ஆனால் அதன் மதிப்பும் இயக்கமும் உண்மை — வெளிப்படாதது என்றால் இல்லாதது அல்ல.</li>
+</ul>
+<h3>சுருதி பிரமாணம்</h3>
+<ul>
+<li><strong>'ய: ஸர்வஜ்ஞ: ஸர்வவித்' (முண்டகம்):</strong> எவர் அனைத்தையும் பொதுவாகவும் விவரமாகவும் அறிகிறாரோ, அவருடைய தவம் ஞானமயமானது; அவரிடமிருந்தே பெயர், உருவம், உணவு அனைத்தும் தோன்றுகின்றன.</li>
+</ul>
+<h2>7. அடுத்த வகுப்பு</h2>
+<p>ஈச்வரனின் உபாதியாக உள்ள இந்த அஜ்ஞானம் ஏன் 'சுத்த ஸத்த்வம்' எனப்படுகிறது என்பதை அடுத்த வகுப்பில் விரிவாகப் பார்க்கலாம் என்று சுவாமி கூறி முடித்தார்.</p>
+<h2>குறிப்புகள் (References)</h2>
+<table>
+<thead>
+<tr>
+<th>சுவாமி குறிப்பிட்டது</th>
+<th>மூலம்</th>
+<th>குறிப்பு</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>அவித்யை, சமஷ்டி/வ்யஷ்டி, உத்க்ருஷ்ட உபாதி, ஈச்வர லக்ஷணம்</td>
+<td>வேதாந்த ஸாரம் (ஸதானந்த யோகீந்த்ரர்), பகுதிகள் 35–38</td>
+<td>பகுதி எண்கள் பதிப்புக்குப் பதிப்பு சற்று மாறலாம்.</td>
+</tr>
+<tr>
+<td>'அஜாமேகாம் லோஹிதசுக்லக்ருஷ்ணாம்' — மூன்று நிற ஆடு, இரு ஆண் ஆடுகள்</td>
+<td>ச்வேதாச்வதர உபநிஷத் 4.5</td>
+<td>—</td>
+</tr>
+<tr>
+<td>அஜ்ஞானம் / மாயை இறைவனின் சக்தியாக (தேவாத்மசக்தி)</td>
+<td>ச்வேதாச்வதர உபநிஷத் 1.3</td>
+<td>—</td>
+</tr>
+<tr>
+<td>'த்வா ஸுபர்ணா ஸயுஜா ஸகாயா' — இரு பறவைகள்</td>
+<td>முண்டக உபநிஷத் 3.1.1; ச்வேதாச்வதர 4.6; ரிக் வேதம் 1.164.20</td>
+<td>மூலத்தில் 'ஸுபர்ணா' என்பது அழகிய சிறகுடைய பறவைகள் என்பது மட்டுமே; புறா என்று குறிப்பிடப்படவில்லை.</td>
+</tr>
+<tr>
+<td>'இந்த்ரோ மாயாபி: புருரூப ஈயதே'</td>
+<td>ரிக் வேதம் 6.47.18; பிருஹதாரண்யக உபநிஷத் 2.5.19-ல் மேற்கோள்</td>
+<td>'இதம்-த்ர → இந்த்ர' சொல்லாடல் ஐதரேய உபநிஷத் 1.3.14-ல் உள்ளது.</td>
+</tr>
+<tr>
+<td>'பச்ய மே யோகமைச்வரம்'</td>
+<td>பகவத் கீதை 9.5 (மேலும் 11.8)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>விச்வரூப தரிசனம், பழைய உருவம் காட்ட வேண்டுதல்</td>
+<td>பகவத் கீதை அத்தியாயம் 11 (11.45–46)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>யசோதை கண்ணன் வாயில் பிரபஞ்சம் காண்பது</td>
+<td>ஸ்ரீமத் பாகவதம் 10.8</td>
+<td>—</td>
+</tr>
+<tr>
+<td>'ய: ஸர்வஜ்ஞ: ஸர்வவித் யஸ்ய ஜ்ஞானமயம் தப:'</td>
+<td>முண்டக உபநிஷத் 1.1.9</td>
+<td>—</td>
+</tr>
+<tr>
+<td>அந்தர்யாமீ</td>
+<td>பிருஹதாரண்யக உபநிஷத் 3.7 (அந்தர்யாமி ப்ராஹ்மணம்)</td>
+<td>சுவாமி நேரடியாகக் குறிப்பிடவில்லை; சொல்லின் மூலத்துக்காக மட்டும்.</td>
+</tr>
+</tbody>
+</table>
+<p><em>இந்தக் குறிப்புகள் YouTube தானியங்கி வசனங்களின் (auto-captions) அடிப்படையில் தொகுக்கப்பட்டவை; சம்ஸ்கிருத மேற்கோள்கள் மூலத்துடன் ஒப்பிட்டுச் சரிசெய்யப்பட்டன.</em></p>
+<p>காணொளி: <a href="https://www.youtube.com/watch?v=dLQEHr79SEI">13 வேதாந்த ஸாரம் | சுவாமி சங்கரானந்தா | அஞ்ஞான விசாரம்</a></p>
+</section>
+
+<section class="vs-note vs-hidden" id="vs14" aria-hidden="true">
+<p class="vs-video"><a href="https://www.youtube.com/watch?v=KFD9A09IBoc" target="_blank" rel="noopener">▶ இந்த வகுப்பை YouTube-ல் காண</a></p>
+<p>இந்த வகுப்பில் வேதாந்த ஸாரத்துக்குள் நுழையும் முன் சுவாமி மூன்று அடிப்படைத் தலைப்புகளை விளக்கினார்: (1) அஞ்ஞானம் என்றால் உண்மையில் என்ன, (2) தகவல்–வடிவம் (நாம–ரூபம்), (3) எண்ணங்களே தன்னை மறைக்கும் அஞ்ஞானம். 'இந்த மூன்றையும் தெளிவாகப் புரிந்துகொண்டால் ஒட்டுமொத்த வேதாந்தமும் எளிதாகும்' என்றார்.</p>
+<h2>1. முந்தைய வகுப்பின் நினைவூட்டல்: மொத்தமும் சில்லறையும்</h2>
+<ul>
+<li>நூறு ரூபாய் நோட்டாகக் கொடுத்தாலும், பத்தாயிரம் பைசாக்களாக மூட்டை கட்டிக் கொடுத்தாலும் மதிப்பு ஒன்றுதான். மொத்தம்/சில்லறை என்பது பார்க்கும் கோணம் (அபிப்பிராய பேதம்) மட்டுமே.</li>
+<li>அஞ்ஞானமும் ஒன்றுதான்: மொத்தமாகப் பார்த்தால் <strong>ஈஸ்வரன்</strong>, சில்லறையாகப் பார்த்தால் <strong>ஜீவன்</strong> — வனம்/மரம், தடாகம்/நீர்த்துளி போல.</li>
+</ul>
+<h2>2. அஞ்ஞானம்: 'இன்மை' அல்ல, 'மறைப்பு'</h2>
+<p>அஞ்ஞானம் = அறிவின்மை, அவித்யா = வித்யை இன்மை என்பது நேரடி மொழிபெயர்ப்பு. ஆனால் 'இன்மை' என்பதைச் சரியாகப் புரிந்துகொள்ள வேண்டும். அது கல்லைப் போல அறிவும் உணர்வும் அற்ற நிலை அல்ல; <strong>அறிவுணர்வுடைய ஒன்றிடம் இருக்கும் மறைப்பு</strong>.</p>
+<h3>கருந்துளை உதாரணம்: முற்றும் இன்மை யாரையும் துன்புறுத்துவதில்லை</h3>
+<ul>
+<li>நட்சத்திரங்களின் முடிவை ஆராய்ந்த தமிழகத்தைச் சேர்ந்த நோபல் விஞ்ஞானி (சந்திரசேகர்) இரு வகை மரணங்களைக் கணித்தார்: ஒன்று நீண்ட காலம் நீடிக்கும் நியூட்ரான் நட்சத்திரம்; மற்றொன்று 'உளதா இலதா' என்று சொல்ல முடியாத கருந்துளை (பிளாக் ஹோல்).</li>
+<li>அன்றைய வானியல் தலைவர் எடிங்டன் அதை 'பைத்தியக்காரத்தனம்' என்று மட்டம் தட்டினார். உறவினரும் நோபல் பரிசு பெற்றவருமான சர் சி.வி. ராமன், 'இது நோபலுக்குத் தகுதியானதுதான்; இப்போது அடக்கி வாசி, இந்த அறிவு வீண் போகாது' என்று ஆறுதல் சொன்னார்.</li>
+<li>சுவாமியின் கருத்து: பல ஆண்டுகள் கருந்துளை பற்றி யாருக்கும் தெரியாது; அதனால் யாருடைய வாழ்க்கையும் கெடவில்லை. இன்றும் கிராமத்தானுக்கு அது பற்றிக் கவலை இல்லை — அந்த விஷயத்தில் அவனுக்கு முற்றும் இன்மை. ஆனால் அவன் அறிவற்றவன் அல்ல; அந்தக் குறிப்பிட்ட அறிவு மட்டும் அவனிடம் இல்லை. 'Ignorance is bliss.'</li>
+<li>இடைக்குறிப்பு: 80களில் 25 ஆண்டுகள் தொடர்ந்து அறிவியல் கட்டுரைகள் எழுதியபோது 'கருந்துளை' என்ற தமிழ்ச் சொல்லை உருவாக்க வேண்டி வந்தது; இன்றைய தமிழ் அறிவியல் கலைச்சொற்கள் பல 'கலைக்கதிர்' இதழிலிருந்து வந்தவை என்று சுவாமி குறிப்பிட்டார்.</li>
+</ul>
+<h3>உண்மைக்கு இரண்டு எதிர்பதங்கள்</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>பொருள்</th>
+<th>விளைவு</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>உண்மை (அனுயோகி)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>இன்மை = ஞான அபாவம் / ரஸ அபாவம்</td>
+<td>அறிவும் உணர்வும் முற்றிலும் இல்லாமை (கல்)</td>
+<td>யாருக்கும் கஷ்டம் இல்லை</td>
+</tr>
+<tr>
+<td>பொய் = ஞான ஆபாஸம் / ரஸாபாஸம்</td>
+<td>தவறான அறிவு, தவறான உணர்வு</td>
+<td>எல்லாப் பிரச்சனைகளுக்கும் காரணம்</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>'அனுயோகி / பிரதியோகி' (தர்க்க சாஸ்திரச் சொற்கள்) — பின்னால் மித்யை பற்றிப் பேசும்போது அடிக்கடி பயன்படும்; நினைவில் வைக்கச் சொன்னார்.</li>
+<li>ஞானம் = அறிவு, ரஸம் = உணர்வு. இரண்டும் இரு பொருள்கள் அல்ல; ஒன்றின் இரு புரிதல்கள். ஞானம் மொழி சார்ந்தது, மனிதனுக்குரியது; ரஸம் மொழி தேவையற்றது, எல்லா உயிர்களுக்கும் பொது. அதனால்தான் வேதம் 'ஞானம்' என்ற சொல்லைப் பயன்படுத்துகிறது — மிருகங்களுக்கு உபநிஷத் தேவையில்லை.</li>
+<li>நவரசங்கள் (பரதநாட்டியம்) உதாரணம்; தமிழில் 'ரஸாபாஸம் ஆகிவிட்டது', 'விரசமாகப் பேசுகிறார்' என்பவை உணர்வு தவறாக வெளிப்படுவதைக் குறிக்கின்றன.</li>
+<li><strong>முடிவு:</strong> வேதாந்தம் பேசும் அஞ்ஞானம் (ஈஸ்வரன்–ஜீவனாக உள்ளது) 'இன்மை' அல்ல, 'ஆபாஸம்' — பொய். Absence of knowledge அல்ல, misunderstanding.</li>
+</ul>
+<h3>ஞான மறைப்பு திறக்கத் துடிக்கும்</h3>
+<ul>
+<li>மறைப்பு என்றால் அங்கே ஞானமும் உணர்வும் இருக்கிறது, மூடப்பட்டிருக்கிறது. மறைக்கப்பட்டது திறக்கப்பட ஆசைப்படும்.</li>
+<li><strong>மூடி வைத்த உணவு:</strong> 'புதிய, மிகச் சுவையான உணவு' என்று சொல்லி மூடி வைத்தால் மனம் முழுதும் அந்த மூடியில்தான் இருக்கும்; திறந்து சுவைத்த பிறகே ஞானம். அதுவரை இருந்தது அஞ்ஞானம்.</li>
+<li><strong>பூடகமாகச் சொல்லுதல்:</strong> 'சொல்கிறேன், சொல்கிறேன்' என்று இழுத்தால் 'என்ன நடந்தது, சொல்லுங்கள்' என்று துடிக்கிறோம். 'ஏதோ இருக்கிறது' என்று தெரிவது ஞானம் அல்ல, ஞான மறைப்பு; 'அது என்ன' என்று தெரிந்தால் ஞான விழிப்பு.</li>
+</ul>
+<h3>மைக் கறை (Rorschach inkblot) உதாரணம்</h3>
+<ul>
+<li>சுவாமி ஒரு மைக் கறைப் படத்தைக் காட்டினார். ஒருவர் 'கைகளை விரித்து மகிழும், நீண்ட சிவப்பு–நீலப் பாவாடை அணிந்த பெண்' என்றார்; மற்றொருவர் 'நீலக் கொண்டையுடைய குருவி' என்றார். சுவாமியின் நோக்கம் எதுவும் இல்லை — அது வெறும் மைக் கறை.</li>
+<li>இந்த அறிவுகள் உண்மையா, பொய்யா, இன்மையா? சங்கரர் இதை அஞ்ஞானம் / ஞான அபாவம் என்று சொல்லாமல் <strong>அத்யாஸம் (superimposition)</strong> என்கிறார் — ஒன்றின் மீது ஒன்றைச் சாற்றிப் பார்ப்பது.</li>
+</ul>
+<h3>அகவயப் பார்வையும் புறவயப் பார்வையும்</h3>
+<ul>
+<li>உள்ளதை உள்ளபடி பார்ப்பது புறவயம் (objective); உள்ளத்தின்படி பார்ப்பது அகவயம் (subjective). ஒரே பொருளைப் பத்துப் பேர் பத்து விதமாக அறிகிறார்கள்.</li>
+<li><strong>பிகாசோ ஓவியம்:</strong> ஒவ்வொருவரும் ஒவ்வொரு கற்பனையோடு பார்க்கிறார்கள்; ஓவியனுக்கு மட்டுமே objective vision. அதுபோல படைத்தவனாகிய இறைவனுக்கு மட்டுமே புறவய அறிவு.</li>
+<li>எனவே அஞ்ஞானத்தை absence of knowledge என்று அல்ல, <strong>misconceived knowledge/experience</strong> — பிழை அறிவு, மறைப்பறிவு, விபரீத அறிவு, விபரீத உணர்வு — என்று எடுத்துக்கொள்ள வேண்டும்.</li>
+</ul>
+<h2>3. மொத்த அஞ்ஞானம் → ஈஸ்வரன், சில்லறை → ஜீவன்</h2>
+<ul>
+<li>சச்சிதானந்த ஸ்வரூபமான பிரம்மம் அஞ்ஞானத்தை மொத்தமாகக் கையாளும்போது இறைவன்; அதில் ஒரு சில்லை மட்டும் எடுத்துக் கையாளும்போது ஜீவன்.</li>
+<li>அஞ்ஞானத்தில் சிறியது, பெரியது இல்லை; வேறுபாடு அதன் பாதிப்பில்தான்:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>ஈஸ்வரன் (மொத்தம்)</th>
+<th>ஜீவன் (சில்லறை)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>அறிவு</td>
+<td>பேரறிவு, முற்றறிவு</td>
+<td>சிற்றறிவு</td>
+</tr>
+<tr>
+<td>உணர்வு</td>
+<td>பேருணர்வு</td>
+<td>சிறு உணர்வு</td>
+</tr>
+<tr>
+<td>நிலை</td>
+<td>அஞ்ஞானத்தைக் கட்டி ஆள்பவன்</td>
+<td>அதனால் கட்டப்பட்டவன்</td>
+</tr>
+</tbody>
+</table>
+<p>இந்த வேறுபாடே பந்தத்திற்கும் மோட்சத்திற்கும் உள்ள உறவு என்பதை பின்னால் புரிந்துகொள்வோம்.</p>
+<ul>
+<li><strong>எச்சரிக்கை:</strong> வேதாந்தத்துக்குள் வராமல் இருப்பதில் பிரச்சனை இல்லை; ஆனால் வந்துவிட்டு விபரீத ஞானத்தைப் பெற்றால் மிக மோசம். தெளிவான ஞானம் = ஸம்யக் ஞானம்.</li>
+</ul>
+<h2>4. தகவல் (Information) → வடிவம் (Formation): நாம–ரூபம்</h2>
+<h3>விதையில் மறைந்த மரம்</h3>
+<ul>
+<li>புளியம் விதையில் புளிய மரம் மறைந்திருக்கிறது; அங்கே வேப்ப மரம் இல்லை. முளைத்த பிறகே தெரியும்.</li>
+<li>விதைக்குள் மரம் <strong>தகவல் ரூபமாக</strong> இருக்கிறது — வேர் முதல் உச்சிக் கிளை வரை, எத்தனை இலைகள், பூக்கள், பழங்கள் என்பதெல்லாம் அந்தத் தகவலில் உள்ளது.</li>
+<li>அந்தத் தகவல் அந்த மரத்துக்கு மட்டுமே சொந்தம் — கைவிரல் ரேகை, ஐரிஸ் போல (ஆதார் அட்டையில் பயன்படுவது) தனித்தன்மையான அடையாளம்.</li>
+<li>இன்பர்மேஷன் என்று ஏன் பெயர்? அதன் அடிப்படையில்தான் <strong>பார்மேஷன்</strong> (வடிவம்) உண்டாகிறது.</li>
+</ul>
+<h3>தகவல் = நாமம், வடிவம் = ரூபம்</h3>
+<ul>
+<li>தகவல் மொழி, சமிக்ஞை, கண்–கை ஜாடை என்று பல வழிகளில் பரிமாறப்படலாம்; ஆனால் உள்ளே 'விளங்குதல்' ஒன்றுதான். அதனால்தான் தமிழ், மலையாளம், தெலுங்கு என்று பல மொழிகள் இருந்தாலும் விளக்கம் ஒன்று.</li>
+<li>செய்முறை உதாரணம்: நாம் தகவல் தருகிறோம் → கட்டடக் கலைஞர் வரைகிறார் → பொறியாளர் அதை வடிவமாக்குகிறார்.</li>
+<li>தமிழில்: <strong>சொல்லும் பொருளும்</strong>; வேதத்தில்: <strong>நாத–பிந்து</strong>.</li>
+</ul>
+<h3>அக்ஷரமே அடிப்படைக் கல்</h3>
+<p>அக்ஷரம் (ஒலிக்குறி, phoneme) → பதம் (சொல்) → வாக்கியம் → மந்திரம் / பத்தி → வேதம் / காப்பியம். அக்ஷரத்துக்குக் கீழே வேறு எதுவும் இல்லை. இசையில் அடிப்படை ஸ்வரங்கள் ஸ ரி க ம ப த நி — இதுவே நாதம்.</p>
+<h3>மரத்தின் அக்ஷரங்கள்: DNA</h3>
+<table>
+<thead>
+<tr>
+<th>மொழி</th>
+<th>உயிரியல்</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>அக்ஷரம்</td>
+<td>நியூக்ளியோடைடு (அடினைன், குவானைன், சைடோசின், தைமின்)</td>
+</tr>
+<tr>
+<td>சொல்</td>
+<td>கோடான் (மூன்று அக்ஷரங்கள்)</td>
+</tr>
+<tr>
+<td>வாக்கியம் / பத்தி</td>
+<td>ஜீன்</td>
+</tr>
+<tr>
+<td>நூல்</td>
+<td>ஜீனோம்</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>வேப்பங்கொட்டையில் வேப்ப மரத்தின் ஜீனோம்; புளியங்கொட்டையில் புளிய மரத்தின் ஜீனோம். மனித ஜீனோமில் சுமார் 28,000 ஜீன்கள் என்றார் சுவாமி (குறிப்புகள் பகுதியைக் காண்க).</li>
+<li>அதே அடிப்படைப் பொருள்களே குவிந்து நான், நீ, மரம், மிருகம், தேவர் என்று ஆகின்றன. இறைவன் அக்ஷரங்களைக் கோர்த்து ஜீனோமாக்கி உலகைப் படைக்கிறார்.</li>
+<li>தமிழில் உயிரெழுத்து, மெய்யெழுத்து → உயிர்மெய் (vowels + consonants) என்றும் ஒப்பிட்டார்.</li>
+</ul>
+<h2>5. மூன்றாவது தலைப்பு: எண்ணங்களே அஞ்ஞானம்</h2>
+<h3>மனதில் 'ஆ' — கேட்டவன் யார்?</h3>
+<ul>
+<li>கண்ணை மூடி மனதுக்குள் 'ஆ' என்று சொல்லுங்கள். மற்றவர்களுக்குக் கேட்கவில்லை; உங்களுக்குக் கேட்டது. உண்டாக்கியவனும் நான், கேட்டவனும் நான்.</li>
+<li>அக்ஷரங்கள் என்னிலிருந்து தோன்றி, என்னால் விளக்கப்பட்டு, என்னிலே மறைகின்றன — சிருஷ்டி, ஸ்திதி, லயம். விளக்குவது தூய ஞானம் (ஞானரஸம்).</li>
+<li>என்னிலிருந்து தோன்றியதால் அவை எனக்கு அயலானவை அல்ல; ஆனால் என்னால் பார்க்கப்படுவதால் அவை ஜடம், திருஶ்யம்; பார்ப்பவனான நான் திருக். நான் சத்-சித்-ஸுகம்; என்னிலிருந்து தோன்றியவை நாம–ரூபங்கள்.</li>
+</ul>
+<h3>எண்ணம் தோன்றினால் தன்னை மறக்கிறோம்</h3>
+<ul>
+<li>தியானத்தில் எண்ணமில்லாதபோது நான் மட்டுமே — இரண்டற்ற தனி முதல், சுயப்பிரகாசம் (ஸ்வயம்ஜோதி, self-evident).</li>
+<li>எண்ணம் தோன்றியவுடன் நான் இரண்டாகிறேன்: எண்ணுபவன்/அறிபவன், அறியப்படும் எண்ணம். இரண்டாவதாகிய எண்ணங்கள் — உண்மையும் அல்ல, இன்மையும் அல்ல, 'பொய்'.</li>
+<li>எண்ணங்கள் திறந்தால் சத்சித்ஸுகம் மறைகிறது; சத்சித்ஸுகம் திறந்தால் எண்ணங்கள் மறைகின்றன. எண்ணங்கள் மறைந்த நிலையே <strong>துரீயம் / ஸமாதி</strong>.</li>
+<li>அனாதி காலமாக ஜீவாத்மாக்கள் தன்னை மறந்து எண்ணத்தில் திளைக்கின்றன. அளவற்ற, அழியாத, மாறாத ஸுகஸ்வரூபத்தை மறந்து, தன்னை அழிகிற, மாறுகிற துக்கரூபமாக எண்ணுவதே அஞ்ஞானம், அதுவே அத்யாஸம்; இதுவே பந்தம், பிறப்பிறப்பு, ஜீவத்துவ வாழ்க்கை.</li>
+<li>உலகம் என்னைப் பயமுறுத்துவது ஏன்? என் எண்ணங்களே உலகமாக நிற்கின்றன; அவரவர் எண்ணங்களே அவரவருக்கு உலகம். மனநல மருத்துவமனை உதாரணம்: பிளவுபட்ட மனம், பயந்த மனம், 'என்னைத் தாக்க வருகிறார்கள்' என்ற மனம், தன்னை மகாராஜா / ஞானி / கடவுள் என்று எண்ணும் மனம் — எல்லாம் எண்ணங்கள் தன்னை மறைப்பது.</li>
+</ul>
+<blockquote>
+<p><strong>வேதாந்த ஸாரத்தின் சாரம் (சுவாமி):</strong> எத்தனை கோடி எண்ணங்கள் வந்தாலும் தன்னை மறவாமல் வைத்துக்கொண்டு எண்ணங்களில் விளையாடுங்கள்.</p>
+</blockquote>
+<h3>பகுதி 34 — மீண்டும் வாசிப்பு</h3>
+<p><strong>வேதாந்த ஸார வாக்கியம்:</strong> அஜ்ஞானந்து ஸதசத்ப்யாமனிர்வசனீயம் த்ரிகுணாத்மகம் ஞானவிரோதி பாவரூபம் யத்கிஞ்சிதிதி வதன்தி, அஹமஜ்ஞ இத்யாத்யனுபவாத், 'தேவாத்மசக்திம் ஸ்வகுணைர்நிகூடாம்' இத்யாதி ஸ்ருதேஸ்ச.</p>
+<p>பொருள்: அஞ்ஞானம் என்பது சத் என்றோ அசத் என்றோ விவரிக்க இயலாத, மூன்று குணங்களுள்ள, ஞானத்துக்கு எதிரான, இருப்புள்ள (பாவரூப) ஏதோ ஒன்று. 'நான் அறியாதவன்' என்ற அனுபவத்தாலும், 'தன் குணங்களால் மறைக்கப்பட்ட தேவாத்ம சக்தி' என்ற ச்ருதியாலும் அறியப்படுகிறது.</p>
+<h2>6. பகுதி 34-ன் சொற்கள்: எண்ணங்களின் ஒளியில்</h2>
+<p>சுவாமி: உடனடியாக உங்களில் எழுகின்ற எண்ணங்களே அஞ்ஞானம். 'அஹம் ப்ரஹ்மாஸ்மி', 'அயமாத்மா ப்ரஹ்ம', 'ப்ரஜ்ஞானம் ப்ரஹ்ம' — 'நான் சத்சித்ஸுகம்' — என்ற எண்ணத்தைத் தவிர (அது உண்மையில் எண்ணமே அல்ல, ஸ்வரூபமே), நல்லது, தீயது, உயர்ந்தது, தாழ்ந்தது என அனைத்து எண்ணங்களும் தற்காலிகமாக மறைப்பவை. எனவே அஞ்ஞானம் கல் அல்ல; சாக்ஷாத் அகங்காரம், ஜீவாத்மா.</p>
+<table>
+<thead>
+<tr>
+<th>சொல்</th>
+<th>சுவாமியின் விளக்கம்</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ஸதசத்ப்யாம் அனிர்வசனீயம்</td>
+<td>எண்ணம் உளதா இலதா என்று சொல்ல முடியாது. உங்களிலிருந்தே தோன்றி உங்களால் விளக்கப்படுகிறது; நீங்கள் விளக்காவிட்டால் அதற்கு வடிவமே இல்லை. இன்பர்மேஷனை பார்மேஷனாக்குவது நீங்கள்தான்.</td>
+</tr>
+<tr>
+<td>த்ரிகுணாத்மகம்</td>
+<td><strong>ஸத்த்வம்:</strong> எண்ணம் விளக்கமாக, மகிழ்ச்சியாக இருப்பது. <strong>ரஜஸ்:</strong> எண்ணம் செயலாக — பேச்சாக, கைகால் இயக்கமாக — மாறுவது (எண்ணமின்றி செயலில்லை). <strong>தமஸ்:</strong> 'நான் இதைச் செய்யமாட்டேன், பொருட்படுத்தமாட்டேன்' என்ற தடை (brake) — அது முக்கியம்; ஆனால் அறிவையும் செயலையும் மறைத்துத் தூக்கத்திற்கும் கொண்டுபோகலாம்.</td>
+</tr>
+<tr>
+<td>ஞானவிரோதி</td>
+<td>தன்னை மறந்திருக்கும்வரைதான் எண்ணங்கள்; தன்னறிவினால் மறைந்துவிடுவதால் ஞானத்துக்கு விரோதம்.</td>
+</tr>
+<tr>
+<td>அஹமஜ்ஞ:</td>
+<td>'நான் ஒன்றும் அறியேன்' என்று ஒவ்வொருவரும் உணர்வதால் அஞ்ஞானம் 'உள்ளது' — அனுபவ பிரமாணம்.</td>
+</tr>
+<tr>
+<td>தேவாத்மசக்திம் ஸ்வகுணைர்நிகூடாம்</td>
+<td>வேப்ப மர எண்ணங்கள் (ஜீனோம்) இல்லாமல் வேப்ப மரம் படைக்கப்படாது; படைப்பவருக்கு அது தகவல். சத்சித்ஸுகமான உங்களில் எண்ணங்களைப் பிறப்பிக்கும் சக்தியே தேவாத்ம சக்தி; அது தன் குணங்களால் தன்னையே மறக்கடிக்கிறது.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>வழிகாட்டல்:</strong> எண்ணத்தை வேட்டையாடுவது, நிறைவேற்றுவது, எண்ணங்களைக் குறித்து வருந்துவது, மற்றவர் எண்ணங்கள் திணிக்கப்படுவது — இவற்றை உதாசீனம் செய்யுங்கள். 'நானே சத்சித்ஸுகம்' என்ற ஞானத்தை விடாப்பிடியாக, கெட்டியாகப் பிடித்துக்கொள்ளுங்கள்.</li>
+<li>எண்ணத்தில் மூழ்கினால் தன்னை மறக்கிறோம்; தன்னை நினைத்தால் எண்ணங்கள் தொலைந்துபோகின்றன — இதையே வேதாந்த ஸாரம் அழகாகச் சொல்கிறது.</li>
+</ul>
+<h2>7. பகுதி 35: ஜகத் ஜீனோம்</h2>
+<p><strong>வேதாந்த ஸார வாக்கியம்:</strong> இதமஜ்ஞானம் ஸமஷ்டிவ்யஷ்ட்யபிப்ராயேணைகமனேகமிதி ச வ்யவஹ்ரியதே — இந்த அஞ்ஞானம் மொத்தம்/சில்லறை என்ற அபிப்பிராயத்தால் ஒன்று என்றும் பல என்றும் வழங்கப்படுகிறது.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>மறைக்கும் தகவல்</th>
+<th>விளைவு</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ஸமஷ்டி</td>
+<td>அனைத்து உயிரினங்களின் ஜீனோம்கள் — ஒட்டுமொத்த 'ஜகத் ஜீனோம்'</td>
+<td>பிரம்மம் ஈஸ்வரனாகத் தோன்றுகிறது: பேரறிவாளன், ஸர்வசக்தி, ஸர்வவ்யாபகன், ஸர்வஜ்ஞன், ஸர்வவித்</td>
+</tr>
+<tr>
+<td>வ்யஷ்டி</td>
+<td>ஒரு ஜீனோம் — ஒரு குறிப்பிட்ட தகவல் கொத்து</td>
+<td>சிற்றறிவுடைய ஜீவன்</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>பிரம்மத்திலிருந்து பிறந்த ஜகத் எண்ணம் பிரம்மத்தை மறைத்து, அதைப் படைப்பவனாகிய இறைவனாகக் காட்டுகிறது. அவன் நல்லது–கெட்டது, தர்ம–அதர்மம், பிறப்பு–இறப்பு அனைத்தையும் கட்டி ஆளும் சாம்ராட் — 'மனத்துள் மன்னிய மன்னே' என்று பாடப்படும் மன்னன்; ஸமஷ்டி அஜ்ஞான புருஷன்.</li>
+<li>இங்குள்ள எல்லா ஜீவராசிகளும் தன்னத் ஜீனோம் என்ற தகவலால் ஸ்வரூபம் மறைக்கப்பட்டு ஜீவனாக வாழ்கின்றன. வேறுபாடு அபிப்பிராயத்தில் மட்டுமே.</li>
+<li>அஞ்ஞானம் = தன்னை மறந்த நிலை; அது செய்வதுதான் சிருஷ்டி. (மைக் கறைப் படத்தை ஆளுக்கொன்றாகப் பார்ப்பதும் அதுவே.)</li>
+<li>மனித ஜீனோம் பற்றிக் கதையாகச் சொல்லும் 'மனித ஜீனோம்' என்ற நூலையும் சுவாமி குறிப்பிட்டு, வாங்கிப் படிக்கச் சொன்னார்.</li>
+</ul>
+<blockquote>
+<p><strong>முக்தி (சுவாமியின் முடிவுரை):</strong> தகவலை மொத்தமாகப் பருகுவதா, சிறுகச் சிறுக அனுபவிப்பதா — அது அபிப்பிராயம். மொத்தமும் வேண்டாம், சில்லறையும் வேண்டாம்; சத்சித்ஸுகமாகத் தன்னில் நிலைத்திருப்பதே முக்தி.</p>
+</blockquote>
+<h2>8. அடுத்த வகுப்பு</h2>
+<p>அடுத்து ஸமஷ்டி அஜ்ஞானம் பற்றி வேதாந்த ஸாரம் பேசும். 'சொல்ல வேண்டியதெல்லாம் சொல்லியாச்சு; இனி முகவுரை குறைவு, வேதாந்த ஸாரத்தில் வேகமாக நுழைவோம்' என்று சுவாமி கூறி வகுப்பை 'பூர்ணமத: பூர்ணமிதம்' சாந்தி மந்திரத்துடன் நிறைவு செய்தார்.</p>
+<h2>குறிப்புகள் (References)</h2>
+<table>
+<thead>
+<tr>
+<th>சுவாமி குறிப்பிட்டது</th>
+<th>மூலம்</th>
+<th>குறிப்பு</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>அஜ்ஞான ஸ்வரூபம்; ஸமஷ்டி–வ்யஷ்டி</td>
+<td>வேதாந்த ஸாரம் (ஸதானந்த யோகீந்த்ரர்), பகுதிகள் 34–35</td>
+<td>பகுதி எண்கள் பதிப்புக்குப் பதிப்பு மாறலாம்.</td>
+</tr>
+<tr>
+<td>'தேவாத்மசக்திம் ஸ்வகுணைர்நிகூடாம்'</td>
+<td>ச்வேதாச்வதர உபநிஷத் 1.3</td>
+<td>—</td>
+</tr>
+<tr>
+<td>அத்யாஸம் (superimposition) — சங்கரர்</td>
+<td>பிரம்மசூத்ர பாஷ்யம், முன்னுரை (அத்யாஸ பாஷ்யம்)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>அஹம் ப்ரஹ்மாஸ்மி / அயமாத்மா ப்ரஹ்ம / ப்ரஜ்ஞானம் ப்ரஹ்ம</td>
+<td>பிருஹதாரண்யகம் 1.4.10; மாண்டூக்யம் 2; ஐதரேயம் 3.3</td>
+<td>—</td>
+</tr>
+<tr>
+<td>துரீயம்</td>
+<td>மாண்டூக்ய உபநிஷத் 7</td>
+<td>—</td>
+</tr>
+<tr>
+<td>ஸம்யக் ஞானம் ('கிருஷ்ணர் சொல்வார்')</td>
+<td>—</td>
+<td>கீதையில் எந்த இடம் என்று சுவாமி குறிப்பிடவில்லை; இங்கு சேர்க்கவில்லை.</td>
+</tr>
+<tr>
+<td>'மனத்துள் மன்னிய மன்னே'</td>
+<td>—</td>
+<td>மூலநூல் அடையாளம் காணப்படவில்லை.</td>
+</tr>
+<tr>
+<td>நவரசங்கள்</td>
+<td>பரதரின் நாட்ய சாஸ்திரம் (அழகியல் மரபு)</td>
+<td>வழக்கமான பட்டியல்: சிருங்காரம், ஹாஸ்யம், கருணம், ரௌத்ரம், வீரம், பயானகம், பீபத்ஸம், அத்புதம், சாந்தம். சுவாமி கூறிய பட்டியல் இதிலிருந்து வேறுபடுகிறது.</td>
+</tr>
+<tr>
+<td>சந்திரசேகர், எடிங்டன், சி.வி. ராமன்</td>
+<td>சுப்ரமண்யன் சந்திரசேகர் (1910–1995); இயற்பியல் நோபல் 1983</td>
+<td>வேறுபாடுகள்: (1) ஆய்வு 1930-களில் (சுவாமி: 1920); எடிங்டனுடன் மோதல் 1935-ல் இங்கிலாந்தில். (2) எடிங்டன் கேம்பிரிட்ஜ் (இங்கிலாந்து) பல்கலைக்கழகத்தில் இருந்தார் (சுவாமி: அமெரிக்கா); சந்திரசேகர் பின்னர் 1937-ல் சிகாகோ பல்கலைக்கழகத்துக்குச் சென்றார். (3) சி.வி. ராமன் அவருடைய தந்தையின் இளைய சகோதரர் (சித்தப்பா). (4) சந்திரசேகர் வரம்பு சுமார் 1.4 சூரிய நிறை (வெண்குறுமீனின் அதிகபட்ச நிறை); சுவாமி சொன்ன 2.5 என்பது நியூட்ரான் நட்சத்திரத்தின் அதிகபட்ச நிறைக்கு (சுமார் 2–3) நெருக்கமானது, அது சந்திரசேகரின் கணக்கு அல்ல. (5) 'Black hole' என்ற பெயர் 1967-க்குப் பிறகு ஜான் வீலரால் பரவலானது. சுவாமியின் மையக் கருத்து இதனால் மாறவில்லை.</td>
+</tr>
+<tr>
+<td>'Ignorance is bliss'</td>
+<td>தாமஸ் கிரே, <em>Ode on a Distant Prospect of Eton College</em> (1742)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>மைக் கறை சோதனை</td>
+<td>ஹெர்மன் ரோர்ஷாக் (Rorschach), 1921</td>
+<td>—</td>
+</tr>
+<tr>
+<td>மனித ஜீனோமில் 28,000 ஜீன்கள்</td>
+<td>Human Genome Project மற்றும் பின்தைய மதிப்பீடுகள்</td>
+<td>தற்போதைய மதிப்பீடு: சுமார் 19,000–20,000 புரதம் குறியீடு செய்யும் ஜீன்கள்.</td>
+</tr>
+<tr>
+<td>'கருந்துளை' சொல், கலைக்கதிர் கட்டுரைகள்</td>
+<td>சுவாமியின் சொந்த அனுபவம்</td>
+<td>சுவாமி சொன்னபடியே; தனியாக சரிபார்க்கப்படவில்லை.</td>
+</tr>
+<tr>
+<td>'மனித ஜீனோம்' நூல்</td>
+<td>—</td>
+<td>சுவாமி குறிப்பிட்டது; ஆசிரியர்/பதிப்பக விவரம் காணொளியில் இல்லை.</td>
+</tr>
+<tr>
+<td>பூர்ணமத: பூர்ணமிதம்</td>
+<td>ஈசாவாஸ்ய உபநிஷத் சாந்தி மந்திரம்; பிருஹதாரண்யகம் 5.1.1</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><em>இந்தக் குறிப்புகள் YouTube தானியங்கி வசனங்களின் (auto-captions) அடிப்படையில் தொகுக்கப்பட்டவை; சம்ஸ்கிருத மேற்கோள்கள் மூலத்துடன் ஒப்பிட்டுச் சரிசெய்யப்பட்டன.</em></p>
+<p>காணொளி: <a href="https://www.youtube.com/watch?v=KFD9A09IBoc">14 வேதாந்த ஸாரம் | சுவாமி சங்கரானந்தா | அஞ்ஞான சாரம்</a></p>
+</section>
+
 <section class="vs-note vs-hidden" id="vsterm0" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> துண்டுபடாதது, பிளக்க முடியாதது</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 12</span> &#x27;எனக்குத் தெரியாது&#x27; என்ற உணர்வே அஜ்ஞானம் இருப்பதற்குச் சாட்சி</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm1" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> அனைத்திற்கும் ஆதாரம் – உபாதான காரணமும் நிமித்த காரணமும்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 13</span> இரண்டு பறவைகள் — ஒன்று பழம் தின்னுகிறது, மற்றது தின்னாமல் பார்த்துக்கொண்டு பிரகாசிக்கிறது</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm2" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> இருமையாகத் தோன்றும் இவ்வுலகில் அதைக் கடந்தவர்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 13</span> எவர் அனைத்தையும் பொதுவாகவும் விவரமாகவும் அறிகிறாரோ, அவருடைய தவம் ஞானமயமானது; அவரிடமிருந்தே பெயர், உருவம், உணவு அனைத்தும் தோன்றுகின்றன</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm3" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 9</span> நெருப்பில் வெந்து உருகுபவன். &#x27;அலம்&#x27; = போதும் (மலையாளத்திலும் இச்சொல் உண்டு); &#x27;அனலம்&#x27; = என்றும் போதும் என்னாத நெருப்பு</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> துண்டுபடாதது, பிளக்க முடியாதது</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm4" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> குருவை நாடிப் பின்தொடர்பவன்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> அனைத்திற்கும் ஆதாரம் – உபாதான காரணமும் நிமித்த காரணமும்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm5" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 2</span> ஒவ்வொரு நூலுக்கும் இருக்க வேண்டிய முன்னுரை (introduction)</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> இருமையாகத் தோன்றும் இவ்வுலகில் அதைக் கடந்தவர்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm6" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> நூல் தடையின்றி நிறைவுற்று, நீண்ட காலம் பயன் தர</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 13</span> உள்ளிருந்து இயக்குபவர்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm7" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 6</span> பழிவாங்கும் உத்தேசம் இல்லாமல் சகித்தல். &quot;பதிலுக்குப் பதில்&quot; (rejoinder) என்ற உடனடித் துடிப்பு இல்லாதிருத்தல்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 9</span> நெருப்பில் வெந்து உருகுபவன். &#x27;அலம்&#x27; = போதும் (மலையாளத்திலும் இச்சொல் உண்டு); &#x27;அனலம்&#x27; = என்றும் போதும் என்னாத நெருப்பு</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm8" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 4</span> பித்ரு/தேவ லோகத்தின் அமிர்தம், இளமை, விரும்பியதெல்லாம்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> குருவை நாடிப் பின்தொடர்பவன்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm9" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> பெயருக்கு ஏற்றபடியே வாழ்பவர்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 2</span> ஒவ்வொரு நூலுக்கும் இருக்க வேண்டிய முன்னுரை (introduction)</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm10" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> வாக்காலும் மனதாலும் பற்ற முடியாதது</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> நூல் தடையின்றி நிறைவுற்று, நீண்ட காலம் பயன் தர</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm11" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 10</span> குருவை அடையப் பெற்றவனே அறிகிறான் (&#x27;வான்&#x27; = உடையவன்; தனவான், ஞானவான் போல)</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 6</span> பழிவாங்கும் உத்தேசம் இல்லாமல் சகித்தல். &quot;பதிலுக்குப் பதில்&quot; (rejoinder) என்ற உடனடித் துடிப்பு இல்லாதிருத்தல்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm12" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 6</span> &quot;ஆகிய&quot; என்றால் இவ்வளவுதான்; &quot;முதலிய&quot; என்றால் இன்னும் பல. குளிர்-வெப்பம் தொடங்கி தர்மம்-அதர்மம், லாபம்-நஷ்டம், உறவு-பிரிவு என எண்ணற்ற இருமைகள்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 4</span> பித்ரு/தேவ லோகத்தின் அமிர்தம், இளமை, விரும்பியதெல்லாம்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm13" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 5</span> புலன், மனம், புத்தி சொன்ன வேலையைச் செய்ய வேண்டும்; அவற்றின் கட்டுப்பாட்டில் நாம் இருந்தால் ஆதீனம் இழந்தோம்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> பெயருக்கு ஏற்றபடியே வாழ்பவர்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm14" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> வாக்காலும் மனதாலும் பற்ற முடியாதது</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm15" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 13</span> சிருஷ்டிக்கு முன் ஜகத்து வெளிப்படாமல் மறைந்திருந்தது. சிருஷ்டி = மீட்டுருவாக்கம் (லயத்தில் கலைந்ததை மீண்டும் ஒன்றுசேர்ப்பது) — எனவே &#x27;முன்பே இருந்தது&#x27; (அக்ர ஆஸீத்)</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 13</span> புலன்களுக்கு வெளிப்படாதவர்</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm16" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 10</span> குருவை அடையப் பெற்றவனே அறிகிறான் (&#x27;வான்&#x27; = உடையவன்; தனவான், ஞானவான் போல)</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm17" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 6</span> &quot;ஆகிய&quot; என்றால் இவ்வளவுதான்; &quot;முதலிய&quot; என்றால் இன்னும் பல. குளிர்-வெப்பம் தொடங்கி தர்மம்-அதர்மம், லாபம்-நஷ்டம், உறவு-பிரிவு என எண்ணற்ற இருமைகள்</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm18" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 5</span> புலன், மனம், புத்தி சொன்ன வேலையைச் செய்ய வேண்டும்; அவற்றின் கட்டுப்பாட்டில் நாம் இருந்தால் ஆதீனம் இழந்தோம்</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm19" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> எல்லோருடைய ஆத்மா; &quot;நான்&quot; என்ற சொல்லின் பொருள்</p>
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> அமைதியில் &quot;நான்&quot; என அமரும்போது உணரும் அதுவே அகண்ட சச்சிதானந்தம்</p>
 </section>
 
-<section class="vs-note vs-hidden" id="vsterm15" aria-hidden="true">
+<section class="vs-note vs-hidden" id="vsterm20" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> எல்லையற்ற இருத்தல், எல்லையற்ற உணர்வு. மூன்று சொற்களும் பிரிக்க முடியாதபடி ஒரே பொருளைக் குறிக்கின்றன</p>
 </section>
 
-<section class="vs-note vs-hidden" id="vsterm16" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> இவை அனைத்தும் பிரம்மமே</p>
-</section>
-
-<section class="vs-note vs-hidden" id="vsterm17" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 4</span> மாலை, சந்தனம், உறவுகள் போன்ற போகங்கள்</p>
-</section>
-
-<section class="vs-note vs-hidden" id="vsterm18" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 11</span> பன்னிரண்டு ஆண்டு குருகுலத்தில் வேதம், வேதாங்கம் (வியாகரணம், நிருக்தம், கல்பம், ஜோதிடம்…) கற்றுக் கர்வத்தோடு திரும்பினான் ச்வேதகேது. கர்வத்தை அழிக்கும் கல்வியை மட்டும் அவன் கற்கவில்லை என்று தந்தை கண்டார்</p>
-</section>
-
-<section class="vs-note vs-hidden" id="vsterm19" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> அருகில் – உன்னை உன்னிடம் இட்டுச் செல்வது, உள்முகமாகத் திருப்புவது</p>
-</section>
-
-<section class="vs-note vs-hidden" id="vsterm20" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 9</span> அணுகி, அவரையே பின்பற்றுகிறான்</p>
-</section>
-
 <section class="vs-note vs-hidden" id="vsterm21" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 9</span> குருவுக்கு எதாவது உபகாரம் செய்யும் கையோடு செல்பவன் (பாணி = கை); ஸமித்பாணி என்றும் சொல்வர்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 13</span> நான் இருந்தேன், ஆனால் அறிவதற்கு இரண்டாவது ஒன்றுமில்லை — நிர்விஷய ஞானமாத்ரம். அறிவு இல்லாமல் போகவில்லை, மறைக்கப்பட்டிருக்கிறது — இதுவே அஜ்ஞானம்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm22" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 2</span> ஒரு தலைப்பை முடிவு கிடைக்கும் வரை நீண்ட நேரம் சிந்திக்கும் வல்லமை. இது இருந்தால் தனியாக தியானம் தேவையில்லை; தியானத்தால் சித்தி கிடைக்கலாம், ஞானம் கிடைக்காது</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> இவை அனைத்தும் பிரம்மமே</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm23" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> இவ்வாறு நான்கையும் அடைந்தவன்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 4</span> மாலை, சந்தனம், உறவுகள் போன்ற போகங்கள்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm24" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> வெளியே கயிறு, மனதில் பாம்பு; அதுபோல வெளியே பிரம்மம், மனதில் &quot;உலகம்&quot;</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 11</span> பன்னிரண்டு ஆண்டு குருகுலத்தில் வேதம், வேதாங்கம் (வியாகரணம், நிருக்தம், கல்பம், ஜோதிடம்…) கற்றுக் கர்வத்தோடு திரும்பினான் ச்வேதகேது. கர்வத்தை அழிக்கும் கல்வியை மட்டும் அவன் கற்கவில்லை என்று தந்தை கண்டார்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm25" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 6</span> பாவரிசை வந்தால் புன்முறுவல், வராவிட்டால் துக்கமில்லை</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> அருகில் – உன்னை உன்னிடம் இட்டுச் செல்வது, உள்முகமாகத் திருப்புவது</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm26" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> பொருள் இல்லாத அசை (சந்தஸுக்காக)</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 9</span> அணுகி, அவரையே பின்பற்றுகிறான்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm27" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> கீதை சொல்லும் இருபது நற்குணங்கள் (அமானித்வம், அதம்பித்வம், அஹிம்ஸா, ஆர்ஜவம்…) உடையவன்; நாலைந்து பிடித்தாலே போதும்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 9</span> குருவுக்கு எதாவது உபகாரம் செய்யும் கையோடு செல்பவன் (பாணி = கை); ஸமித்பாணி என்றும் சொல்வர்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm28" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 11</span> &#x27;அவித்யாயா அவித்யாத்வம் இதமேவ லக்ஷணம் யத் ப்ரமாணாஸஹிஷ்ணுத்வம்&#x27; — எந்தப் பிரமாணத்தையும் தாங்காதது என்பதே அவித்யையின் லட்சணம்; இல்லாவிட்டால் அது வஸ்துவாகிவிடும். ஒளியைக் கொண்டு இருட்டைத் தேடினால் காணமுடியாது</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 2</span> ஒரு தலைப்பை முடிவு கிடைக்கும் வரை நீண்ட நேரம் சிந்திக்கும் வல்லமை. இது இருந்தால் தனியாக தியானம் தேவையில்லை; தியானத்தால் சித்தி கிடைக்கலாம், ஞானம் கிடைக்காது</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm29" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> இறைவனின் லட்சணம் – இருத்தல், அறிவுணர்வு, எல்லையற்றது</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> இவ்வாறு நான்கையும் அடைந்தவன்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm30" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> எந்தப் பொருளையும் மனதில் வைக்காமல் &quot;இருக்கிறது&quot; என்று மட்டும் கற்பனை செய்ய முடியாது – இதுவே வாக்கு-மனத்திற்கு எட்டாத தன்மை. விவேக-வைராக்கியமுள்ள மனதுக்கே புலனாகும்; நூல் முடியும்போது தெளிவாகும்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 13</span> சிவப்பு, வெள்ளை, கருப்பு நிறமுள்ள ஒரு &#x27;அஜா&#x27; (பெண் ஆடு / பிறவாதது) — மூன்று நிறங்கள் = ரஜஸ், ஸத்துவம், தமஸ். ஒரு ஆண் ஆடு அதனுடன் கூடி குட்டிகளைப் பெறுகிறது (ஜீவன், பிறப்பு-இறப்பு); மற்றொன்று அதை அனுபவித்துவிட்டு துறக்கிறது (ஞானி)</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm31" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 4</span> மேலுலகின் உச்சி; ஸாரூப்ய, ஸாமீப்ய, ஸாலோக்ய, ஸாயுஜ்ய பதமுக்தி பெற்றவர்கள் வாழும் இடம்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> வெளியே கயிறு, மனதில் பாம்பு; அதுபோல வெளியே பிரம்மம், மனதில் &quot;உலகம்&quot;</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm32" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 2</span> புத்தகமும் (உபநிஷத்து) அறிவைத் தரும் பிரமாணம்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 6</span> பாவரிசை வந்தால் புன்முறுவல், வராவிட்டால் துக்கமில்லை</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm33" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> நாம் &quot;இருக்கிறது&quot; என்பதெல்லாம் ஜடப் பொருள்கள்; ஆனால் இந்த சத் அறிவுமயமானது. சித் = ஞானம்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> பொருள் இல்லாத அசை (சந்தஸுக்காக)</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm34" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 2</span> மனதின் மாசு = ராக-த்வேஷம் (விருப்பு-வெறுப்பு); புத்தியின் மாசு = மோகம். எல்லாமே இறைவனின் வெளிப்பாடு என்று புரிந்தால் விருப்பு-வெறுப்பு தணியும்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> கீதை சொல்லும் இருபது நற்குணங்கள் (அமானித்வம், அதம்பித்வம், அஹிம்ஸா, ஆர்ஜவம்…) உடையவன்; நாலைந்து பிடித்தாலே போதும்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm35" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 4</span> வங்கி கவுண்டரில் எல்லோரும் பரபரப்பாக இருக்க, ஒருவர் மட்டும் புன்னகையுடன் அமைதியாக, கனிவாக வேலை செய்வது – சலனமில்லாத மனத்தின் உதாரணம்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 11</span> &#x27;அவித்யாயா அவித்யாத்வம் இதமேவ லக்ஷணம் யத் ப்ரமாணாஸஹிஷ்ணுத்வம்&#x27; — எந்தப் பிரமாணத்தையும் தாங்காதது என்பதே அவித்யையின் லட்சணம்; இல்லாவிட்டால் அது வஸ்துவாகிவிடும். ஒளியைக் கொண்டு இருட்டைத் தேடினால் காணமுடியாது</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm36" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 11</span> &#x27;ஸேயம் ப்ராந்திர் நிராலம்பா ஸர்வந்யாயவிரோதினீ&#x27; — இந்த அஜ்ஞானம் பிராந்தி (தவறான அறிவு), தனிப்பட்ட ஆதாரமில்லாதது (நிராலம்பம்), எந்த நியாயத்தாலும் நிறுவமுடியாதது; விசாரம் செய்தால் இல்லாமல் போகும். உவமையில்: உணவகத்துக்குள்ளிருந்து அருவிக் கண்ணாடி வழியே மட்டுமே உலகைப் பார்த்தவன் வெளியே வந்த பிறகே &#x27;அது பிராந்தி&#x27; என்று அறிகிறான்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> இறைவனின் லட்சணம் – இருத்தல், அறிவுணர்வு, எல்லையற்றது</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm37" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 9</span> பிறப்பு-இறப்பு முதலிய சம்சாரம்; இடைவிடாமல் சுகம் தேடுவதே சம்சாரம் (முன்னர் சொன்ன பிரம்மாவின் கேள்வி)</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> எந்தப் பொருளையும் மனதில் வைக்காமல் &quot;இருக்கிறது&quot; என்று மட்டும் கற்பனை செய்ய முடியாது – இதுவே வாக்கு-மனத்திற்கு எட்டாத தன்மை. விவேக-வைராக்கியமுள்ள மனதுக்கே புலனாகும்; நூல் முடியும்போது தெளிவாகும்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm38" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> இந்திரியங்களை வென்றவன் (ஜித் = வெற்றி)</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 4</span> மேலுலகின் உச்சி; ஸாரூப்ய, ஸாமீப்ய, ஸாலோக்ய, ஸாயுஜ்ய பதமுக்தி பெற்றவர்கள் வாழும் இடம்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm39" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> அதிலிருந்து பிறக்கிறது</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 2</span> புத்தகமும் (உபநிஷத்து) அறிவைத் தரும் பிரமாணம்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm40" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> அதில் பிறந்து, அதில் ஒடுங்கி, அதில் நிலைத்திருப்பது (அடுத்த பகுதி)</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> நாம் &quot;இருக்கிறது&quot; என்பதெல்லாம் ஜடப் பொருள்கள்; ஆனால் இந்த சத் அறிவுமயமானது. சித் = ஞானம்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm41" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> கரையில் நின்று நீரோட்டத்தைப் பார்ப்பது போல, கால-தேச வர்த்தமானங்கள் என்னைக் கட்டுப்படுத்த முடியாமல் ஓடுவதை ஈடுபடாமல் சாட்சியாகப் பார்ப்பது. ஸ்வரூபத்தில் நான் இம்மூன்றும் இல்லாத சுத்த சைதன்யம் என்று அறிவதே பிரயோஜனம்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 2</span> மனதின் மாசு = ராக-த்வேஷம் (விருப்பு-வெறுப்பு); புத்தியின் மாசு = மோகம். எல்லாமே இறைவனின் வெளிப்பாடு என்று புரிந்தால் விருப்பு-வெறுப்பு தணியும்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm42" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> அதில் நிலைத்து வாழ்கிறது</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 4</span> வங்கி கவுண்டரில் எல்லோரும் பரபரப்பாக இருக்க, ஒருவர் மட்டும் புன்னகையுடன் அமைதியாக, கனிவாக வேலை செய்வது – சலனமில்லாத மனத்தின் உதாரணம்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm43" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 10</span> நனவு, கனவு, உறக்கம் மூன்றையும் விசாரித்து, அவற்றை ஒன்றாக இருந்து அறிபவன் அவற்றுக்கு வேறானவன் என்று அறிவதற்காக</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 11</span> &#x27;ஸேயம் ப்ராந்திர் நிராலம்பா ஸர்வந்யாயவிரோதினீ&#x27; — இந்த அஜ்ஞானம் பிராந்தி (தவறான அறிவு), தனிப்பட்ட ஆதாரமில்லாதது (நிராலம்பம்), எந்த நியாயத்தாலும் நிறுவமுடியாதது; விசாரம் செய்தால் இல்லாமல் போகும். உவமையில்: உணவகத்துக்குள்ளிருந்து அருவிக் கண்ணாடி வழியே மட்டுமே உலகைப் பார்த்தவன் வெளியே வந்த பிறகே &#x27;அது பிராந்தி&#x27; என்று அறிகிறான்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm44" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> அதில் ஒடுங்குகிறது</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 12</span> தேவாத்மசக்திம் ஸ்வகுணைர்நிகூடாம் (ச்வேதாச்வதரம் 1.3) — பிரம்மத்தின் சக்தியின் குணத்தாலேயே பிரம்மம் மூடப்பட்டுள்ளது</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm45" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 9</span> தலை பற்றியெரிபவன் நீர்நிலையை நோக்கி ஓடுவது போல (சிரம் = தலை, தீப்தம் = எரிவது, ராசி = திரள்)</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 13</span> உலகின் காரணம்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm46" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> நிச்சயமாக – வேறு வழியில்லை</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 9</span> பிறப்பு-இறப்பு முதலிய சம்சாரம்; இடைவிடாமல் சுகம் தேடுவதே சம்சாரம் (முன்னர் சொன்ன பிரம்மாவின் கேள்வி)</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm47" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> அறிவதற்கான சாதனம்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> இந்திரியங்களை வென்றவன் (ஜித் = வெற்றி)</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm48" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> அறிய விரும்புபவன்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 12</span> ஒளி வந்ததும் இருட்டு மறைவதுபோல் ஞானம் வந்ததும் சுவடே இல்லாமல் அழிகிறது; மற்ற பொருள்கள் நீங்கினால் வாசனை எஞ்சலாம்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm49" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> அறியப்பட வேண்டியது</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> அதிலிருந்து பிறக்கிறது</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm50" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 4</span> கோபம், பொறாமை, காமம் போன்ற மன உணர்வுகள் புத்தியை மழுங்கச் செய்கின்றன</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> அதில் பிறந்து, அதில் ஒடுங்கி, அதில் நிலைத்திருப்பது (அடுத்த பகுதி)</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm51" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> அமைதி அடைந்த மனம்; காமம், க்ரோதம், லோபம், மோகம் முதலிய ஆறு பகைகளையும் விட்டவன்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> கரையில் நின்று நீரோட்டத்தைப் பார்ப்பது போல, கால-தேச வர்த்தமானங்கள் என்னைக் கட்டுப்படுத்த முடியாமல் ஓடுவதை ஈடுபடாமல் சாட்சியாகப் பார்ப்பது. ஸ்வரூபத்தில் நான் இம்மூன்றும் இல்லாத சுத்த சைதன்யம் என்று அறிவதே பிரயோஜனம்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm52" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> அறிவும் உணர்வும் உடைய, &#x27;நான்&#x27; என்று சொல்லும் அறிபவன். இங்கே &#x27;ஆத்மா&#x27; என்ற சொல்லை பரிபூரண சைதன்யம் என்று அல்ல, &#x27;நான்&#x27; என்ற உணர்வாக எடுத்துக்கொள்ள வேண்டும்; சொல்லை இடத்துக்கேற்பப் புரிந்துகொள்ளவேண்டும்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> அதில் நிலைத்து வாழ்கிறது</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm53" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> தார்மீகமாக கர்மம் செய்து பாவம் முதலிய தோஷங்களிலிருந்து விலகியவன்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 10</span> நனவு, கனவு, உறக்கம் மூன்றையும் விசாரித்து, அவற்றை ஒன்றாக இருந்து அறிபவன் அவற்றுக்கு வேறானவன் என்று அறிவதற்காக</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm54" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 9</span> வெளியே சுறுசுறுப்பாக இயங்கினாலும் ஆழ்மனத்தில் துருவ நட்சத்திரம் போல் அசையாத நிறைவுடன் வாழ்பவர்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> அதில் ஒடுங்குகிறது</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm55" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> வைரஸ் ஒரு செல்லுக்குள் நுழைந்து நூறு மடங்காகப் பெருகுவதுபோல (கொரோனா உதாரணம்), தீய எண்ணங்கள் பலவீனமான மனங்களில் புகுந்து பெருகும் – தூரம் தடையல்ல என்று சுவாமி கூறுகிறார். காரணமில்லாத பயம், விரக்தி இதனால் வரலாம் என்பது அவரது கருத்து</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 9</span> தலை பற்றியெரிபவன் நீர்நிலையை நோக்கி ஓடுவது போல (சிரம் = தலை, தீப்தம் = எரிவது, ராசி = திரள்)</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm56" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> ஒரே தலைப்பைப் பற்றி நீண்ட நேரம் தொடரும் எண்ணம். (நோயாளி நோயையே, தேர்வுக்குப் படிப்பவன் பாடத்தையே நினைப்பதுபோல.)</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> நிச்சயமாக – வேறு வழியில்லை</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm57" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 7</span> சொல்வதும் செய்வதும் ஒன்றாக இருப்பவன் (சாது) – அவனே சமாதானத்துக்கு வருகிறான்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 12</span> ஒவ்வொரு பொருளுக்கும் எதிர்ப்பொருள் உண்டு (அனுயோகி-ப்ரதியோகி என்று சுவாமி விளக்கினார்): கடம் அஸ்தி / கடம் நாஸ்தி (கடாபாவம்). இந்த முறையில் அஜ்ஞானம் = ஞானாபாவம் (முற்றின்மை) ஆகிவிடும்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm58" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> சொன்னபடியே செய்பவன் (சாது)</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 13</span> இந்திரன் (ஆத்மா) மாயையால் பல உருவங்களாகத் தோன்றுகிறான். (&#x27;இதம்-த்ர&#x27; → &#x27;இந்த்ர&#x27; என்ற சொல்லாடலையும் சுவாமி குறிப்பிட்டார்.)</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm59" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 10</span> அரசன் (இன்று அதிகாரிகள்), தேவதை (கோயில்), குரு — இவர்களை வெறுங்கையுடன் காணச் செல்லக் கூடாது; சேவை மனத்தோடு செல்ல வேண்டும்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 12</span> அது இருக்கிறது என்று சொன்னால்தான் அதைப் போக்கும் அக்கறை வரும்; ஞானாபாவம் என்றால் அதைப் பற்றிப் பேச்சே இல்லை என்றார் சுவாமி</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm60" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 11</span> எல்லா உயிர்களிலும் அறிவாக இருப்பது அளவற்ற பிரம்மம்</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> அறிவதற்கான சாதனம்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm61" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 4</span> இடம், காலம், பொருள், விசை நான்கும் ஒன்றை ஒன்று சார்ந்தவை, அனைத்தும் அநித்தியம். நித்தியம் = எதையும் சாராமல் தானே இருப்பது</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> அறிய விரும்புபவன்</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm62" aria-hidden="true">
-  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> சாந்தோக்ய, பிரஹதாரண்யக உபநிஷத்துகளில் சுமார் 35 வகை உபாசனைகள் – சாண்டில்ய, உபகோஸல, தஹர, பூம, பஞ்சாக்னி, சோடசகலா, ஸம்வர்க்க, புருஷ வித்யா முதலியன</p>
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> அறியப்பட வேண்டியது</p>
 </section>
 
 <section class="vs-note vs-hidden" id="vsterm63" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 4</span> கோபம், பொறாமை, காமம் போன்ற மன உணர்வுகள் புத்தியை மழுங்கச் செய்கின்றன</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm64" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> அமைதி அடைந்த மனம்; காமம், க்ரோதம், லோபம், மோகம் முதலிய ஆறு பகைகளையும் விட்டவன்</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm65" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> அறிவும் உணர்வும் உடைய, &#x27;நான்&#x27; என்று சொல்லும் அறிபவன். இங்கே &#x27;ஆத்மா&#x27; என்ற சொல்லை பரிபூரண சைதன்யம் என்று அல்ல, &#x27;நான்&#x27; என்ற உணர்வாக எடுத்துக்கொள்ள வேண்டும்; சொல்லை இடத்துக்கேற்பப் புரிந்துகொள்ளவேண்டும்</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm66" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> தார்மீகமாக கர்மம் செய்து பாவம் முதலிய தோஷங்களிலிருந்து விலகியவன்</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm67" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 9</span> வெளியே சுறுசுறுப்பாக இயங்கினாலும் ஆழ்மனத்தில் துருவ நட்சத்திரம் போல் அசையாத நிறைவுடன் வாழ்பவர்</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm68" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> வைரஸ் ஒரு செல்லுக்குள் நுழைந்து நூறு மடங்காகப் பெருகுவதுபோல (கொரோனா உதாரணம்), தீய எண்ணங்கள் பலவீனமான மனங்களில் புகுந்து பெருகும் – தூரம் தடையல்ல என்று சுவாமி கூறுகிறார். காரணமில்லாத பயம், விரக்தி இதனால் வரலாம் என்பது அவரது கருத்து</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm69" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> ஒரே தலைப்பைப் பற்றி நீண்ட நேரம் தொடரும் எண்ணம். (நோயாளி நோயையே, தேர்வுக்குப் படிப்பவன் பாடத்தையே நினைப்பதுபோல.)</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm70" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 13</span> கண்ணனின் வாயில் முழு பிரபஞ்சத்தையும் கண்டாள்; ஆனால் அடுத்த கணமே மாயையால் அதை மறந்து, மீண்டும் தாயாகவே பார்த்தாள்</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm71" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 7</span> சொல்வதும் செய்வதும் ஒன்றாக இருப்பவன் (சாது) – அவனே சமாதானத்துக்கு வருகிறான்</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm72" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> சொன்னபடியே செய்பவன் (சாது)</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm73" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 10</span> அரசன் (இன்று அதிகாரிகள்), தேவதை (கோயில்), குரு — இவர்களை வெறுங்கையுடன் காணச் செல்லக் கூடாது; சேவை மனத்தோடு செல்ல வேண்டும்</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm74" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 11</span> எல்லா உயிர்களிலும் அறிவாக இருப்பது அளவற்ற பிரம்மம்</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm75" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 4</span> இடம், காலம், பொருள், விசை நான்கும் ஒன்றை ஒன்று சார்ந்தவை, அனைத்தும் அநித்தியம். நித்தியம் = எதையும் சாராமல் தானே இருப்பது</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm76" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> சாந்தோக்ய, பிரஹதாரண்யக உபநிஷத்துகளில் சுமார் 35 வகை உபாசனைகள் – சாண்டில்ய, உபகோஸல, தஹர, பூம, பஞ்சாக்னி, சோடசகலா, ஸம்வர்க்க, புருஷ வித்யா முதலியன</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm77" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> உலக சுகங்கள் அநித்தியம் – கையில் பிடித்த பறவை பறந்துவிடுவதுபோல், கண்ணாடிப் பாத்திரம் உடைவதுபோல். நித்திய சுகம் எங்கே என்ற தேடல் தொடங்குகிறது</p>
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 5</span> உடல், மனம், புத்தி உட்பட அனைத்தும் தோன்றி, இருந்து, மறைவதால் அநித்தியம்</p>
 </section>
 
-<section class="vs-note vs-hidden" id="vsterm64" aria-hidden="true">
+<section class="vs-note vs-hidden" id="vsterm78" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 5</span> அனுபவிப்பதில் தவறில்லை; அது உன் சுதந்திரத்தை (ஆதீனம்) பறிக்கும்போது அங்கு பற்று வந்துவிட்டது என்று கவனி; விவேகம் துணையாக விலகு</p>
 </section>
 
-<section class="vs-note vs-hidden" id="vsterm65" aria-hidden="true">
+<section class="vs-note vs-hidden" id="vsterm79" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> அமைதியான, கலங்காத மனத்துடன் உபாசிக்கவும்</p>
 </section>
 
-<section class="vs-note vs-hidden" id="vsterm66" aria-hidden="true">
+<section class="vs-note vs-hidden" id="vsterm80" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 1</span> மூன்று பொருள்: தகர்த்தெறிதல் (விஶரணம்), அடைவித்தல் (அவகதி), வேரோடு புடுங்குதல்</p>
 </section>
 
-<section class="vs-note vs-hidden" id="vsterm67" aria-hidden="true">
+<section class="vs-note vs-hidden" id="vsterm81" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 10</span> அனைத்தின் இருப்பும் (ஸத்), அறிவுணர்வும் (சித்), சுக ஸ்வரூபமும் (ஆனந்தம்). ஆழ்ந்த உறக்கத்தின் ஆனந்தம் &#x27;அப்படித்தான் இருந்தது&#x27; என்ற நினைவாக (ப்ரத்யபிஜ்ஞை) நமக்குத் தெரிகிறது</p>
 </section>
 
-<section class="vs-note vs-hidden" id="vsterm68" aria-hidden="true">
+<section class="vs-note vs-hidden" id="vsterm82" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 13</span> அனைத்தையும் அறிவது</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm83" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 10</span> &#x27;ஏததேவ ஹி தயாளுலக்ஷணம்&#x27; — பணிவுள்ள மாணவனின் ஞானத்தை வளர்ப்பதுதான் அருள் நிறைந்த குருவின் லட்சணம்</p>
 </section>
 
-<section class="vs-note vs-hidden" id="vsterm69" aria-hidden="true">
+<section class="vs-note vs-hidden" id="vsterm84" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 8</span> எல்லா விதத்திலும், ஒன்றுவிடாமல் கொடுக்கப்பட வேண்டியது</p>
 </section>
 
-<section class="vs-note vs-hidden" id="vsterm70" aria-hidden="true">
+<section class="vs-note vs-hidden" id="vsterm85" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 13</span> அனைத்தையும் கட்டுப்படுத்துபவர்</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm86" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> உபநிஷத்தில் – எல்லா லோகங்களிலும் உள்ள அறிவுடையன, அறிவற்றன அனைத்தும் (அகிலம்)</p>
 </section>
 
-<section class="vs-note vs-hidden" id="vsterm71" aria-hidden="true">
+<section class="vs-note vs-hidden" id="vsterm87" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 10</span> இருப்பதெல்லாம் பிரம்மம்; அதில் தோன்றி, அதனால் நிலைத்து, அதில் மறைகிறது. எனவே நனவில் தோன்றும் பயமும் கனவில் தோன்றும் பயமும் நானே; தன்னில் தோன்றிய கத்தி தன்னை எப்படி அழிக்க முடியும்?</p>
 </section>
 
-<section class="vs-note vs-hidden" id="vsterm72" aria-hidden="true">
+<section class="vs-note vs-hidden" id="vsterm88" aria-hidden="true">
+  <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 13</span> அனைத்துக்கும் தலைவன்</p>
+</section>
+
+<section class="vs-note vs-hidden" id="vsterm89" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 3</span> ஆறு ஆதாரங்களிலும் அம்பிகையின் குணங்களை தன்னில் பாவிப்பது – இழிவானதை (நிஷ்கிருஷ்டம்) உயர்ந்ததாக (உத்கிருஷ்டம்) பாவிக்கும் உபாசனை (குண்டலினி, ராஜயோகம்)</p>
 </section>
 
-<section class="vs-note vs-hidden" id="vsterm73" aria-hidden="true">
+<section class="vs-note vs-hidden" id="vsterm90" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 9</span> முறைப்படி, சம்பிரதாயப்படி வேதாந்தம் பயின்ற குரு</p>
 </section>
 
-<section class="vs-note vs-hidden" id="vsterm74" aria-hidden="true">
+<section class="vs-note vs-hidden" id="vsterm91" aria-hidden="true">
   <p class="vs-term__sense"><span class="vs-term__cls">வகுப்பு 10</span> குரு உபதேசத்தால், குருவின் சாந்நித்யத்தில் தன்னை விளங்கிக்கொண்டவர். ப்ரஹ்மநிஷ்டர்: விளங்கியபடியே வாழ்பவர்</p>
 </section>
 
