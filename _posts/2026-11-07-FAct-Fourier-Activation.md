@@ -3,7 +3,7 @@ title: "FAct (Fourier Activation)"
 date: 2026-11-07
 tags: [Deep-Learning, Research, Transformers]
 mathjax: true
-excerpt: "A single activation written as a truncated Fourier series, shared by every block of a Vision Transformer and learned on ImageNet-1K — at 3 million, 22 million and 304 million parameters."
+excerpt: "A single activation written as a truncated Fourier series, shared by every block of a Vision Transformer and learned on ImageNet-1K. Against matched GELU twins at 3M, 22M and 304M parameters it wins, ties, and then loses — while learning the same curve every time."
 ---
 
 Nearly every architecture we build begins with a decision that is almost never
@@ -118,15 +118,15 @@ place to sit — not from a faithful reproduction of GELU.
 ## Training on ViT
 
 I trained three Vision Transformers on ImageNet-1K, spanning two orders of magnitude
-in size, with the globally shared $K=2$ FAct in place of GELU in every FFN. At the two
-smaller scales a GELU-activated twin was trained under an identical configuration, so
-the activation is the only difference between the arms.
+in size, with the globally shared $K=2$ FAct in place of GELU in every FFN. At every
+scale a GELU-activated twin was trained under an identical configuration, so the
+activation is the only difference between the arms.
 
 ### Training details
 
 | | **ViT-d6** | **ViT-S/16** | **ViT-L/16** |
 |---|---|---|---|
-| Parameters (FAct / GELU) | 3,048,237 / 3,048,232 | 22,050,669 / 22,050,664 | 304,326,637 / — |
+| Parameters (FAct / GELU) | 3,048,237 / 3,048,232 | 22,050,669 / 22,050,664 | 304,326,637 / 304,326,632 |
 | Depth · embed · heads | 6 · 192 · 6 | 12 · 384 · 6 | 24 · 1024 · 16 |
 | Patch · resolution | 16 · 224² | 16 · 224² | 16 · 224² |
 | Optimiser | AdamW | AdamW | AdamW |
@@ -134,10 +134,10 @@ the activation is the only difference between the arms.
 | Weight decay | 0.05 | 0.05 | 0.05 |
 | Warm-up / schedule | 5 ep · cosine | 5 ep · cosine | 2 ep · cosine |
 | Batch size | 256 | 512 | 64 |
-| Epochs | 100 | 100 | 100 scheduled, stopped at 94 |
+| Epochs | 100 | 100 | 100 scheduled; FAct stopped at 94, GELU at 93 |
 | Augmentation | RRC(0.5–1.0) + flip | RRC(0.5–1.0) + flip | heavy: RandAugment(2,9) + RandomErasing(0.25) + RRC(0.08–1.0) + mixup 0.8 / CutMix 1.0 |
 | Seeds | 3 | 1 | 1 |
-| Wall-clock (per run)† | ≈ 19–27 h | ≈ 43 h | ≈ 3.7 days |
+| Wall-clock (per run)† | ≈ 19–27 h | ≈ 43 h | ≈ 3.2–3.7 days |
 
 † Wall-clock is quoted only to convey the scale of each run. These were shared
 machines with varying contention, so the figures are not a like-for-like timing
@@ -150,14 +150,25 @@ training set as the validation split, and the official 50,000-image ImageNet val
 set used strictly as a held-out test set. Every accuracy reported as "test" below is
 measured on those 50,000 images.
 
-One caveat must be registered at the outset, since it governs how much the three rows
-may be compared with each other. **This is not a controlled scaling study.** The ViT-L
-run differs from the two smaller runs in learning rate, batch size and augmentation
-recipe, all of which were chosen to make a 304M model trainable from scratch within a
-reasonable wall-clock budget rather than to hold the comparison fixed. It also has no
-GELU twin — a second four-day run was not affordable. The ViT-L row therefore answers
-"what shape does a large model learn on this data?" and not "does FAct beat GELU at
-304M?". The latter question remains open.
+Two caveats must be registered at the outset, since they govern how much the three rows
+may be compared with each other.
+
+**This is not a controlled scaling study.** The ViT-L run differs from the two smaller
+runs in learning rate, batch size and augmentation recipe, all of which were chosen to
+make a 304M model trainable from scratch within a reasonable wall-clock budget rather
+than to hold the comparison fixed. Comparisons *down* the table — 3M against 304M — are
+therefore confounded; comparisons *within* a column, FAct against its GELU twin, are not.
+
+**The 304M pair has one asymmetry I could not remove after the fact.** Both arms were
+carried across 24-hour scheduler windows by stopping and resubmitting from the latest
+checkpoint. The FAct run was launched before I had added optimiser state to the
+checkpoint format, so each of its six resumptions restarted AdamW's moments from zero;
+the GELU run, launched ten days later, resumed its moments properly across three
+restarts. That difference favours GELU at every window boundary, and it is not
+recoverable without re-running four days of training. It is small — the moments rebuild
+within a few hundred steps of a 19,861-step epoch — but it is real, and it points the
+same way as the result below, so the 304M gap should be read as an upper bound on
+GELU's advantage rather than a point estimate.
 
 ### Table summary
 
@@ -167,7 +178,8 @@ GELU twin — a second four-day run was not affordable. The ViT-L row therefore 
 | | | **FAct** $K{=}2$ | **67.15 ± 0.65** | **64.47 ± 0.59** | **+1.95** |
 | ViT-S/16 (1 seed) | 22.05 M | GELU | 70.03 | 66.81 | — |
 | | | **FAct** $K{=}2$ | **70.25** | 66.58 | −0.23 |
-| ViT-L/16 (1 seed) | 304.3 M | **FAct** $K{=}2$ | **76.43** | 72.93 | no twin |
+| ViT-L/16 (1 seed) | 304.3 M | GELU | **77.66** | **74.57** | — |
+| | | **FAct** $K{=}2$ | 76.43 | 72.93 | **−1.63** |
 
 At **3 million parameters the result is clear and it replicates.** Averaged over three
 seeds, FAct gains $1.95 \pm 0.59$ percentage points of test accuracy over GELU; a
@@ -186,15 +198,34 @@ coefficients confer on a 3M model, a 22M model has evidently found another way t
 obtain — most plausibly through the additional width and depth it can spend on the
 same problem.
 
-I want to be direct about this, since it is the least convenient number in the post: on
-the evidence here, **the accuracy benefit of FAct does not survive the jump from 3M to
-22M parameters.** A single-seed comparison cannot establish a tie with any rigour, but
-it certainly cannot rescue a $+1.95$ point claim either. The accuracy case for FAct, as
-it stands, is a small-model case.
+At **304 million parameters the sign has flipped, and GELU wins.** The control arm
+reaches 77.66% on validation and 74.57% on the test set at its best checkpoint, against
+FAct's 76.43% and 72.93% — a deficit of $1.63$ points for the learned activation. The
+same ordering holds at the last checkpoint of each run (73.98% against 72.56%), so this
+is not a matter of which epoch one reads off. One seed per arm, and the optimiser-state
+asymmetry noted above tilts the board slightly towards GELU, so I would not defend the
+exact magnitude. The sign, at $1.63$ points, is well outside anything those caveats
+plausibly account for.
+
+I want to be direct about what the three rows now say together, since it is the least
+convenient result in the post. Read as a sequence, the Δ column goes $+1.95$, $-0.23$,
+$-1.63$: **the benefit of a learned shared activation does not merely fade with scale
+— it reverses.** The accuracy case for FAct is a small-model case, and at 304M the
+honest summary is that five learnable coefficients cost roughly a point and a half
+against simply using GELU.
+
+The losses say something about why. At 304M, FAct's training loss is the *lower* of the
+two at every single epoch of the run, ending at 2.05 against GELU's 2.25. Its validation
+loss, however, is lower only up to epoch 51; from epoch 52 onward it is the higher of
+the two, ending at 2.17 against 1.98. So the extra flexibility keeps paying on the
+training distribution long after it has stopped paying on held-out data — under this
+heavy-augmentation recipe it is being spent fitting rather than generalising. That is
+the opposite of what the same five parameters do at 3M, where FAct's advantage appears
+on validation within the first ten epochs and never goes away.
 
 ### Training curves
 
-<img src="/images/FAct-Fourier-Activation/training-curves-three-scales.png" alt="Six panels in two rows. Top row: validation top-1 accuracy against epoch for the three model scales; FAct is clearly above GELU at 3.05M, indistinguishable at 22.05M, and the 304M panel shows FAct alone. Bottom row: the corresponding training loss curves." style="max-width:100%; height:auto;">
+<img src="/images/FAct-Fourier-Activation/training-curves-three-scales.png" alt="Six panels in two rows. Top row: validation top-1 accuracy against epoch for the three model scales; FAct is clearly above GELU at 3.05M, indistinguishable at 22.05M, and at 304M FAct leads early before GELU crosses above it around epoch 65 and finishes 1.2 points higher. Bottom row: the corresponding training loss curves, where at 304M FAct's training loss is the lower of the two throughout." style="max-width:100%; height:auto;">
 
 The curves are instructive beyond the final numbers. At 3.05M the separation opens
 within the first ten epochs and then holds, roughly constant, for the remaining ninety
@@ -209,19 +240,27 @@ points, and GELU is in front at twenty of them. The advantage is therefore not a
 at this scale; it is spent, well before the cosine schedule anneals. The larger model
 reaches on its own, and fairly quickly, whatever the learned activation was buying.
 
-The ViT-L panel shows a single run and should be read as a training log rather than a
-comparison. Its best checkpoint, at epoch 58, reaches 76.43% on the held-out validation
-split and 72.93% on the 50,000-image test set — six points clear of the 22M model, which
-is what one would expect from a fourteen-fold increase in size combined with a far
-heavier augmentation recipe, and which says nothing at all about the activation.
-Validation accuracy reaches the mid-seventies by epoch 45 and then plateaus; the small
-discontinuities in the loss curve near epochs 75 and 94 are resume boundaries, since the run was carried across several 24-hour scheduler windows
-by stopping and resubmitting from the latest checkpoint. The run was halted at epoch 94
-rather than 100: validation loss had begun drifting upward from epoch 77 while
-validation accuracy stayed flat — the usual late-cosine label-smoothing
-overconfidence — and the learned coefficients were by then moving only in the fourth
-decimal place. That reading is borne out by the final epoch-94 checkpoint, which scores
-75.44% validation and 72.56% test, below the epoch-58 best on both counts.
+At 304.3M the 22M pattern repeats, and then goes one step further. FAct is ahead for
+roughly the first two-thirds of training — by an average of 1.9 points over epochs 1–20
+and 1.1 points over epochs 21–60 — and its best checkpoint, at epoch 58, arrives while
+it is still in front. GELU catches it at epoch 65 and stays ahead thereafter, leading by
+an average of 1.2 points over epochs 61–93 and peaking at 77.66% at epoch 78. So the
+early-advantage-then-spent story of the 22M run is visible here too; what is new is that
+the curves do not merely converge, they cross.
+
+Both runs were carried across 24-hour scheduler windows by stopping and resubmitting
+from the latest checkpoint, which is what the small discontinuities in the loss curves
+are. Neither reached epoch 100: FAct was halted at 94 because its validation loss had
+been drifting upward since epoch 77 while validation accuracy stayed flat — the usual
+late-cosine label-smoothing overconfidence — and its coefficients were by then moving
+only in the fourth decimal place; GELU was stopped at 93, fifteen epochs past its own
+peak and oscillating flat between 76.5% and 77.1% for the last eight of them. Reading
+each run's last checkpoint instead of its best gives 72.56% test for FAct and 73.98%
+for GELU, preserving the ordering.
+
+Both models are of course far above the 22M pair, by six to eight points, which is what
+a fourteen-fold increase in size with a much heavier augmentation recipe buys and which
+says nothing about the activation either way.
 
 ### The learned activation
 
@@ -271,6 +310,14 @@ shape with the volume turned down. Whether this reflects the model size or the m
 heavier augmentation and smaller learning rate it was trained with, I cannot separate
 from this single run — and it would be wrong to claim otherwise.
 
+It is tempting to connect the flatness to the accuracy result — the one scale where the
+learned curve stays closest to a plain monotone nonlinearity is also the one scale where
+GELU wins — and the connection may well be real. But a single run cannot distinguish
+"the large model found less use for the oscillation" from "the large model had not
+finished moving when I stopped it at epoch 94", and the coefficients were still drifting
+in the fourth decimal place when it stopped. I record the coincidence and leave it at
+that.
+
 There is one further observation that I did not anticipate, and which I find the most
 persuasive piece of evidence in the whole study. The three seeds of the 3.05M model
 end at:
@@ -297,25 +344,38 @@ To summarise honestly:
 - A globally shared $K=2$ Fourier activation costs five parameters and gives a
   reproducible $+1.95$ point test gain on a 3M-parameter ViT on ImageNet-1K.
 - That gain is gone by 22M parameters, where FAct and GELU are tied on a single-seed
-  comparison.
+  comparison, and **reversed by 304M, where the GELU twin wins by $1.63$ points.**
+  Across the three scales the test-set delta runs $+1.95$, $-0.23$, $-1.63$.
+- The mechanism behind the reversal is visible in the curves: at both 22M and 304M FAct
+  holds a one-to-two point lead for the first part of training and then loses it. At
+  304M it also ends with the lower training loss and the higher validation loss, which
+  is what spending flexibility on fitting rather than generalising looks like.
 - At all three scales — 3M, 22M and 304M — the learned curve departs from GELU in the
   same direction and arrives at a recognisably common shape, with the largest model
-  settling on a flatter version of it.
+  settling on a flatter version of it. This holds *regardless of which arm won*.
 - Across seeds at a fixed scale, the learned coefficients reproduce to about two
   decimal places.
 
-The accuracy story and the shape story therefore point in different directions, and I
-think it is the second that deserves the follow-up. If the curve a network learns is
-determined this reliably by the data, then it is a property of the problem and not of
-the particular network, and one ought to be able to learn it once and reuse it
+The accuracy story and the shape story therefore point in different directions — more
+sharply now than when I first wrote this up, since the accuracy story ends in a loss
+rather than a tie. It is the second that deserves the follow-up. If the curve a network
+learns is determined this reliably by the data, then it is a property of the problem and
+not of the particular network, and one ought to be able to learn it once and reuse it
 elsewhere. That is precisely what the transfer experiments in the companion post
 [We Can Not Only Learn Activations, But Also Transfer Them](/2026/08/31/we-can-not-only-learn-but-also-transfer-activations.html)
-examine, and it is where I believe the idea actually earns its keep.
+examine, and it is where I believe the idea actually earns its keep. It is worth saying
+plainly that the shape result is *not* contingent on FAct winning: the 304M model learns
+the same departure from GELU whether or not that departure helped it, which is what makes
+the curve interesting as an object of study rather than as a proposed improvement.
 
-What is still missing is a GELU twin at 304M and more than one seed at 22M, both of
-which are compute questions rather than scientific ones. Until those exist, the
-scaling behaviour above should be read as three careful observations and not as a
-trend.
+What is still missing is more than one seed at 22M and at 304M. Both are compute
+questions rather than scientific ones, and at four days per 304M run the second is not
+cheap. A monotone progression across three scales measured once each is suggestive, not
+established; with the 304M arms differing by $1.63$ points I am fairly confident of the
+*sign* at that scale, considerably less so of the shape of the curve connecting the
+three points. The one asymmetry I know of — FAct's optimiser moments restarting at each
+resume — pushes in GELU's favour, so a properly matched rerun would most likely narrow
+the 304M gap rather than widen it.
 
 ## Citation
 
